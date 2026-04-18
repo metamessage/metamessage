@@ -10,9 +10,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/lizongying/meta-message/internal/jsonc/ast"
-	"github.com/lizongying/meta-message/internal/jsonc/token"
-	"github.com/lizongying/meta-message/internal/utils"
+	"github.com/metamessage/metamessage/internal/jsonc/ast"
+	"github.com/metamessage/metamessage/internal/jsonc/token"
+	"github.com/metamessage/metamessage/internal/utils"
 )
 
 const BitSize = 32 << (^uint(0) >> 63)

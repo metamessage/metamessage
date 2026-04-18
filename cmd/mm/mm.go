@@ -10,13 +10,15 @@ import (
 	"slices"
 	"strings"
 
-	"github.com/lizongying/meta-message/internal/gen"
-	"github.com/lizongying/meta-message/internal/jsonc"
-	"github.com/lizongying/meta-message/internal/mm"
+	"github.com/metamessage/metamessage/internal/gen"
+	"github.com/metamessage/metamessage/internal/jsonc"
+	"github.com/metamessage/metamessage/internal/mm"
 )
 
 // go run ./cmd/mm -generate -lang go -in example.jsonc / cat example.jsonc | go run ./cmd/mm -generate -lang go
 func main() {
+	validLangs := []string{"go", "java", "ts", "kt", "py", "js", "cs", "rs", "swift", "php"}
+
 	encode := flag.Bool("encode", false, "encode mode: jsonc -> MetaMessage")
 	flag.BoolVar(encode, "e", false, "shorthand for -encode")
 
@@ -35,7 +37,7 @@ func main() {
 	force := flag.Bool("force", false, "overwrite output file if it already exists (default: false)")
 	flag.BoolVar(force, "f", false, "shorthand for -force")
 
-	lang := flag.String("lang", "none", "generate target language (only valid for -gen, default: none, support: go, java, ts, kt, py, js, csharp, rust, swift, php)")
+	lang := flag.String("lang", "none", fmt.Sprintf("generate target language (only valid for -gen, default: none, support: %s)", strings.Join(validLangs, ", ")))
 	flag.StringVar(lang, "l", "none", "shorthand for -lang")
 
 	flag.Usage = func() {
@@ -49,7 +51,7 @@ func main() {
 		fmt.Fprintln(os.Stderr, "  -out, -o string    Output file path (empty = write to stdout)")
 		fmt.Fprintln(os.Stderr, "  -force, -f         Overwrite output file if it exists (default: false)")
 		fmt.Fprintln(os.Stderr, "\nGenerate Options (only for -gen):")
-		fmt.Fprintln(os.Stderr, "  -lang, -l string   Target language (default: none, support: go, java, ts, kt, py, js, csharp, rust, swift, php)")
+		fmt.Fprintln(os.Stderr, "  -lang, -l string   Target language (default: none, support: go, java, ts, kt, py, js, cs, rs, swift, php)")
 		fmt.Fprintln(os.Stderr, "\nExamples:")
 		fmt.Fprintln(os.Stderr, "  # Encode JSONC to MetaMessage (stdin -> stdout)")
 		fmt.Fprintln(os.Stderr, "  ", os.Args[0], "-encode -in input.jsonc -out output.MetaMessage")
@@ -58,9 +60,9 @@ func main() {
 		fmt.Fprintln(os.Stderr, "  # Generate Go struct from JSONC")
 		fmt.Fprintln(os.Stderr, "  ", os.Args[0], "-gen -lang go -in input.jsonc -out output.go")
 		fmt.Fprintln(os.Stderr, "  # Generate C# class from JSONC")
-		fmt.Fprintln(os.Stderr, "  ", os.Args[0], "-gen -lang csharp -in input.jsonc -out output.cs")
+		fmt.Fprintln(os.Stderr, "  ", os.Args[0], "-gen -lang cs -in input.jsonc -out output.cs")
 		fmt.Fprintln(os.Stderr, "  # Generate Rust struct from JSONC")
-		fmt.Fprintln(os.Stderr, "  ", os.Args[0], "-gen -lang rust -in input.jsonc -out output.rs")
+		fmt.Fprintln(os.Stderr, "  ", os.Args[0], "-gen -lang rs -in input.jsonc -out output.rs")
 		fmt.Fprintln(os.Stderr, "  # Generate Swift struct from JSONC")
 		fmt.Fprintln(os.Stderr, "  ", os.Args[0], "-gen -lang swift -in input.jsonc -out output.swift")
 	}
@@ -90,7 +92,6 @@ func main() {
 	}
 
 	if *generate {
-		validLangs := []string{"go", "java", "ts", "kt", "py", "js", "csharp", "cs", "rust", "rs", "swift", "php"}
 		if !slices.Contains(validLangs, *lang) {
 			fmt.Fprintf(os.Stderr, "Error: Unsupported language %s! Valid options: %s, all\n", *lang, strings.Join(validLangs, ", "))
 			os.Exit(1)
@@ -206,9 +207,9 @@ func main() {
 			outputStr = gen.ToPy(node)
 		case "js":
 			outputStr = gen.ToJS(node)
-		case "csharp", "cs":
+		case "cs":
 			outputStr = gen.ToCSharp(node)
-		case "rust", "rs":
+		case "rs":
 			outputStr = gen.ToRust(node)
 		case "swift":
 			outputStr = gen.ToSwift(node)
@@ -216,6 +217,7 @@ func main() {
 			outputStr = gen.ToPHP(node)
 		default:
 			fmt.Fprintf(os.Stderr, "unsupported language: %s\n", *lang)
+			fmt.Fprintf(os.Stderr, "supported languages: %s\n", strings.Join(validLangs, ", "))
 			os.Exit(2)
 		}
 

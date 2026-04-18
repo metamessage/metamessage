@@ -4,7 +4,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/lizongying/meta-message/internal/jsonc/ast"
+	"github.com/metamessage/metamessage/internal/jsonc/ast"
 )
 
 func TestToPHPGeneratesCode(t *testing.T) {

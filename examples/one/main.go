@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"fmt"
 
-	"github.com/lizongying/meta-message/internal/mm"
+	"github.com/metamessage/metamessage/internal/mm"
 )
 
 func main() {

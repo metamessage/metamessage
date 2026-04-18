@@ -8,9 +8,9 @@ import (
 	"net"
 	"time"
 
-	"github.com/lizongying/meta-message/internal/jsonc"
-	"github.com/lizongying/meta-message/internal/jsonc/ast"
-	"github.com/lizongying/meta-message/internal/utils"
+	"github.com/metamessage/metamessage/internal/jsonc"
+	"github.com/metamessage/metamessage/internal/jsonc/ast"
+	"github.com/metamessage/metamessage/internal/utils"
 )
 
 type Encoder interface {

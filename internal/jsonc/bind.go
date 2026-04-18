@@ -9,7 +9,7 @@ import (
 	"time"
 	"unicode"
 
-	"github.com/lizongying/meta-message/internal/jsonc/ast"
+	"github.com/metamessage/metamessage/internal/jsonc/ast"
 )
 
 func Bind(node ast.Node, out any) error {

@@ -12,7 +12,7 @@ import (
 	"time"
 	"unicode/utf8"
 
-	"github.com/lizongying/meta-message/internal/utils"
+	"github.com/metamessage/metamessage/internal/utils"
 )
 
 var emailRegex = regexp.MustCompile(`^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$`)
@@ -53,10 +53,11 @@ func (t *Tag) ValidateString(val string) (data any, text string, err error) {
 		var mini int
 		mini, err = strconv.Atoi(t.Min)
 		if err == nil {
+			err = fmt.Errorf("failed to parse t.Min as int: %w", err)
 			return
 		}
 		if l < mini {
-			err = fmt.Errorf("string length %d < min %d", l, mini)
+			err = fmt.Errorf("string length %v is less than the minimum limit %v", l, mini)
 			return
 		}
 	}
@@ -65,10 +66,11 @@ func (t *Tag) ValidateString(val string) (data any, text string, err error) {
 		var maxi int
 		maxi, err = strconv.Atoi(t.Max)
 		if err == nil {
+			err = fmt.Errorf("failed to parse t.Max as int: %w", err)
 			return
 		}
 		if l > maxi {
-			err = fmt.Errorf("string length %d > max %d", l, maxi)
+			err = fmt.Errorf("string length %v exceeds the maximum limit %v", l, maxi)
 			return
 		}
 	}
@@ -114,10 +116,11 @@ func (t *Tag) ValidateBytes(val []byte) (data any, text string, err error) {
 		var mini int
 		mini, err = strconv.Atoi(t.Min)
 		if err != nil {
+			err = fmt.Errorf("failed to parse t.Min as int: %w", err)
 			return
 		}
 		if l < mini {
-			err = fmt.Errorf("[]byte length %d < min %d", l, mini)
+			err = fmt.Errorf("[]byte length %v is less than the minimum limit %v", l, mini)
 			return
 		}
 	}
@@ -126,10 +129,11 @@ func (t *Tag) ValidateBytes(val []byte) (data any, text string, err error) {
 		var maxi int
 		maxi, err = strconv.Atoi(t.Max)
 		if err != nil {
+			err = fmt.Errorf("failed to parse t.Max as int: %w", err)
 			return
 		}
 		if l > maxi {
-			err = fmt.Errorf("[]byte length %d > max %d", l, maxi)
+			err = fmt.Errorf("[]byte length %v exceeds the maximum limit %v", l, maxi)
 			return
 		}
 	}
