@@ -3,7 +3,7 @@ package mm
 import (
 	"fmt"
 
-	"github.com/lizongying/meta-message/internal/utils"
+	"github.com/metamessage/metamessage/internal/utils"
 )
 
 func (e *encoder) encodeFloat(s string) (n uint32, err error) {

@@ -4,7 +4,7 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/lizongying/meta-message/internal/jsonc"
+	"github.com/metamessage/metamessage/internal/jsonc"
 )
 
 // go test ./internal/mm -v

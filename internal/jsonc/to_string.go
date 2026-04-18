@@ -5,7 +5,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/lizongying/meta-message/internal/jsonc/ast"
+	"github.com/metamessage/metamessage/internal/jsonc/ast"
 )
 
 const indentUnit = "\t"

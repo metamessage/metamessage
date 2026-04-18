@@ -4,10 +4,10 @@ import (
 	"encoding/json"
 	"regexp"
 
-	"github.com/lizongying/meta-message/internal/jsonc/ast"
-	"github.com/lizongying/meta-message/internal/jsonc/parser"
-	"github.com/lizongying/meta-message/internal/jsonc/scanner"
-	"github.com/lizongying/meta-message/internal/jsonc/token"
+	"github.com/metamessage/metamessage/internal/jsonc/ast"
+	"github.com/metamessage/metamessage/internal/jsonc/parser"
+	"github.com/metamessage/metamessage/internal/jsonc/scanner"
+	"github.com/metamessage/metamessage/internal/jsonc/token"
 )
 
 var Email = regexp.MustCompile(`^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$`)

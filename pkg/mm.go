@@ -3,9 +3,9 @@ package pkg
 import (
 	"io"
 
-	"github.com/lizongying/meta-message/internal/jsonc"
-	"github.com/lizongying/meta-message/internal/jsonc/ast"
-	"github.com/lizongying/meta-message/internal/mm"
+	"github.com/metamessage/metamessage/internal/jsonc"
+	"github.com/metamessage/metamessage/internal/jsonc/ast"
+	"github.com/metamessage/metamessage/internal/mm"
 )
 
 type Encoder interface {

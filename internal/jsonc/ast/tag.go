@@ -10,7 +10,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/lizongying/meta-message/internal/utils"
+	"github.com/metamessage/metamessage/internal/utils"
 )
 
 const (
