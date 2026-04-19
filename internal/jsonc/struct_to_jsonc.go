@@ -910,6 +910,7 @@ func toJSONC(v any, tag *ast.Tag, depth int, path string) (node ast.Node, err er
 	}
 
 	if err != nil {
+		err = fmt.Errorf("validate failed: %w", err)
 		return
 	}
 
@@ -1034,6 +1035,7 @@ func anyToJSONC(obj any, tag *ast.Tag, depth int, path string) (ast.Node, error)
 		}
 	}
 
+	var err error
 	switch val.Kind() {
 	case reflect.Struct:
 		switch val.Type() {
@@ -1070,7 +1072,6 @@ func anyToJSONC(obj any, tag *ast.Tag, depth int, path string) (ast.Node, error)
 				fieldKey := utils.CamelToSnake(field.Name)
 				mmTagStr := field.Tag.Get("mm")
 				var tagField *ast.Tag
-				var err error
 				if mmTagStr != "" {
 					if tagField, err = ast.ParseMMTag(mmTagStr); err != nil {
 						return nil, fmt.Errorf("parse mm tag for field %s: %w", field.Name, err)
@@ -1109,6 +1110,12 @@ func anyToJSONC(obj any, tag *ast.Tag, depth int, path string) (ast.Node, error)
 					Key:   fieldKey,
 					Value: fieldNode,
 				})
+			}
+
+			err = tagNode.ValidateStruct()
+			if err != nil {
+				err = fmt.Errorf("validate failed: %w", err)
+				return nil, err
 			}
 
 			return objNode, nil
@@ -1217,7 +1224,6 @@ func anyToJSONC(obj any, tag *ast.Tag, depth int, path string) (ast.Node, error)
 			}
 
 			var exampleVal any
-			var err error
 			elemType := typ.Elem()
 			exampleVal, err = createExampleValue(elemType, tag.ChildType)
 			if err != nil {
@@ -1292,6 +1298,12 @@ func anyToJSONC(obj any, tag *ast.Tag, depth int, path string) (ast.Node, error)
 				Key:   keyStr,
 				Value: valNode,
 			})
+		}
+
+		err = tagNode.ValidateMap()
+		if err != nil {
+			err = fmt.Errorf("validate failed: %w", err)
+			return nil, err
 		}
 		return node, nil
 
@@ -1387,7 +1399,6 @@ func anyToJSONC(obj any, tag *ast.Tag, depth int, path string) (ast.Node, error)
 
 		if val.Len() == 0 {
 			var exampleVal any
-			var err error
 			exampleVal, err = createExampleValue(typ.Elem(), tag.ChildType)
 			if err != nil {
 				return nil, fmt.Errorf("create example value for empty slice: %w", err)
@@ -1460,6 +1471,12 @@ func anyToJSONC(obj any, tag *ast.Tag, depth int, path string) (ast.Node, error)
 			}
 
 			node.Items = append(node.Items, itemNode)
+		}
+
+		err = tagNode.ValidateSlice(node.Items)
+		if err != nil {
+			err = fmt.Errorf("validate failed: %w", err)
+			return nil, err
 		}
 
 		return node, nil
@@ -1560,7 +1577,6 @@ func anyToJSONC(obj any, tag *ast.Tag, depth int, path string) (ast.Node, error)
 
 		if tagNode.Size == 0 {
 			var exampleVal any
-			var err error
 			exampleVal, err = createExampleValue(typ.Elem(), tag.ChildType)
 			if err != nil {
 				return nil, fmt.Errorf("create example value for empty array: %w", err)
@@ -1630,6 +1646,12 @@ func anyToJSONC(obj any, tag *ast.Tag, depth int, path string) (ast.Node, error)
 			}
 
 			node.Items = append(node.Items, itemNode)
+		}
+
+		err = tagNode.ValidateArray(node.Items)
+		if err != nil {
+			err = fmt.Errorf("validate failed: %w", err)
+			return nil, err
 		}
 
 		return node, nil

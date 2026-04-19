@@ -70,11 +70,22 @@ datetime : UTC par défaut 1970-01-01 00:00:00
 ## Tags
 
 - is_null : indique une valeur null avec un espace réservé vide
-- example : données d'exemple utilisées lorsque les tableaux ou maps sont vides
-- min : capacité minimale pour les tableaux, longueur minimale pour les chaînes/octets, ou valeur minimale pour les nombres
-- max : capacité maximale pour les tableaux, longueur maximale pour les chaînes/octets, ou valeur maximale pour les nombres
-- size : taille fixe pour les tableaux, chaînes ou octets
-- location : décalage de fuseau horaire, défaut 0, plage -12 à 14
+- desc: résumé, s'applique à tous les types. Longueur maximale 65535 bits
+- type: type de données. Dans les formats texte, les chaînes, entiers (int), décimales (float64) et objets (ou structures similaires) ne nécessitent pas d'étiquettes de type explicites lorsque sans ambiguïté. Dans les langages de programmation, si les objets (ou structures similaires) et maps peuvent être déterminés, les maps ne nécessitent pas non plus d'étiquettes de type
+- raw: dans certains langages de programmation, les types de données utilisent généralement des types wrapper, comme Java. Les types wrapper sont utilisés par défaut; définissez sur raw si vous ne le souhaitez pas. À déterminer, peut être supprimé dans les versions futures
+- nullable: si null est autorisé, s'applique à tous les types
+- allow_empty: sauf pour les types booléens, les autres types ne permettent pas le vide par défaut. Lorsque allow_empty est défini, les valeurs vides sont autorisées selon certaines règles
+- unique: s'applique uniquement aux slices ou tableaux, indique que les éléments ne peuvent pas être répétés
+- default: valeur par défaut, non encore activée
+- example: données d'exemple utilisées lorsque les tableaux ou maps sont vides
+- min: capacité minimale pour les tableaux, longueur minimale pour les chaînes/octets, ou valeur minimale pour les nombres
+- max: capacité maximale pour les tableaux, longueur maximale pour les chaînes/octets, ou valeur maximale pour les nombres
+- size: capacité pour les tableaux, longueur fixe pour les chaînes ou octets
+- enum: quand cette étiquette est présente, la valeur est du type enum par défaut. Le type enum ici est sous forme de chaîne et n'accepte pas d'autres formes
+- pattern: regex, s'applique aux chaînes
+- location: décalage de fuseau horaire, défaut 0, s'applique uniquement aux types datetime, plage -12 à 14
+- version: limiter la version dans uuid; dans ip peut restreindre ipv4 ou ipv6
+- mime: type de document, non encore activé
 
 ## Utilisation
 

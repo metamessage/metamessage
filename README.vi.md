@@ -70,11 +70,22 @@ datetime: mặc định UTC 1970-01-01 00:00:00
 ## Thẻ
 
 - is_null: giá trị null với trình giữ chỗ trống
+- desc: tóm tắt, áp dụng cho tất cả các loại. Độ dài tối đa 65535 bit
+- type: kiểu dữ liệu. Trong định dạng văn bản, chuỗi, số nguyên (int), số thập phân (float64) và đối tượng (hoặc cấu trúc tương tự) không yêu cầu thẻ kiểu rõ ràng khi không có sự nhập nhằng. Trong ngôn ngữ lập trình, nếu có thể xác định được đối tượng (hoặc cấu trúc tương tự) và map, thì map cũng không cần thẻ kiểu
+- raw: trong một số ngôn ngữ lập trình, kiểu dữ liệu thường sử dụng kiểu bao bọc, chẳng hạn như Java. Kiểu bao bọc được sử dụng theo mặc định; đặt thành raw nếu không mong muốn. Chưa xác định, có thể sẽ bị xóa trong các phiên bản sau
+- nullable: có cho phép null hay không, áp dụng cho tất cả các loại
+- allow_empty: ngoại trừ kiểu boolean, các kiểu khác không cho phép trống theo mặc định. Khi đặt allow_empty, các giá trị trống được phép theo một số quy tắc
+- unique: chỉ áp dụng cho lát cắt hoặc mảng, chỉ ra rằng các phần tử không thể lặp lại
+- default: giá trị mặc định, chưa được bật
 - example: dữ liệu ví dụ dùng khi mảng hoặc map rỗng
 - min: dung lượng tối thiểu cho mảng, độ dài tối thiểu cho chuỗi/byte array, hoặc giá trị tối thiểu cho số
 - max: dung lượng tối đa cho mảng, độ dài tối đa cho chuỗi/byte array, hoặc giá trị tối đa cho số
-- size: độ dài cố định cho mảng, chuỗi hoặc byte array
-- location: độ lệch múi giờ, mặc định 0, phạm vi -12 đến 14
+- size: dung lượng cho mảng, độ dài cố định cho chuỗi hoặc byte array
+- enum: khi có thẻ này, giá trị mặc định thuộc kiểu enum. Kiểu enum ở đây ở dạng chuỗi và không chấp nhận các hình thức khác
+- pattern: biểu thức chính quy, áp dụng cho chuỗi
+- location: độ lệch múi giờ, mặc định 0, chỉ áp dụng cho các kiểu datetime, phạm vi -12 đến 14
+- version: giới hạn phiên bản trong uuid; trong ip có thể hạn chế ipv4 hoặc ipv6
+- mime: loại tài liệu, chưa được bật
 
 ## Sử dụng
 

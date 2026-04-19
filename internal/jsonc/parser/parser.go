@@ -185,7 +185,7 @@ func (p *Parser) parse() (val ast.Node, err error) {
 					} else {
 						var d []byte
 						if d, err = base64.StdEncoding.DecodeString(text); err != nil {
-							return nil, fmt.Errorf("invalid base64 bytes literal: %w", err)
+							return nil, fmt.Errorf("invalid base64 bytes %q: %w", text, err)
 						}
 
 						data, text, err = tag.ValidateBytes(d)
@@ -208,7 +208,7 @@ func (p *Parser) parse() (val ast.Node, err error) {
 						var d time.Time
 						d, err = time.ParseInLocation(time.DateTime, text, location)
 						if err != nil {
-							return nil, fmt.Errorf("invalid datatime literal: %w", err)
+							return nil, fmt.Errorf("invalid datatime %q: %w", text, err)
 						}
 
 						data, text, err = tag.ValidateDateTime(d)
@@ -231,7 +231,7 @@ func (p *Parser) parse() (val ast.Node, err error) {
 						var d time.Time
 						d, err = time.ParseInLocation(time.DateOnly, text, location)
 						if err != nil {
-							return nil, fmt.Errorf("invalid data literal: %w", err)
+							return nil, fmt.Errorf("invalid data %q: %w", text, err)
 						}
 
 						data, text, err = tag.ValidateDate(d)
@@ -254,7 +254,7 @@ func (p *Parser) parse() (val ast.Node, err error) {
 						var d time.Time
 						d, err = time.ParseInLocation(time.TimeOnly, text, location)
 						if err != nil {
-							return nil, fmt.Errorf("invalid time literal: %w", err)
+							return nil, fmt.Errorf("invalid time %q: %w", text, err)
 						}
 
 						data, text, err = tag.ValidateTime(d)
@@ -306,7 +306,7 @@ func (p *Parser) parse() (val ast.Node, err error) {
 						var u *url.URL
 						u, err = url.Parse(text)
 						if err != nil {
-							return nil, fmt.Errorf("invalid url: %w", err)
+							return nil, fmt.Errorf("invalid url %q: %w", text, err)
 						}
 
 						data, text, err = tag.ValidateURL(*u)
@@ -350,7 +350,7 @@ func (p *Parser) parse() (val ast.Node, err error) {
 						var val []byte
 						val, err = base64.StdEncoding.DecodeString(text)
 						if err != nil {
-							return nil, fmt.Errorf("invalid base64 image literal: %w", err)
+							return nil, fmt.Errorf("invalid base64 image %q: %w", text, err)
 						}
 
 						data, text, err = tag.ValidateImage(val)
@@ -398,7 +398,7 @@ func (p *Parser) parse() (val ast.Node, err error) {
 					} else {
 						var f64 float64
 						if f64, err = strconv.ParseFloat(text, 32); err != nil {
-							return nil, fmt.Errorf("invalid float32 literal: %w", err)
+							return nil, fmt.Errorf("invalid float32 %q: %w", text, err)
 						}
 
 						data, text, err = tag.ValidateFloat32(float32(f64))
@@ -414,7 +414,7 @@ func (p *Parser) parse() (val ast.Node, err error) {
 					} else {
 						var f64 float64
 						if f64, err = strconv.ParseFloat(text, 64); err != nil {
-							return nil, fmt.Errorf("invalid float64 literal: %w", err)
+							return nil, fmt.Errorf("invalid float64 %q: %w", text, err)
 						}
 
 						data, text, err = tag.ValidateFloat64(f64)
@@ -439,7 +439,7 @@ func (p *Parser) parse() (val ast.Node, err error) {
 					} else {
 						var uv int64
 						if uv, err = strconv.ParseInt(text, 10, BitSize); err != nil {
-							return nil, fmt.Errorf("invalid uint literal: %w", err)
+							return nil, fmt.Errorf("invalid int %q: %w", text, err)
 						}
 
 						data, text, err = tag.ValidateInt(int(uv))
@@ -455,7 +455,7 @@ func (p *Parser) parse() (val ast.Node, err error) {
 					} else {
 						var uv int64
 						if uv, err = strconv.ParseInt(text, 10, 8); err != nil {
-							return nil, fmt.Errorf("invalid int8 literal: %w", err)
+							return nil, fmt.Errorf("invalid int8 %q: %w", text, err)
 						}
 
 						data, text, err = tag.ValidateInt8(int8(uv))
@@ -471,7 +471,7 @@ func (p *Parser) parse() (val ast.Node, err error) {
 					} else {
 						var uv int64
 						if uv, err = strconv.ParseInt(text, 10, 16); err != nil {
-							return nil, fmt.Errorf("invalid int16 literal: %w", err)
+							return nil, fmt.Errorf("invalid int16 %q: %w", text, err)
 						}
 
 						data, text, err = tag.ValidateInt16(int16(uv))
@@ -487,7 +487,7 @@ func (p *Parser) parse() (val ast.Node, err error) {
 					} else {
 						var uv int64
 						if uv, err = strconv.ParseInt(text, 10, 32); err != nil {
-							return nil, fmt.Errorf("invalid int32 literal: %w", err)
+							return nil, fmt.Errorf("invalid int32 %q: %w", text, err)
 						}
 
 						data, text, err = tag.ValidateInt32(int32(uv))
@@ -503,7 +503,7 @@ func (p *Parser) parse() (val ast.Node, err error) {
 					} else {
 						var uv int64
 						if uv, err = strconv.ParseInt(text, 10, 64); err != nil {
-							return nil, fmt.Errorf("invalid int64 literal: %w", err)
+							return nil, fmt.Errorf("invalid int64 %q: %w", text, err)
 						}
 
 						data, text, err = tag.ValidateInt64(uv)
@@ -519,7 +519,7 @@ func (p *Parser) parse() (val ast.Node, err error) {
 					} else {
 						bi, ok := new(big.Int).SetString(text, 10)
 						if !ok {
-							return nil, fmt.Errorf("invalid bigint literal: %v", text)
+							return nil, fmt.Errorf("invalid bigint %q", text)
 						}
 
 						data, text, err = tag.ValidateBigInt(*bi)
@@ -572,7 +572,7 @@ func (p *Parser) parse() (val ast.Node, err error) {
 					} else {
 						var uv int64
 						if uv, err = strconv.ParseInt(text, 10, BitSize); err != nil {
-							return nil, fmt.Errorf("invalid uint literal: %w", err)
+							return nil, fmt.Errorf("invalid int %q: %w", text, err)
 						}
 
 						data, text, err = tag.ValidateInt(int(uv))
@@ -588,7 +588,7 @@ func (p *Parser) parse() (val ast.Node, err error) {
 					} else {
 						var uv int64
 						if uv, err = strconv.ParseInt(text, 10, 8); err != nil {
-							return nil, fmt.Errorf("invalid int8 literal: %w", err)
+							return nil, fmt.Errorf("invalid int8 %q: %w", text, err)
 						}
 
 						data, text, err = tag.ValidateInt8(int8(uv))
@@ -604,7 +604,7 @@ func (p *Parser) parse() (val ast.Node, err error) {
 					} else {
 						var uv int64
 						if uv, err = strconv.ParseInt(text, 10, 16); err != nil {
-							return nil, fmt.Errorf("invalid int16 literal: %w", err)
+							return nil, fmt.Errorf("invalid int16 %q: %w", text, err)
 						}
 
 						data, text, err = tag.ValidateInt16(int16(uv))
@@ -620,7 +620,7 @@ func (p *Parser) parse() (val ast.Node, err error) {
 					} else {
 						var uv int64
 						if uv, err = strconv.ParseInt(text, 10, 32); err != nil {
-							return nil, fmt.Errorf("invalid int32 literal: %w", err)
+							return nil, fmt.Errorf("invalid int32 %q: %w", text, err)
 						}
 
 						data, text, err = tag.ValidateInt32(int32(uv))
@@ -636,7 +636,7 @@ func (p *Parser) parse() (val ast.Node, err error) {
 					} else {
 						var uv int64
 						if uv, err = strconv.ParseInt(text, 10, 64); err != nil {
-							return nil, fmt.Errorf("invalid int64 literal: %w", err)
+							return nil, fmt.Errorf("invalid int64 %q: %w", text, err)
 						}
 
 						data, text, err = tag.ValidateInt64(uv)
@@ -652,7 +652,7 @@ func (p *Parser) parse() (val ast.Node, err error) {
 					} else {
 						var uv uint64
 						if uv, err = strconv.ParseUint(text, 10, BitSize); err != nil {
-							return nil, fmt.Errorf("invalid uint literal: %w", err)
+							return nil, fmt.Errorf("invalid uint %q: %w", text, err)
 						}
 
 						data, text, err = tag.ValidateUint(uint(uv))
@@ -668,7 +668,7 @@ func (p *Parser) parse() (val ast.Node, err error) {
 					} else {
 						var uv uint64
 						if uv, err = strconv.ParseUint(text, 10, 8); err != nil {
-							return nil, fmt.Errorf("invalid uint8 literal: %w", err)
+							return nil, fmt.Errorf("invalid uint8 %q: %w", text, err)
 						}
 
 						data, text, err = tag.ValidateUint8(uint8(uv))
@@ -684,7 +684,7 @@ func (p *Parser) parse() (val ast.Node, err error) {
 					} else {
 						var uv uint64
 						if uv, err = strconv.ParseUint(text, 10, 16); err != nil {
-							return nil, fmt.Errorf("invalid uint16 literal: %w", err)
+							return nil, fmt.Errorf("invalid uint16 %q: %w", text, err)
 						}
 
 						data, text, err = tag.ValidateUint16(uint16(uv))
@@ -700,7 +700,7 @@ func (p *Parser) parse() (val ast.Node, err error) {
 					} else {
 						var uv uint64
 						if uv, err = strconv.ParseUint(text, 10, 32); err != nil {
-							return nil, fmt.Errorf("invalid uint32 literal: %w", err)
+							return nil, fmt.Errorf("invalid uint32 %q: %w", text, err)
 						}
 
 						data, text, err = tag.ValidateUint32(uint32(uv))
@@ -716,7 +716,7 @@ func (p *Parser) parse() (val ast.Node, err error) {
 					} else {
 						var uv uint64
 						if uv, err = strconv.ParseUint(text, 10, 64); err != nil {
-							return nil, fmt.Errorf("invalid uint64 literal: %w", err)
+							return nil, fmt.Errorf("invalid uint64 %q: %w", text, err)
 						}
 
 						data, text, err = tag.ValidateUint64(uv)
@@ -732,7 +732,7 @@ func (p *Parser) parse() (val ast.Node, err error) {
 					} else {
 						bi, ok := new(big.Int).SetString(text, 10)
 						if !ok {
-							return nil, fmt.Errorf("invalid bigint literal: %v", text)
+							return nil, fmt.Errorf("invalid bigint %q", text)
 						}
 
 						data, text, err = tag.ValidateBigInt(*bi)
@@ -897,11 +897,11 @@ func (p *Parser) parseObject(openLine int) (*ast.Object, error) {
 	for {
 		tok := p.peek()
 		if tok.Type == token.EOF {
-			return obj, nil
+			break
 		}
 		if tok.Type == token.RBrace {
 			p.next()
-			return obj, nil
+			break
 		}
 
 		if tok.Type == token.LeadingComment {
@@ -936,6 +936,7 @@ func (p *Parser) parseObject(openLine int) (*ast.Object, error) {
 
 		p.next()
 		if val, err = p.parse(); err != nil {
+			err = fmt.Errorf("array parse err: %w", err)
 			return nil, err
 		}
 		if val == nil {
@@ -967,6 +968,24 @@ func (p *Parser) parseObject(openLine int) (*ast.Object, error) {
 			p.next()
 		}
 	}
+
+	switch tag.Type {
+	case ast.ValueTypeMap:
+		err = tag.ValidateMap()
+		if err != nil {
+			err = fmt.Errorf("validate failed: %w", err)
+			return nil, err
+		}
+
+	case ast.ValueTypeStruct:
+		err = tag.ValidateStruct()
+		if err != nil {
+			err = fmt.Errorf("validate failed: %w", err)
+			return nil, err
+		}
+	}
+
+	return obj, nil
 }
 
 func (p *Parser) parseArray(openLine int) (*ast.Array, error) {
@@ -993,11 +1012,11 @@ func (p *Parser) parseArray(openLine int) (*ast.Array, error) {
 	for {
 		tok := p.peek()
 		if tok.Type == token.EOF {
-			return arr, nil
+			break
 		}
 		if tok.Type == token.RBracket {
 			p.next()
-			return arr, nil
+			break
 		}
 
 		if tok.Type == token.LeadingComment {
@@ -1026,6 +1045,7 @@ func (p *Parser) parseArray(openLine int) (*ast.Array, error) {
 		}
 
 		if item, err = p.parse(); err != nil {
+			err = fmt.Errorf("array parse err: %w", err)
 			return nil, err
 		}
 		if item == nil {
@@ -1052,6 +1072,24 @@ func (p *Parser) parseArray(openLine int) (*ast.Array, error) {
 			p.next()
 		}
 	}
+
+	switch tag.Type {
+	case ast.ValueTypeArray:
+		err = tag.ValidateArray(arr.Items)
+		if err != nil {
+			err = fmt.Errorf("validate failed: %w", err)
+			return nil, err
+		}
+
+	case ast.ValueTypeSlice:
+		err = tag.ValidateSlice(arr.Items)
+		if err != nil {
+			err = fmt.Errorf("validate failed: %w", err)
+			return nil, err
+		}
+	}
+
+	return arr, nil
 }
 
 func mergeNodeTag(n ast.Node, parsed *ast.Tag) {

@@ -70,11 +70,22 @@ datetime: Standard UTC 1970-01-01 00:00:00
 ## Tags
 
 - is_null: zeigt einen null-Wert mit einem leeren Platzhalter an
+- desc: Zusammenfassung, gilt für alle Typen. Maximale Länge 65535 Bits
+- type: Datentyp. In Textformaten erfordern Strings, Integer (int), Dezimalzahlen (float64) und Objekte (oder ähnliche Strukturen) keine expliziten Typ-Tags, wenn diese eindeutig sind. In Programmiersprachen benötigen Maps auch keine Typ-Tags, wenn Objekte (oder ähnliche Strukturen) und Maps ermittelt werden können
+- raw: In einigen Programmiersprachen verwenden Datentypen üblicherweise Wrapper-Typen wie Java. Wrapper-Typen werden standardmäßig verwendet; setzen Sie auf raw, falls nicht gewünscht. Zu bestimmen, kann in zukünftigen Versionen entfernt werden
+- nullable: ob null zulässig ist, gilt für alle Typen
+- allow_empty: außer für boolesche Typen erlauben andere Typen standardmäßig keine leeren Werte. Wenn allow_empty gesetzt ist, werden leere Werte nach bestimmten Regeln zugelassen
+- unique: gilt nur für Slices oder Arrays, zeigt an, dass Elemente nicht wiederholt werden können
+- default: Standardwert, noch nicht aktiviert
 - example: Beispielwert, der verwendet wird, wenn Arrays oder Maps leer sind
 - min: minimale Kapazität für Arrays, minimale Länge für Strings/Byte-Arrays oder minimaler Wert für Zahlen
 - max: maximale Kapazität für Arrays, maximale Länge für Strings/Byte-Arrays oder maximaler Wert für Zahlen
-- size: feste Länge für Arrays, Strings oder Byte-Arrays
-- location: Zeitzonenoffset, Standard 0, Bereich -12 bis 14
+- size: Kapazität für Arrays, feste Länge für Strings oder Byte-Arrays
+- enum: wenn dieses Tag vorhanden ist, ist der Wert standardmäßig vom Typ enum. Der enum-Typ hier ist in Stringform und akzeptiert keine anderen Formen
+- pattern: Regex, gilt für Strings
+- location: Zeitzonenoffset, Standard 0, gilt nur für datetime-Typen, Bereich -12 bis 14
+- version: Version in uuid begrenzen; in ip kann ipv4 oder ipv6 beschränkt werden
+- mime: Dokumenttyp, noch nicht aktiviert
 
 ## Verwendung
 
