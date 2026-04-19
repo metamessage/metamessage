@@ -70,11 +70,22 @@ datetime: default UTC 1970-01-01 00:00:00
 ## Tag
 
 - is_null: nilai null dengan placeholder kosong
+- desc: ringkasan, berlaku untuk semua tipe. Panjang maksimum 65535 bit
+- type: tipe data. Dalam format teks, string, integer (int), desimal (float64), dan objek (atau struktur serupa) tidak memerlukan tag tipe eksplisit ketika tidak ambigu. Dalam bahasa pemrograman, jika objek (atau struktur serupa) dan map dapat ditentukan, map juga tidak memerlukan tag tipe
+- raw: dalam beberapa bahasa pemrograman, tipe data biasanya menggunakan tipe wrapper, seperti Java. Tipe wrapper digunakan secara default; atur ke raw jika tidak diinginkan. Untuk ditentukan, mungkin akan dihapus di versi mendatang
+- nullable: apakah null diizinkan, berlaku untuk semua tipe
+- allow_empty: kecuali untuk tipe boolean, tipe lain tidak mengizinkan kosong secara default. Ketika allow_empty diatur, nilai kosong diizinkan mengikuti aturan tertentu
+- unique: hanya berlaku untuk slice atau array, menunjukkan elemen tidak dapat diulang
+- default: nilai default, belum diaktifkan
 - example: data contoh yang digunakan ketika array atau map kosong
 - min: kapasitas minimum untuk array, panjang minimum untuk string/byte array, atau nilai minimum untuk angka
 - max: kapasitas maksimum untuk array, panjang maksimum untuk string/byte array, atau nilai maksimum untuk angka
-- size: panjang tetap untuk array, string, atau byte array
-- location: offset zona waktu, default 0, rentang -12 hingga 14
+- size: kapasitas untuk array, panjang tetap untuk string atau byte array
+- enum: ketika tag ini ada, nilai secara default bertipe enum. Tipe enum di sini dalam bentuk string dan tidak menerima bentuk lain
+- pattern: regex, berlaku untuk string
+- location: offset zona waktu, default 0, hanya berlaku untuk tipe datetime, rentang -12 hingga 14
+- version: batasi versi dalam uuid; di ip dapat membatasi ipv4 atau ipv6
+- mime: tipe dokumen, belum diaktifkan
 
 ## Penggunaan
 

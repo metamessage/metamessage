@@ -19,6 +19,82 @@ var emailRegex = regexp.MustCompile(`^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]
 var decimalRegex = regexp.MustCompile(`^-?\d+\.\d+$`)
 var uuidRegex = regexp.MustCompile(`^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$`)
 
+func (t *Tag) ValidateArray(value []Node) (err error) {
+	if len(t.Desc) > 65535 {
+		err = fmt.Errorf("desc length exceeds 65535 bytes")
+		return
+	}
+
+	location := utils.GetLocationOffsetHour(t.Location)
+	if location != 0 {
+		err = fmt.Errorf("type array not support location UTC%d", location)
+		return
+	}
+
+	l := len(value)
+
+	if l == 0 {
+		if t.AllowEmpty {
+			return
+		}
+		err = fmt.Errorf("type array not allow empty")
+		return
+	}
+
+	if t.Size > 0 {
+		if l > t.Size {
+			err = fmt.Errorf("type array over size")
+			return
+		}
+	}
+
+	if value[0].GetType() != NodeTypeValue {
+		return
+	}
+
+	if t.ChildUnique {
+		seen := make(map[any]bool)
+
+		for i, node := range value {
+			data := node.(*Value).Data
+			if seen[data] {
+				return fmt.Errorf("array duplicate value found: %v, index: %d", data, i)
+			}
+			seen[data] = true
+		}
+	}
+
+	return
+}
+
+func (t *Tag) ValidateStruct() (err error) {
+	if len(t.Desc) > 65535 {
+		err = fmt.Errorf("desc length exceeds 65535 bytes")
+		return
+	}
+
+	location := utils.GetLocationOffsetHour(t.Location)
+	if location != 0 {
+		err = fmt.Errorf("type struct not support location UTC%d", location)
+		return
+	}
+	return
+}
+
+func (t *Tag) ValidateMap() (err error) {
+	if len(t.Desc) > 65535 {
+		err = fmt.Errorf("desc length exceeds 65535 bytes")
+		return
+	}
+
+	location := utils.GetLocationOffsetHour(t.Location)
+	if location != 0 {
+		err = fmt.Errorf("type map not support location UTC%d", location)
+		return
+	}
+	return
+}
+
 func (t *Tag) ValidateString(val string) (data any, text string, err error) {
 	if val == "" {
 		if t.AllowEmpty {
@@ -34,15 +110,17 @@ func (t *Tag) ValidateString(val string) (data any, text string, err error) {
 		var re *regexp.Regexp
 		re, err = t.GetPattern()
 		if err != nil {
+			err = fmt.Errorf("pattern %q compile err: %w", t.Pattern, err)
 			return
 		}
-		if re != nil {
-			if !re.MatchString(val) {
-				err = fmt.Errorf("value '%s' does not match pattern %s", val, t.Pattern)
-				return
-			}
-		} else {
-			err = fmt.Errorf("pattern error")
+
+		if re == nil {
+			err = fmt.Errorf("pattern %q compile error: regexp is nil", t.Pattern)
+			return
+		}
+
+		if !re.MatchString(val) {
+			err = fmt.Errorf("value %q does not match pattern %s", val, t.Pattern)
 			return
 		}
 	}
@@ -185,39 +263,44 @@ func (t *Tag) ValidateBool(val bool) (data any, text string, err error) {
 	return
 }
 
-func (t *Tag) ValidateSlice(value *[]any) (data any, text string, err error) {
-	if utils.GetLocationOffsetHour(t.Location) != 0 {
-		err = fmt.Errorf("location offset hour not zero: type slice not supported")
+func (t *Tag) ValidateSlice(value []Node) (err error) {
+	if len(t.Desc) > 65535 {
+		err = fmt.Errorf("desc length exceeds 65535 bytes")
 		return
 	}
-	return
-}
 
-func (t *Tag) ValidateArray(value []any) (ok bool, err error) {
-	// if t.Size != 0 {
-	// 	if l != t.Size {
-	// 		return false, fmt.Errorf("string length %d != size %d", l, t.Size)
-	// 	}
-	// }
-
-	return
-}
-
-func (t *Tag) ValidateStruct(value *any) (data any, text string, err error) {
 	location := utils.GetLocationOffsetHour(t.Location)
 	if location != 0 {
-		err = fmt.Errorf("type struct not support location UTC%d", location)
+		err = fmt.Errorf("type slice not support location UTC%d", location)
 		return
 	}
-	return
-}
 
-func (t *Tag) ValidateMap(value *map[string]any) (data any, text string, err error) {
-	location := utils.GetLocationOffsetHour(t.Location)
-	if location != 0 {
-		err = fmt.Errorf("type map not support location UTC%d", location)
+	l := len(value)
+
+	if l == 0 {
+		if t.AllowEmpty {
+			return
+		}
+		err = fmt.Errorf("type slice not allow empty")
 		return
 	}
+
+	if value[0].GetType() != NodeTypeValue {
+		return
+	}
+
+	if t.ChildUnique {
+		seen := make(map[any]bool)
+
+		for i, node := range value {
+			data := node.(*Value).Data
+			if seen[data] {
+				return fmt.Errorf("slice duplicate value found: %v, index: %d", data, i)
+			}
+			seen[data] = true
+		}
+	}
+
 	return
 }
 
@@ -1049,7 +1132,7 @@ func (t *Tag) ValidateUUID(val string) (data any, text string, err error) {
 	}
 
 	if t.Version != 0 && t.Version != int((uuid[6]>>4)&0x0F) {
-		err = fmt.Errorf("invalid uuid")
+		err = fmt.Errorf("invalid uuid version")
 		return
 	}
 
@@ -1116,14 +1199,14 @@ func (t *Tag) ValidateIP(val net.IP) (data any, text string, err error) {
 
 	if t.Version == 4 {
 		if val.To4() == nil {
-			err = fmt.Errorf("invalid ip: %s", val.String())
+			err = fmt.Errorf("invalid ipv4: %s", val.String())
 			return
 		}
 	}
 
 	if t.Version == 6 {
 		if val.To4() != nil {
-			err = fmt.Errorf("invalid ip: %s", val.String())
+			err = fmt.Errorf("invalid ipv6: %s", val.String())
 			return
 		}
 	}

@@ -7,11 +7,13 @@ const (
 	NodeTypeObject
 	NodeTypeArray
 	NodeTypeValue
+	NodeTypeDoc
 
 	LabelNodeTypeUnknown = "unknown"
 	LabelNodeTypeObject  = "object"
 	LabelNodeTypeArray   = "array"
 	LabelNodeTypeValue   = "value"
+	LabelNodeTypeDoc     = "doc"
 )
 
 func (nt NodeType) String() string {
@@ -22,6 +24,8 @@ func (nt NodeType) String() string {
 		return LabelNodeTypeArray
 	case NodeTypeValue:
 		return LabelNodeTypeValue
+	case NodeTypeDoc:
+		return LabelNodeTypeDoc
 	default:
 		return LabelNodeTypeUnknown
 	}
@@ -35,6 +39,8 @@ func ParseNodeType(s string) NodeType {
 		return NodeTypeArray
 	case LabelNodeTypeValue:
 		return NodeTypeValue
+	case LabelNodeTypeDoc:
+		return NodeTypeDoc
 	default:
 		return NodeTypeUnknown
 	}
@@ -116,6 +122,28 @@ func (v *Value) GetTag() *Tag {
 	}
 	if v.Tag != nil {
 		return v.Tag
+	}
+	return nil
+}
+
+type Doc struct {
+	Fields []*Field
+	Tag    *Tag
+	Path   string
+}
+
+func (d *Doc) GetPath() string { return d.Path }
+
+func (d *Doc) SetPath(path string) { d.Path = path }
+
+func (d *Doc) GetType() NodeType { return NodeTypeDoc }
+
+func (d *Doc) GetTag() *Tag {
+	if d == nil {
+		return nil
+	}
+	if d.Tag != nil {
+		return d.Tag
 	}
 	return nil
 }

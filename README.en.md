@@ -70,11 +70,22 @@ datetime: default UTC 1970-01-01 00:00:00
 ## Tags
 
 - is_null: indicates a null value using an empty placeholder
+- desc: summary, applies to all types. Maximum length 65535 bits
+- type: data type. In text formats, strings, integers (int), decimals (float64), objects (or similar structures) do not require explicit type tags when unambiguous. In programming languages, if objects (or similar structures) and maps can be determined, maps also do not require type tags
+- raw: in some programming languages, data types typically use wrapper types, such as Java. Wrapper types are used by default; set to raw if not desired. To be determined, may be removed in future versions
+- nullable: whether null is allowed, applies to all types
+- allow_empty: except for boolean types, other types do not allow empty by default. When allow_empty is set, empty values are allowed following certain rules
+- unique: applies only to slices or arrays, indicates elements cannot be repeated
+- default: default value, not yet enabled
 - example: sample data used when arrays or maps are empty
 - min: minimum capacity for arrays, minimum length for strings/byte arrays, or minimum value for numbers
 - max: maximum capacity for arrays, maximum length for strings/byte arrays, or maximum value for numbers
-- size: fixed size for arrays, strings, or byte arrays
-- location: timezone offset, default 0, range -12 to 14
+- size: capacity for arrays, fixed length for strings or byte arrays
+- enum: when this tag is present, the value defaults to enum type. Enum type here is in string form and does not accept other forms
+- pattern: regex, applies to strings
+- location: timezone offset, default 0, applies only to datetime types, range -12 to 14
+- version: limit version in uuid; in ip can restrict ipv4 or ipv6
+- mime: document type, not yet enabled
 
 ## Usage
 

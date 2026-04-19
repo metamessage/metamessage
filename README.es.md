@@ -70,11 +70,22 @@ datetime: UTC por defecto 1970-01-01 00:00:00
 ## Etiquetas
 
 - is_null: valor nulo con marcador de posición vacío
+- desc: resumen, se aplica a todos los tipos. Longitud máxima 65535 bits
+- type: tipo de dato. En formatos de texto, las cadenas, enteros (int), decimales (float64) y objetos (o estructuras similares) no requieren etiquetas de tipo explícitas cuando no son ambiguas. En lenguajes de programación, si se pueden determinar objetos (o estructuras similares) y maps, los maps tampoco requieren etiquetas de tipo
+- raw: en algunos lenguajes de programación, los tipos de datos generalmente usan tipos envueltos, como Java. Se usan tipos envueltos por defecto; establezca en raw si no lo desea. Por determinar, puede ser eliminado en futuras versiones
+- nullable: si se permite null, se aplica a todos los tipos
+- allow_empty: excepto para tipos booleanos, otros tipos no permiten vacío por defecto. Cuando se establece allow_empty, se permiten valores vacíos siguiendo ciertas reglas
+- unique: se aplica solo a slices o arreglos, indica que los elementos no pueden repetirse
+- default: valor predeterminado, no está habilitado aún
 - example: datos de ejemplo usados cuando un arreglo o map está vacío
 - min: capacidad mínima en arreglos, longitud mínima en cadenas/byte arrays, valor mínimo en números
 - max: capacidad máxima en arreglos, longitud máxima en cadenas/byte arrays, valor máximo en números
-- size: longitud fija para arreglos, cadenas o byte arrays
-- location: desplazamiento de zona horaria, valor predeterminado 0, rango -12 a 14
+- size: capacidad en arreglos, longitud fija para cadenas o byte arrays
+- enum: cuando esta etiqueta está presente, el valor es de tipo enum por defecto. El tipo enum aquí se presenta en forma de cadena y no acepta otras formas
+- pattern: expresión regular, se aplica a cadenas
+- location: desplazamiento de zona horaria, valor predeterminado 0, se aplica solo a tipos datetime, rango -12 a 14
+- version: limita versión en uuid; en ip puede restringir ipv4 o ipv6
+- mime: tipo de documento, no está habilitado aún
 
 ## Uso
 
