@@ -35,20 +35,19 @@ MetaMessage естественно подходит для понимания и
 
 [meta-message](https://github.com/metamessage/metamessage)
 
-## Конвертация данных
-
-Поддерживается вывод в JSONC, YAML, TOML и другие текстовые форматы.
+## Текстовые форматы
 
 **JSONC**
 
 - Разрешены конечные запятые в массивах или объектах
-
-Рекомендуемый стиль комментариев:
-
 - Обычные комментарии разрешены
 - Комментарии следует писать над полями
 - Тег mm должен быть в последней строке
 - Оставляйте пустую строку между тегом mm и обычными комментариями для читабельности
+
+**YAML**
+
+**TOML**
 
 ## Примечания
 
@@ -65,9 +64,42 @@ MetaMessage естественно подходит для понимания и
 
 ## Типы данных
 
-datetime: по умолчанию UTC 1970-01-01 00:00:00
+- doc:
+- slice:
+- array: arr
+- struct:
+- map:
+- string: str
+- bytes:
+- bool:
+- int: i
+- int8: i8
+- int16: i16
+- int32: i32
+- int64: i64
+- uint: u
+- uint8: u8
+- uint16: u16
+- uint32: u32
+- uint64: u64
+- float32: f32
+- float64: f64
+- bigint: bi
+- datetime: по умолчанию UTC 1970-01-01 00:00:00
+- date: 1970-01-01
+- time: 00:00:00
+- uuid
+- decimal
+- ip
+- url
+- email
+- enum
+- image
+- video
 
 ## Теги
+
+Теги — это аннотации, метки или атрибуты структур языков программирования или комментарии в текстовых форматах
 
 - is_null: значение null с пустым заполнителем
 - desc: краткое описание, применяется ко всем типам. Максимальная длина 65535 бит
@@ -188,7 +220,7 @@ cat input.mm | ./mm -decode > output.jsonc
 #### Установка
 
 ```bash
-go get github.com/metamessage/metamessage/pkg
+go get github.com/metamessage/metamessage
 ```
 
 #### Пример
@@ -198,7 +230,7 @@ package main
 
 import (
     "fmt"
-    "github.com/metamessage/metamessage/pkg"
+    mm "github.com/metamessage/metamessage"
 )
 
 func main() {
@@ -208,26 +240,26 @@ func main() {
     }
 
     p := Person{Name: "Alice", Age: 30}
-    data, err := pkg.EncodeFromStruct(p)
+    data, err := mm.EncodeFromStruct(p)
     if err != nil {
         panic(err)
     }
     fmt.Printf("Encoded: %x\n", data)
 
     var decoded Person
-    err = pkg.Decode(data, &decoded)
+    err = mm.Decode(data, &decoded)
     if err != nil {
         panic(err)
     }
     fmt.Printf("Decoded: %+v\n", decoded)
 
     jsoncStr := `{"name": "Bob", "age": 25}`
-    data2, err := pkg.EncodeFromJSONC(jsoncStr)
+    data2, err := mm.EncodeFromJSONC(jsoncStr)
     if err != nil {
         panic(err)
     }
 
-    jsoncOut, err := pkg.DecodeToJSONC(data2)
+    jsoncOut, err := mm.DecodeToJSONC(data2)
     if err != nil {
         panic(err)
     }

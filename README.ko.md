@@ -35,20 +35,19 @@ MetaMessage는 AI의 이해와 상호작용에 자연스럽게 맞으며, 모호
 
 [meta-message](https://github.com/metamessage/metamessage)
 
-## 데이터 변환
-
-JSONC, YAML, TOML 등의 텍스트 형식 출력 지원
+## 텍스트 형식
 
 **JSONC**
 
 - 배열 또는 객체의 끝에 쉼표를 허용
-
-권장 주석 스타일:
-
 - 일반 주석 허용
 - 필드 위에 주석 작성 권장
 - mm 태그는 마지막 줄에 있어야 함
 - 읽기 쉽도록 mm 태그와 일반 주석 사이에 빈 줄을 둠
+
+**YAML**
+
+**TOML**
 
 ## 주의 사항
 
@@ -65,9 +64,42 @@ JSONC, YAML, TOML 등의 텍스트 형식 출력 지원
 
 ## 데이터 타입
 
-datetime: 기본 UTC 1970-01-01 00:00:00
+- doc:
+- slice:
+- array: arr
+- struct:
+- map:
+- string: str
+- bytes:
+- bool:
+- int: i
+- int8: i8
+- int16: i16
+- int32: i32
+- int64: i64
+- uint: u
+- uint8: u8
+- uint16: u16
+- uint32: u32
+- uint64: u64
+- float32: f32
+- float64: f64
+- bigint: bi
+- datetime: 기본 UTC 1970-01-01 00:00:00
+- date: 1970-01-01
+- time: 00:00:00
+- uuid
+- decimal
+- ip
+- url
+- email
+- enum
+- image
+- video
 
 ## 태그
+
+태그는 프로그래밍 언어 구조체의 주석, 레이블 또는 속성, 또는 텍스트 형식의 주석입니다
 
 - is_null: null 값을 빈 자리 표시자로 표현
 - desc: 요약으로 모든 타입에 적용. 최대 길이 65535 비트
@@ -188,7 +220,7 @@ cat input.mm | ./mm -decode > output.jsonc
 #### 설치
 
 ```bash
-go get github.com/metamessage/metamessage/pkg
+go get github.com/metamessage/metamessage
 ```
 
 #### 예시 코드
@@ -198,7 +230,7 @@ package main
 
 import (
     "fmt"
-    "github.com/metamessage/metamessage/pkg"
+    mm "github.com/metamessage/metamessage"
 )
 
 func main() {
@@ -208,26 +240,26 @@ func main() {
     }
 
     p := Person{Name: "Alice", Age: 30}
-    data, err := pkg.EncodeFromStruct(p)
+    data, err := mm.EncodeFromStruct(p)
     if err != nil {
         panic(err)
     }
     fmt.Printf("Encoded: %x\n", data)
 
     var decoded Person
-    err = pkg.Decode(data, &decoded)
+    err = mm.Decode(data, &decoded)
     if err != nil {
         panic(err)
     }
     fmt.Printf("Decoded: %+v\n", decoded)
 
     jsoncStr := `{"name": "Bob", "age": 25}`
-    data2, err := pkg.EncodeFromJSONC(jsoncStr)
+    data2, err := mm.EncodeFromJSONC(jsoncStr)
     if err != nil {
         panic(err)
     }
 
-    jsoncOut, err := pkg.DecodeToJSONC(data2)
+    jsoncOut, err := mm.DecodeToJSONC(data2)
     if err != nil {
         panic(err)
     }

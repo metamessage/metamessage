@@ -35,20 +35,19 @@ MetaMessage est naturellement adapté à la compréhension et à l'interaction a
 
 [meta-message](https://github.com/metamessage/metamessage)
 
-## Conversion de données
-
-Prend en charge la sortie vers JSONC, YAML, TOML et d'autres formats texte.
+## Formats texte
 
 **JSONC**
 
 - Autorise les virgules finales dans les tableaux ou objets
-
-Style de commentaire recommandé :
-
-- Les commentaires ordinaires sont autorisés
+- Autorise les commentaires ordinaires
 - Les commentaires doivent être écrits au-dessus des champs
 - Le tag mm doit être sur la dernière ligne
 - Laisser une ligne vide entre le tag mm et les commentaires ordinaires pour une meilleure lisibilité
+
+**YAML**
+
+**TOML**
 
 ## Notes
 
@@ -65,9 +64,42 @@ Style de commentaire recommandé :
 
 ## Types de données
 
-datetime : UTC par défaut 1970-01-01 00:00:00
+- doc:
+- slice:
+- array: arr
+- struct:
+- map:
+- string: str
+- bytes:
+- bool:
+- int: i
+- int8: i8
+- int16: i16
+- int32: i32
+- int64: i64
+- uint: u
+- uint8: u8
+- uint16: u16
+- uint32: u32
+- uint64: u64
+- float32: f32
+- float64: f64
+- bigint: bi
+- datetime: UTC par défaut 1970-01-01 00:00:00
+- date: 1970-01-01
+- time: 00:00:00
+- uuid
+- decimal
+- ip
+- url
+- email
+- enum
+- image
+- video
 
 ## Tags
+
+Les tags sont des annotations, étiquettes ou attributs de structures de langages de programmation, ou des commentaires dans les formats texte
 
 - is_null : indique une valeur null avec un espace réservé vide
 - desc: résumé, s'applique à tous les types. Longueur maximale 65535 bits
@@ -188,7 +220,7 @@ Le projet fournit une bibliothèque Go pour un usage programmatique.
 #### Installation
 
 ```bash
-go get github.com/metamessage/metamessage/pkg
+go get github.com/metamessage/metamessage
 ```
 
 #### Exemple
@@ -198,7 +230,7 @@ package main
 
 import (
     "fmt"
-    "github.com/metamessage/metamessage/pkg"
+    mm "github.com/metamessage/metamessage"
 )
 
 func main() {
@@ -208,26 +240,26 @@ func main() {
     }
 
     p := Person{Name: "Alice", Age: 30}
-    data, err := pkg.EncodeFromStruct(p)
+    data, err := mm.EncodeFromStruct(p)
     if err != nil {
         panic(err)
     }
     fmt.Printf("Encoded: %x\n", data)
 
     var decoded Person
-    err = pkg.Decode(data, &decoded)
+    err = mm.Decode(data, &decoded)
     if err != nil {
         panic(err)
     }
     fmt.Printf("Decoded: %+v\n", decoded)
 
     jsoncStr := `{"name": "Bob", "age": 25}`
-    data2, err := pkg.EncodeFromJSONC(jsoncStr)
+    data2, err := mm.EncodeFromJSONC(jsoncStr)
     if err != nil {
         panic(err)
     }
 
-    jsoncOut, err := pkg.DecodeToJSONC(data2)
+    jsoncOut, err := mm.DecodeToJSONC(data2)
     if err != nil {
         panic(err)
     }
