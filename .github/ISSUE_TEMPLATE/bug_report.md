@@ -14,13 +14,17 @@ A clear and concise description of the bug.
 (e.g. 0.1.0)
 
 ## To Reproduce
+
 Provide a **minimal, complete, reproducible example** (code + steps).
 
 ## Expected behavior
+
 What you expected to happen.
 
 ## Actual behavior
+
 What actually happened.
 
 ## Additional context
+
 Any logs, error messages, or screenshots (optional).
