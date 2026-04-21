@@ -16,12 +16,15 @@ import (
 )
 
 const BitSize = 32 << (^uint(0) >> 63)
+const maxDepth = 32
 
 type Parser struct {
 	toks []token.Token
 	pos  int
 
 	pending []token.Token
+
+	depth int
 }
 
 func New(tokens []token.Token) *Parser {
@@ -102,13 +105,13 @@ func (p *Parser) Parse() (val ast.Node, err error) {
 			continue
 		}
 
-		if val, err = p.parse(); err != nil {
+		if val, err = p.parse(""); err != nil {
 			return
 		}
 	}
 }
 
-func (p *Parser) parse() (val ast.Node, err error) {
+func (p *Parser) parse(path string) (val ast.Node, err error) {
 	for {
 		tok := p.next()
 		var data any
@@ -116,9 +119,9 @@ func (p *Parser) parse() (val ast.Node, err error) {
 		case token.EOF:
 			return nil, nil
 		case token.LBrace:
-			return p.parseObject(tok.Line)
+			return p.parseObject(tok.Line, path)
 		case token.LBracket:
-			return p.parseArray(tok.Line)
+			return p.parseArray(tok.Line, path)
 		case token.String:
 			var tag *ast.Tag
 			if tag, err = p.consumeCommentsFor(tok.Line); err != nil {
@@ -877,7 +880,12 @@ func (p *Parser) parse() (val ast.Node, err error) {
 	}
 }
 
-func (p *Parser) parseObject(openLine int) (*ast.Object, error) {
+func (p *Parser) parseObject(openLine int, path string) (*ast.Object, error) {
+	p.depth++
+	if p.depth > maxDepth {
+		return nil, fmt.Errorf("max depth: %d", maxDepth)
+	}
+
 	tag, err := p.consumeCommentsFor(openLine)
 	if err != nil {
 		return nil, err
@@ -889,8 +897,17 @@ func (p *Parser) parseObject(openLine int) (*ast.Object, error) {
 		tag.Type = ast.ValueTypeStruct
 	}
 
+	if tag.Name != "" {
+		if path == "" {
+			path = tag.Name
+		} else {
+			path = fmt.Sprintf("%s.%s", path, tag.Name)
+		}
+	}
+
 	obj := &ast.Object{
-		Tag: tag,
+		Tag:  tag,
+		Path: path,
 	}
 
 	var val ast.Node
@@ -933,9 +950,11 @@ func (p *Parser) parseObject(openLine int) (*ast.Object, error) {
 		if key.Type != token.String {
 			return nil, fmt.Errorf("expect string key")
 		}
+		keyStr := utils.CamelToSnake(key.Literal)
 
 		p.next()
-		if val, err = p.parse(); err != nil {
+		path = fmt.Sprintf("%s.%s", path, keyStr)
+		if val, err = p.parse(path); err != nil {
 			err = fmt.Errorf("array parse err: %w", err)
 			return nil, err
 		}
@@ -948,7 +967,7 @@ func (p *Parser) parseObject(openLine int) (*ast.Object, error) {
 			childTag.Inherit(tag)
 		}
 		field := &ast.Field{
-			Key:   utils.CamelToSnake(key.Literal),
+			Key:   keyStr,
 			Value: val,
 		}
 		obj.Fields = append(obj.Fields, field)
@@ -977,7 +996,12 @@ func (p *Parser) parseObject(openLine int) (*ast.Object, error) {
 	return obj, nil
 }
 
-func (p *Parser) parseArray(openLine int) (*ast.Array, error) {
+func (p *Parser) parseArray(openLine int, path string) (*ast.Array, error) {
+	p.depth++
+	if p.depth > maxDepth {
+		return nil, fmt.Errorf("max depth: %d", maxDepth)
+	}
+
 	tag, err := p.consumeCommentsFor(openLine)
 	if err != nil {
 		return nil, err
@@ -993,11 +1017,16 @@ func (p *Parser) parseArray(openLine int) (*ast.Array, error) {
 		}
 	}
 
+	if tag.Name != "" {
+		path = fmt.Sprintf("%s.%s", path, tag.Name)
+	}
 	arr := &ast.Array{
-		Tag: tag,
+		Tag:  tag,
+		Path: path,
 	}
 
 	var item ast.Node
+	var i int
 	for {
 		tok := p.peek()
 		if tok.Type == token.EOF {
@@ -1033,7 +1062,8 @@ func (p *Parser) parseArray(openLine int) (*ast.Array, error) {
 			continue
 		}
 
-		if item, err = p.parse(); err != nil {
+		path = fmt.Sprintf("%s.%s", path, strconv.Itoa(i))
+		if item, err = p.parse(path); err != nil {
 			err = fmt.Errorf("array parse err: %w", err)
 			return nil, err
 		}
@@ -1045,6 +1075,7 @@ func (p *Parser) parseArray(openLine int) (*ast.Array, error) {
 			childTag.Inherit(tag)
 		}
 		arr.Items = append(arr.Items, item)
+		i++
 
 		if p.peek().Type == token.Comma {
 			p.next()

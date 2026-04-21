@@ -1130,7 +1130,9 @@ func anyToJSONC(obj any, tag *ast.Tag, depth int, path string) (ast.Node, error)
 		tagNode.ChildExample = tag.ChildExample
 		tagNode.InheritExample = tag.InheritExample
 
-		path = fmt.Sprintf("%s.%s", path, tagNode.Name)
+		if tagNode.Name != "" {
+			path = fmt.Sprintf("%s.%s", path, tagNode.Name)
+		}
 		node := &ast.Object{
 			Tag:  tagNode,
 			Path: path,
@@ -1165,10 +1167,10 @@ func anyToJSONC(obj any, tag *ast.Tag, depth int, path string) (ast.Node, error)
 				tagItem.Example = true
 			}
 			tagItem.Type = tag.ChildType
-			p := fmt.Sprintf("%s.%s", path, keyStr)
-			valNode, err := toJSONC(val.MapIndex(key).Interface(), tagItem, depth, p)
+			path = fmt.Sprintf("%s.%s", path, keyStr)
+			valNode, err := toJSONC(val.MapIndex(key).Interface(), tagItem, depth, path)
 			if err != nil {
-				return nil, fmt.Errorf("%s: %w", p, err)
+				return nil, fmt.Errorf("%s: %w", path, err)
 			}
 
 			tagItem = valNode.GetTag()
@@ -1348,10 +1350,10 @@ func anyToJSONC(obj any, tag *ast.Tag, depth int, path string) (ast.Node, error)
 				tagItem.ChildExample = true
 				tagItem.Example = true
 			}
-			p := fmt.Sprintf("%s.%s", path, strconv.Itoa(i))
-			itemNode, err := toJSONC(val.Index(i).Interface(), tagItem, depth, p)
+			path = fmt.Sprintf("%s.%s", path, strconv.Itoa(i))
+			itemNode, err := toJSONC(val.Index(i).Interface(), tagItem, depth, path)
 			if err != nil {
-				return nil, fmt.Errorf("%s: %w", p, err)
+				return nil, fmt.Errorf("%s: %w", path, err)
 			}
 
 			tagItem = itemNode.GetTag()
@@ -1505,7 +1507,9 @@ func anyToJSONC(obj any, tag *ast.Tag, depth int, path string) (ast.Node, error)
 		tagNode.InheritExample = tag.InheritExample
 
 		tagNode.Size = val.Len()
-		path = fmt.Sprintf("%s.%s", path, tagNode.Name)
+		if tagNode.Name != "" {
+			path = fmt.Sprintf("%s.%s", path, tagNode.Name)
+		}
 		node := &ast.Array{
 			Tag:  tagNode,
 			Path: path,
