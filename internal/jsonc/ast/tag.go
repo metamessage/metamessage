@@ -97,9 +97,9 @@ type Tag struct {
 
 	Desc       string         // desc=...
 	Type       ValueType      // type=...
-	Raw        bool           // raw=...
+	Raw        bool           // raw
 	Nullable   bool           // nullable
-	AllowEmpty bool           // allow_empty=...
+	AllowEmpty bool           // allow_empty
 	Unique     bool           // unique
 	Default    string         // default=...
 	Min        string         // min=...
@@ -107,13 +107,13 @@ type Tag struct {
 	Size       int            // size=... default 0
 	Enum       string         // enum=...|...
 	Pattern    string         // pattern=...
-	Location   *time.Location // location=0  for time.Time
-	Version    int            // version=4
+	Location   *time.Location // location=0  for time.Time [-12, +14]
+	Version    int            // version=0 for uuid/ip
 	Mime       string         // mime=...
 
 	ChildDesc       string         // child_desc=...
 	ChildType       ValueType      // child_type=...
-	ChildRaw        bool           // child_raw=...
+	ChildRaw        bool           // child_raw
 	ChildNullable   bool           // child_nullable
 	ChildAllowEmpty bool           // child_allow_empty
 	ChildUnique     bool           // child_unique
@@ -129,23 +129,23 @@ type Tag struct {
 	ChildIsNull     bool
 	ChildExample    bool
 
-	ParentDesc       string
-	ParentType       ValueType
-	ParentRaw        bool
-	ParentNullable   bool
-	ParentAllowEmpty bool
-	ParentUnique     bool
-	ParentDefault    string
-	ParentMin        string
-	ParentMax        string
-	ParentSize       int
-	ParentEnum       string
-	ParentPattern    string
-	ParentLocation   *time.Location
-	ParentVersion    int
-	ParentMime       string
-	ParentIsNull     bool
-	ParentExample    bool
+	InheritDesc       string
+	InheritType       ValueType
+	InheritRaw        bool
+	InheritNullable   bool
+	InheritAllowEmpty bool
+	InheritUnique     bool
+	InheritDefault    string
+	InheritMin        string
+	InheritMax        string
+	InheritSize       int
+	InheritEnum       string
+	InheritPattern    string
+	InheritLocation   *time.Location
+	InheritVersion    int
+	InheritMime       string
+
+	InheritExample bool
 }
 
 const (
@@ -156,13 +156,47 @@ var DefaultLocation *time.Location = time.UTC
 
 func NewTag() *Tag {
 	return &Tag{
-		Version:        DefaultVersion,
-		ChildVersion:   DefaultVersion,
-		ParentVersion:  DefaultVersion,
-		Location:       DefaultLocation,
-		ChildLocation:  DefaultLocation,
-		ParentLocation: DefaultLocation,
+		Version:         DefaultVersion,
+		ChildVersion:    DefaultVersion,
+		InheritVersion:  DefaultVersion,
+		Location:        DefaultLocation,
+		ChildLocation:   DefaultLocation,
+		InheritLocation: DefaultLocation,
 	}
+}
+
+func (t *Tag) Inherit(tag *Tag) {
+	t.Desc = tag.ChildDesc
+	t.Type = tag.ChildType
+	t.Raw = tag.ChildRaw
+	t.Nullable = tag.ChildNullable
+	t.AllowEmpty = tag.ChildAllowEmpty
+	t.Unique = tag.ChildUnique
+	t.Default = tag.ChildDefault
+	t.Min = tag.ChildMin
+	t.Max = tag.ChildMax
+	t.Size = tag.ChildSize
+	t.Enum = tag.ChildEnum
+	t.Pattern = tag.ChildPattern
+	t.Location = tag.ChildLocation
+	t.Version = tag.ChildVersion
+	t.Mime = tag.ChildMime
+
+	t.InheritDesc = tag.ChildDesc
+	t.InheritType = tag.ChildType
+	t.InheritRaw = tag.ChildRaw
+	t.InheritNullable = tag.ChildNullable
+	t.InheritAllowEmpty = tag.ChildAllowEmpty
+	t.InheritUnique = tag.ChildUnique
+	t.InheritDefault = tag.ChildDefault
+	t.InheritMin = tag.ChildMin
+	t.InheritMax = tag.ChildMax
+	t.InheritSize = tag.ChildSize
+	t.InheritEnum = tag.ChildEnum
+	t.InheritPattern = tag.ChildPattern
+	t.InheritLocation = tag.ChildLocation
+	t.InheritVersion = tag.ChildVersion
+	t.InheritMime = tag.ChildMime
 }
 
 func (t *Tag) GetPattern() (*regexp.Regexp, error) {
@@ -192,7 +226,7 @@ func (t *Tag) String() string {
 		first = false
 	}
 
-	if t.Type != ValueTypeUnknown && t.Type != t.ParentType {
+	if t.Type != ValueTypeUnknown && t.Type != t.InheritType {
 		if t.Type == ValueTypeString ||
 			t.Type == ValueTypeInt ||
 			t.Type == ValueTypeFloat64 ||
@@ -209,11 +243,11 @@ func (t *Tag) String() string {
 		}
 	}
 
-	if t.Example && !t.ParentExample {
+	if t.Example && !t.InheritExample {
 		add(TExample)
 	}
 
-	if t.Nullable && t.Nullable != t.ParentNullable {
+	if t.Nullable && t.Nullable != t.InheritNullable {
 		if t.IsNull {
 			add(TIsNull)
 		} else {
@@ -221,56 +255,56 @@ func (t *Tag) String() string {
 		}
 	}
 
-	if t.Desc != "" && t.Desc != t.ParentDesc {
+	if t.Desc != "" && t.Desc != t.InheritDesc {
 		add(TDesc + "=" + strconv.Quote(t.Desc))
 	}
 
-	if t.Raw && t.Raw != t.ParentRaw {
+	if t.Raw && t.Raw != t.InheritRaw {
 		add(TRaw)
 	}
 
-	if t.AllowEmpty && t.AllowEmpty != t.ParentAllowEmpty {
+	if t.AllowEmpty && t.AllowEmpty != t.InheritAllowEmpty {
 		add(TAllowEmpty)
 	}
 
-	if t.Unique && t.Unique != t.ParentUnique {
+	if t.Unique && t.Unique != t.InheritUnique {
 		add(TUnique)
 	}
 
-	if t.Default != "" && t.Default != t.ParentDefault {
+	if t.Default != "" && t.Default != t.InheritDefault {
 		add(TDefault + "=" + t.Default)
 	}
 
-	if t.Min != "" && t.Min != t.ParentMin {
+	if t.Min != "" && t.Min != t.InheritMin {
 		add(TMin + "=" + t.Min)
 	}
 
-	if t.Max != "" && t.Max != t.ParentMax {
+	if t.Max != "" && t.Max != t.InheritMax {
 		add(TMax + "=" + t.Max)
 	}
 
-	if t.Size != 0 && t.Size != t.ParentSize {
+	if t.Size != 0 && t.Size != t.InheritSize {
 		add(TSize + "=" + strconv.Itoa(t.Size))
 	}
 
-	if t.Enum != "" && t.Enum != t.ParentEnum {
+	if t.Enum != "" && t.Enum != t.InheritEnum {
 		add(TEnum + "=" + t.Enum)
 	}
 
-	if t.Pattern != "" && t.Pattern != t.ParentPattern {
+	if t.Pattern != "" && t.Pattern != t.InheritPattern {
 		add(TPattern + "=" + t.Pattern)
 	}
 
 	locationOffsetHour := utils.GetLocationOffsetHour(t.Location)
-	if locationOffsetHour != 0 && t.Location != t.ParentLocation {
+	if locationOffsetHour != 0 && t.Location != t.InheritLocation {
 		add(TLocation + "=" + strconv.Itoa(locationOffsetHour))
 	}
 
-	if t.Version != DefaultVersion && t.Version != t.ParentVersion {
+	if t.Version != DefaultVersion && t.Version != t.InheritVersion {
 		add(TVersion + "=" + strconv.Itoa(t.Version))
 	}
 
-	if t.Mime != "" && t.Mime != t.ParentMime {
+	if t.Mime != "" && t.Mime != t.InheritMime {
 		add(TMime + "=" + t.Mime)
 	}
 
@@ -353,12 +387,12 @@ func (t *Tag) String() string {
 
 func (t *Tag) Bytes() []byte {
 	var bs bytes.Buffer
-	if t.Example && !t.ParentExample {
+	if t.Example && !t.InheritExample {
 		b := KExample | 1
 		bs.WriteByte(byte(b))
 	}
 
-	if t.Nullable && t.Nullable != t.ParentNullable {
+	if t.Nullable && t.Nullable != t.InheritNullable {
 		if t.IsNull {
 			b := KIsNull | 1
 			bs.WriteByte(byte(b))
@@ -368,7 +402,7 @@ func (t *Tag) Bytes() []byte {
 		}
 	}
 
-	if t.Desc != "" && t.Desc != t.ParentDesc {
+	if t.Desc != "" && t.Desc != t.InheritDesc {
 		l := len(t.Desc)
 		switch {
 		case l <= 5:
@@ -389,7 +423,7 @@ func (t *Tag) Bytes() []byte {
 		}
 	}
 
-	if t.Type != ValueTypeUnknown && t.Type != t.ParentType {
+	if t.Type != ValueTypeUnknown && t.Type != t.InheritType {
 		if t.Type == ValueTypeString ||
 			t.Type == ValueTypeBytes ||
 			t.Type == ValueTypeInt ||
@@ -408,19 +442,19 @@ func (t *Tag) Bytes() []byte {
 		}
 	}
 
-	if t.Raw && t.Raw != t.ParentRaw {
+	if t.Raw && t.Raw != t.InheritRaw {
 		bs.WriteByte(byte(KRaw | 1))
 	}
 
-	if t.AllowEmpty && t.AllowEmpty != t.ParentAllowEmpty {
+	if t.AllowEmpty && t.AllowEmpty != t.InheritAllowEmpty {
 		bs.WriteByte(byte(KAllowEmpty | 1))
 	}
 
-	if t.Unique && t.Unique != t.ParentUnique {
+	if t.Unique && t.Unique != t.InheritUnique {
 		bs.WriteByte(byte(KUnique | 1))
 	}
 
-	if t.Default != "" && t.Default != t.ParentDefault {
+	if t.Default != "" && t.Default != t.InheritDefault {
 		l := len(t.Default)
 		if l < 7 {
 			bs.WriteByte(byte(KDefault) | byte(l))
@@ -432,7 +466,7 @@ func (t *Tag) Bytes() []byte {
 		}
 	}
 
-	if t.Min != "" && t.Min != t.ParentMin {
+	if t.Min != "" && t.Min != t.InheritMin {
 		l := len(t.Min)
 		if l < 7 {
 			bs.WriteByte(byte(KMin) | byte(l))
@@ -444,7 +478,7 @@ func (t *Tag) Bytes() []byte {
 		}
 	}
 
-	if t.Max != "" && t.Max != t.ParentMax {
+	if t.Max != "" && t.Max != t.InheritMax {
 		l := len(t.Max)
 		if l < 7 {
 			bs.WriteByte(byte(KMax) | byte(l))
@@ -456,11 +490,11 @@ func (t *Tag) Bytes() []byte {
 		}
 	}
 
-	if t.Size != 0 && t.Size != t.ParentSize {
+	if t.Size != 0 && t.Size != t.InheritSize {
 		encodeUint64(&bs, KSize, uint64(t.Size))
 	}
 
-	if t.Enum != "" && t.Enum != t.ParentEnum {
+	if t.Enum != "" && t.Enum != t.InheritEnum {
 		l := len(t.Enum)
 		switch {
 		case l <= 5:
@@ -481,7 +515,7 @@ func (t *Tag) Bytes() []byte {
 		}
 	}
 
-	if t.Pattern != "" && t.Pattern != t.ParentPattern {
+	if t.Pattern != "" && t.Pattern != t.InheritPattern {
 		l := len(t.Pattern)
 		if l < 7 {
 			bs.WriteByte(byte(KPattern) | byte(l))
@@ -494,13 +528,13 @@ func (t *Tag) Bytes() []byte {
 	}
 
 	locationOffsetHour := utils.GetLocationOffsetHour(t.Location)
-	if locationOffsetHour != 0 && t.Location != t.ParentLocation {
+	if locationOffsetHour != 0 && t.Location != t.InheritLocation {
 		v := strconv.Itoa(locationOffsetHour)
 		bs.WriteByte(byte(KLocation) | byte(len(v)))
 		bs.WriteString(v)
 	}
 
-	if t.Version != DefaultVersion && t.Version != t.ParentVersion {
+	if t.Version != DefaultVersion && t.Version != t.InheritVersion {
 		encodeUint64(&bs, KVersion, uint64(t.Version))
 	}
 

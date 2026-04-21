@@ -1,5 +1,17 @@
 # MetaMessage
 
+- [README 中文](README.md)
+- [README English](README.en.md)
+- [README 日本語](README.ja.md)
+- [README 한국어](README.ko.md)
+- [README Español](README.es.md)
+- [README Français](README.fr.md)
+- [README Deutsch](README.de.md)
+- [README Русский](README.ru.md)
+- [README Tiếng Việt](README.vi.md)
+- [README Bahasa Indonesia](README.id.md)
+- [README ไทย](README.th.md)
+
 MetaMessage (mm) เป็นโปรโตคอลแลกเปลี่ยนข้อมูลแบบมีโครงสร้าง มันอธิบายตัวเอง กำหนดข้อจำกัดตัวเอง และยกตัวอย่างตัวเอง ทำให้การแลกเปลี่ยนข้อมูลไม่สูญเสียข้อมูล ถูกออกแบบเป็นโปรโตคอลสากลยุคถัดไปที่รองรับ AI มนุษย์ และเครื่องจักรโดยตรง
 
 - เป็นมิตรกับมนุษย์และ AI
@@ -24,14 +36,7 @@ MetaMessage (mm) เป็นโปรโตคอลแลกเปลี่ย
 
 MetaMessage เหมาะสำหรับการเข้าใจและโต้ตอบกับ AI โดยธรรมชาติ แก้ปัญหาความกำกวมและความไม่แม่นยำ มันแทนที่เอกสาร API แบบเดิม การตกลงรูปแบบด้วยวาจา และการซิงค์เวอร์ชันด้วยตนเอง โดยทำให้ข้อมูลอธิบายตัวเองได้และพัฒนาได้อย่างอิสระ
 
-**ตัวอย่าง**
-
-```jsonc
-{
-    // mm: type=datetime; desc=เวลาเริ่มต้นสร้าง
-    "create_time": "2026-01-01 00:00:00"
-}
-```
+หมายเหตุ: ขณะนี้อยู่ในระหว่างการพัฒนาและทดสอบ ไม่แนะนำให้ใช้งานในระบบผลิต
 
 [meta-message](https://github.com/metamessage/metamessage)
 

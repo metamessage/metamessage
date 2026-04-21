@@ -313,6 +313,26 @@ func convertValue(val *ast.Value, outVal reflect.Value) error {
 			return fmt.Errorf("unsupported type for url conversion: %T", d)
 		}
 
+	case ast.ValueTypeEnum:
+		if outVal.Type() != reflect.TypeFor[string]() {
+			return fmt.Errorf("target type must be string, got %s", outVal.Type())
+		}
+		if !outVal.CanAddr() {
+			return fmt.Errorf("unexpected: target string value is unaddressable (bug)")
+		}
+		*(*string)(outVal.Addr().UnsafePointer()) = text
+
+	case ast.ValueTypeImage:
+		return fmt.Errorf("unsupported type: %s", tag.Type)
+	case ast.ValueTypeVideo:
+		return fmt.Errorf("unsupported type: %s", tag.Type)
+	case ast.ValueTypeDoc:
+		return fmt.Errorf("unsupported type: %s", tag.Type)
+	// case ast.ValueTypeAudio:
+	// 	return fmt.Errorf("unsupported type: %s", tag.Type)
+	// case ast.ValueTypeFont:
+	// 	return fmt.Errorf("unsupported type: %s", tag.Type)
+
 	case ast.ValueTypeInt:
 		if outVal.Type() != reflect.TypeFor[int]() {
 			return fmt.Errorf("target type must be int, got %s", outVal.Type())

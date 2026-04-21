@@ -312,17 +312,3 @@ func FloatLen(b byte) (int, int) {
 		return l - FloatLen1Byte + 1, 0
 	}
 }
-
-var ImageExtMIME = map[string]string{
-	"jpeg": "image/jpeg",
-	"png":  "image/png",
-	"gif":  "image/gif",
-	"webp": "image/webp",
-	"svg":  "image/svg+xml",
-	"avif": "image/avif",
-	"bmp":  "image/bmp",
-	"tiff": "image/tiff",
-	"ico":  "image/x-icon",
-	"heic": "image/heic",
-	"heif": "image/heif",
-}

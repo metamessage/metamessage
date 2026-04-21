@@ -1,5 +1,17 @@
 # MetaMessage
 
+- [README 中文](README.md)
+- [README English](README.en.md)
+- [README 日本語](README.ja.md)
+- [README 한국어](README.ko.md)
+- [README Español](README.es.md)
+- [README Français](README.fr.md)
+- [README Deutsch](README.de.md)
+- [README Русский](README.ru.md)
+- [README Tiếng Việt](README.vi.md)
+- [README Bahasa Indonesia](README.id.md)
+- [README ไทย](README.th.md)
+
 MetaMessage (mm) es un protocolo de intercambio de datos estructurados. Es autodescriptivo, autocontenible y autoejemplificador, lo que permite un intercambio de datos sin pérdidas. Está diseñado como un protocolo universal de próxima generación que admite de forma nativa a IA, humanos y máquinas.
 
 - Amigable para humanos y IA
@@ -24,14 +36,7 @@ MetaMessage (mm) es un protocolo de intercambio de datos estructurados. Es autod
 
 MetaMessage es naturalmente adecuado para la comprensión e interacción de IA, resolviendo ambigüedades e imprecisiones. Reemplaza la documentación de API tradicional, los acuerdos de formato verbales y la sincronización manual de versiones, al hacer que los datos sean autoexplicativos y evolucionen de manera independiente.
 
-**Ejemplo**
-
-```jsonc
-{
-    // mm: type=datetime; desc=fecha de creación
-    "create_time": "2026-01-01 00:00:00"
-}
-```
+Nota: Actualmente en desarrollo y pruebas, no se recomienda para uso en producción
 
 [meta-message](https://github.com/metamessage/metamessage)
 
