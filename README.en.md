@@ -1,5 +1,17 @@
 # MetaMessage
 
+- [README 中文](README.md)
+- [README English](README.en.md)
+- [README 日本語](README.ja.md)
+- [README 한국어](README.ko.md)
+- [README Español](README.es.md)
+- [README Français](README.fr.md)
+- [README Deutsch](README.de.md)
+- [README Русский](README.ru.md)
+- [README Tiếng Việt](README.vi.md)
+- [README Bahasa Indonesia](README.id.md)
+- [README ไทย](README.th.md)
+
 MetaMessage (mm) is a structured data exchange protocol. It is self-describing, self-constraining, and self-exemplifying, enabling lossless data exchange. It is designed as a next-generation universal protocol that natively supports AI, humans, and machines.
 
 - Human and AI friendly
@@ -24,6 +36,20 @@ MetaMessage (mm) is a structured data exchange protocol. It is self-describing, 
 
 MetaMessage is naturally suited for AI understanding and interaction, solving ambiguity and imprecision in data. It replaces traditional API docs, verbal format agreements, and manual version sync by making data self-explanatory and independently evolvable.
 
+Note: Currently in development and testing, not recommended for production use
+
+[meta-message](https://github.com/metamessage/metamessage)
+
+## Text Formats
+
+### JSONC
+
+- Allows trailing commas in arrays or objects
+- Allows ordinary comments
+- Comments should be written above fields
+- The mm tag must be on the last line
+- Leave an empty line between mm tag and ordinary comments for readability
+
 **Example**
 
 ```jsonc
@@ -33,46 +59,21 @@ MetaMessage is naturally suited for AI understanding and interaction, solving am
 }
 ```
 
-[meta-message](https://github.com/metamessage/metamessage)
+### YAML
 
-## Text Formats
-
-**JSONC**
-
-- Allows trailing commas in arrays or objects
-- Allows ordinary comments
-- Comments should be written above fields
-- The mm tag must be on the last line
-- Leave an empty line between mm tag and ordinary comments for readability
-
-**YAML**
-
-**TOML**
-
-## Notes
-
-- There are still many bugs and incomplete tests; production use is not recommended
-- Arrays and slices do not allow composite types; map keys must be strings and values must not be composite types
-- Empty arrays/slices automatically insert an example value
-- Integers and strings do not require explicit type tags
-- Structs and slices do not require explicit type tags
-- When array size > 0, explicit type tags are not needed
-- Floats do not support NaN/Inf/-0
-- Encoding supports up to 65535 bytes (64KB); this may be extended later
-- Float literals must include a decimal point
-- Integer literals must not include a decimal point
+### TOML
 
 ## Data Types
 
-- doc:
-- slice:
+- doc: Encoding supports up to 65535 bytes (64KB). This limit may be extended after full support for document types
+- slice: Arrays and slices do not allow composite types
 - array: arr
 - struct:
-- map:
+- map: Map keys must be strings, and values must not be composite types
 - string: str
 - bytes:
 - bool:
-- int: i
+- int: i; integer literals must not include a decimal point
 - int8: i8
 - int16: i16
 - int32: i32
@@ -82,7 +83,7 @@ MetaMessage is naturally suited for AI understanding and interaction, solving am
 - uint16: u16
 - uint32: u32
 - uint64: u64
-- float32: f32
+- float32: f32; floats do not support NaN / Inf / -0; float literals must include a decimal point, e.g., 0.0
 - float64: f64
 - bigint: bi
 - datetime: default UTC 1970-01-01 00:00:00
@@ -101,22 +102,38 @@ MetaMessage is naturally suited for AI understanding and interaction, solving am
 
 Tags are annotations, labels, or attributes of programming language structs, or comments in text formats
 
-- is_null: indicates a null value using an empty placeholder
+- is_null: value is null using an empty placeholder
+
 - desc: summary, applies to all types. Maximum length 65535 bits
-- type: data type. In text formats, strings, integers (int), decimals (float64), objects (or similar structures) do not require explicit type tags when unambiguous. In programming languages, if objects (or similar structures) and maps can be determined, maps also do not require type tags
+
+- type: data type. In text formats, strings, integers (int), decimals (float64), slices, objects (or similar structures) do not require explicit type tags when unambiguous, such as when array size > 0. In programming languages, if arrays, maps, and other types can be determined, type tags are also not needed
+
 - raw: in some programming languages, data types typically use wrapper types, such as Java. Wrapper types are used by default; set to raw if not desired. To be determined, may be removed in future versions
+
 - nullable: whether null is allowed, applies to all types
+
 - allow_empty: except for boolean types, other types do not allow empty by default. When allow_empty is set, empty values are allowed following certain rules
+
 - unique: applies only to slices or arrays, indicates elements cannot be repeated
+
 - default: default value, not yet enabled
-- example: sample data used when arrays or maps are empty
-- min: minimum capacity for arrays, minimum length for strings/byte arrays, or minimum value for numbers
-- max: maximum capacity for arrays, maximum length for strings/byte arrays, or maximum value for numbers
-- size: capacity for arrays, fixed length for strings or byte arrays
+
+- example: sample data used when arrays, slices, or maps are empty, automatically generating an empty value example
+
+- min: for arrays, indicates minimum capacity; for strings and byte arrays, indicates minimum length; for numeric types (integers, decimals, bigint), indicates minimum value
+
+- max: for arrays, indicates maximum capacity; for strings and byte arrays, indicates maximum length; for numeric types (integers, decimals, bigint), indicates maximum value
+
+- size: for arrays, indicates capacity; for strings and byte arrays, indicates fixed length
+
 - enum: when this tag is present, the value defaults to enum type. Enum type here is in string form and does not accept other forms
+
 - pattern: regex, applies to strings
+
 - location: timezone offset, default 0, applies only to datetime types, range -12 to 14
+
 - version: limit version in uuid; in ip can restrict ipv4 or ipv6
+
 - mime: document type, not yet enabled
 
 ## Usage

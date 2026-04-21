@@ -1,5 +1,17 @@
 # MetaMessage
 
+- [README 中文](README.md)
+- [README English](README.en.md)
+- [README 日本語](README.ja.md)
+- [README 한국어](README.ko.md)
+- [README Español](README.es.md)
+- [README Français](README.fr.md)
+- [README Deutsch](README.de.md)
+- [README Русский](README.ru.md)
+- [README Tiếng Việt](README.vi.md)
+- [README Bahasa Indonesia](README.id.md)
+- [README ไทย](README.th.md)
+
 MetaMessage (mm) ist ein strukturiertes Datenaustauschprotokoll. Es ist selbstbeschreibend, selbstbeschränkend und selbstbeispielgebend und ermöglicht verlustfreien Datenaustausch. Es ist als universelles Protokoll der nächsten Generation konzipiert, das KI, Menschen und Maschinen nativ unterstützt.
 
 - Benutzer- und KI-freundlich
@@ -24,6 +36,20 @@ MetaMessage (mm) ist ein strukturiertes Datenaustauschprotokoll. Es ist selbstbe
 
 MetaMessage eignet sich von Natur aus für das Verständnis und die Interaktion mit KI und löst Mehrdeutigkeiten und Ungenauigkeiten. Es ersetzt traditionelle API-Dokumentation, mündliche Formatvereinbarungen und manuelle Versionssynchronisierung, indem es Daten selbsterklärend und unabhängig entwickelbar macht.
 
+Hinweis: Derzeit in Entwicklung und Test, nicht für den Produktionseinsatz empfohlen
+
+[meta-message](https://github.com/metamessage/metamessage)
+
+## Textformate
+
+### JSONC
+
+- Erlaubt abschließende Kommas in Arrays oder Objekten
+- Normale Kommentare sind erlaubt
+- Kommentare sollten über den Feldern stehen
+- Das mm-Tag muss in der letzten Zeile stehen
+- Lasse eine Leerzeile zwischen mm-Tag und normalen Kommentaren für bessere Lesbarkeit
+
 **Beispiel**
 
 ```jsonc
@@ -33,46 +59,21 @@ MetaMessage eignet sich von Natur aus für das Verständnis und die Interaktion 
 }
 ```
 
-[meta-message](https://github.com/metamessage/metamessage)
+### YAML
 
-## Textformate
-
-**JSONC**
-
-- Erlaubt abschließende Kommas in Arrays oder Objekten
-- Normale Kommentare sind erlaubt
-- Kommentare sollten über den Feldern stehen
-- Das mm-Tag muss in der letzten Zeile stehen
-- Lasse eine Leerzeile zwischen mm-Tag und normalen Kommentaren für bessere Lesbarkeit
-
-**YAML**
-
-**TOML**
-
-## Hinweise
-
-- Es gibt noch viele Fehler und unvollständige Tests; Produktionseinsatz wird nicht empfohlen
-- Arrays und Slices erlauben keine zusammengesetzten Typen; Map-Schlüssel müssen Strings sein und Werte dürfen keine zusammengesetzten Typen sein
-- Leere Arrays/Slices fügen automatisch einen Beispielwert ein
-- Ganzzahlen und Strings benötigen keine expliziten Typ-Tags
-- Structs und Slices benötigen keine expliziten Typ-Tags
-- Wenn die Array-Größe > 0 ist, sind explizite Typ-Tags nicht erforderlich
-- Floats unterstützen kein NaN/Inf/-0
-- Kodierung unterstützt bis zu 65535 Bytes (64KB); dies kann später erweitert werden
-- Float-Literale müssen einen Dezimalpunkt enthalten
-- Ganzzahl-Literale dürfen keinen Dezimalpunkt enthalten
+### TOML
 
 ## Datentypen
 
-- doc:
-- slice:
+- doc: Die Kodierung unterstützt bis zu 65535 Bytes (64KB). Diese Grenze kann nach vollständiger Unterstützung von Dokumenttypen überschritten werden
+- slice: Arrays und Slices erlauben keine zusammengesetzten Typen
 - array: arr
 - struct:
-- map:
+- map: Map-Schlüssel müssen Strings sein und Werte dürfen keine zusammengesetzten Typen sein
 - string: str
 - bytes:
 - bool:
-- int: i
+- int: i; Ganzzahl-Literale dürfen keinen Dezimalpunkt enthalten
 - int8: i8
 - int16: i16
 - int32: i32
@@ -82,7 +83,7 @@ MetaMessage eignet sich von Natur aus für das Verständnis und die Interaktion 
 - uint16: u16
 - uint32: u32
 - uint64: u64
-- float32: f32
+- float32: f32; Floats unterstützen NaN/Inf/-0 nicht; Float-Literale müssen einen Dezimalpunkt enthalten, z.B. 0.0
 - float64: f64
 - bigint: bi
 - datetime: Standard UTC 1970-01-01 00:00:00
@@ -102,21 +103,37 @@ MetaMessage eignet sich von Natur aus für das Verständnis und die Interaktion 
 Tags sind Annotationen, Labels oder Attribute von Programmiersprachen-Strukturen oder Kommentare in Textformaten
 
 - is_null: zeigt einen null-Wert mit einem leeren Platzhalter an
+
 - desc: Zusammenfassung, gilt für alle Typen. Maximale Länge 65535 Bits
-- type: Datentyp. In Textformaten erfordern Strings, Integer (int), Dezimalzahlen (float64) und Objekte (oder ähnliche Strukturen) keine expliziten Typ-Tags, wenn diese eindeutig sind. In Programmiersprachen benötigen Maps auch keine Typ-Tags, wenn Objekte (oder ähnliche Strukturen) und Maps ermittelt werden können
+
+- type: Datentyp. In Textformaten erfordern Strings, Integer (int), Dezimalzahlen (float64), Slices, Objekte (oder ähnliche Strukturen) keine expliziten Typ-Tags, wenn diese eindeutig sind, z.B. wenn die Array-Größe > 0. In Programmiersprachen benötigen Arrays, Maps und andere Typen auch keine Typ-Tags, wenn diese ermittelt werden können
+
 - raw: In einigen Programmiersprachen verwenden Datentypen üblicherweise Wrapper-Typen wie Java. Wrapper-Typen werden standardmäßig verwendet; setzen Sie auf raw, falls nicht gewünscht. Zu bestimmen, kann in zukünftigen Versionen entfernt werden
+
 - nullable: ob null zulässig ist, gilt für alle Typen
+
 - allow_empty: außer für boolesche Typen erlauben andere Typen standardmäßig keine leeren Werte. Wenn allow_empty gesetzt ist, werden leere Werte nach bestimmten Regeln zugelassen
+
 - unique: gilt nur für Slices oder Arrays, zeigt an, dass Elemente nicht wiederholt werden können
+
 - default: Standardwert, noch nicht aktiviert
-- example: Beispielwert, der verwendet wird, wenn Arrays oder Maps leer sind
-- min: minimale Kapazität für Arrays, minimale Länge für Strings/Byte-Arrays oder minimaler Wert für Zahlen
-- max: maximale Kapazität für Arrays, maximale Länge für Strings/Byte-Arrays oder maximaler Wert für Zahlen
+
+- example: Beispielwert, der verwendet wird, wenn Arrays, Slices oder Maps leer sind, automatisch werden leere Wert-Beispiele generiert
+
+- min: minimale Kapazität für Arrays, minimale Länge für Strings/Byte-Arrays oder minimaler Wert für Zahlen (Integer, Dezimalzahlen, bigint)
+
+- max: maximale Kapazität für Arrays, maximale Länge für Strings/Byte-Arrays oder maximaler Wert für Zahlen (Integer, Dezimalzahlen, bigint)
+
 - size: Kapazität für Arrays, feste Länge für Strings oder Byte-Arrays
+
 - enum: wenn dieses Tag vorhanden ist, ist der Wert standardmäßig vom Typ enum. Der enum-Typ hier ist in Stringform und akzeptiert keine anderen Formen
+
 - pattern: Regex, gilt für Strings
+
 - location: Zeitzonenoffset, Standard 0, gilt nur für datetime-Typen, Bereich -12 bis 14
+
 - version: Version in uuid begrenzen; in ip kann ipv4 oder ipv6 beschränkt werden
+
 - mime: Dokumenttyp, noch nicht aktiviert
 
 ## Verwendung

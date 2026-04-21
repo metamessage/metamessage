@@ -1401,18 +1401,7 @@ func (d *decoder) decodeArray(prefix byte, tag *ast.Tag, path string) (node *ast
 	index := 0
 	for index < l2 {
 		tagValue := ast.NewTag()
-		tagValue.ParentDesc = tag.ChildDesc
-		tagValue.ParentType = tag.ChildType
-		tagValue.ParentRaw = tag.ChildRaw
-		tagValue.ParentNullable = tag.ChildNullable
-		tagValue.ParentDefault = tag.ChildDefault
-		tagValue.ParentMin = tag.ChildMin
-		tagValue.ParentMax = tag.ChildMax
-		tagValue.ParentSize = tag.ChildSize
-		tagValue.ParentEnum = tag.ChildEnum
-		tagValue.ParentPattern = tag.ChildPattern
-		tagValue.ParentLocation = tag.ChildLocation
-		tagValue.ParentVersion = tag.ChildVersion
+		tagValue.Inherit(tag)
 
 		p := fmt.Sprintf("%s.%s", path, strconv.Itoa(index))
 		n, l, e := d.decode(tagValue, p)
@@ -1489,18 +1478,7 @@ func (d *decoder) decodeObject(prefix byte, tag *ast.Tag, path string) (node *as
 	i := 0
 	for index < l2 {
 		tagValue := ast.NewTag()
-		tagValue.ParentDesc = tag.ChildDesc
-		tagValue.ParentType = tag.ChildType
-		tagValue.ParentRaw = tag.ChildRaw
-		tagValue.ParentNullable = tag.ChildNullable
-		tagValue.ParentDefault = tag.ChildDefault
-		tagValue.ParentMin = tag.ChildMin
-		tagValue.ParentMax = tag.ChildMax
-		tagValue.ParentSize = tag.ChildSize
-		tagValue.ParentEnum = tag.ChildEnum
-		tagValue.ParentPattern = tag.ChildPattern
-		tagValue.ParentLocation = tag.ChildLocation
-		tagValue.ParentVersion = tag.ChildVersion
+		tagValue.Inherit(tag)
 
 		key := nKeys.Items[i].(*ast.Value).Text
 		p := fmt.Sprintf("%s.%s", path, key)

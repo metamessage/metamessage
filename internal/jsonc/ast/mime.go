@@ -19,6 +19,9 @@ const (
 	MIMEAvif
 	MIMEBmp
 	MIMEIco
+	MIMETiff
+	MIMEHeic
+	MIMEHeif
 
 	// Text
 	MIMETextPlain
@@ -72,6 +75,12 @@ func (m MIME) String() string {
 		return "image/bmp"
 	case MIMEIco:
 		return "image/x-icon"
+	case MIMETiff:
+		return "image/tiff"
+	case MIMEHeic:
+		return "image/heic"
+	case MIMEHeif:
+		return "image/heif"
 
 	// Text
 	case MIMETextPlain:
@@ -142,6 +151,9 @@ var strToMIME = map[string]MIME{
 	"image/avif":             MIMEAvif,
 	"image/bmp":              MIMEBmp,
 	"image/x-icon":           MIMEIco,
+	"image/tiff":             MIMETiff,
+	"image/heic":             MIMEHeic,
+	"image/heif":             MIMEHeif,
 	"text/plain":             MIMETextPlain,
 	"text/html":              MIMEHtml,
 	"text/css":               MIMECss,
@@ -178,7 +190,7 @@ func ParseMIME(s string) (MIME, error) {
 // IsImage
 func (m MIME) IsImage() bool {
 	switch m {
-	case MIMEJpeg, MIMEPng, MIMEGif, MIMEWebp, MIMESvg, MIMEAvif, MIMEBmp, MIMEIco:
+	case MIMEJpeg, MIMEPng, MIMEGif, MIMEWebp, MIMESvg, MIMEAvif, MIMEBmp, MIMEIco, MIMETiff, MIMEHeic, MIMEHeif:
 		return true
 	default:
 		return false
@@ -204,6 +216,12 @@ func (m MIME) Ext() string {
 		return "bmp"
 	case MIMEIco:
 		return "ico"
+	case MIMETiff:
+		return "tiff"
+	case MIMEHeic:
+		return "heic"
+	case MIMEHeif:
+		return "heif"
 	case MIMETextPlain:
 		return "txt"
 	case MIMEHtml:

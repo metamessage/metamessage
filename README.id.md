@@ -1,5 +1,17 @@
 # MetaMessage
 
+- [README 中文](README.md)
+- [README English](README.en.md)
+- [README 日本語](README.ja.md)
+- [README 한국어](README.ko.md)
+- [README Español](README.es.md)
+- [README Français](README.fr.md)
+- [README Deutsch](README.de.md)
+- [README Русский](README.ru.md)
+- [README Tiếng Việt](README.vi.md)
+- [README Bahasa Indonesia](README.id.md)
+- [README ไทย](README.th.md)
+
 MetaMessage (mm) adalah protokol pertukaran data terstruktur. Itu menjelaskan dirinya sendiri, membatasi dirinya sendiri, dan memberi contoh dirinya sendiri, memungkinkan pertukaran data tanpa kehilangan. Ini dirancang sebagai protokol universal generasi berikutnya yang mendukung AI, manusia, dan mesin secara native.
 
 - Ramah manusia dan AI
@@ -24,6 +36,20 @@ MetaMessage (mm) adalah protokol pertukaran data terstruktur. Itu menjelaskan di
 
 MetaMessage secara alami cocok untuk pemahaman dan interaksi AI, menyelesaikan ambiguitas dan ketidakakuratan. Ini menggantikan dokumentasi API tradisional, kesepakatan format verbal, dan sinkronisasi versi manual dengan membuat data menjelaskan dirinya sendiri dan berkembang secara independen.
 
+Catatan: Sedang dalam tahap pengembangan dan pengujian, tidak disarankan untuk penggunaan produksi.
+
+[meta-message](https://github.com/metamessage/metamessage)
+
+## Format teks
+
+### JSONC
+
+- Mengizinkan koma terakhir dalam array atau objek
+- Komentar biasa diizinkan
+- Komentar harus ditulis di atas field
+- tag mm harus pada baris terakhir
+- Sisakan baris kosong antara tag mm dan komentar biasa agar lebih mudah dibaca
+
 **Contoh**
 
 ```jsonc
@@ -33,46 +59,21 @@ MetaMessage secara alami cocok untuk pemahaman dan interaksi AI, menyelesaikan a
 }
 ```
 
-[meta-message](https://github.com/metamessage/metamessage)
+### YAML
 
-## Format teks
-
-**JSONC**
-
-- Mengizinkan koma terakhir dalam array atau objek
-- Komentar biasa diizinkan
-- Komentar harus ditulis di atas field
-- tag mm harus pada baris terakhir
-- Sisakan baris kosong antara tag mm dan komentar biasa agar lebih mudah dibaca
-
-**YAML**
-
-**TOML**
-
-## Catatan
-
-- Masih ada banyak bug dan pengujian belum lengkap; tidak disarankan untuk produksi
-- Array dan slice tidak mengizinkan tipe komposit; kunci map harus string dan nilai tidak boleh tipe komposit
-- Array/slice kosong secara otomatis menyisipkan nilai contoh
-- Integer dan string tidak memerlukan tag tipe eksplisit
-- Struct dan slice tidak memerlukan tag tipe eksplisit
-- Saat ukuran array > 0, tag tipe eksplisit tidak diperlukan
-- Float tidak mendukung NaN/Inf/-0
-- Encoding mendukung hingga 65535 byte (64KB); ini mungkin diperluas nanti
-- Literal float harus menyertakan titik desimal
-- Literal integer tidak boleh menyertakan titik desimal
+### TOML
 
 ## Tipe data
 
-- doc:
-- slice:
+- doc: Encoding mendukung hingga 65535 byte (64KB). Batasan ini mungkin diperluas setelah dukungan penuh untuk tipe dokumen
+- slice: Array dan slice tidak mengizinkan tipe komposit
 - array: arr
 - struct:
-- map:
+- map: Kunci map harus string dan nilai tidak boleh tipe komposit
 - string: str
 - bytes:
 - bool:
-- int: i
+- int: i; literal integer tidak boleh menyertakan titik desimal
 - int8: i8
 - int16: i16
 - int32: i32
@@ -82,7 +83,7 @@ MetaMessage secara alami cocok untuk pemahaman dan interaksi AI, menyelesaikan a
 - uint16: u16
 - uint32: u32
 - uint64: u64
-- float32: f32
+- float32: f32; float tidak mendukung NaN/Inf/-0; literal float harus menyertakan titik desimal, misalnya 0.0
 - float64: f64
 - bigint: bi
 - datetime: default UTC 1970-01-01 00:00:00
@@ -102,21 +103,37 @@ MetaMessage secara alami cocok untuk pemahaman dan interaksi AI, menyelesaikan a
 Tag adalah anotasi, label, atau atribut dari struktur bahasa pemrograman, atau komentar dalam format teks
 
 - is_null: nilai null dengan placeholder kosong
+
 - desc: ringkasan, berlaku untuk semua tipe. Panjang maksimum 65535 bit
-- type: tipe data. Dalam format teks, string, integer (int), desimal (float64), dan objek (atau struktur serupa) tidak memerlukan tag tipe eksplisit ketika tidak ambigu. Dalam bahasa pemrograman, jika objek (atau struktur serupa) dan map dapat ditentukan, map juga tidak memerlukan tag tipe
+
+- type: tipe data. Dalam format teks, string, integer (int), desimal (float64), slices, objek (atau struktur serupa) tidak memerlukan tag tipe eksplisit ketika tidak ambigu, misalnya ketika ukuran array > 0. Dalam bahasa pemrograman, jika array, maps, dan tipe lain dapat ditentukan, tag tipe juga tidak diperlukan
+
 - raw: dalam beberapa bahasa pemrograman, tipe data biasanya menggunakan tipe wrapper, seperti Java. Tipe wrapper digunakan secara default; atur ke raw jika tidak diinginkan. Untuk ditentukan, mungkin akan dihapus di versi mendatang
+
 - nullable: apakah null diizinkan, berlaku untuk semua tipe
+
 - allow_empty: kecuali untuk tipe boolean, tipe lain tidak mengizinkan kosong secara default. Ketika allow_empty diatur, nilai kosong diizinkan mengikuti aturan tertentu
-- unique: hanya berlaku untuk slice atau array, menunjukkan elemen tidak dapat diulang
+
+- unique: hanya berlaku untuk slices atau array, menunjukkan elemen tidak dapat diulang
+
 - default: nilai default, belum diaktifkan
-- example: data contoh yang digunakan ketika array atau map kosong
-- min: kapasitas minimum untuk array, panjang minimum untuk string/byte array, atau nilai minimum untuk angka
-- max: kapasitas maksimum untuk array, panjang maksimum untuk string/byte array, atau nilai maksimum untuk angka
+
+- example: data contoh yang digunakan ketika array, slices, atau map kosong, secara otomatis menghasilkan contoh nilai kosong
+
+- min: kapasitas minimum untuk array, panjang minimum untuk string/byte array, atau nilai minimum untuk angka (integer, desimal, bigint)
+
+- max: kapasitas maksimum untuk array, panjang maksimum untuk string/byte array, atau nilai maksimum untuk angka (integer, desimal, bigint)
+
 - size: kapasitas untuk array, panjang tetap untuk string atau byte array
+
 - enum: ketika tag ini ada, nilai secara default bertipe enum. Tipe enum di sini dalam bentuk string dan tidak menerima bentuk lain
+
 - pattern: regex, berlaku untuk string
+
 - location: offset zona waktu, default 0, hanya berlaku untuk tipe datetime, rentang -12 hingga 14
+
 - version: batasi versi dalam uuid; di ip dapat membatasi ipv4 atau ipv6
+
 - mime: tipe dokumen, belum diaktifkan
 
 ## Penggunaan

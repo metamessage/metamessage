@@ -27,9 +27,11 @@ func FromStruct(v any, tag string) (bs []byte, err error) {
 	var node ast.Node
 	node, err = jsonc.StructToJSONC(v, tag)
 	if err != nil {
+		err = fmt.Errorf("struct to jsonc error: %w", err)
 		return
 	}
-	fmt.Println("FromStruct", jsonc.Json(node))
+
+	// fmt.Println("FromStruct", jsonc.Json(node))
 
 	encoder := getEncoder()
 	defer putEncoder(encoder)
@@ -40,6 +42,7 @@ func FromJSONC(s string) (bs []byte, err error) {
 	var node ast.Node
 	node, err = jsonc.ParseFromString(s)
 	if err != nil {
+		err = fmt.Errorf("parse error: %w", err)
 		return
 	}
 
@@ -77,6 +80,7 @@ func ToJSONC(data []byte) (str string, err error) {
 	var node ast.Node
 	node, err = Decode(data)
 	if err != nil {
+		err = fmt.Errorf("decode error: %w", err)
 		return
 	}
 
@@ -86,6 +90,7 @@ func ToJSONC(data []byte) (str string, err error) {
 func ToJSONCBytes(data []byte) (bs []byte, err error) {
 	str, err := ToJSONC(data)
 	if err != nil {
+		err = fmt.Errorf("to jsonc error: %w", err)
 		return
 	}
 
@@ -96,6 +101,7 @@ func Bind(in []byte, out any) (err error) {
 	var n ast.Node
 	n, err = Decode(in)
 	if err != nil {
+		err = fmt.Errorf("decode error: %w", err)
 		return
 	}
 

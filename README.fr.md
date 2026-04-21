@@ -1,5 +1,17 @@
 # MetaMessage
 
+- [README 中文](README.md)
+- [README English](README.en.md)
+- [README 日本語](README.ja.md)
+- [README 한국어](README.ko.md)
+- [README Español](README.es.md)
+- [README Français](README.fr.md)
+- [README Deutsch](README.de.md)
+- [README Русский](README.ru.md)
+- [README Tiếng Việt](README.vi.md)
+- [README Bahasa Indonesia](README.id.md)
+- [README ไทย](README.th.md)
+
 MetaMessage (mm) est un protocole d'échange de données structurées. Il est auto-descriptif, auto-contraint et auto-exemplifié, permettant un échange de données sans perte. Il est conçu comme un protocole universel de nouvelle génération prenant en charge nativement l'IA, les humains et les machines.
 
 - Convient aux humains et à l'IA
@@ -24,6 +36,20 @@ MetaMessage (mm) est un protocole d'échange de données structurées. Il est au
 
 MetaMessage est naturellement adapté à la compréhension et à l'interaction avec l'IA, résolvant l'ambiguïté et l'imprécision. Il remplace la documentation d'API traditionnelle, les accords verbaux de format et la synchronisation manuelle des versions en rendant les données auto-explicatives et indépendamment évolutives.
 
+Note : Actuellement en développement et test, utilisation en production non recommandée
+
+[meta-message](https://github.com/metamessage/metamessage)
+
+## Formats texte
+
+### JSONC
+
+- Autorise les virgules finales dans les tableaux ou objets
+- Autorise les commentaires ordinaires
+- Les commentaires doivent être écrits au-dessus des champs
+- Le tag mm doit être sur la dernière ligne
+- Laisser une ligne vide entre le tag mm et les commentaires ordinaires pour une meilleure lisibilité
+
 **Exemple**
 
 ```jsonc
@@ -33,46 +59,21 @@ MetaMessage est naturellement adapté à la compréhension et à l'interaction a
 }
 ```
 
-[meta-message](https://github.com/metamessage/metamessage)
+### YAML
 
-## Formats texte
-
-**JSONC**
-
-- Autorise les virgules finales dans les tableaux ou objets
-- Autorise les commentaires ordinaires
-- Les commentaires doivent être écrits au-dessus des champs
-- Le tag mm doit être sur la dernière ligne
-- Laisser une ligne vide entre le tag mm et les commentaires ordinaires pour une meilleure lisibilité
-
-**YAML**
-
-**TOML**
-
-## Notes
-
-- Il reste encore de nombreux bugs et les tests sont incomplets ; l'utilisation en production n'est pas recommandée
-- Les tableaux et slices n'autorisent pas les types composites ; les clés de map doivent être des chaînes et les valeurs ne doivent pas être des types composites
-- Les tableaux/slices vides insèrent automatiquement une valeur d'exemple
-- Les entiers et les chaînes ne nécessitent pas d'étiquettes de type explicites
-- Les structs et slices ne nécessitent pas d'étiquettes de type explicites
-- Lorsque la taille du tableau est > 0, les étiquettes de type explicites ne sont pas nécessaires
-- Les floats ne prennent pas en charge NaN/Inf/-0
-- L'encodage prend en charge jusqu'à 65535 octets (64KB) ; cela pourrait être étendu ultérieurement
-- Les littéraux à virgule flottante doivent inclure un point décimal
-- Les littéraux entiers ne doivent pas inclure de point décimal
+### TOML
 
 ## Types de données
 
-- doc:
-- slice:
+- doc: L'encodage prend en charge jusqu'à 65535 octets (64KB). Cette limite peut être étendue après la prise en charge complète des types de documents
+- slice: Les tableaux et slices n'autorisent pas les types composites
 - array: arr
 - struct:
-- map:
+- map: Les clés de map doivent être des chaînes et les valeurs ne doivent pas être des types composites
 - string: str
 - bytes:
 - bool:
-- int: i
+- int: i; les littéraux entiers ne doivent pas inclure de point décimal
 - int8: i8
 - int16: i16
 - int32: i32
@@ -82,7 +83,7 @@ MetaMessage est naturellement adapté à la compréhension et à l'interaction a
 - uint16: u16
 - uint32: u32
 - uint64: u64
-- float32: f32
+- float32: f32; les floats ne prennent pas en charge NaN/Inf/-0; les littéraux à virgule flottante doivent inclure un point décimal, par exemple 0.0
 - float64: f64
 - bigint: bi
 - datetime: UTC par défaut 1970-01-01 00:00:00
@@ -101,22 +102,38 @@ MetaMessage est naturellement adapté à la compréhension et à l'interaction a
 
 Les tags sont des annotations, étiquettes ou attributs de structures de langages de programmation, ou des commentaires dans les formats texte
 
-- is_null : indique une valeur null avec un espace réservé vide
+- is_null: indique une valeur null avec un espace réservé vide
+
 - desc: résumé, s'applique à tous les types. Longueur maximale 65535 bits
-- type: type de données. Dans les formats texte, les chaînes, entiers (int), décimales (float64) et objets (ou structures similaires) ne nécessitent pas d'étiquettes de type explicites lorsque sans ambiguïté. Dans les langages de programmation, si les objets (ou structures similaires) et maps peuvent être déterminés, les maps ne nécessitent pas non plus d'étiquettes de type
+
+- type: type de données. Dans les formats texte, les chaînes, entiers (int), décimales (float64), slices, objets (ou structures similaires) ne nécessitent pas d'étiquettes de type explicites lorsque sans ambiguïté, par exemple lorsque la taille du tableau > 0. Dans les langages de programmation, si les tableaux, maps et autres types peuvent être déterminés, les étiquettes de type ne sont pas non plus nécessaires
+
 - raw: dans certains langages de programmation, les types de données utilisent généralement des types wrapper, comme Java. Les types wrapper sont utilisés par défaut; définissez sur raw si vous ne le souhaitez pas. À déterminer, peut être supprimé dans les versions futures
+
 - nullable: si null est autorisé, s'applique à tous les types
+
 - allow_empty: sauf pour les types booléens, les autres types ne permettent pas le vide par défaut. Lorsque allow_empty est défini, les valeurs vides sont autorisées selon certaines règles
+
 - unique: s'applique uniquement aux slices ou tableaux, indique que les éléments ne peuvent pas être répétés
+
 - default: valeur par défaut, non encore activée
-- example: données d'exemple utilisées lorsque les tableaux ou maps sont vides
-- min: capacité minimale pour les tableaux, longueur minimale pour les chaînes/octets, ou valeur minimale pour les nombres
-- max: capacité maximale pour les tableaux, longueur maximale pour les chaînes/octets, ou valeur maximale pour les nombres
+
+- example: données d'exemple utilisées lorsque les tableaux, slices, ou maps sont vides, générant automatiquement un exemple de valeur vide
+
+- min: capacité minimale pour les tableaux, longueur minimale pour les chaînes/octets, ou valeur minimale pour les nombres (entiers, décimales, bigint)
+
+- max: capacité maximale pour les tableaux, longueur maximale pour les chaînes/octets, ou valeur maximale pour les nombres (entiers, décimales, bigint)
+
 - size: capacité pour les tableaux, longueur fixe pour les chaînes ou octets
+
 - enum: quand cette étiquette est présente, la valeur est du type enum par défaut. Le type enum ici est sous forme de chaîne et n'accepte pas d'autres formes
+
 - pattern: regex, s'applique aux chaînes
+
 - location: décalage de fuseau horaire, défaut 0, s'applique uniquement aux types datetime, plage -12 à 14
+
 - version: limiter la version dans uuid; dans ip peut restreindre ipv4 ou ipv6
+
 - mime: type de document, non encore activé
 
 ## Utilisation

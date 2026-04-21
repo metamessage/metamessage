@@ -1046,7 +1046,7 @@ func anyToJSONC(obj any, tag *ast.Tag, depth int, path string) (ast.Node, error)
 			tagNode.Nullable = nullable
 			tagNode.Example = tag.Example
 			tagNode.ChildExample = tag.ChildExample
-			tagNode.ParentExample = tag.ParentExample
+			tagNode.InheritExample = tag.InheritExample
 
 			if tagNode.Name != "" {
 				if path == "" {
@@ -1096,7 +1096,7 @@ func anyToJSONC(obj any, tag *ast.Tag, depth int, path string) (ast.Node, error)
 				}
 
 				if tag.ChildExample {
-					tagField.ParentExample = true
+					tagField.InheritExample = true
 					tagField.ChildExample = true
 					tagField.Example = true
 				}
@@ -1128,7 +1128,7 @@ func anyToJSONC(obj any, tag *ast.Tag, depth int, path string) (ast.Node, error)
 		tagNode.Nullable = nullable
 		tagNode.Example = tag.Example
 		tagNode.ChildExample = tag.ChildExample
-		tagNode.ParentExample = tag.ParentExample
+		tagNode.InheritExample = tag.InheritExample
 
 		path = fmt.Sprintf("%s.%s", path, tagNode.Name)
 		node := &ast.Object{
@@ -1160,7 +1160,7 @@ func anyToJSONC(obj any, tag *ast.Tag, depth int, path string) (ast.Node, error)
 			tagItem.Version = tag.Version
 			tagItem.Name = keyStr
 			if tag.ChildExample {
-				tagItem.ParentExample = true
+				tagItem.InheritExample = true
 				tagItem.ChildExample = true
 				tagItem.Example = true
 			}
@@ -1195,18 +1195,18 @@ func anyToJSONC(obj any, tag *ast.Tag, depth int, path string) (ast.Node, error)
 					setTag = true
 				}
 
-				tagItem.ParentDesc = tagItem.Desc
-				tagItem.ParentType = tagItem.Type
-				tagItem.ParentRaw = tagItem.Raw
-				tagItem.ParentNullable = tagItem.Nullable
-				tagItem.ParentDefault = tagItem.Default
-				tagItem.ParentMin = tagItem.Min
-				tagItem.ParentMax = tagItem.Max
-				tagItem.ParentSize = tagItem.Size
-				tagItem.ParentEnum = tagItem.Enum
-				tagItem.ParentPattern = tagItem.Pattern
-				tagItem.ParentLocation = tagItem.Location
-				tagItem.ParentVersion = tagItem.Version
+				tagItem.InheritDesc = tagItem.Desc
+				tagItem.InheritType = tagItem.Type
+				tagItem.InheritRaw = tagItem.Raw
+				tagItem.InheritNullable = tagItem.Nullable
+				tagItem.InheritDefault = tagItem.Default
+				tagItem.InheritMin = tagItem.Min
+				tagItem.InheritMax = tagItem.Max
+				tagItem.InheritSize = tagItem.Size
+				tagItem.InheritEnum = tagItem.Enum
+				tagItem.InheritPattern = tagItem.Pattern
+				tagItem.InheritLocation = tagItem.Location
+				tagItem.InheritVersion = tagItem.Version
 			default:
 
 			}
@@ -1248,7 +1248,7 @@ func anyToJSONC(obj any, tag *ast.Tag, depth int, path string) (ast.Node, error)
 			tagItem.Example = true
 			tagItem.ChildExample = true
 			if tag.ChildExample {
-				tagItem.ParentExample = true
+				tagItem.InheritExample = true
 			}
 			tagItem.Type = tag.ChildType
 			p := fmt.Sprintf("%s.%s", path, keyStr)
@@ -1278,18 +1278,18 @@ func anyToJSONC(obj any, tag *ast.Tag, depth int, path string) (ast.Node, error)
 				node.Tag.ChildLocation = tagItem.Location
 				node.Tag.ChildVersion = tagItem.Version
 
-				tagItem.ParentDesc = tagItem.Desc
-				tagItem.ParentType = tagItem.Type
-				tagItem.ParentRaw = tagItem.Raw
-				tagItem.ParentNullable = tagItem.Nullable
-				tagItem.ParentDefault = tagItem.Default
-				tagItem.ParentMin = tagItem.Min
-				tagItem.ParentMax = tagItem.Max
-				tagItem.ParentSize = tagItem.Size
-				tagItem.ParentEnum = tagItem.Enum
-				tagItem.ParentPattern = tagItem.Pattern
-				tagItem.ParentLocation = tagItem.Location
-				tagItem.ParentVersion = tagItem.Version
+				tagItem.InheritDesc = tagItem.Desc
+				tagItem.InheritType = tagItem.Type
+				tagItem.InheritRaw = tagItem.Raw
+				tagItem.InheritNullable = tagItem.Nullable
+				tagItem.InheritDefault = tagItem.Default
+				tagItem.InheritMin = tagItem.Min
+				tagItem.InheritMax = tagItem.Max
+				tagItem.InheritSize = tagItem.Size
+				tagItem.InheritEnum = tagItem.Enum
+				tagItem.InheritPattern = tagItem.Pattern
+				tagItem.InheritLocation = tagItem.Location
+				tagItem.InheritVersion = tagItem.Version
 			default:
 
 			}
@@ -1314,7 +1314,7 @@ func anyToJSONC(obj any, tag *ast.Tag, depth int, path string) (ast.Node, error)
 		tagNode.Nullable = nullable
 		tagNode.Example = tag.Example
 		tagNode.ChildExample = tag.ChildExample
-		tagNode.ParentExample = tag.ParentExample
+		tagNode.InheritExample = tag.InheritExample
 
 		tagNode.IsNull = isNil
 
@@ -1344,7 +1344,7 @@ func anyToJSONC(obj any, tag *ast.Tag, depth int, path string) (ast.Node, error)
 			tagItem.Version = tag.Version
 
 			if tag.ChildExample {
-				tagItem.ParentExample = true
+				tagItem.InheritExample = true
 				tagItem.ChildExample = true
 				tagItem.Example = true
 			}
@@ -1378,18 +1378,21 @@ func anyToJSONC(obj any, tag *ast.Tag, depth int, path string) (ast.Node, error)
 					setTag = true
 				}
 
-				tagItem.ParentDesc = tagItem.Desc
-				tagItem.ParentType = tagItem.Type
-				tagItem.ParentRaw = tagItem.Raw
-				tagItem.ParentNullable = tagItem.Nullable
-				tagItem.ParentDefault = tagItem.Default
-				tagItem.ParentMin = tagItem.Min
-				tagItem.ParentMax = tagItem.Max
-				tagItem.ParentSize = tagItem.Size
-				tagItem.ParentEnum = tagItem.Enum
-				tagItem.ParentPattern = tagItem.Pattern
-				tagItem.ParentLocation = tagItem.Location
-				tagItem.ParentVersion = tagItem.Version
+				tagItem.InheritDesc = tagItem.Desc
+				tagItem.InheritType = tagItem.Type
+				tagItem.InheritRaw = tagItem.Raw
+				tagItem.InheritNullable = tagItem.Nullable
+				tagItem.InheritAllowEmpty = tag.ChildAllowEmpty
+				tagItem.InheritUnique = tag.ChildUnique
+				tagItem.InheritDefault = tagItem.Default
+				tagItem.InheritMin = tagItem.Min
+				tagItem.InheritMax = tagItem.Max
+				tagItem.InheritSize = tagItem.Size
+				tagItem.InheritEnum = tagItem.Enum
+				tagItem.InheritPattern = tagItem.Pattern
+				tagItem.InheritLocation = tagItem.Location
+				tagItem.InheritVersion = tagItem.Version
+				tagItem.InheritMime = tag.ChildMime
 			default:
 
 			}
@@ -1424,7 +1427,7 @@ func anyToJSONC(obj any, tag *ast.Tag, depth int, path string) (ast.Node, error)
 			tagItem.Example = true
 			tagItem.ChildExample = true
 			if tag.ChildExample {
-				tagItem.ParentExample = true
+				tagItem.InheritExample = true
 			}
 			tagItem.Type = tag.ChildType
 			p := fmt.Sprintf("%s.%s", path, strconv.Itoa(0))
@@ -1454,18 +1457,21 @@ func anyToJSONC(obj any, tag *ast.Tag, depth int, path string) (ast.Node, error)
 				node.Tag.ChildLocation = tagItem.Location
 				node.Tag.ChildVersion = tagItem.Version
 
-				tagItem.ParentDesc = tagItem.Desc
-				tagItem.ParentType = tagItem.Type
-				tagItem.ParentRaw = tagItem.Raw
-				tagItem.ParentNullable = tagItem.Nullable
-				tagItem.ParentDefault = tagItem.Default
-				tagItem.ParentMin = tagItem.Min
-				tagItem.ParentMax = tagItem.Max
-				tagItem.ParentSize = tagItem.Size
-				tagItem.ParentEnum = tagItem.Enum
-				tagItem.ParentPattern = tagItem.Pattern
-				tagItem.ParentLocation = tagItem.Location
-				tagItem.ParentVersion = tagItem.Version
+				tagItem.InheritDesc = tagItem.Desc
+				tagItem.InheritType = tagItem.Type
+				tagItem.InheritRaw = tagItem.Raw
+				tagItem.InheritNullable = tagItem.Nullable
+				tagItem.InheritAllowEmpty = tag.ChildAllowEmpty
+				tagItem.InheritUnique = tag.ChildUnique
+				tagItem.InheritDefault = tagItem.Default
+				tagItem.InheritMin = tagItem.Min
+				tagItem.InheritMax = tagItem.Max
+				tagItem.InheritSize = tagItem.Size
+				tagItem.InheritEnum = tagItem.Enum
+				tagItem.InheritPattern = tagItem.Pattern
+				tagItem.InheritLocation = tagItem.Location
+				tagItem.InheritVersion = tagItem.Version
+				tagItem.InheritMime = tag.ChildMime
 			default:
 
 			}
@@ -1496,7 +1502,7 @@ func anyToJSONC(obj any, tag *ast.Tag, depth int, path string) (ast.Node, error)
 		tagNode.Nullable = nullable
 		tagNode.Example = tag.Example
 		tagNode.ChildExample = tag.ChildExample
-		tagNode.ParentExample = tag.ParentExample
+		tagNode.InheritExample = tag.InheritExample
 
 		tagNode.Size = val.Len()
 		path = fmt.Sprintf("%s.%s", path, tagNode.Name)
@@ -1521,7 +1527,7 @@ func anyToJSONC(obj any, tag *ast.Tag, depth int, path string) (ast.Node, error)
 			tagItem.Version = tag.Version
 
 			if tag.ChildExample {
-				tagItem.ParentExample = true
+				tagItem.InheritExample = true
 				tagItem.ChildExample = true
 				tagItem.Example = true
 			}
@@ -1556,18 +1562,21 @@ func anyToJSONC(obj any, tag *ast.Tag, depth int, path string) (ast.Node, error)
 					setTag = true
 				}
 
-				tagItem.ParentDesc = tagItem.Desc
-				tagItem.ParentType = tagItem.Type
-				tagItem.ParentRaw = tagItem.Raw
-				tagItem.ParentNullable = tagItem.Nullable
-				tagItem.ParentDefault = tagItem.Default
-				tagItem.ParentMin = tagItem.Min
-				tagItem.ParentMax = tagItem.Max
-				tagItem.ParentSize = tagItem.Size
-				tagItem.ParentEnum = tagItem.Enum
-				tagItem.ParentPattern = tagItem.Pattern
-				tagItem.ParentLocation = tagItem.Location
-				tagItem.ParentVersion = tagItem.Version
+				tagItem.InheritDesc = tagItem.Desc
+				tagItem.InheritType = tagItem.Type
+				tagItem.InheritRaw = tagItem.Raw
+				tagItem.InheritNullable = tagItem.Nullable
+				tagItem.InheritAllowEmpty = tag.ChildAllowEmpty
+				tagItem.InheritUnique = tag.ChildUnique
+				tagItem.InheritDefault = tagItem.Default
+				tagItem.InheritMin = tagItem.Min
+				tagItem.InheritMax = tagItem.Max
+				tagItem.InheritSize = tagItem.Size
+				tagItem.InheritEnum = tagItem.Enum
+				tagItem.InheritPattern = tagItem.Pattern
+				tagItem.InheritLocation = tagItem.Location
+				tagItem.InheritVersion = tagItem.Version
+				tagItem.InheritMime = tag.ChildMime
 			default:
 
 			}
@@ -1599,7 +1608,7 @@ func anyToJSONC(obj any, tag *ast.Tag, depth int, path string) (ast.Node, error)
 			tagItem.Example = true
 			tagItem.ChildExample = true
 			if tag.ChildExample {
-				tagItem.ParentExample = true
+				tagItem.InheritExample = true
 			}
 			tagItem.Type = tag.ChildType
 			p := fmt.Sprintf("%s.%s", path, strconv.Itoa(0))
@@ -1629,18 +1638,21 @@ func anyToJSONC(obj any, tag *ast.Tag, depth int, path string) (ast.Node, error)
 				node.Tag.ChildLocation = tagItem.Location
 				node.Tag.ChildVersion = tagItem.Version
 
-				tagItem.ParentDesc = tagItem.Desc
-				tagItem.ParentType = tagItem.Type
-				tagItem.ParentRaw = tagItem.Raw
-				tagItem.ParentNullable = tagItem.Nullable
-				tagItem.ParentDefault = tagItem.Default
-				tagItem.ParentMin = tagItem.Min
-				tagItem.ParentMax = tagItem.Max
-				tagItem.ParentSize = tagItem.Size
-				tagItem.ParentEnum = tagItem.Enum
-				tagItem.ParentPattern = tagItem.Pattern
-				tagItem.ParentLocation = tagItem.Location
-				tagItem.ParentVersion = tagItem.Version
+				tagItem.InheritDesc = tagItem.Desc
+				tagItem.InheritType = tagItem.Type
+				tagItem.InheritRaw = tagItem.Raw
+				tagItem.InheritNullable = tagItem.Nullable
+				tagItem.InheritAllowEmpty = tag.ChildAllowEmpty
+				tagItem.InheritUnique = tag.ChildUnique
+				tagItem.InheritDefault = tagItem.Default
+				tagItem.InheritMin = tagItem.Min
+				tagItem.InheritMax = tagItem.Max
+				tagItem.InheritSize = tagItem.Size
+				tagItem.InheritEnum = tagItem.Enum
+				tagItem.InheritPattern = tagItem.Pattern
+				tagItem.InheritLocation = tagItem.Location
+				tagItem.InheritVersion = tagItem.Version
+				tagItem.InheritMime = tag.ChildMime
 			default:
 
 			}

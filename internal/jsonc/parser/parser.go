@@ -945,18 +945,7 @@ func (p *Parser) parseObject(openLine int) (*ast.Object, error) {
 		}
 		childTag := val.GetTag()
 		if childTag != nil && tag != nil {
-			childTag.ParentDesc = tag.ChildDesc
-			childTag.ParentType = tag.ChildType
-			childTag.ParentRaw = tag.ChildRaw
-			childTag.ParentNullable = tag.ChildNullable
-			childTag.ParentDefault = tag.ChildDefault
-			childTag.ParentMin = tag.ChildMin
-			childTag.ParentMax = tag.ChildMax
-			childTag.ParentSize = tag.ChildSize
-			childTag.ParentEnum = tag.ChildEnum
-			childTag.ParentPattern = tag.ChildPattern
-			childTag.ParentLocation = tag.ChildLocation
-			childTag.ParentVersion = tag.ChildVersion
+			childTag.Inherit(tag)
 		}
 		field := &ast.Field{
 			Key:   utils.CamelToSnake(key.Literal),
@@ -1053,18 +1042,7 @@ func (p *Parser) parseArray(openLine int) (*ast.Array, error) {
 		}
 		childTag := item.GetTag()
 		if childTag != nil && tag != nil {
-			childTag.ParentDesc = tag.ChildDesc
-			childTag.ParentType = tag.ChildType
-			childTag.ParentRaw = tag.ChildRaw
-			childTag.ParentNullable = tag.ChildNullable
-			childTag.ParentDefault = tag.ChildDefault
-			childTag.ParentMin = tag.ChildMin
-			childTag.ParentMax = tag.ChildMax
-			childTag.ParentSize = tag.ChildSize
-			childTag.ParentEnum = tag.ChildEnum
-			childTag.ParentPattern = tag.ChildPattern
-			childTag.ParentLocation = tag.ChildLocation
-			childTag.ParentVersion = tag.ChildVersion
+			childTag.Inherit(tag)
 		}
 		arr.Items = append(arr.Items, item)
 
