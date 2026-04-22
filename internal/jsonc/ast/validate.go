@@ -1187,7 +1187,7 @@ func (t *Tag) ValidateDecimal(val string) (data any, text string, err error) {
 }
 
 func (t *Tag) ValidateIP(val net.IP) (data any, text string, err error) {
-	if val.String() == "" {
+	if val.String() == "<nil>" {
 		if t.AllowEmpty {
 			data = val
 			text = ""

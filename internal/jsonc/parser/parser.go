@@ -372,6 +372,7 @@ func (p *Parser) parse(path string) (val ast.Node, err error) {
 				Data: data,
 				Text: text,
 				Tag:  tag,
+				Path: path,
 			}, nil
 
 		case token.Number:
@@ -782,6 +783,7 @@ func (p *Parser) parse(path string) (val ast.Node, err error) {
 				Data: data,
 				Text: text,
 				Tag:  tag,
+				Path: path,
 			}, nil
 
 		case token.True:
@@ -816,6 +818,7 @@ func (p *Parser) parse(path string) (val ast.Node, err error) {
 				Data: true,
 				Text: ast.True,
 				Tag:  tag,
+				Path: path,
 			}, nil
 
 		case token.False:
@@ -849,6 +852,7 @@ func (p *Parser) parse(path string) (val ast.Node, err error) {
 				Data: false,
 				Text: ast.False,
 				Tag:  tag,
+				Path: path,
 			}, nil
 
 		// case token.Null:
@@ -953,9 +957,12 @@ func (p *Parser) parseObject(openLine int, path string) (*ast.Object, error) {
 		keyStr := utils.CamelToSnake(key.Literal)
 
 		p.next()
-		path = fmt.Sprintf("%s.%s", path, keyStr)
-		if val, err = p.parse(path); err != nil {
-			err = fmt.Errorf("array parse err: %w", err)
+		pa := fmt.Sprintf("%s.%s", path, keyStr)
+		if ast.ValueTypeMap == tag.Type {
+			pa = fmt.Sprintf("%s[%s]", path, keyStr)
+		}
+		if val, err = p.parse(pa); err != nil {
+			err = fmt.Errorf("%s parse err: %w", pa, err)
 			return nil, err
 		}
 		if val == nil {
@@ -1062,9 +1069,9 @@ func (p *Parser) parseArray(openLine int, path string) (*ast.Array, error) {
 			continue
 		}
 
-		path = fmt.Sprintf("%s.%s", path, strconv.Itoa(i))
-		if item, err = p.parse(path); err != nil {
-			err = fmt.Errorf("array parse err: %w", err)
+		pa := fmt.Sprintf("%s[%d]", path, i)
+		if item, err = p.parse(pa); err != nil {
+			err = fmt.Errorf("%s parse err: %w", pa, err)
 			return nil, err
 		}
 		if item == nil {

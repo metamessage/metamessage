@@ -7,7 +7,6 @@ import (
 	"net"
 	"net/url"
 	"reflect"
-	"strconv"
 	"time"
 
 	"github.com/metamessage/metamessage/internal/jsonc/ast"
@@ -923,72 +922,99 @@ func toJSONC(v any, tag *ast.Tag, depth int, path string) (node ast.Node, err er
 }
 
 // Create sample values according to the element Type (special for empty slices)
-func createExampleValue(elemType reflect.Type, valueType ast.ValueType) (any, error) {
+func createExampleValue(elemType reflect.Type) (any, error) {
 	if elemType.Kind() == reflect.Pointer {
-		baseType := elemType.Elem()
-		baseVal := reflect.New(baseType).Elem()
-		ptr := reflect.New(baseType)
-		ptr.Elem().Set(baseVal)
+		base := elemType.Elem()
+		baseVal, err := createExampleValue(base)
+		if err != nil {
+			return nil, err
+		}
+		ptr := reflect.New(base)
+		ptr.Elem().Set(reflect.ValueOf(baseVal))
 		return ptr.Interface(), nil
 	}
 
 	switch elemType.Kind() {
-	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
+	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64,
+		reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64,
+		reflect.Float32, reflect.Float64:
 		return reflect.Zero(elemType).Interface(), nil
-	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
-		return reflect.Zero(elemType).Interface(), nil
-	case reflect.Float32, reflect.Float64:
-		return reflect.Zero(elemType).Interface(), nil
+
 	case reflect.String:
-		switch valueType {
-		default:
-			return "", nil
-		}
+		return "", nil
 
 	case reflect.Bool:
 		return false, nil
+
 	case reflect.Slice:
 		// Recursively create sample values for other slices (e.g., []int → []int{0})
 		sliceVal := reflect.MakeSlice(elemType, 1, 1)
-		elemExample, err := createExampleValue(elemType.Elem(), ast.ValueTypeUnknown)
+		elemExample, err := createExampleValue(elemType.Elem())
 		if err != nil {
 			return nil, err
 		}
 		sliceVal.Index(0).Set(reflect.ValueOf(elemExample))
 		return sliceVal.Interface(), nil
+
 	case reflect.Array:
 		arrayVal := reflect.New(elemType).Elem()
 		if elemType.Len() > 0 {
-			elemExample, err := createExampleValue(elemType.Elem(), ast.ValueTypeUnknown)
+			elemExample, err := createExampleValue(elemType.Elem())
 			if err != nil {
 				return nil, err
 			}
 			arrayVal.Index(0).Set(reflect.ValueOf(elemExample))
 		}
 		return arrayVal.Interface(), nil
+
 	case reflect.Struct:
-		// switch elemType.Type() {
-		// 			// case reflect.TypeFor[big.Int]():
-		// // 	tag.Type = ast.ValueTypeBigInt
-		// // 	if !isNil {
-		// // 		data = val.Interface()
-		// // 		text = val.String()
-		// // 	}
-		// default:
-		// }
-		return reflect.New(elemType).Elem().Interface(), nil
+		switch elemType {
+		case reflect.TypeFor[time.Time]():
+			return utils.DefaultTime, nil
+
+		case reflect.TypeFor[big.Int]():
+			return big.NewInt(0), nil
+
+		case reflect.TypeFor[net.IP]():
+			return net.IP{}, nil
+
+		case reflect.TypeFor[url.URL]():
+			return url.URL{}, nil
+
+		default:
+			structVal := reflect.New(elemType).Elem()
+			for i := 0; i < elemType.NumField(); i++ {
+				field := elemType.Field(i)
+				if !field.IsExported() {
+					continue
+				}
+
+				fieldVal, err := createExampleValue(field.Type)
+				if err != nil {
+					return nil, fmt.Errorf("struct %s field %s: %w", elemType.Name(), field.Name, err)
+				}
+
+				val := reflect.ValueOf(fieldVal)
+				if structVal.Field(i).CanSet() && val.IsValid() {
+					structVal.Field(i).Set(val)
+				}
+			}
+			return structVal.Interface(), nil
+		}
+
 	case reflect.Map:
 		mapVal := reflect.MakeMap(elemType)
-		keyExample, err := createExampleValue(elemType.Key(), ast.ValueTypeUnknown)
+		keyExample, err := createExampleValue(elemType.Key())
 		if err != nil {
 			return nil, fmt.Errorf("create map key example: %w", err)
 		}
-		valExample, err := createExampleValue(elemType.Elem(), ast.ValueTypeUnknown)
+		valExample, err := createExampleValue(elemType.Elem())
 		if err != nil {
 			return nil, fmt.Errorf("create map val example: %w", err)
 		}
 		mapVal.SetMapIndex(reflect.ValueOf(keyExample), reflect.ValueOf(valExample))
 		return mapVal.Interface(), nil
+
 	default:
 		return nil, fmt.Errorf("createExampleValue unsupported example type: %s", elemType.Kind())
 	}
@@ -1011,14 +1037,12 @@ func anyToJSONC(obj any, tag *ast.Tag, depth int, path string) (ast.Node, error)
 		tag = ast.NewTag()
 	}
 
-	isNil := false
-	nullable := false
 	if val.Kind() == reflect.Pointer {
-		nullable = true
+		tag.Nullable = true
 		if val.IsNil() {
-			isNil = true
-			typ := typ.Elem()
-			elemVal, err := createExampleValue(typ, tag.Type)
+			tag.IsNull = true
+			typ = typ.Elem()
+			elemVal, err := createExampleValue(typ)
 			if err != nil {
 				return nil, fmt.Errorf("create element %s: %w", typ, err)
 			}
@@ -1036,28 +1060,44 @@ func anyToJSONC(obj any, tag *ast.Tag, depth int, path string) (ast.Node, error)
 	}
 
 	var err error
+
+	if tag.String() == "" {
+		mmMethod, hasMM := typ.MethodByName("MM")
+		if hasMM && mmMethod.Type.NumIn() == 1 && mmMethod.Type.NumOut() == 1 {
+			ret := mmMethod.Func.Call([]reflect.Value{val})
+			if len(ret) > 0 {
+				mmTag := ret[0].String()
+				if mmTag != "" {
+					var tagNode *ast.Tag
+					if tagNode, err = ast.ParseMMTag(mmTag); err != nil {
+						return nil, fmt.Errorf("parse mm tag for struct %s: %w", tag.Name, err)
+					} else {
+						tag = ast.MergeTag(tag, tagNode)
+						fmt.Println("mmTag", tag)
+					}
+				}
+			}
+		}
+	}
+
+	tag.Type = ast.ValueTypeStruct
+	tag.Name = utils.CamelToSnake(typ.Name())
+	if tag.Name != "" {
+		if path == "" {
+			path = tag.Name
+		} else {
+			path = fmt.Sprintf("%s.%s", path, tag.Name)
+		}
+	}
+
 	switch val.Kind() {
 	case reflect.Struct:
 		switch val.Type() {
 		default:
-			tagNode := ast.NewTag()
-			tagNode.Name = utils.CamelToSnake(typ.Name())
-			tagNode.Type = ast.ValueTypeStruct
-			tagNode.Nullable = nullable
-			tagNode.Example = tag.Example
-			tagNode.ChildExample = tag.ChildExample
-			tagNode.InheritExample = tag.InheritExample
-
-			if tagNode.Name != "" {
-				if path == "" {
-					path = tagNode.Name
-				} else {
-					path = fmt.Sprintf("%s.%s", path, tagNode.Name)
-				}
-			}
+			tag.Type = ast.ValueTypeStruct
 
 			objNode := &ast.Object{
-				Tag:  tagNode,
+				Tag:  tag,
 				Path: path,
 			}
 
@@ -1074,7 +1114,7 @@ func anyToJSONC(obj any, tag *ast.Tag, depth int, path string) (ast.Node, error)
 				var tagField *ast.Tag
 				if mmTagStr != "" {
 					if tagField, err = ast.ParseMMTag(mmTagStr); err != nil {
-						return nil, fmt.Errorf("parse mm tag for field %s: %w", field.Name, err)
+						return nil, fmt.Errorf("parse mm tag for field %s: %w", fieldKey, err)
 					} else {
 						if tagField != nil {
 							if tagField.Name != "" {
@@ -1112,7 +1152,7 @@ func anyToJSONC(obj any, tag *ast.Tag, depth int, path string) (ast.Node, error)
 				})
 			}
 
-			err = tagNode.ValidateStruct()
+			err = tag.ValidateStruct()
 			if err != nil {
 				err = fmt.Errorf("validate failed: %w", err)
 				return nil, err
@@ -1122,19 +1162,10 @@ func anyToJSONC(obj any, tag *ast.Tag, depth int, path string) (ast.Node, error)
 		}
 
 	case reflect.Map:
-		tagNode := ast.NewTag()
-		tagNode.Name = utils.CamelToSnake(typ.Name())
-		tagNode.Type = ast.ValueTypeSlice
-		tagNode.Nullable = nullable
-		tagNode.Example = tag.Example
-		tagNode.ChildExample = tag.ChildExample
-		tagNode.InheritExample = tag.InheritExample
+		tag.Type = ast.ValueTypeMap
 
-		if tagNode.Name != "" {
-			path = fmt.Sprintf("%s.%s", path, tagNode.Name)
-		}
 		node := &ast.Object{
-			Tag:  tagNode,
+			Tag:  tag,
 			Path: path,
 		}
 
@@ -1148,69 +1179,41 @@ func anyToJSONC(obj any, tag *ast.Tag, depth int, path string) (ast.Node, error)
 			keyStr = utils.CamelToSnake(keyStr)
 
 			tagItem := ast.NewTag()
-			tagItem.Desc = tag.Desc
-			tagItem.Type = tag.Type
-			tagItem.Raw = tag.Raw
-			// tagItem.Nullable = tag.Nullable
-			tagItem.Default = tag.Default
-			tagItem.Min = tag.Min
-			tagItem.Max = tag.Max
-			tagItem.Size = tag.Size
-			tagItem.Enum = tag.Enum
-			tagItem.Pattern = tag.Pattern
-			tagItem.Location = tag.Location
-			tagItem.Version = tag.Version
+			tagItem.Inherit(tag)
+
 			tagItem.Name = keyStr
+
 			if tag.ChildExample {
 				tagItem.InheritExample = true
 				tagItem.ChildExample = true
 				tagItem.Example = true
 			}
-			tagItem.Type = tag.ChildType
-			path = fmt.Sprintf("%s.%s", path, keyStr)
-			valNode, err := toJSONC(val.MapIndex(key).Interface(), tagItem, depth, path)
+
+			p := fmt.Sprintf("%s[%s]", path, keyStr)
+			valNode, err := toJSONC(val.MapIndex(key).Interface(), tagItem, depth, p)
 			if err != nil {
-				return nil, fmt.Errorf("%s: %w", path, err)
+				return nil, fmt.Errorf("%s: %w", p, err)
 			}
 
 			tagItem = valNode.GetTag()
 
-			switch valNode.GetType() {
-			case ast.NodeTypeArray:
-
-			case ast.NodeTypeObject:
-
-			case ast.NodeTypeValue:
-				if !setTag {
-					node.Tag.ChildDesc = tagItem.Desc
-					node.Tag.ChildType = tagItem.Type
-					node.Tag.ChildRaw = tagItem.Raw
-					node.Tag.ChildNullable = tagItem.Nullable
-					node.Tag.ChildDefault = tagItem.Default
-					node.Tag.ChildMin = tagItem.Min
-					node.Tag.ChildMax = tagItem.Max
-					node.Tag.ChildSize = tagItem.Size
-					node.Tag.ChildEnum = tagItem.Enum
-					node.Tag.ChildPattern = tagItem.Pattern
-					node.Tag.ChildLocation = tagItem.Location
-					node.Tag.ChildVersion = tagItem.Version
-					setTag = true
-				}
-
-				tagItem.InheritDesc = tagItem.Desc
-				tagItem.InheritType = tagItem.Type
-				tagItem.InheritRaw = tagItem.Raw
-				tagItem.InheritNullable = tagItem.Nullable
-				tagItem.InheritDefault = tagItem.Default
-				tagItem.InheritMin = tagItem.Min
-				tagItem.InheritMax = tagItem.Max
-				tagItem.InheritSize = tagItem.Size
-				tagItem.InheritEnum = tagItem.Enum
-				tagItem.InheritPattern = tagItem.Pattern
-				tagItem.InheritLocation = tagItem.Location
-				tagItem.InheritVersion = tagItem.Version
-			default:
-
+			if !setTag {
+				node.Tag.ChildDesc = tagItem.Desc
+				node.Tag.ChildType = tagItem.Type
+				node.Tag.ChildRaw = tagItem.Raw
+				node.Tag.ChildNullable = tagItem.Nullable
+				node.Tag.ChildAllowEmpty = tagItem.AllowEmpty
+				node.Tag.ChildUnique = tagItem.Unique
+				node.Tag.ChildDefault = tagItem.Default
+				node.Tag.ChildMin = tagItem.Min
+				node.Tag.ChildMax = tagItem.Max
+				node.Tag.ChildSize = tagItem.Size
+				node.Tag.ChildEnum = tagItem.Enum
+				node.Tag.ChildPattern = tagItem.Pattern
+				node.Tag.ChildLocation = tagItem.Location
+				node.Tag.ChildVersion = tagItem.Version
+				node.Tag.ChildMime = tagItem.Mime
+				setTag = true
 			}
 
 			node.Fields = append(node.Fields, &ast.Field{
@@ -1227,33 +1230,25 @@ func anyToJSONC(obj any, tag *ast.Tag, depth int, path string) (ast.Node, error)
 
 			var exampleVal any
 			elemType := typ.Elem()
-			exampleVal, err = createExampleValue(elemType, tag.ChildType)
+			exampleVal, err = createExampleValue(elemType)
 			if err != nil {
 				return nil, fmt.Errorf("create example value for empty slice: %w", err)
 			}
 
-			keyStr := "_example"
+			keyStr := ""
+
 			tagItem := ast.NewTag()
-			tagItem.Desc = tag.Desc
-			tagItem.Type = tag.Type
-			tagItem.Raw = tag.Raw
-			// tagItem.Nullable = tag.Nullable
-			tagItem.Default = tag.Default
-			tagItem.Min = tag.Min
-			tagItem.Max = tag.Max
-			tagItem.Size = tag.Size
-			tagItem.Enum = tag.Enum
-			tagItem.Pattern = tag.Pattern
-			tagItem.Location = tag.Location
-			tagItem.Version = tag.Version
+			tagItem.Inherit(tag)
+
 			tagItem.Name = keyStr
+
 			tagItem.Example = true
 			tagItem.ChildExample = true
 			if tag.ChildExample {
 				tagItem.InheritExample = true
 			}
-			tagItem.Type = tag.ChildType
-			p := fmt.Sprintf("%s.%s", path, keyStr)
+
+			p := fmt.Sprintf("%s[%s]", path, keyStr)
 			valNode, err := toJSONC(exampleVal, tagItem, depth, p)
 			if err != nil {
 				return nil, fmt.Errorf("%s: %w", p, err)
@@ -1261,16 +1256,13 @@ func anyToJSONC(obj any, tag *ast.Tag, depth int, path string) (ast.Node, error)
 
 			tagItem = valNode.GetTag()
 
-			switch valNode.GetType() {
-			case ast.NodeTypeArray:
-
-			case ast.NodeTypeObject:
-
-			case ast.NodeTypeValue:
+			if !setTag {
 				node.Tag.ChildDesc = tagItem.Desc
 				node.Tag.ChildType = tagItem.Type
 				node.Tag.ChildRaw = tagItem.Raw
 				node.Tag.ChildNullable = tagItem.Nullable
+				node.Tag.ChildAllowEmpty = tagItem.AllowEmpty
+				node.Tag.ChildUnique = tagItem.Unique
 				node.Tag.ChildDefault = tagItem.Default
 				node.Tag.ChildMin = tagItem.Min
 				node.Tag.ChildMax = tagItem.Max
@@ -1279,21 +1271,8 @@ func anyToJSONC(obj any, tag *ast.Tag, depth int, path string) (ast.Node, error)
 				node.Tag.ChildPattern = tagItem.Pattern
 				node.Tag.ChildLocation = tagItem.Location
 				node.Tag.ChildVersion = tagItem.Version
-
-				tagItem.InheritDesc = tagItem.Desc
-				tagItem.InheritType = tagItem.Type
-				tagItem.InheritRaw = tagItem.Raw
-				tagItem.InheritNullable = tagItem.Nullable
-				tagItem.InheritDefault = tagItem.Default
-				tagItem.InheritMin = tagItem.Min
-				tagItem.InheritMax = tagItem.Max
-				tagItem.InheritSize = tagItem.Size
-				tagItem.InheritEnum = tagItem.Enum
-				tagItem.InheritPattern = tagItem.Pattern
-				tagItem.InheritLocation = tagItem.Location
-				tagItem.InheritVersion = tagItem.Version
-			default:
-
+				node.Tag.ChildMime = tagItem.Mime
+				setTag = true
 			}
 
 			node.Fields = append(node.Fields, &ast.Field{
@@ -1302,7 +1281,7 @@ func anyToJSONC(obj any, tag *ast.Tag, depth int, path string) (ast.Node, error)
 			})
 		}
 
-		err = tagNode.ValidateMap()
+		err = tag.ValidateMap()
 		if err != nil {
 			err = fmt.Errorf("validate failed: %w", err)
 			return nil, err
@@ -1310,146 +1289,39 @@ func anyToJSONC(obj any, tag *ast.Tag, depth int, path string) (ast.Node, error)
 		return node, nil
 
 	case reflect.Slice:
-		tagNode := ast.NewTag()
-		tagNode.Name = utils.CamelToSnake(typ.Name())
-		tagNode.Type = ast.ValueTypeSlice
-		tagNode.Nullable = nullable
-		tagNode.Example = tag.Example
-		tagNode.ChildExample = tag.ChildExample
-		tagNode.InheritExample = tag.InheritExample
-
-		tagNode.IsNull = isNil
-
-		if tagNode.Name != "" {
-			path = fmt.Sprintf("%s.%s", path, tagNode.Name)
-		}
+		tag.Type = ast.ValueTypeSlice
 
 		node := &ast.Array{
-			Tag:  tagNode,
+			Tag:  tag,
 			Path: path,
 		}
 
 		setTag := false
 		for i := 0; i < val.Len(); i++ {
 			tagItem := ast.NewTag()
-			tagItem.Desc = tag.Desc
-			tagItem.Type = tag.Type
-			tagItem.Raw = tag.Raw
-			// tagItem.Nullable = tag.Nullable
-			tagItem.Default = tag.Default
-			tagItem.Min = tag.Min
-			tagItem.Max = tag.Max
-			tagItem.Size = tag.Size
-			tagItem.Enum = tag.Enum
-			tagItem.Pattern = tag.Pattern
-			tagItem.Location = tag.Location
-			tagItem.Version = tag.Version
+			tagItem.Inherit(tag)
 
 			if tag.ChildExample {
 				tagItem.InheritExample = true
 				tagItem.ChildExample = true
 				tagItem.Example = true
 			}
-			path = fmt.Sprintf("%s.%s", path, strconv.Itoa(i))
-			itemNode, err := toJSONC(val.Index(i).Interface(), tagItem, depth, path)
-			if err != nil {
-				return nil, fmt.Errorf("%s: %w", path, err)
-			}
 
-			tagItem = itemNode.GetTag()
-
-			switch itemNode.GetType() {
-			case ast.NodeTypeArray:
-
-			case ast.NodeTypeObject:
-
-			case ast.NodeTypeValue:
-				if !setTag {
-					node.Tag.ChildDesc = tagItem.Desc
-					node.Tag.ChildType = tagItem.Type
-					node.Tag.ChildRaw = tagItem.Raw
-					node.Tag.ChildNullable = tagItem.Nullable
-					node.Tag.ChildDefault = tagItem.Default
-					node.Tag.ChildMin = tagItem.Min
-					node.Tag.ChildMax = tagItem.Max
-					node.Tag.ChildSize = tagItem.Size
-					node.Tag.ChildEnum = tagItem.Enum
-					node.Tag.ChildPattern = tagItem.Pattern
-					node.Tag.ChildLocation = tagItem.Location
-					node.Tag.ChildVersion = tagItem.Version
-					setTag = true
-				}
-
-				tagItem.InheritDesc = tagItem.Desc
-				tagItem.InheritType = tagItem.Type
-				tagItem.InheritRaw = tagItem.Raw
-				tagItem.InheritNullable = tagItem.Nullable
-				tagItem.InheritAllowEmpty = tag.ChildAllowEmpty
-				tagItem.InheritUnique = tag.ChildUnique
-				tagItem.InheritDefault = tagItem.Default
-				tagItem.InheritMin = tagItem.Min
-				tagItem.InheritMax = tagItem.Max
-				tagItem.InheritSize = tagItem.Size
-				tagItem.InheritEnum = tagItem.Enum
-				tagItem.InheritPattern = tagItem.Pattern
-				tagItem.InheritLocation = tagItem.Location
-				tagItem.InheritVersion = tagItem.Version
-				tagItem.InheritMime = tag.ChildMime
-			default:
-
-			}
-
-			node.Items = append(node.Items, itemNode)
-		}
-
-		if val.Len() == 0 {
-			var exampleVal any
-			exampleVal, err = createExampleValue(typ.Elem(), tag.ChildType)
-			if err != nil {
-				return nil, fmt.Errorf("create example value for empty slice: %w", err)
-			}
-
-			tagItem := ast.NewTag()
-			tagItem.Desc = tag.Desc
-			tagItem.Type = tag.Type
-			tagItem.Raw = tag.Raw
-			// tagItem.Nullable = tag.Nullable
-			tagItem.Default = tag.Default
-			tagItem.Min = tag.Min
-			tagItem.Max = tag.Max
-			tagItem.Size = tag.Size
-			tagItem.Enum = tag.Enum
-			tagItem.Pattern = tag.Pattern
-
-			tagItem.Location = tag.Location
-			tag.Location = ast.DefaultLocation
-
-			tagItem.Version = tag.Version
-
-			tagItem.Example = true
-			tagItem.ChildExample = true
-			if tag.ChildExample {
-				tagItem.InheritExample = true
-			}
-			tagItem.Type = tag.ChildType
-			p := fmt.Sprintf("%s.%s", path, strconv.Itoa(0))
-			itemNode, err := toJSONC(exampleVal, tagItem, depth, p)
+			p := fmt.Sprintf("%s[%d]", path, i)
+			itemNode, err := toJSONC(val.Index(i).Interface(), tagItem, depth, p)
 			if err != nil {
 				return nil, fmt.Errorf("%s: %w", p, err)
 			}
 
 			tagItem = itemNode.GetTag()
 
-			switch itemNode.GetType() {
-			case ast.NodeTypeArray:
-
-			case ast.NodeTypeObject:
-
-			case ast.NodeTypeValue:
+			if !setTag {
 				node.Tag.ChildDesc = tagItem.Desc
 				node.Tag.ChildType = tagItem.Type
 				node.Tag.ChildRaw = tagItem.Raw
 				node.Tag.ChildNullable = tagItem.Nullable
+				node.Tag.ChildAllowEmpty = tagItem.AllowEmpty
+				node.Tag.ChildUnique = tagItem.Unique
 				node.Tag.ChildDefault = tagItem.Default
 				node.Tag.ChildMin = tagItem.Min
 				node.Tag.ChildMax = tagItem.Max
@@ -1458,30 +1330,60 @@ func anyToJSONC(obj any, tag *ast.Tag, depth int, path string) (ast.Node, error)
 				node.Tag.ChildPattern = tagItem.Pattern
 				node.Tag.ChildLocation = tagItem.Location
 				node.Tag.ChildVersion = tagItem.Version
-
-				tagItem.InheritDesc = tagItem.Desc
-				tagItem.InheritType = tagItem.Type
-				tagItem.InheritRaw = tagItem.Raw
-				tagItem.InheritNullable = tagItem.Nullable
-				tagItem.InheritAllowEmpty = tag.ChildAllowEmpty
-				tagItem.InheritUnique = tag.ChildUnique
-				tagItem.InheritDefault = tagItem.Default
-				tagItem.InheritMin = tagItem.Min
-				tagItem.InheritMax = tagItem.Max
-				tagItem.InheritSize = tagItem.Size
-				tagItem.InheritEnum = tagItem.Enum
-				tagItem.InheritPattern = tagItem.Pattern
-				tagItem.InheritLocation = tagItem.Location
-				tagItem.InheritVersion = tagItem.Version
-				tagItem.InheritMime = tag.ChildMime
-			default:
-
+				node.Tag.ChildMime = tagItem.Mime
+				setTag = true
 			}
 
 			node.Items = append(node.Items, itemNode)
 		}
 
-		err = tagNode.ValidateSlice(node.Items)
+		if val.Len() == 0 {
+			var exampleVal any
+			exampleVal, err = createExampleValue(typ.Elem())
+			if err != nil {
+				return nil, fmt.Errorf("create example value for empty slice: %w", err)
+			}
+
+			tagItem := ast.NewTag()
+			tagItem.Inherit(tag)
+
+			tagItem.Example = true
+			tagItem.ChildExample = true
+			if tag.ChildExample {
+				tagItem.InheritExample = true
+			}
+
+			p := fmt.Sprintf("%s[%d]", path, 0)
+			itemNode, err := toJSONC(exampleVal, tagItem, depth, p)
+			if err != nil {
+				return nil, fmt.Errorf("%s: %w", p, err)
+			}
+
+			tagItem = itemNode.GetTag()
+
+			if !setTag {
+				node.Tag.ChildDesc = tagItem.Desc
+				node.Tag.ChildType = tagItem.Type
+				node.Tag.ChildRaw = tagItem.Raw
+				node.Tag.ChildNullable = tagItem.Nullable
+				node.Tag.ChildAllowEmpty = tagItem.AllowEmpty
+				node.Tag.ChildUnique = tagItem.Unique
+				node.Tag.ChildDefault = tagItem.Default
+				node.Tag.ChildMin = tagItem.Min
+				node.Tag.ChildMax = tagItem.Max
+				node.Tag.ChildSize = tagItem.Size
+				node.Tag.ChildEnum = tagItem.Enum
+				node.Tag.ChildPattern = tagItem.Pattern
+				node.Tag.ChildLocation = tagItem.Location
+				node.Tag.ChildVersion = tagItem.Version
+				node.Tag.ChildMime = tagItem.Mime
+				setTag = true
+			}
+
+			node.Items = append(node.Items, itemNode)
+		}
+
+		err = tag.ValidateSlice(node.Items)
 		if err != nil {
 			err = fmt.Errorf("validate failed: %w", err)
 			return nil, err
@@ -1490,53 +1392,26 @@ func anyToJSONC(obj any, tag *ast.Tag, depth int, path string) (ast.Node, error)
 		return node, nil
 
 	case reflect.Array:
-		// switch tag.Type {
-		// case ast.ValueTypeUnknown:
-		// 	tag.Type = ast.ValueTypeArray
-		// case ast.ValueTypeArray:
-		// default:
-		// 	return nil, fmt.Errorf("%s unsupported type: %s", tag.Type.String(), typ)
-		// }
+		tag.Type = ast.ValueTypeArray
 
-		tagNode := ast.NewTag()
-		tagNode.Name = utils.CamelToSnake(typ.Name())
-		tagNode.Type = ast.ValueTypeArray
-		tagNode.Nullable = nullable
-		tagNode.Example = tag.Example
-		tagNode.ChildExample = tag.ChildExample
-		tagNode.InheritExample = tag.InheritExample
-
-		tagNode.Size = val.Len()
-		if tagNode.Name != "" {
-			path = fmt.Sprintf("%s.%s", path, tagNode.Name)
-		}
+		tag.Size = val.Len()
 		node := &ast.Array{
-			Tag:  tagNode,
+			Tag:  tag,
 			Path: path,
 		}
+
 		setTag := false
-		for i := 0; i < tagNode.Size; i++ {
+		for i := 0; i < tag.Size; i++ {
 			tagItem := ast.NewTag()
-			tagItem.Desc = tag.Desc
-			tagItem.Type = tag.Type
-			tagItem.Raw = tag.Raw
-			// tagItem.Nullable = tag.Nullable
-			tagItem.Default = tag.Default
-			tagItem.Min = tag.Min
-			tagItem.Max = tag.Max
-			tagItem.Size = tag.Size
-			tagItem.Enum = tag.Enum
-			tagItem.Pattern = tag.Pattern
-			tagItem.Location = tag.Location
-			tagItem.Version = tag.Version
+			tagItem.Inherit(tag)
 
 			if tag.ChildExample {
 				tagItem.InheritExample = true
 				tagItem.ChildExample = true
 				tagItem.Example = true
 			}
-			tagItem.Type = tag.ChildType
-			p := fmt.Sprintf("%s.%s", path, strconv.Itoa(i))
+
+			p := fmt.Sprintf("%s[%d]", path, i)
 			itemNode, err := toJSONC(val.Index(i).Interface(), tagItem, depth, p)
 			if err != nil {
 				return nil, fmt.Errorf("%s: %w", p, err)
@@ -1544,95 +1419,13 @@ func anyToJSONC(obj any, tag *ast.Tag, depth int, path string) (ast.Node, error)
 
 			tagItem = itemNode.GetTag()
 
-			switch itemNode.GetType() {
-			case ast.NodeTypeArray:
-
-			case ast.NodeTypeObject:
-
-			case ast.NodeTypeValue:
-				if !setTag {
-					node.Tag.ChildDesc = tagItem.Desc
-					node.Tag.ChildType = tagItem.Type
-					node.Tag.ChildRaw = tagItem.Raw
-					node.Tag.ChildNullable = tagItem.Nullable
-					node.Tag.ChildDefault = tagItem.Default
-					node.Tag.ChildMin = tagItem.Min
-					node.Tag.ChildMax = tagItem.Max
-					node.Tag.ChildSize = tagItem.Size
-					node.Tag.ChildEnum = tagItem.Enum
-					node.Tag.ChildPattern = tagItem.Pattern
-					node.Tag.ChildLocation = tagItem.Location
-					node.Tag.ChildVersion = tagItem.Version
-					setTag = true
-				}
-
-				tagItem.InheritDesc = tagItem.Desc
-				tagItem.InheritType = tagItem.Type
-				tagItem.InheritRaw = tagItem.Raw
-				tagItem.InheritNullable = tagItem.Nullable
-				tagItem.InheritAllowEmpty = tag.ChildAllowEmpty
-				tagItem.InheritUnique = tag.ChildUnique
-				tagItem.InheritDefault = tagItem.Default
-				tagItem.InheritMin = tagItem.Min
-				tagItem.InheritMax = tagItem.Max
-				tagItem.InheritSize = tagItem.Size
-				tagItem.InheritEnum = tagItem.Enum
-				tagItem.InheritPattern = tagItem.Pattern
-				tagItem.InheritLocation = tagItem.Location
-				tagItem.InheritVersion = tagItem.Version
-				tagItem.InheritMime = tag.ChildMime
-			default:
-
-			}
-
-			node.Items = append(node.Items, itemNode)
-		}
-
-		if tagNode.Size == 0 {
-			var exampleVal any
-			exampleVal, err = createExampleValue(typ.Elem(), tag.ChildType)
-			if err != nil {
-				return nil, fmt.Errorf("create example value for empty array: %w", err)
-			}
-
-			tagItem := ast.NewTag()
-			tagItem.Desc = tag.Desc
-			tagItem.Type = tag.Type
-			tagItem.Raw = tag.Raw
-			// tagItem.Nullable = tag.Nullable
-			tagItem.Default = tag.Default
-			tagItem.Min = tag.Min
-			tagItem.Max = tag.Max
-			tagItem.Size = tag.Size
-			tagItem.Enum = tag.Enum
-			tagItem.Pattern = tag.Pattern
-			tagItem.Location = tag.Location
-			tagItem.Version = tag.Version
-
-			tagItem.Example = true
-			tagItem.ChildExample = true
-			if tag.ChildExample {
-				tagItem.InheritExample = true
-			}
-			tagItem.Type = tag.ChildType
-			p := fmt.Sprintf("%s.%s", path, strconv.Itoa(0))
-			itemNode, err := toJSONC(exampleVal, tagItem, depth, p)
-			if err != nil {
-				return nil, fmt.Errorf("%s: %w", p, err)
-			}
-
-			tagItem = itemNode.GetTag()
-
-			switch itemNode.GetType() {
-			case ast.NodeTypeArray:
-
-			case ast.NodeTypeObject:
-
-			case ast.NodeTypeValue:
+			if !setTag {
 				node.Tag.ChildDesc = tagItem.Desc
 				node.Tag.ChildType = tagItem.Type
 				node.Tag.ChildRaw = tagItem.Raw
 				node.Tag.ChildNullable = tagItem.Nullable
+				node.Tag.ChildAllowEmpty = tagItem.AllowEmpty
+				node.Tag.ChildUnique = tagItem.Unique
 				node.Tag.ChildDefault = tagItem.Default
 				node.Tag.ChildMin = tagItem.Min
 				node.Tag.ChildMax = tagItem.Max
@@ -1641,30 +1434,60 @@ func anyToJSONC(obj any, tag *ast.Tag, depth int, path string) (ast.Node, error)
 				node.Tag.ChildPattern = tagItem.Pattern
 				node.Tag.ChildLocation = tagItem.Location
 				node.Tag.ChildVersion = tagItem.Version
-
-				tagItem.InheritDesc = tagItem.Desc
-				tagItem.InheritType = tagItem.Type
-				tagItem.InheritRaw = tagItem.Raw
-				tagItem.InheritNullable = tagItem.Nullable
-				tagItem.InheritAllowEmpty = tag.ChildAllowEmpty
-				tagItem.InheritUnique = tag.ChildUnique
-				tagItem.InheritDefault = tagItem.Default
-				tagItem.InheritMin = tagItem.Min
-				tagItem.InheritMax = tagItem.Max
-				tagItem.InheritSize = tagItem.Size
-				tagItem.InheritEnum = tagItem.Enum
-				tagItem.InheritPattern = tagItem.Pattern
-				tagItem.InheritLocation = tagItem.Location
-				tagItem.InheritVersion = tagItem.Version
-				tagItem.InheritMime = tag.ChildMime
-			default:
-
+				node.Tag.ChildMime = tagItem.Mime
+				setTag = true
 			}
 
 			node.Items = append(node.Items, itemNode)
 		}
 
-		err = tagNode.ValidateArray(node.Items)
+		if tag.Size == 0 {
+			var exampleVal any
+			exampleVal, err = createExampleValue(typ.Elem())
+			if err != nil {
+				return nil, fmt.Errorf("create example value for empty array: %w", err)
+			}
+
+			tagItem := ast.NewTag()
+			tagItem.Inherit(tag)
+
+			tagItem.Example = true
+			tagItem.ChildExample = true
+			if tag.ChildExample {
+				tagItem.InheritExample = true
+			}
+
+			p := fmt.Sprintf("%s[%d]", path, 0)
+			itemNode, err := toJSONC(exampleVal, tagItem, depth, p)
+			if err != nil {
+				return nil, fmt.Errorf("%s: %w", p, err)
+			}
+
+			tagItem = itemNode.GetTag()
+
+			if !setTag {
+				node.Tag.ChildDesc = tagItem.Desc
+				node.Tag.ChildType = tagItem.Type
+				node.Tag.ChildRaw = tagItem.Raw
+				node.Tag.ChildNullable = tagItem.Nullable
+				node.Tag.ChildAllowEmpty = tagItem.AllowEmpty
+				node.Tag.ChildUnique = tagItem.Unique
+				node.Tag.ChildDefault = tagItem.Default
+				node.Tag.ChildMin = tagItem.Min
+				node.Tag.ChildMax = tagItem.Max
+				node.Tag.ChildSize = tagItem.Size
+				node.Tag.ChildEnum = tagItem.Enum
+				node.Tag.ChildPattern = tagItem.Pattern
+				node.Tag.ChildLocation = tagItem.Location
+				node.Tag.ChildVersion = tagItem.Version
+				node.Tag.ChildMime = tagItem.Mime
+				setTag = true
+			}
+
+			node.Items = append(node.Items, itemNode)
+		}
+
+		err = tag.ValidateArray(node.Items)
 		if err != nil {
 			err = fmt.Errorf("validate failed: %w", err)
 			return nil, err
