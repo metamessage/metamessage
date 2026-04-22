@@ -9,6 +9,9 @@ import (
 // go test -v -run TestStructToJsonc
 //
 // go test internal/jsonc/*.go -v -run TestStructToJsonc/empty_slice_int
+
+// go test internal/jsonc/*.go -v -run TestStructToJsoncA
+
 func TestStructToJsonc(t *testing.T) {
 	type Address struct {
 		Province string `mm:"required; max_len=20; desc=省份"`
@@ -17,12 +20,12 @@ func TestStructToJsonc(t *testing.T) {
 	}
 
 	type User struct {
-		ID       int64    `mm:"name=id,min=1,desc=用户ID"`      // 数值最小值+描述
-		Name     string   `mm:"required,max_len=20,desc=用户名"` // 必填+字符串长度+描述
-		Age      int      `mm:"min=18,max=120,desc=年龄"`       // 数值范围+描述
-		IsActive bool     `mm:"default=true,desc=是否激活"`       // 默认值+描述
-		Tags     []string `mm:"max_items=10,desc=标签列表"`       // 切片元素限制+描述
-		Addr     Address  `mm:"required,desc=地址信息"`           // 必填+描述（嵌套结构体）
+		ID       int64    `mm:"name=id,min=1,desc=用户ID"`
+		Name     string   `mm:"required,max_len=20,desc=用户名"`
+		Age      int      `mm:"min=18,max=120,desc=年龄"`
+		IsActive bool     `mm:"default=true,desc=是否激活"`
+		Tags     []string `mm:"max_items=10,desc=标签列表"`
+		Addr     Address  `mm:"required,desc=地址信息"`
 	}
 
 	type C struct {
@@ -40,11 +43,11 @@ func TestStructToJsonc(t *testing.T) {
 	}
 
 	type Some struct {
-		ID       int64    `mm:"name=id; min=1,desc=用户ID"`                // 数值最小值+描述
-		Name     string   `mm:"name=name; required,max_len=20,desc=用户名"` // 必填+字符串长度+描述
-		Age      int      `mm:"name=age; min=18,max=120,desc=年龄"`        // 数值范围+描述
-		IsActive bool     `mm:"name=is_active; default=true,desc=是否激活"`  // 默认值+描述
-		Tags     []string `mm:"name=tags; max_items=10,desc=标签列表"`       // 切片元素限制+描述
+		ID       int64    `mm:"name=id; min=1,desc=用户ID"`
+		Name     string   `mm:"name=name; required,max_len=20,desc=用户名"`
+		Age      int      `mm:"name=age; min=18,max=120,desc=年龄"`
+		IsActive bool     `mm:"name=is_active; default=true,desc=是否激活"`
+		Tags     []string `mm:"name=tags; max_items=10,desc=标签列表"`
 		Addr     *A
 	}
 
@@ -255,4 +258,38 @@ func TestStructToJsonc_InvalidInput(t *testing.T) {
 	if err == nil {
 		t.Error("Expected error for recursive struct, got nil")
 	}
+}
+
+func TestStructToJsoncA(t *testing.T) {
+	type A struct {
+		Arr []int `mm:"desc=Arr desc; child_desc=Arr item desc"`
+	}
+
+	astNode, err := StructToJSONC(A{Arr: []int{1, 2, 3}}, "")
+	if err != nil {
+		t.Error("err:", err)
+	}
+	fmt.Println("node", Json(astNode))
+}
+
+type B struct {
+	ArrB map[string]*int `mm:"desc=Arr desc1; child_desc=Arr item desc; allow_empty; child_allow_empty"`
+}
+
+type A struct {
+	Arr *B `mm:"desc=Arr desc; child_desc=Arr item desc"`
+}
+
+func (*A) MM() string {
+	return `desc=desc`
+}
+
+func TestStructToJsoncB(t *testing.T) {
+
+	// astNode, err := StructToJSONC(A{Arr: B{ArrB: 5}}, "")
+	astNode, err := StructToJSONC(A{}, "")
+	if err != nil {
+		t.Error("err:", err)
+	}
+	fmt.Println("node", Json(astNode))
 }
