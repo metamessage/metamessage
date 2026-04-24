@@ -1135,11 +1135,6 @@ func anyToJSONC(obj any, tag *ast.Tag, depth int, path string) (ast.Node, error)
 					tagField.Name = fieldKey
 				}
 
-				if tag.ChildExample {
-					tagField.InheritExample = true
-					tagField.ChildExample = true
-					tagField.Example = true
-				}
 				p := fmt.Sprintf("%s.%s", path, fieldKey)
 				fieldNode, err := toJSONC(fieldVal.Interface(), tagField, depth, p)
 				if err != nil {
@@ -1182,12 +1177,6 @@ func anyToJSONC(obj any, tag *ast.Tag, depth int, path string) (ast.Node, error)
 			tagItem.Inherit(tag)
 
 			tagItem.Name = keyStr
-
-			if tag.ChildExample {
-				tagItem.InheritExample = true
-				tagItem.ChildExample = true
-				tagItem.Example = true
-			}
 
 			p := fmt.Sprintf("%s[%s]", path, keyStr)
 			valNode, err := toJSONC(val.MapIndex(key).Interface(), tagItem, depth, p)
@@ -1243,10 +1232,6 @@ func anyToJSONC(obj any, tag *ast.Tag, depth int, path string) (ast.Node, error)
 			tagItem.Name = keyStr
 
 			tagItem.Example = true
-			tagItem.ChildExample = true
-			if tag.ChildExample {
-				tagItem.InheritExample = true
-			}
 
 			p := fmt.Sprintf("%s[%s]", path, keyStr)
 			valNode, err := toJSONC(exampleVal, tagItem, depth, p)
@@ -1301,12 +1286,6 @@ func anyToJSONC(obj any, tag *ast.Tag, depth int, path string) (ast.Node, error)
 			tagItem := ast.NewTag()
 			tagItem.Inherit(tag)
 
-			if tag.ChildExample {
-				tagItem.InheritExample = true
-				tagItem.ChildExample = true
-				tagItem.Example = true
-			}
-
 			p := fmt.Sprintf("%s[%d]", path, i)
 			itemNode, err := toJSONC(val.Index(i).Interface(), tagItem, depth, p)
 			if err != nil {
@@ -1348,10 +1327,6 @@ func anyToJSONC(obj any, tag *ast.Tag, depth int, path string) (ast.Node, error)
 			tagItem.Inherit(tag)
 
 			tagItem.Example = true
-			tagItem.ChildExample = true
-			if tag.ChildExample {
-				tagItem.InheritExample = true
-			}
 
 			p := fmt.Sprintf("%s[%d]", path, 0)
 			itemNode, err := toJSONC(exampleVal, tagItem, depth, p)
@@ -1405,12 +1380,6 @@ func anyToJSONC(obj any, tag *ast.Tag, depth int, path string) (ast.Node, error)
 			tagItem := ast.NewTag()
 			tagItem.Inherit(tag)
 
-			if tag.ChildExample {
-				tagItem.InheritExample = true
-				tagItem.ChildExample = true
-				tagItem.Example = true
-			}
-
 			p := fmt.Sprintf("%s[%d]", path, i)
 			itemNode, err := toJSONC(val.Index(i).Interface(), tagItem, depth, p)
 			if err != nil {
@@ -1452,10 +1421,6 @@ func anyToJSONC(obj any, tag *ast.Tag, depth int, path string) (ast.Node, error)
 			tagItem.Inherit(tag)
 
 			tagItem.Example = true
-			tagItem.ChildExample = true
-			if tag.ChildExample {
-				tagItem.InheritExample = true
-			}
 
 			p := fmt.Sprintf("%s[%d]", path, 0)
 			itemNode, err := toJSONC(exampleVal, tagItem, depth, p)
