@@ -1,0 +1,29 @@
+{
+  "name": "mm-js",
+  "version": "1.0.0",
+  "description": "MetaMessage JavaScript implementation",
+  "type": "module",
+  "main": "src/mm/index.js",
+  "exports": {
+    ".": "./src/mm/index.js",
+    "./jsonc": "./src/jsonc/index.js"
+  },
+  "scripts": {
+    "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js",
+    "build": "echo 'No build step required for ESM'",
+    "test:watch": "node --experimental-vm-modules node_modules/jest/bin/jest.js --watch"
+  },
+  "keywords": [
+    "metamessage",
+    "serialization",
+    "jsonc"
+  ],
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "jest": "^29.7.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
