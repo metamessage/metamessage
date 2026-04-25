@@ -1,5 +1,5 @@
 import { JSONCScanner, TokenType, jsoncScanner } from './scanner.js';
-import { JSONCValue, JSONCObject, JSONCArray, JSONCDoc, JSONCTag, parseMMTag } from './ast.js';
+import { JSONCValue, JSONCObject, JSONCArray, JSONCDoc, JSONCTag, JSONCValueType, parseMMTag } from './ast.js';
 import { JSONCParser, parseJSONC } from './parser.js';
 import { JSONCPrinter, printJSONC, printJSONCCompact } from './printer.js';
 import { JSONCBinder, bindJSONC } from './binder.js';
@@ -13,6 +13,7 @@ export {
   JSONCArray,
   JSONCDoc,
   JSONCTag,
+  JSONCValueType,
   parseMMTag,
   JSONCParser,
   parseJSONC,
@@ -32,6 +33,7 @@ export default {
   JSONCArray,
   JSONCDoc,
   JSONCTag,
+  JSONCValueType,
   parseMMTag,
   JSONCParser,
   parseJSONC,

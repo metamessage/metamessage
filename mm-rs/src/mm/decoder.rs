@@ -1,8 +1,9 @@
 use crate::jsonc::ast::{Node, Object, Array, Value, Field, ValueData};
 use crate::jsonc::tag::Tag;
 use crate::jsonc::ValueType;
-use crate::mm::prefix::Prefix;
+use crate::mm::prefix::{Prefix, FLOAT_POSITIVE_NEGATIVE_MASK, FLOAT_LEN_MASK, FLOAT_LEN_1};
 use crate::mm::simple_value::SimpleValue;
+use crate::mm::constants::{CONTAINER_ARRAY, CONTAINER_LEN_1, CONTAINER_LEN_2, CONTAINER_LEN_MASK};
 
 pub struct Decoder {
     data: Vec<u8>,
@@ -34,10 +35,10 @@ impl Decoder {
 
     pub fn decode(&mut self) -> Result<Node, std::io::Error> {
         let tag = Tag::new();
-        self.decode_node(&tag)
+        self.decode_node(&tag, "")
     }
 
-    fn decode_node(&mut self, tag: &Tag) -> Result<Node, std::io::Error> {
+    fn decode_node(&mut self, tag: &Tag, _path: &str) -> Result<Node, std::io::Error> {
         let b = self.read_byte()?;
         let prefix = Prefix::from_byte(b).ok_or_else(|| {
             std::io::Error::new(std::io::ErrorKind::InvalidData, "invalid prefix")
@@ -102,7 +103,7 @@ impl Decoder {
                 tag: Some(tag),
             }))
         } else {
-            self.decode_node(&tag)
+            self.decode_node(&tag, "")
         }
     }
 
@@ -185,12 +186,38 @@ impl Decoder {
         }))
     }
 
-    fn decode_float(&mut self, _prefix: u8, _tag: &Tag) -> Result<Node, std::io::Error> {
-        let s = String::from_utf8_lossy(self.read_bytes(8)?).to_string();
-        let f = s.parse::<f64>().unwrap_or(0.0);
+    fn decode_float(&mut self, prefix: u8, _tag: &Tag) -> Result<Node, std::io::Error> {
+        let l = prefix & FLOAT_LEN_MASK;
+        let mut v: f64;
+
+        if l < FLOAT_LEN_1 {
+            v = (prefix & 0xF) as f64 / 10.0;
+        } else {
+            let exp = self.read_byte()? as i8;
+            let l1 = if l < FLOAT_LEN_1 { 0 } else { l - FLOAT_LEN_1 + 1 };
+
+            let mantissa: u64 = if l1 == 0 {
+                0
+            } else {
+                let mut m = 0u64;
+                for _ in 0..l1 {
+                    let b = self.read_byte()?;
+                    m = (m << 8) | (b as u64);
+                }
+                m
+            };
+
+            let dec = mantissa_to_decimal(mantissa, exp);
+            v = dec.parse().unwrap_or(0.0);
+        }
+
+        if (prefix & FLOAT_POSITIVE_NEGATIVE_MASK) != 0 {
+            v = -v;
+        }
+
         Ok(Node::Value(Value {
-            data: ValueData::Float(f),
-            text: ryu::Buffer::new().format_finite(f).to_string(),
+            data: ValueData::Float(v),
+            text: ryu::Buffer::new().format_finite(v).to_string(),
             tag: Some(Tag::new()),
         }))
     }
@@ -250,7 +277,7 @@ impl Decoder {
     }
 
     fn decode_container(&mut self, prefix: u8, tag: &Tag) -> Result<Node, std::io::Error> {
-        let is_array = (prefix & 0x01) != 0;
+        let is_array = (prefix & CONTAINER_ARRAY) != 0;
         if is_array {
             self.decode_array(tag)
         } else {
@@ -264,7 +291,7 @@ impl Decoder {
 
         let mut items = Vec::new();
         for _ in 0..len {
-            let item = self.decode_node(&Tag::new())?;
+            let item = self.decode_node(&Tag::new(), "")?;
             items.push(item);
         }
 
@@ -275,33 +302,79 @@ impl Decoder {
     }
 
     fn decode_object(&mut self, tag: &Tag) -> Result<Node, std::io::Error> {
+        let l1 = match tag {
+            _ if self.offset >= self.data.len() => 0,
+            _ => {
+                let b = self.data[self.offset];
+                match b & CONTAINER_LEN_MASK {
+                    0 => 0,
+                    1 => 1,
+                    2 => 2,
+                    _ => 0,
+                }
+            }
+        };
+
+        let mut l2: usize = 0;
+        match l1 {
+            0 => {
+                let b = self.read_byte()?;
+                l2 = b as usize;
+            }
+            1 => {
+                let b = self.read_byte()?;
+                l2 = b as usize;
+            }
+            2 => {
+                let l = self.read_bytes(2)?;
+                l2 = ((l[0] as usize) << 8) | (l[1] as usize);
+            }
+            _ => {}
+        }
+
+        let l_array = self.read_byte()?;
+        let keys_array = self.decode_array(&Tag::new())?;
+
+        let keys = if let Node::Array(arr) = keys_array {
+            arr.items
+        } else {
+            vec![]
+        };
+
         let mut fields = Vec::new();
+        let mut index = 0;
+        let mut current = 0;
 
-        let l = self.read_byte()?;
-        let _len = l as usize;
-
-        loop {
-            if self.offset >= self.data.len() {
-                break;
-            }
-            let b = self.data[self.offset];
-            if b == 0x00 || b == 0x01 {
-                break;
-            }
-
-            let key_node = self.decode_node(&Tag::new())?;
-            if let Node::Value(v) = key_node {
-                let key = v.text;
-                let value = self.decode_node(&Tag::new())?;
-                fields.push(Field { key, value });
+        while current < l2 && index < keys.len() {
+            let key_node = &keys[index];
+            let key = if let Node::Value(v) = key_node {
+                v.text.clone()
             } else {
                 break;
-            }
+            };
+
+            let value = self.decode_node(&Tag::new(), "")?;
+            fields.push(Field { key, value });
+            current += 1;
+            index += 1;
         }
 
         Ok(Node::Object(Object {
             fields,
             tag: Some(Tag::new()),
         }))
+    }
+}
+
+fn mantissa_to_decimal(mantissa: u64, exp: i8) -> String {
+    let num_str = mantissa.to_string();
+    let decimal_pos = num_str.len() as i32 + (exp as i32);
+
+    if decimal_pos <= 0 {
+        format!("0.{}{}", "0".repeat((-decimal_pos) as usize), num_str)
+    } else if (decimal_pos as usize) < num_str.len() {
+        format!("{}.{}", &num_str[..decimal_pos as usize], &num_str[decimal_pos as usize..])
+    } else {
+        format!("{}{}", num_str, "0".repeat((decimal_pos as usize).saturating_sub(num_str.len())))
     }
 }

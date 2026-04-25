@@ -293,6 +293,116 @@ func main() {
 - `Decode(in []byte, out any) error`: 構造体へデコード
 - `DecodeToJSONC(in []byte) (string, error)`: JSONC文字列へデコード
 
+### 他の言語の例
+
+#### Java
+
+```java
+import io.metamessage.mm.MetaMessage;
+import io.metamessage.mm.MM;
+
+@MM
+class Person {
+    public String name = "Ed";
+    public int age = 30;
+}
+
+public class Example {
+    public static void main(String[] args) throws Exception {
+        Person person = new Person();
+        byte[] wire = MetaMessage.encode(person);
+        Person decoded = MetaMessage.decode(wire, Person.class);
+    }
+}
+```
+
+#### Kotlin
+
+```kotlin
+import io.metamessage.mm.MetaMessage
+import io.metamessage.mm.MM
+
+@MM
+class Person(var name: String = "Ed", var age: Int = 30)
+
+fun main() {
+    val person = Person()
+    val wire = MetaMessage.encode(person)
+    val decoded = MetaMessage.decode(wire, Person::class.java)
+}
+```
+
+#### TypeScript
+
+```typescript
+import { encode, decode } from '@metamessage/ts';
+
+const person = { name: "Ed", age: 30 };
+const wire = encode(person);
+const decoded = decode(wire);
+```
+
+#### Python
+
+```python
+from metamessage import encode, decode
+
+person = {"name": "Ed", "age": 30}
+wire = encode(person)
+decoded = decode(wire)
+```
+
+#### JavaScript
+
+```javascript
+const { encode, decode } = require('@metamessage/js');
+
+const person = { name: "Ed", age: 30 };
+const wire = encode(person);
+const decoded = decode(wire);
+```
+
+#### C\#
+
+```csharp
+using MetaMessage;
+
+var person = new Person { Name = "Ed", Age = 30 };
+byte[] wire = MetaMessage.Encode(person);
+var decoded = MetaMessage.Decode<Person>(wire);
+```
+
+#### Rust
+
+```rust
+use metamessage::{encode, decode, Node};
+
+let person = Node::Object(/* ... */);
+let wire = encode(&person);
+let decoded = decode(&wire).unwrap();
+```
+
+#### Swift
+
+```swift
+import MetaMessage
+
+let person = Person(name: "Ed", age: 30)
+let wire = MetaMessage.encode(person)
+let decoded = try MetaMessage.decode(wire)
+```
+
+#### PHP
+
+```php
+<?php
+use io\metamessage\mm\MetaMessage;
+
+$person = new Person();
+$wire = MetaMessage::encode($person);
+$decoded = MetaMessage::decode($wire, Person::class);
+```
+
 ### 例
 
 `examples/`ディレクトリのサンプルコードを参照してください。

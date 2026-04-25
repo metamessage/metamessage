@@ -191,9 +191,10 @@ public class WireDecoder
         }
 
         double val;
-        if (Prefix.Suffix(first) <= 7)
+        int l = first & WireConstants.FLOAT_LEN_MASK;
+        if (l < WireConstants.FLOAT_LEN_1)
         {
-            int mantissa = first & WireConstants.FLOAT_LEN_MASK;
+            int mantissa = l;
             val = mantissa / 10.0;
             if ((first & WireConstants.FLOAT_NEG_MASK) != 0)
             {
@@ -209,13 +210,20 @@ public class WireDecoder
             int exp = _data[_offset++];
             int l1 = FloatLenExtraBytes(first);
             long mantissa = 0;
-            for (int i = 0; i < l1; i++)
+            if (l1 == 0)
             {
-                if (_offset >= _data.Length)
+                mantissa = 0;
+            }
+            else
+            {
+                for (int i = 0; i < l1; i++)
                 {
-                    throw new MmDecodeException("Unexpected end of data");
+                    if (_offset >= _data.Length)
+                    {
+                        throw new MmDecodeException("Unexpected end of data");
+                    }
+                    mantissa = (mantissa << 8) | _data[_offset++];
                 }
-                mantissa = (mantissa << 8) | _data[_offset++];
             }
             string dec = FloatCodec.MantissaToDecimal(mantissa, exp);
             val = double.Parse(dec);
@@ -352,6 +360,7 @@ public class WireDecoder
                 var value = DecodeNext(null);
                 entries.Add(new KeyValuePair<MmScalar, IMmTree>(key, value));
             }
+            _offset = end;
             return new MmMap(entries, tag);
         }
     }
@@ -390,7 +399,6 @@ public class WireDecoder
         MmTag tag = TagFieldParser.Parse(tagBytes);
         if (inherited != null)
         {
-            // 继承一些属性
         }
 
         return DecodeNext(tag);

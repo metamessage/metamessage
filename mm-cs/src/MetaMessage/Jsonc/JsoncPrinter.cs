@@ -191,7 +191,19 @@ public class JsoncPrinter
                 sb.Append("null");
                 break;
             default:
-                sb.Append(value.Value?.ToString() ?? "null");
+                var type = value.Tag?.Type ?? ValueType.Unknown;
+                bool needsQuotes = type.NeedsQuotes();
+                var text = value.Value?.ToString() ?? "";
+                if (needsQuotes)
+                {
+                    sb.Append('"');
+                    sb.Append(EscapeString(text));
+                    sb.Append('"');
+                }
+                else
+                {
+                    sb.Append(text);
+                }
                 break;
         }
     }
@@ -206,12 +218,32 @@ public class JsoncPrinter
         if (comment.IsBlock)
         {
             sb.Append("/*");
-            sb.Append(comment.Text.TrimStart('/', '*').TrimEnd('*', '/'));
+            var commentText = comment.Text.TrimStart('/', '*').TrimEnd('*', '/');
+            if (commentText.StartsWith("mm:"))
+            {
+                sb.Append(commentText);
+            }
+            else
+            {
+                sb.Append(commentText.TrimStart('/', '*').TrimEnd('*', '/'));
+            }
             sb.AppendLine("*/");
         }
         else
         {
-            sb.AppendLine(comment.Text);
+            var commentText = comment.Text;
+            if (commentText.StartsWith("//"))
+            {
+                sb.AppendLine(commentText);
+            }
+            else if (commentText.StartsWith("mm:"))
+            {
+                sb.AppendLine("// " + commentText);
+            }
+            else
+            {
+                sb.AppendLine(commentText);
+            }
         }
     }
 

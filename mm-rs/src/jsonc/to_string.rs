@@ -1,5 +1,6 @@
 use std::fmt::Write;
 use crate::jsonc::ast::{Node, Object, Array, Value, Field, ValueData};
+use crate::jsonc::value_type::ValueType;
 
 const INDENT_UNIT: &str = "  ";
 
@@ -23,7 +24,14 @@ fn write_value(buf: &mut String, val: &Value) {
             buf.push_str(if *b { "true" } else { "false" });
         }
         ValueData::String(s) => {
-            write_quoted_string(buf, s);
+            let needs_quotes = val.tag.as_ref()
+                .map(|t| t.value_type.needs_quotes())
+                .unwrap_or(false);
+            if needs_quotes {
+                write_quoted_string(buf, s);
+            } else {
+                buf.push_str(s);
+            }
         }
         ValueData::Int(i) => {
             write!(buf, "{}", i).unwrap();
@@ -65,9 +73,8 @@ fn write_object(buf: &mut String, obj: &Object, indent: usize) {
         write_indent(buf, indent + 1);
 
         if let Some(tag) = field.value.get_tag() {
-            let tag_str = format!("{:?}", tag);
+            let tag_str = tag.to_string();
             if !tag_str.is_empty() {
-                write_indent(buf, indent + 1);
                 buf.push_str("// ");
                 buf.push_str(&tag_str);
                 buf.push('\n');

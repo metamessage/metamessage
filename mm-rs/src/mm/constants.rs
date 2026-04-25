@@ -26,12 +26,17 @@ pub const STRING_LEN_2: u8 = 0x81;
 pub const BYTES_LEN_1: u8 = 0x80;
 pub const BYTES_LEN_2: u8 = 0x81;
 
-pub const CONTAINER_LEN_1: u8 = 0x80;
-pub const CONTAINER_LEN_2: u8 = 0x81;
+pub const CONTAINER_LEN_1: u8 = 0x08;
+pub const CONTAINER_LEN_2: u8 = 0x09;
+pub const CONTAINER_LEN_MASK: u8 = 0x07;
 
 pub const TAG_LEN_1: u8 = 0x80;
 pub const TAG_LEN_2: u8 = 0x81;
 
-pub const CONTAINER_ARRAY: u8 = 0x01;
-pub const CONTAINER_MAP: u8 = 0x02;
-pub const CONTAINER_TYPE_MASK: u8 = 0x03;
+pub const FLOAT_POSITIVE_NEGATIVE_MASK: u8 = 0x10;
+pub const FLOAT_LEN_MASK: u8 = 0x0F;
+pub const FLOAT_LEN_1: u8 = 0x08;
+
+pub const CONTAINER_ARRAY: u8 = 0x10;
+pub const CONTAINER_MAP: u8 = 0x00;
+pub const CONTAINER_TYPE_MASK: u8 = 0x10;

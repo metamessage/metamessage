@@ -154,7 +154,12 @@ public class JSONCPrinter {
         }
 
         if let stringVal = value.data as? String {
-            return "\"\(escapeString(stringVal))\""
+            let needsQuotes = value.tag?.type.needsQuotes ?? true
+            if needsQuotes {
+                return "\"\(escapeString(stringVal))\""
+            } else {
+                return escapeString(stringVal)
+            }
         }
 
         if let dataVal = value.data as? Data {
@@ -165,7 +170,12 @@ public class JSONCPrinter {
             return "null"
         }
 
-        return "\"\(escapeString(value.text))\""
+        let needsQuotes = value.tag?.type.needsQuotes ?? true
+        if needsQuotes {
+            return "\"\(escapeString(value.text))\""
+        } else {
+            return escapeString(value.text)
+        }
     }
 
     private func formatDouble(_ value: Double) -> String {
