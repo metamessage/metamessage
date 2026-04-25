@@ -297,15 +297,19 @@ class Parser:
 
 def mm_tag_from_comment(comment: str) -> Optional[Tag]:
     comment = comment.strip()
-    comment = comment.lstrip("//")
-    comment = comment.strip()
-    comment = comment.lstrip("mm:")
-    comment = comment.strip()
-    
-    if not comment:
+    if comment.startswith("//"):
+        comment = comment[2:].strip()
+    elif comment.startswith("/*"):
+        comment = comment[2:]
+        if comment.endswith("*/"):
+            comment = comment[:-2]
+        comment = comment.strip()
+    if not comment.startswith("mm:"):
         return None
-    
-    return mm_tag(comment)
+    tag_str = comment[3:].strip()
+    if not tag_str:
+        return None
+    return mm_tag(tag_str)
 
 
 def merge_tag(a: Tag, b: Tag) -> Tag:

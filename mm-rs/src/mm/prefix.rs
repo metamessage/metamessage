@@ -29,7 +29,7 @@ impl Prefix {
     }
 
     pub fn is_array(prefix: u8) -> bool {
-        (prefix & 0x01) != 0 && (prefix & 0xF8) == 0x30
+        (prefix & 0x10) != 0 && (prefix & 0xF8) == 0x30
     }
 }
 
@@ -42,5 +42,6 @@ pub const PREFIX_BYTES: u8 = 0x28;
 pub const PREFIX_CONTAINER: u8 = 0x30;
 pub const PREFIX_TAG: u8 = 0x38;
 
-pub const FLOAT_POSITIVE_NEGATIVE_MASK: u8 = 0x08;
-pub const FLOAT_LEN_MASK: u8 = 0x07;
+pub const FLOAT_POSITIVE_NEGATIVE_MASK: u8 = 0x10;
+pub const FLOAT_LEN_MASK: u8 = 0x0F;
+pub const FLOAT_LEN_1: u8 = 0x08;

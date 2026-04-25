@@ -112,4 +112,20 @@ impl ValueType {
             ValueType::Video => "video",
         }
     }
+
+    pub fn needs_quotes(&self) -> bool {
+        matches!(
+            self,
+            ValueType::String
+                | ValueType::Bytes
+                | ValueType::DateTime
+                | ValueType::Date
+                | ValueType::Time
+                | ValueType::UUID
+                | ValueType::IP
+                | ValueType::URL
+                | ValueType::Email
+                | ValueType::Enum
+        )
+    }
 }

@@ -1,4 +1,4 @@
-import { JSONCValue, JSONCObject, JSONCArray, JSONCDoc } from './ast';
+import { JSONCValue, JSONCObject, JSONCArray, JSONCDoc, JSONCTag, JSONCValueType } from './ast';
 
 export interface JSONCNode {
   getType(): string;
@@ -7,6 +7,19 @@ export interface JSONCNode {
   setPath(path: string): void;
   setTag(tag: any): void;
 }
+
+const QUOTED_TYPES: JSONCValueType[] = [
+  JSONCValueType.String,
+  JSONCValueType.Bytes,
+  JSONCValueType.DateTime,
+  JSONCValueType.Date,
+  JSONCValueType.Time,
+  JSONCValueType.UUID,
+  JSONCValueType.IP,
+  JSONCValueType.URL,
+  JSONCValueType.Email,
+  JSONCValueType.Enum,
+];
 
 export class JSONCPrinter {
   private indent: string;
@@ -42,7 +55,7 @@ export class JSONCPrinter {
 
   private printNodeCompact(node: JSONCNode): string {
     if (node instanceof JSONCValue) {
-      return this.printValue(node);
+      return this.printValueCompact(node);
     } else if (node instanceof JSONCObject) {
       return this.printObjectCompact(node);
     } else if (node instanceof JSONCArray) {
@@ -54,6 +67,26 @@ export class JSONCPrinter {
   }
 
   private printValue(value: JSONCValue): string {
+    const tag = value.getTag();
+    let result = '';
+
+    if (tag && tag.desc) {
+      result += `// mm: ${tag.toString()}\n${this.getIndent()}`;
+    }
+
+    result += this.valueToStringOnly(value);
+    return result;
+  }
+
+  private printValueCompact(value: JSONCValue): string {
+    return this.valueToStringOnly(value);
+  }
+
+  private valueToStringOnly(value: JSONCValue): string {
+    const tag = value.getTag();
+    const type = tag?.type || JSONCValueType.Unknown;
+    const needsQuotes = QUOTED_TYPES.includes(type);
+
     const val = value.getValue();
     if (val === null) {
       return 'null';
@@ -62,7 +95,7 @@ export class JSONCPrinter {
     } else if (typeof val === 'number') {
       return val.toString();
     } else if (typeof val === 'string') {
-      return JSON.stringify(val);
+      return needsQuotes ? `"${val}"` : JSON.stringify(val);
     }
     return 'null';
   }
@@ -78,7 +111,13 @@ export class JSONCPrinter {
     const entries: string[] = [];
 
     for (const [key, value] of properties.entries()) {
-      entries.push(`${indent}${JSON.stringify(key)}: ${this.printNode(value)}`);
+      const tag = value.getTag();
+      let entry = '';
+      if (tag && tag.desc && value instanceof JSONCValue) {
+        entry += `${indent}// mm: ${tag.toString()}\n${indent}`;
+      }
+      entry += `${JSON.stringify(key)}: ${this.printNode(value)}`;
+      entries.push(entry);
     }
 
     this.indentLevel--;

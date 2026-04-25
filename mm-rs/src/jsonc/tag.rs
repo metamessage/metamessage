@@ -146,6 +146,88 @@ impl Tag {
         Some(tag)
     }
 
+    pub fn to_string(&self) -> String {
+        let mut parts = Vec::new();
+
+        if self.value_type != ValueType::Unknown {
+            parts.push(format!("type={}", self.value_type.to_str()));
+        }
+
+        if let Some(ref desc) = self.desc {
+            parts.push(format!("desc={}", desc));
+        }
+
+        if self.nullable {
+            parts.push("nullable".to_string());
+        }
+
+        if self.is_null {
+            parts.push("is_null".to_string());
+        }
+
+        if let Some(ref default) = self.default {
+            parts.push(format!("default={}", default));
+        }
+
+        if let Some(ref min) = self.min {
+            parts.push(format!("min={}", min));
+        }
+
+        if let Some(ref max) = self.max {
+            parts.push(format!("max={}", max));
+        }
+
+        if let Some(size) = self.size {
+            parts.push(format!("size={}", size));
+        }
+
+        if let Some(ref enum_values) = self.enum_values {
+            parts.push(format!("enum={}", enum_values.join(",")));
+        }
+
+        if let Some(ref pattern) = self.pattern {
+            parts.push(format!("pattern={}", pattern));
+        }
+
+        if let Some(ref location) = self.location {
+            parts.push(format!("location={}", location));
+        }
+
+        if let Some(ref version) = self.version {
+            parts.push(format!("version={}", version));
+        }
+
+        if let Some(ref mime) = self.mime {
+            parts.push(format!("mime={}", mime));
+        }
+
+        if let Some(child_type) = self.child_type {
+            parts.push(format!("child_type={}", child_type.to_str()));
+        }
+
+        if let Some(ref child_desc) = self.child_desc {
+            parts.push(format!("child_desc={}", child_desc));
+        }
+
+        if let Some(ref key_desc) = self.key_desc {
+            parts.push(format!("key_desc={}", key_desc));
+        }
+
+        if let Some(ref value_desc) = self.value_desc {
+            parts.push(format!("value_desc={}", value_desc));
+        }
+
+        if let Some(ref ele_desc) = self.ele_desc {
+            parts.push(format!("ele_desc={}", ele_desc));
+        }
+
+        if parts.is_empty() {
+            String::new()
+        } else {
+            format!("mm: {}", parts.join("; "))
+        }
+    }
+
     pub fn to_bytes(&self) -> Vec<u8> {
         let mut parts = Vec::new();
 

@@ -1,5 +1,41 @@
 import { TokenType, JSONCScanner } from './scanner.js';
 
+const ValueType = {
+  Unknown: 'unknown',
+  Doc: 'doc',
+  Slice: 'slice',
+  Array: 'array',
+  Struct: 'struct',
+  Map: 'map',
+  String: 'str',
+  Bytes: 'bytes',
+  Bool: 'bool',
+  Int: 'int',
+  Int8: 'i8',
+  Int16: 'i16',
+  Int32: 'i32',
+  Int64: 'i64',
+  Uint: 'uint',
+  Uint8: 'u8',
+  Uint16: 'u16',
+  Uint32: 'u32',
+  Uint64: 'u64',
+  Float32: 'f32',
+  Float64: 'f64',
+  BigInt: 'bi',
+  DateTime: 'datetime',
+  Date: 'date',
+  Time: 'time',
+  Uuid: 'uuid',
+  Decimal: 'decimal',
+  Ip: 'ip',
+  Url: 'url',
+  Email: 'email',
+  Enum: 'enum',
+  Image: 'image',
+  Video: 'video'
+};
+
 export class JSONCPrinter {
   constructor(indentString = '  ', useIndent = true) {
     this.indentLevel = 0;
@@ -132,14 +168,100 @@ export class JSONCPrinter {
     }
 
     if (typeof value.data === 'string') {
-      return JSON.stringify(value.data);
+      return this.valueToStringOnly(value);
     }
 
     if (value.data === null || value.data === undefined) {
       return 'null';
     }
 
-    return JSON.stringify(value.text);
+    return this.valueToStringOnly(value);
+  }
+
+  valueToStringOnly(value) {
+    const tag = value.tag;
+    const type = tag?.type || ValueType.Unknown;
+
+    const needsQuotes = this.typeNeedsQuotes(type);
+
+    if (needsQuotes) {
+      return `"${value.text}"`;
+    }
+    return value.text;
+  }
+
+  typeNeedsQuotes(type) {
+    return type === ValueType.String ||
+           type === ValueType.Bytes ||
+           type === ValueType.DateTime ||
+           type === ValueType.Date ||
+           type === ValueType.Time ||
+           type === ValueType.Uuid ||
+           type === ValueType.Ip ||
+           type === ValueType.Url ||
+           type === ValueType.Email ||
+           type === ValueType.Enum;
+  }
+
+  tagToString(tag) {
+    const parts = [];
+
+    if (tag.type !== ValueType.Unknown) {
+      parts.push(`type=${this.typeToString(tag.type)}`);
+    }
+    if (tag.desc) {
+      parts.push(`desc=${tag.desc}`);
+    }
+    if (tag.nullable) {
+      parts.push('nullable');
+    }
+    if (tag.isNull) {
+      parts.push('is_null');
+    }
+    if (tag.raw) {
+      parts.push('raw');
+    }
+    if (tag.defaultValue) {
+      parts.push(`default=${tag.defaultValue}`);
+    }
+    if (tag.enumValues) {
+      parts.push(`enum=${tag.enumValues}`);
+    }
+
+    return parts.join('; ');
+  }
+
+  typeToString(type) {
+    switch (type) {
+      case ValueType.String: return 'str';
+      case ValueType.Int: return 'i';
+      case ValueType.Int8: return 'i8';
+      case ValueType.Int16: return 'i16';
+      case ValueType.Int32: return 'i32';
+      case ValueType.Int64: return 'i64';
+      case ValueType.Uint: return 'u';
+      case ValueType.Uint8: return 'u8';
+      case ValueType.Uint16: return 'u16';
+      case ValueType.Uint32: return 'u32';
+      case ValueType.Uint64: return 'u64';
+      case ValueType.Float32: return 'f32';
+      case ValueType.Float64: return 'f64';
+      case ValueType.Bool: return 'bool';
+      case ValueType.Bytes: return 'bytes';
+      case ValueType.BigInt: return 'bi';
+      case ValueType.DateTime: return 'datetime';
+      case ValueType.Date: return 'date';
+      case ValueType.Time: return 'time';
+      case ValueType.Uuid: return 'uuid';
+      case ValueType.Decimal: return 'decimal';
+      case ValueType.Ip: return 'ip';
+      case ValueType.Url: return 'url';
+      case ValueType.Email: return 'email';
+      case ValueType.Enum: return 'enum';
+      case ValueType.Array: return 'arr';
+      case ValueType.Struct: return 'struct';
+      default: return 'unknown';
+    }
   }
 
   formatNumber(value) {
@@ -240,14 +362,14 @@ export class JSONCPrinter {
     }
 
     if (typeof value.data === 'string') {
-      return JSON.stringify(value.data);
+      return this.valueToStringOnly(value);
     }
 
     if (value.data === null || value.data === undefined) {
       return 'null';
     }
 
-    return JSON.stringify(value.text);
+    return this.valueToStringOnly(value);
   }
 }
 

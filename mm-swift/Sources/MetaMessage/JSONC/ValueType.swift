@@ -119,4 +119,13 @@ public enum ValueType: UInt8, Codable {
         default: return nil
         }
     }
+
+    public var needsQuotes: Bool {
+        switch self {
+        case .string, .bytes, .dateTime, .date, .time, .uuid, .ip, .url, .email, .enumValue:
+            return true
+        default:
+            return false
+        }
+    }
 }

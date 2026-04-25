@@ -1,142 +1,65 @@
-# MM-Java 实现完善计划
+# Java MetaMessage (mm-java) 實現計劃
 
-## 1. 代码分析结论
+## 概述
+基於 Go 版本的功能完整移植到 Java，測試要完整全面。
 
-通过对 mm-java 代码库的分析，我发现以下情况：
+## 當前進度
+- ✅ Wire 格式對齊完成 (22 tests)
+- ✅ JSONC 基本對齊完成 (15 tests)
+- ✅ JSONC MM 對齊完成 (22 tests)
 
-### 已实现的功能
-- 基本的编码和解码逻辑，包括：
-  - 整数（正整数、负整数）
-  - 浮点数
-  - 字符串
-  - 字节
-  - 容器（数组、对象）
-  - 标签（Tag）
-- 反射绑定，支持将 Java 对象编码为 MM 字节，以及将 MM 字节解码为 Java 对象
-- 支持多种数据类型，包括：
-  - 基本类型（int、long、float、double、boolean）
-  - 字符串类型（String、Email、URL、IP）
-  - 时间类型（DateTime、Date、Time）
-  - 复合类型（数组、列表、对象）
-  - 特殊类型（BigInt、UUID）
+## 項目結構
+```
+mm-java/
+├── src/main/java/io/metamessage/
+│   ├── mm/
+│   │   ├── Constants.java
+│   │   ├── Types.java
+│   │   ├── Prefix.java
+│   │   ├── SimpleValue.java
+│   │   ├── MMBuffer.java
+│   │   ├── MMEncoder.java
+│   │   ├── MMDecoder.java
+│   │   └── MetaMessage.java
+│   └── jsonc/
+│       ├── JsoncScanner.java
+│       ├── JsoncToken.java
+│       ├── JsoncParser.java
+│       ├── JsoncNode.java
+│       ├── JsoncPrinter.java
+│       ├── JsoncTag.java
+│       └── ValueType.java
+└── src/test/java/io/metamessage/
+```
 
-### 存在的问题和未实现的功能
-1. **测试覆盖不足**：测试用例非常少，只测试了基本的结构、列表和日期时间类型，没有测试其他类型和边界情况
-2. **潜在的错误**：
-   - `WireDecoder.decodeArray` 方法中，标签继承处理可能存在问题
-   - `WireDecoder.decodeObject` 方法假设对象的键总是字符串数组，可能存在限制
-   - `WireEncoder.encodeContainer` 方法的容器长度计算可能不准确
-3. **功能完整性**：
-   - 枚举类型的支持可能不完整
-   - 缺少对复杂类型映射的支持
-   - 缺少自定义类型转换器
-4. **文档不完善**：缺少详细的使用说明和示例
+## 已完成功能
 
-## 2. 改进计划
+### Wire 格式
+- ✅ Bool 編碼/解碼
+- ✅ Int 編碼/解碼
+- ✅ Float/Double 編碼/解碼
+- ✅ String 編碼/解碼
+- ✅ Bytes 編碼/解碼
+- ✅ Array 編碼/解碼
+- ✅ Object/Struct 編碼/解碼
 
-### 2.1 修复潜在错误
+### JSONC
+- ✅ Scanner - 詞法分析，支持 `//` 和 `/* */` 註釋
+- ✅ Parser - 語法分析，創建 AST
+- ✅ Printer - 格式化輸出
+- ✅ Tag 解析 - 支持 `// mm:` 前綴
+- ✅ 類型感知打印 - String/UUID 等加引號，Int/Float 不加
 
-#### 2.1.1 修复标签继承问题
-- **文件**：`WireDecoder.java`
-- **问题**：`decodeArray` 方法中标签继承处理可能存在问题
-- **解决方案**：确保 `inheritFromArrayParent` 方法正确处理标签继承，包括类型、子类型、大小等属性
+## 已修復問題
+- `decodeTagged` - 添加 `offset = innerEnd`
+- `decodeObject` - 邊界檢查
+- `decodeFloat` - 條件和 mantissa 修正
 
-#### 2.1.2 修复对象解码限制
-- **文件**：`WireDecoder.java`
-- **问题**：`decodeObject` 方法假设对象的键总是字符串数组
-- **解决方案**：增强对象解码逻辑，支持更灵活的键类型
+## 測試覆蓋
+- ✅ 22 Wire 測試
+- ✅ 15 JSONC 基本測試
+- ✅ 22 JSONC MM 測試
 
-#### 2.1.3 修复容器长度计算
-- **文件**：`WireEncoder.java`
-- **问题**：`encodeContainer` 方法的容器长度计算可能不准确
-- **解决方案**：确保容器长度计算正确，使用容器内容的实际长度
-
-### 2.2 完善功能
-
-#### 2.2.1 增强枚举类型支持
-- **文件**：`WireDecoder.java`、`WireEncoder.java`
-- **任务**：确保枚举类型的编码和解码正确处理，包括枚举值的映射和标签信息
-
-#### 2.2.2 增加自定义类型转换器
-- **文件**：新增 `TypeConverter` 接口和相关实现
-- **任务**：实现自定义类型转换器机制，允许用户自定义类型的编码和解码逻辑
-
-#### 2.2.3 增强类型映射
-- **文件**：`ReflectMmBinder.java`、`ReflectMmEncoder.java`
-- **任务**：增强类型映射逻辑，支持更多的 Java 类型和 MM 类型之间的映射
-
-### 2.3 增加测试覆盖
-
-#### 2.3.1 增加基本类型测试
-- **文件**：`MetaMessageTest.java`
-- **任务**：添加测试用例，覆盖所有基本类型的编码和解码
-
-#### 2.3.2 增加复合类型测试
-- **文件**：`MetaMessageTest.java`
-- **任务**：添加测试用例，覆盖数组、对象、嵌套结构等复合类型的编码和解码
-
-#### 2.3.3 增加边界情况测试
-- **文件**：`MetaMessageTest.java`
-- **任务**：添加测试用例，覆盖边界情况，如空数组、空对象、最大值、最小值等
-
-#### 2.3.4 增加错误处理测试
-- **文件**：`MetaMessageTest.java`
-- **任务**：添加测试用例，测试错误处理逻辑，如无效输入、类型不匹配等
-
-### 2.4 完善文档
-
-#### 2.4.1 增加类文档
-- **文件**：所有主要类文件
-- **任务**：为所有主要类添加详细的 Javadoc 文档
-
-#### 2.4.2 增加使用示例
-- **文件**：新增 `README.md` 或示例文件
-- **任务**：提供详细的使用示例，包括基本用法、高级用法和常见问题
-
-## 3. 实施步骤
-
-1. **修复潜在错误**：
-   - 修复 `WireDecoder.decodeArray` 方法中的标签继承问题
-   - 修复 `WireDecoder.decodeObject` 方法的对象解码限制
-   - 修复 `WireEncoder.encodeContainer` 方法的容器长度计算
-
-2. **完善功能**：
-   - 增强枚举类型支持
-   - 增加自定义类型转换器
-   - 增强类型映射
-
-3. **增加测试覆盖**：
-   - 增加基本类型测试
-   - 增加复合类型测试
-   - 增加边界情况测试
-   - 增加错误处理测试
-
-4. **完善文档**：
-   - 增加类文档
-   - 增加使用示例
-
-## 4. 风险处理
-
-1. **兼容性风险**：修改现有代码可能会破坏与其他语言实现的兼容性
-   - **缓解措施**：确保所有修改都符合 MetaMessage 协议规范，保持与其他语言实现的兼容性
-
-2. **性能风险**：增加功能可能会影响性能
-   - **缓解措施**：在增加功能的同时，注意性能优化，避免引入性能瓶颈
-
-3. **测试风险**：测试覆盖不足可能导致未发现的错误
-   - **缓解措施**：增加全面的测试用例，确保所有功能都得到充分测试
-
-4. **维护风险**：代码复杂度增加可能导致维护困难
-   - **缓解措施**：保持代码结构清晰，增加详细的文档和注释
-
-## 5. 预期成果
-
-通过实施上述计划，mm-java 将成为一个功能完整、稳定可靠的 MetaMessage 协议实现，具有以下特点：
-
-- 完整支持 MetaMessage 协议的所有功能
-- 与其他语言实现保持兼容
-- 具有良好的性能和可靠性
-- 提供详细的文档和使用示例
-- 具有全面的测试覆盖
-
-这将使 mm-java 成为 Java 生态系统中处理 MetaMessage 协议的首选实现。
+## 參考實現
+- Go 版本: `/Users/lizongying/IdeaProjects/meta-message/internal/mm/`
+- Go JSONC: `/Users/lizongying/IdeaProjects/meta-message/internal/jsonc/`

@@ -5,6 +5,7 @@ export class MMDecoder {
   constructor(data) {
     this.buffer = new MMBuffer(data.length);
     this.buffer.writeBytes(data);
+    this.buffer.offset = 0;
   }
 
   decode() {
@@ -73,11 +74,13 @@ export class MMDecoder {
       if (b === null) {
         throw MMError.UnexpectedEndOfData;
       }
-      value |= BigInt(b) << BigInt(i * 8);
+      value = (value << BigInt(8)) | BigInt(b);
     }
 
-    const suffix = byte & 0x1F;
-    value |= BigInt(suffix);
+    if (extraBytes === 0) {
+      const suffix = byte & 0x1F;
+      value = BigInt(suffix);
+    }
 
     return { type: 'int', value: value };
   }
@@ -96,11 +99,13 @@ export class MMDecoder {
       if (b === null) {
         throw MMError.UnexpectedEndOfData;
       }
-      value |= BigInt(b) << BigInt(i * 8);
+      value = (value << BigInt(8)) | BigInt(b);
     }
 
-    const suffix = byte & 0x1F;
-    value |= BigInt(suffix);
+    if (extraBytes === 0) {
+      const suffix = byte & 0x1F;
+      value = BigInt(suffix);
+    }
 
     return { type: 'int', value: -value };
   }
@@ -200,12 +205,14 @@ export class MMDecoder {
       return { type: 'array', value: elements };
     } else {
       const dict = {};
-      for (let i = 0; i < Math.floor(totalLen / 2); i++) {
+      let i = 0;
+      while (this.buffer.offset < this.buffer.buffer.length && i < Math.floor(totalLen / 2)) {
         const keyValue = this.decode();
         const value = this.decode();
         if (keyValue.type === 'string') {
           dict[keyValue.value] = value;
         }
+        i++;
       }
       return { type: 'object', value: dict };
     }

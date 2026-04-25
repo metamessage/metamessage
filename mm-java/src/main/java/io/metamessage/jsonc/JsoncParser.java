@@ -131,10 +131,11 @@ public final class JsoncParser {
         if (lit == null) {
             return null;
         }
-        if (lit.startsWith("mm:") || lit.contains("mm:")) {
-            return MmLineParser.parse(lit);
+        String trimmed = lit.trim();
+        if (!trimmed.startsWith("mm:")) {
+            return null;
         }
-        return null;
+        return MmLineParser.parse(lit);
     }
 
     private JcNode.JcObject parseObject(int openLine, String path) {

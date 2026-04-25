@@ -171,4 +171,22 @@ public static class ValueTypeExtensions
         }
         return ValueType.Unknown;
     }
+
+    public static bool NeedsQuotes(this ValueType vt)
+    {
+        return vt switch
+        {
+            ValueType.String => true,
+            ValueType.Bytes => true,
+            ValueType.DateTime => true,
+            ValueType.Date => true,
+            ValueType.Time => true,
+            ValueType.UUID => true,
+            ValueType.IP => true,
+            ValueType.URL => true,
+            ValueType.Email => true,
+            ValueType.Enum => true,
+            _ => false
+        };
+    }
 }

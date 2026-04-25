@@ -661,74 +661,61 @@ class Decoder:
     
     def _decode_float(self, suffix: int):
         is_negative = (suffix & FloatPositiveNegativeMask) != 0
-        len_mask = suffix & FloatLenMask
-        
-        if len_mask < FloatLen1Byte:
-            # 处理特殊情况：exponent == -1 and mantissa <= 7
-            mantissa = len_mask
+        l = suffix & FloatLenMask
+
+        if l < FloatLen1Byte:
+            mantissa = l
             exponent = -1
-        elif len_mask == FloatLen1Byte:
-            exponent = self._read_byte()
-            # 将无符号字节转换为有符号整数
-            if exponent > 127:
-                exponent -= 256
-            mantissa = self._read_byte()
-        elif len_mask == FloatLen2Byte:
-            exponent = self._read_byte()
-            # 将无符号字节转换为有符号整数
-            if exponent > 127:
-                exponent -= 256
-            bs = self._read_bytes(2)
-            mantissa = (bs[0] << 8) | bs[1]
-        elif len_mask == FloatLen3Byte:
-            exponent = self._read_byte()
-            # 将无符号字节转换为有符号整数
-            if exponent > 127:
-                exponent -= 256
-            bs = self._read_bytes(3)
-            mantissa = (bs[0] << 16) | (bs[1] << 8) | bs[2]
-        elif len_mask == FloatLen4Byte:
-            exponent = self._read_byte()
-            # 将无符号字节转换为有符号整数
-            if exponent > 127:
-                exponent -= 256
-            bs = self._read_bytes(4)
-            mantissa = struct.unpack('>I', bs)[0]
-        elif len_mask == FloatLen5Byte:
-            exponent = self._read_byte()
-            # 将无符号字节转换为有符号整数
-            if exponent > 127:
-                exponent -= 256
-            bs = self._read_bytes(5)
-            mantissa = (bs[0] << 32) | struct.unpack('>I', bs[1:])[0]
-        elif len_mask == FloatLen6Byte:
-            exponent = self._read_byte()
-            # 将无符号字节转换为有符号整数
-            if exponent > 127:
-                exponent -= 256
-            bs = self._read_bytes(6)
-            mantissa = (bs[0] << 40) | (bs[1] << 32) | struct.unpack('>I', bs[2:])[0]
-        elif len_mask == FloatLen7Byte:
-            exponent = self._read_byte()
-            # 将无符号字节转换为有符号整数
-            if exponent > 127:
-                exponent -= 256
-            bs = self._read_bytes(7)
-            mantissa = (bs[0] << 48) | (bs[1] << 40) | (bs[2] << 32) | struct.unpack('>I', bs[3:])[0]
-        elif len_mask == FloatLen8Byte:
-            exponent = self._read_byte()
-            # 将无符号字节转换为有符号整数
-            if exponent > 127:
-                exponent -= 256
-            bs = self._read_bytes(8)
-            mantissa = struct.unpack('>Q', bs)[0]
+            value = mantissa * (10 ** exponent)
+            if is_negative:
+                value = -value
+            return value
+
+        l1 = self._float_len_extra_bytes(suffix)
+
+        exponent = self._read_byte()
+        if exponent > 127:
+            exponent -= 256
+
+        if l1 == 0:
+            mantissa = 0
         else:
-            raise ValueError(f"invalid float len mask: {len_mask}")
-        
+            if l1 == 1:
+                mantissa = self._read_byte()
+            elif l1 == 2:
+                bs = self._read_bytes(2)
+                mantissa = (bs[0] << 8) | bs[1]
+            elif l1 == 3:
+                bs = self._read_bytes(3)
+                mantissa = (bs[0] << 16) | (bs[1] << 8) | bs[2]
+            elif l1 == 4:
+                bs = self._read_bytes(4)
+                mantissa = struct.unpack('>I', bs)[0]
+            elif l1 == 5:
+                bs = self._read_bytes(5)
+                mantissa = (bs[0] << 32) | struct.unpack('>I', bs[1:])[0]
+            elif l1 == 6:
+                bs = self._read_bytes(6)
+                mantissa = (bs[0] << 40) | (bs[1] << 32) | struct.unpack('>I', bs[2:])[0]
+            elif l1 == 7:
+                bs = self._read_bytes(7)
+                mantissa = (bs[0] << 48) | (bs[1] << 40) | (bs[2] << 32) | struct.unpack('>I', bs[3:])[0]
+            elif l1 == 8:
+                bs = self._read_bytes(8)
+                mantissa = struct.unpack('>Q', bs)[0]
+            else:
+                raise ValueError(f"invalid float length: {l1}")
+
         value = mantissa * (10 ** exponent)
         if is_negative:
             value = -value
         return value
+
+    def _float_len_extra_bytes(self, first: int) -> int:
+        l = first & FloatLenMask
+        if l < FloatLen1Byte:
+            return 0
+        return l - FloatLen1Byte + 1
     
     def _decode_string(self, suffix: int):
         if suffix < StringLen1Byte:

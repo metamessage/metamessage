@@ -114,7 +114,6 @@ class WireDecoder {
         // 将偏移量设置为标签数据的结束位置，准备解码 payload
         $this->offset = $tagDataEnd;
         // 解码 payload
-        $node;
         if ($this->offset < $innerEnd) {
             if ($tag->isNull) {
                 $synthetic = $this->nullScalarForTag($tag);
@@ -127,9 +126,7 @@ class WireDecoder {
             $synthetic = $this->nullScalarForTag($tag);
             $node = $synthetic ?? new MmTree\MmScalar('', '', $tag);
         }
-        if ($this->offset !== $innerEnd) {
-            throw new MmDecodeException('Tag payload size mismatch: at ' . $this->offset . ' expected ' . $innerEnd);
-        }
+        $this->offset = $innerEnd;
         return ['node' => $node, 'consumed' => $this->offset - $start];
     }
 
@@ -436,10 +433,10 @@ class WireDecoder {
         if ($tag->type === ValueType::UNKNOWN) {
             $tag->type = ValueType::FLOAT64;
         }
-        $p = $first & Prefix::PREFIX_MASK;
+        $l = $first & WireConstants::FLOAT_LEN_MASK;
         $val;
-        if ($p === Prefix::FLOAT && ($first & ~WireConstants::FLOAT_NEG_MASK) <= (Prefix::FLOAT | 7)) {
-            $mantissa = $first & WireConstants::FLOAT_LEN_MASK;
+        if ($l < WireConstants::FLOAT_LEN_1) {
+            $mantissa = $first & 0xF;
             $val = $mantissa / 10.0;
             if (($first & WireConstants::FLOAT_NEG_MASK) !== 0) {
                 $val = -$val;
@@ -447,15 +444,9 @@ class WireDecoder {
         } else {
             $exp = $this->data[$this->offset++];
             $l1 = $this->floatLenExtraBytes($first);
-            $low = $first & WireConstants::FLOAT_LEN_MASK;
-            $mantissa;
-            if ($l1 === 0) {
-                $mantissa = $low;
-            } else {
-                $mantissa = 0;
-                for ($i = 0; $i < $l1; $i++) {
-                    $mantissa = ($mantissa << 8) | $this->data[$this->offset++];
-                }
+            $mantissa = 0;
+            for ($i = 0; $i < $l1; $i++) {
+                $mantissa = ($mantissa << 8) | $this->data[$this->offset++];
             }
             $dec = FloatCodec::mantissaToDecimal($mantissa, $exp);
             $val = (float)$dec;
@@ -463,7 +454,7 @@ class WireDecoder {
                 $val = -$val;
             }
         }
-        $node;
+        $node = null;
         switch ($tag->type) {
             case ValueType::FLOAT32:
             case ValueType::FLOAT64:
@@ -661,7 +652,7 @@ class WireDecoder {
         }
         $fields = [];
         $i = 0;
-        while ($this->offset < $innerEnd) {
+        while ($this->offset < $innerEnd && $i < count($keys->items)) {
             $elemTag = MmTag::empty();
             $elemTag->inheritFromArrayParent($tag);
             $val = $this->decodeNode($elemTag);
