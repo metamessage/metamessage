@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="https://maven.apache.org/surefire/maven-surefire-plugin/xsd/surefire-test-report-3.0.xsd" version="3.0" name="io.metamessage.mm.MetaMessageTest" time="0.053" tests="5" errors="0" skipped="0" failures="0">
+  <properties>
+    <property name="java.specification.version" value="21"/>
+    <property name="sun.jnu.encoding" value="UTF-8"/>
+    <property name="java.class.path" value="/Users/lizongying/IdeaProjects/meta-message/mm-kt/target/test-classes:/Users/lizongying/IdeaProjects/meta-message/mm-kt/target/classes:/Users/lizongying/.m2/repository/org/jetbrains/kotlin/kotlin-stdlib/1.9.22/kotlin-stdlib-1.9.22.jar:/Users/lizongying/.m2/repository/org/jetbrains/annotations/13.0/annotations-13.0.jar:/Users/lizongying/.m2/repository/org/jetbrains/kotlin/kotlin-test-junit5/1.9.22/kotlin-test-junit5-1.9.22.jar:/Users/lizongying/.m2/repository/org/jetbrains/kotlin/kotlin-test/1.9.22/kotlin-test-1.9.22.jar:/Users/lizongying/.m2/repository/org/junit/jupiter/junit-jupiter-api/5.6.3/junit-jupiter-api-5.6.3.jar:/Users/lizongying/.m2/repository/org/apiguardian/apiguardian-api/1.1.0/apiguardian-api-1.1.0.jar:/Users/lizongying/.m2/repository/org/opentest4j/opentest4j/1.2.0/opentest4j-1.2.0.jar:/Users/lizongying/.m2/repository/org/junit/platform/junit-platform-commons/1.6.3/junit-platform-commons-1.6.3.jar:/Users/lizongying/.m2/repository/org/junit/jupiter/junit-jupiter-engine/5.6.3/junit-jupiter-engine-5.6.3.jar:/Users/lizongying/.m2/repository/org/junit/platform/junit-platform-engine/1.6.3/junit-platform-engine-1.6.3.jar:/Users/lizongying/.m2/repository/org/junit/jupiter/junit-jupiter/5.10.2/junit-jupiter-5.10.2.jar:/Users/lizongying/.m2/repository/org/junit/jupiter/junit-jupiter-params/5.10.2/junit-jupiter-params-5.10.2.jar:"/>
+    <property name="java.vm.vendor" value="JetBrains s.r.o."/>
+    <property name="sun.arch.data.model" value="64"/>
+    <property name="java.vendor.url" value="https://openjdk.org/"/>
+    <property name="os.name" value="Mac OS X"/>
+    <property name="java.vm.specification.version" value="21"/>
+    <property name="sun.java.launcher" value="SUN_STANDARD"/>
+    <property name="user.country" value="CN"/>
+    <property name="sun.boot.library.path" value="/Users/lizongying/.sdkman/candidates/java/21.0.6-jbr/lib"/>
+    <property name="sun.java.command" value="/Users/lizongying/IdeaProjects/meta-message/mm-kt/target/surefire/surefirebooter-20260425205151920_3.jar /Users/lizongying/IdeaProjects/meta-message/mm-kt/target/surefire 2026-04-25T20-51-51_873-jvmRun1 surefire-20260425205151920_1tmp surefire_0-20260425205151920_2tmp"/>
+    <property name="http.nonProxyHosts" value="127.0.0.1|192.168.0.0/16|*.192.168.0.0/16|10.0.0.0/8|*.10.0.0.0/8|172.16.0.0/12|*.172.16.0.0/12|100.64.0.0/10|*.100.64.0.0/10|17.0.0.0/8|*.17.0.0.0/8|localhost|*.localhost|local|*.local|169.254.0.0/16|*.169.254.0.0/16|224.0.0.0/4|*.224.0.0.0/4|240.0.0.0/4|*.240.0.0.0/4"/>
+    <property name="jdk.debug" value="release"/>
+    <property name="surefire.test.class.path" value="/Users/lizongying/IdeaProjects/meta-message/mm-kt/target/test-classes:/Users/lizongying/IdeaProjects/meta-message/mm-kt/target/classes:/Users/lizongying/.m2/repository/org/jetbrains/kotlin/kotlin-stdlib/1.9.22/kotlin-stdlib-1.9.22.jar:/Users/lizongying/.m2/repository/org/jetbrains/annotations/13.0/annotations-13.0.jar:/Users/lizongying/.m2/repository/org/jetbrains/kotlin/kotlin-test-junit5/1.9.22/kotlin-test-junit5-1.9.22.jar:/Users/lizongying/.m2/repository/org/jetbrains/kotlin/kotlin-test/1.9.22/kotlin-test-1.9.22.jar:/Users/lizongying/.m2/repository/org/junit/jupiter/junit-jupiter-api/5.6.3/junit-jupiter-api-5.6.3.jar:/Users/lizongying/.m2/repository/org/apiguardian/apiguardian-api/1.1.0/apiguardian-api-1.1.0.jar:/Users/lizongying/.m2/repository/org/opentest4j/opentest4j/1.2.0/opentest4j-1.2.0.jar:/Users/lizongying/.m2/repository/org/junit/platform/junit-platform-commons/1.6.3/junit-platform-commons-1.6.3.jar:/Users/lizongying/.m2/repository/org/junit/jupiter/junit-jupiter-engine/5.6.3/junit-jupiter-engine-5.6.3.jar:/Users/lizongying/.m2/repository/org/junit/platform/junit-platform-engine/1.6.3/junit-platform-engine-1.6.3.jar:/Users/lizongying/.m2/repository/org/junit/jupiter/junit-jupiter/5.10.2/junit-jupiter-5.10.2.jar:/Users/lizongying/.m2/repository/org/junit/jupiter/junit-jupiter-params/5.10.2/junit-jupiter-params-5.10.2.jar:"/>
+    <property name="sun.cpu.endian" value="little"/>
+    <property name="user.home" value="/Users/lizongying"/>
+    <property name="user.language" value="zh"/>
+    <property name="java.specification.vendor" value="Oracle Corporation"/>
+    <property name="java.version.date" value="2025-01-21"/>
+    <property name="java.home" value="/Users/lizongying/.sdkman/candidates/java/21.0.6-jbr"/>
+    <property name="file.separator" value="/"/>
+    <property name="basedir" value="/Users/lizongying/IdeaProjects/meta-message/mm-kt"/>
+    <property name="java.vm.compressedOopsMode" value="Non-zero based"/>
+    <property name="line.separator" value="&#10;"/>
+    <property name="java.vm.specification.vendor" value="Oracle Corporation"/>
+    <property name="java.specification.name" value="Java Platform API Specification"/>
+    <property name="intellij.os.virtualization" value="none"/>
+    <property name="jbr.virtualization.information" value="No virtualization detected"/>
+    <property name="apple.awt.application.name" value="ForkedBooter"/>
+    <property name="surefire.real.class.path" value="/Users/lizongying/IdeaProjects/meta-message/mm-kt/target/surefire/surefirebooter-20260425205151920_3.jar"/>
+    <property name="user.script" value="Hans"/>
+    <property name="sun.management.compiler" value="HotSpot 64-Bit Tiered Compilers"/>
+    <property name="ftp.nonProxyHosts" value="127.0.0.1|192.168.0.0/16|*.192.168.0.0/16|10.0.0.0/8|*.10.0.0.0/8|172.16.0.0/12|*.172.16.0.0/12|100.64.0.0/10|*.100.64.0.0/10|17.0.0.0/8|*.17.0.0.0/8|localhost|*.localhost|local|*.local|169.254.0.0/16|*.169.254.0.0/16|224.0.0.0/4|*.224.0.0.0/4|240.0.0.0/4|*.240.0.0.0/4"/>
+    <property name="java.runtime.version" value="21.0.6+8-b825.69"/>
+    <property name="user.name" value="lizongying"/>
+    <property name="stdout.encoding" value="UTF-8"/>
+    <property name="path.separator" value=":"/>
+    <property name="os.version" value="26.1"/>
+    <property name="java.runtime.name" value="OpenJDK Runtime Environment"/>
+    <property name="file.encoding" value="UTF-8"/>
+    <property name="java.vm.name" value="OpenJDK 64-Bit Server VM"/>
+    <property name="java.vendor.version" value="JBR-21.0.6+8-825.69-jcef"/>
+    <property name="localRepository" value="/Users/lizongying/.m2/repository"/>
+    <property name="java.vendor.url.bug" value="https://bugreport.java.com/bugreport/"/>
+    <property name="java.io.tmpdir" value="/var/folders/66/rv9s0g5n7bd908c8g7lvf98r0000gn/T/"/>
+    <property name="java.version" value="21.0.6"/>
+    <property name="user.dir" value="/Users/lizongying/IdeaProjects/meta-message/mm-kt"/>
+    <property name="os.arch" value="aarch64"/>
+    <property name="java.vm.specification.name" value="Java Virtual Machine Specification"/>
+    <property name="native.encoding" value="UTF-8"/>
+    <property name="java.library.path" value="/Users/lizongying/Library/Java/Extensions:/Library/Java/Extensions:/Network/Library/Java/Extensions:/System/Library/Java/Extensions:/usr/lib/java:."/>
+    <property name="java.vm.info" value="mixed mode, sharing"/>
+    <property name="stderr.encoding" value="UTF-8"/>
+    <property name="java.vendor" value="JetBrains s.r.o."/>
+    <property name="java.vm.version" value="21.0.6+8-b825.69"/>
+    <property name="sun.io.unicode.encoding" value="UnicodeBig"/>
+    <property name="socksNonProxyHosts" value="127.0.0.1|192.168.0.0/16|*.192.168.0.0/16|10.0.0.0/8|*.10.0.0.0/8|172.16.0.0/12|*.172.16.0.0/12|100.64.0.0/10|*.100.64.0.0/10|17.0.0.0/8|*.17.0.0.0/8|localhost|*.localhost|local|*.local|169.254.0.0/16|*.169.254.0.0/16|224.0.0.0/4|*.224.0.0.0/4|240.0.0.0/4|*.240.0.0.0/4"/>
+    <property name="java.class.version" value="65.0"/>
+  </properties>
+  <testcase name="roundtripBasicTypes" classname="io.metamessage.mm.MetaMessageTest" time="0.028"/>
+  <testcase name="roundtripMapTypes" classname="io.metamessage.mm.MetaMessageTest" time="0.004"/>
+  <testcase name="roundtripSimpleStruct" classname="io.metamessage.mm.MetaMessageTest" time="0.001"/>
+  <testcase name="roundtripListField" classname="io.metamessage.mm.MetaMessageTest" time="0.01"/>
+  <testcase name="roundtripDateTime" classname="io.metamessage.mm.MetaMessageTest" time="0.002"/>
+</testsuite>

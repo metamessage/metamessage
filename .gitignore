@@ -3,3 +3,84 @@
 .README.md
 releases/
 tmp/
+
+# Language-specific files
+
+# Go
+mm-go/bin/
+mm-go/pkg/
+mm-go/.idea/
+mm-go/*.exe
+
+# Java
+mm-java/target/
+mm-java/.idea/
+mm-java/*.class
+mm-java/*.jar
+
+# TypeScript
+mm-ts/dist/
+mm-ts/node_modules/
+mm-ts/.idea/
+mm-ts/*.log
+
+# Kotlin
+mm-kt/build/
+mm-kt/.idea/
+mm-kt/*.class
+mm-kt/*.jar
+
+# Python
+mm-py/__pycache__/
+mm-py/*.pyc
+mm-py/.idea/
+
+# JavaScript
+mm-js/node_modules/
+mm-js/dist/
+mm-js/.idea/
+
+# C#
+mm-cs/**/[Bb]in/
+mm-cs/**/[Oo]bj/
+mm-cs/.idea/
+
+# Rust
+mm-rs/target/
+mm-rs/.idea/
+
+# Swift
+mm-swift/.build/
+mm-swift/.idea/
+
+# PHP
+mm-php/vendor/
+mm-php/.idea/
+mm-php/*.log
+
+# Build artifacts
+build/
+dist/
+node_modules/
+*.jar
+*.class
+*.pyc
+__pycache__/
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS files
+Thumbs.db
+.DS_Store
+
+# Log files
+*.log
+
+# Test files
+coverage/
+.nyc_output/
