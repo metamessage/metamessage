@@ -210,9 +210,9 @@ const (
 
 // Container
 const (
-	ContainerMask  = 0b10000
-	ContainerMap   = 0b00000
-	ContainerArray = 0b10000
+	ContainerMask   = 0b10000
+	ContainerObject = 0b00000
+	ContainerArray  = 0b10000
 
 	ContainerLenMask  = 0b01111
 	ContainerLen1Byte = ContainerLenMask - 1

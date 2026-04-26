@@ -51,7 +51,7 @@ final class ReflectMmEncoder {
             return;
         }
         if (work.type == ValueType.MAP) {
-            encodeMap(enc, (java.util.Map<?, ?>) v, work);
+            encodeObject(enc, (java.util.Map<?, ?>) v, work);
             return;
         }
         WireEncoder payload = new WireEncoder();
@@ -101,7 +101,7 @@ final class ReflectMmEncoder {
         mapBody.writeAll(tmp.toByteArray());
         mapBody.writeAll(valsPacked.copyRange(0, valsPacked.length()));
         tmp.reset();
-        tmp.encodeMapPayload(mapBody.copyRange(0, mapBody.length()));
+        tmp.encodeObjectPayload(mapBody.copyRange(0, mapBody.length()));
         enc.encodeTaggedPayload(tmp.toByteArray(), objTag.toBytes());
     }
 
@@ -225,7 +225,7 @@ final class ReflectMmEncoder {
         enc.encodeTaggedPayload(el.toByteArray(), tag.toBytes());
     }
     
-    private static void encodeMap(WireEncoder enc, java.util.Map<?, ?> map, MmTag tag) throws ReflectiveOperationException {
+    private static void encodeObject(WireEncoder enc, java.util.Map<?, ?> map, MmTag tag) throws ReflectiveOperationException {
         if (map == null) {
             MmTag nt = tag.copy();
             nt.isNull = true;
@@ -265,7 +265,7 @@ final class ReflectMmEncoder {
         mapBody.writeAll(tmp.toByteArray());
         mapBody.writeAll(valsPacked.copyRange(0, valsPacked.length()));
         tmp.reset();
-        tmp.encodeMapPayload(mapBody.copyRange(0, mapBody.length()));
+        tmp.encodeObjectPayload(mapBody.copyRange(0, mapBody.length()));
         enc.encodeTaggedPayload(tmp.toByteArray(), tag.toBytes());
     }
 

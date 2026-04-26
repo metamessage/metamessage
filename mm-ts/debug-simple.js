@@ -110,7 +110,7 @@ const StringLen2Byte = 31;
 const BytesLen1Byte = 30;
 const BytesLen2Byte = 31;
 
-const ContainerMap = 0b00000;
+const ContainerObject = 0b00000;
 const ContainerArray = 0b10000;
 const ContainerLen1Byte = 14;
 const ContainerLen2Byte = 15;
@@ -388,7 +388,7 @@ class MMEncoder {
   encodeObject(value) {
     const entries = Object.entries(value);
     const length = entries.length;
-    let prefix = Prefix.Container | ContainerMap;
+    let prefix = Prefix.Container | ContainerObject;
     
     if (length < ContainerLen1Byte) {
       prefix |= length;

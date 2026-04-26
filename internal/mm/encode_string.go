@@ -1,17 +1,13 @@
 package mm
 
 import (
-	"errors"
+	"fmt"
 )
 
 func (e *encoder) encodeString(s string) (n uint32, err error) {
-	// defer func() {
-	// 	fmt.Printf("encodeString: %q\n", s)
-	// }()
-
 	length := len(s)
 	if length > Max2Byte {
-		err = errors.New("string too long")
+		err = fmt.Errorf("string too long, max length: %d, actual: %d", Max2Byte, length)
 		return
 	}
 

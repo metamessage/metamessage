@@ -1,11 +1,11 @@
 package mm
 
-import "errors"
+import "fmt"
 
 func (e *encoder) encodeBytes(bs []byte) (n uint32, err error) {
 	length := len(bs)
 	if length > Max2Byte {
-		err = errors.New("bytes too long")
+		err = fmt.Errorf("bytes too long, max length: %d, actual: %d", Max2Byte, length)
 		return
 	}
 

@@ -129,7 +129,7 @@ class WireEncoder {
         return $this->encodeContainer($payload, Prefix::CONTAINER | WireConstants::CONTAINER_ARRAY);
     }
 
-    public function encodeMapPayload(array $payload): int {
+    public function encodeObjectPayload(array $payload): int {
         return $this->encodeContainer($payload, Prefix::CONTAINER | WireConstants::CONTAINER_MAP);
     }
 

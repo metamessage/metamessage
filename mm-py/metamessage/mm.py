@@ -63,7 +63,7 @@ BytesLen1Byte = BytesLenMask - 1
 BytesLen2Byte = BytesLenMask
 
 ContainerMask = 0b10000
-ContainerMap = 0b00000
+ContainerObject = 0b00000
 ContainerArray = 0b10000
 ContainerLenMask = 0b01111
 ContainerLen1Byte = 24
@@ -313,7 +313,7 @@ class Encoder:
         if length > MAX_2BYTE:
             raise ValueError("map too long")
 
-        sign = Container | ContainerMap
+        sign = Container | ContainerObject
         if length < 24:
             n = self._write_byte(sign | length)
         elif length < 256:

@@ -213,9 +213,22 @@ func genRustFields(b *strings.Builder, n ast.Node, indent int) {
 		WriteIndent(b, indent)
 		b.WriteString("pub ")
 		b.WriteString(exportRustFieldName(f.Key))
-		b.WriteString(": Option<")
-		b.WriteString(getRustTypeForField(f))
-		b.WriteString(">,\n")
+		b.WriteString(": ")
+
+		// Check if field is nullable
+		isNullable := false
+		if tag := f.Value.GetTag(); tag != nil {
+			isNullable = tag.Nullable
+		}
+
+		if isNullable {
+			b.WriteString("Option<")
+			b.WriteString(getRustTypeForField(f))
+			b.WriteString(">,\n")
+		} else {
+			b.WriteString(getRustTypeForField(f))
+			b.WriteString(",\n")
+		}
 	}
 }
 

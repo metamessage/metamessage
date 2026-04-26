@@ -204,7 +204,18 @@ func genSwiftFields(b *strings.Builder, n ast.Node, indent int) {
 		b.WriteString(exportSwiftFieldName(f.Key))
 		b.WriteString(": ")
 		b.WriteString(getSwiftTypeForField(f))
-		b.WriteString("?\n")
+
+		// Check if field is nullable
+		isNullable := false
+		if tag := f.Value.GetTag(); tag != nil {
+			isNullable = tag.Nullable
+		}
+
+		if isNullable {
+			b.WriteString("?\n")
+		} else {
+			b.WriteString("\n")
+		}
 	}
 }
 

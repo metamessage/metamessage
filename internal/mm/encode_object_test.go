@@ -8,12 +8,12 @@ import (
 	"github.com/metamessage/metamessage/internal/jsonc"
 )
 
-// go test ./internal/mm -v -run TestEncodeStruct
+// go test ./internal/mm -v -run TestEncodeObject
 //
-// go test ./internal/mm -v -run TestEncodeStruct/invalid_uuid
+// go test ./internal/mm -v -run TestEncodeObject/invalid_uuid
 //
-// go test ./internal/mm -test.fullpath=true -benchmem -run=^$ -bench ^BenchmarkEncodeStruct_MM$ -benchtime=1000000x
-// go test ./internal/mm -test.fullpath=true -benchmem -run=^$ -bench ^BenchmarkEncodeStruct_JSON$ -benchtime=1000000x
+// go test ./internal/mm -test.fullpath=true -benchmem -run=^$ -bench ^BenchmarkEncodeObject_MM$ -benchtime=1000000x
+// go test ./internal/mm -test.fullpath=true -benchmem -run=^$ -bench ^BenchmarkEncodeObject_JSON$ -benchtime=1000000x
 
 type User struct {
 	ID      int    `mm:"min=2"`
@@ -36,7 +36,7 @@ type encodeTestCase struct {
 	wantErr bool
 }
 
-func TestEncodeStruct(t *testing.T) {
+func TestEncodeObject(t *testing.T) {
 	var nilStr *string
 
 	testCases := []encodeTestCase{
@@ -134,7 +134,7 @@ func TestEncodeStruct(t *testing.T) {
 	}
 }
 
-func BenchmarkEncodeStruct_MM(b *testing.B) {
+func BenchmarkEncodeObject_MM(b *testing.B) {
 	e := NewEncoder(nil)
 	data := User{
 		ID:   100,
@@ -157,7 +157,7 @@ func BenchmarkEncodeStruct_MM(b *testing.B) {
 	}
 }
 
-func BenchmarkEncodeStruct_JSON(b *testing.B) {
+func BenchmarkEncodeObject_JSON(b *testing.B) {
 	data := User{
 		ID:   100,
 		Name: "",

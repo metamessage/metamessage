@@ -50,7 +50,7 @@ object ReflectMmEncoder {
         }
         if (work.type == ValueType.MAP) {
             @Suppress("UNCHECKED_CAST")
-            encodeMap(enc, v as Map<*, *>, work)
+            encodeObject(enc, v as Map<*, *>, work)
             return
         }
         val payload = WireEncoder()
@@ -90,7 +90,7 @@ object ReflectMmEncoder {
         mapBody.writeAll(tmp.toByteArray())
         mapBody.writeAll(valsPacked.copyRange(0, valsPacked.length()))
         tmp.reset()
-        tmp.encodeMapPayload(mapBody.copyRange(0, mapBody.length()))
+        tmp.encodeObjectPayload(mapBody.copyRange(0, mapBody.length()))
         enc.encodeTaggedPayload(tmp.toByteArray(), objTag.toBytes())
     }
 
@@ -193,7 +193,7 @@ object ReflectMmEncoder {
         enc.encodeTaggedPayload(el.toByteArray(), tag.toBytes())
     }
 
-    private fun encodeMap(enc: WireEncoder, map: Map<*, *>?, tag: MmTag) {
+    private fun encodeObject(enc: WireEncoder, map: Map<*, *>?, tag: MmTag) {
         if (map == null) {
             val nt = tag.copy()
             nt.isNull = true
@@ -241,7 +241,7 @@ object ReflectMmEncoder {
         mapBody.writeAll(tmp.toByteArray())
         mapBody.writeAll(valsPacked.copyRange(0, valsPacked.length()))
         tmp.reset()
-        tmp.encodeMapPayload(mapBody.copyRange(0, mapBody.length()))
+        tmp.encodeObjectPayload(mapBody.copyRange(0, mapBody.length()))
         enc.encodeTaggedPayload(tmp.toByteArray(), tag.toBytes())
     }
 

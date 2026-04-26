@@ -151,16 +151,29 @@ func addCSharpImportForType(typ ast.ValueType, imports map[string]struct{}) {
 }
 
 func getCSharpTypeForField(f *ast.Field) string {
+	baseType := ""
 	switch v := f.Value.(type) {
 	case *ast.Value:
-		return getCSharpType(v)
+		baseType = getCSharpType(v)
 	case *ast.Object:
-		return getCSharpObjectType(f.Key, v)
+		baseType = getCSharpObjectType(f.Key, v)
 	case *ast.Array:
-		return getCSharpArrayType(f.Key, v)
+		baseType = getCSharpArrayType(f.Key, v)
 	default:
-		return "object"
+		baseType = "object"
 	}
+
+	// Check if field is nullable
+	isNullable := false
+	if tag := f.Value.GetTag(); tag != nil {
+		isNullable = tag.Nullable
+	}
+
+	if isNullable {
+		baseType = baseType + "?"
+	}
+
+	return baseType
 }
 
 func getCSharpType(v *ast.Value) string {

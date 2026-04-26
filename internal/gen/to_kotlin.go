@@ -194,6 +194,38 @@ func getKotlinArrayType(fieldKey string, a *ast.Array) string {
 	return "List<Any>"
 }
 
+func getKotlinDefaultValue(node ast.Node) string {
+	switch v := node.(type) {
+	case *ast.Value:
+		if v.Tag != nil {
+			switch v.Tag.Type {
+			case ast.ValueTypeBool:
+				return "false"
+			case ast.ValueTypeString, ast.ValueTypeBytes, ast.ValueTypeDecimal,
+				ast.ValueTypeDateTime, ast.ValueTypeDate, ast.ValueTypeTime,
+				ast.ValueTypeUUID, ast.ValueTypeEmail, ast.ValueTypeIP,
+				ast.ValueTypeURL, ast.ValueTypeEnum, ast.ValueTypeImage:
+				return "\"\""
+			case ast.ValueTypeInt, ast.ValueTypeInt8, ast.ValueTypeInt16, ast.ValueTypeInt32, ast.ValueTypeInt64,
+				ast.ValueTypeUint, ast.ValueTypeUint8, ast.ValueTypeUint16, ast.ValueTypeUint32, ast.ValueTypeUint64,
+				ast.ValueTypeFloat32, ast.ValueTypeFloat64:
+				return "0"
+			case ast.ValueTypeBigInt:
+				return "BigInteger.ZERO"
+			default:
+				return "null"
+			}
+		}
+		return "null"
+	case *ast.Array:
+		return "emptyList()"
+	case *ast.Object:
+		return "null"
+	default:
+		return "null"
+	}
+}
+
 func genKotlinFields(b *strings.Builder, n ast.Node, indent int) {
 	obj, ok := n.(*ast.Object)
 	if !ok {
@@ -208,8 +240,21 @@ func genKotlinFields(b *strings.Builder, n ast.Node, indent int) {
 		b.WriteString("var ")
 		b.WriteString(exportKotlinFieldName(f.Key))
 		b.WriteString(": ")
+
+		// Check if field is nullable
+		isNullable := false
+		if tag := f.Value.GetTag(); tag != nil {
+			isNullable = tag.Nullable
+		}
+
 		b.WriteString(getKotlinTypeForField(f))
-		b.WriteString("? = null\n")
+		if isNullable {
+			b.WriteString("? = null\n")
+		} else {
+			b.WriteString(" = ")
+			b.WriteString(getKotlinDefaultValue(f.Value))
+			b.WriteString("\n")
+		}
 	}
 }
 

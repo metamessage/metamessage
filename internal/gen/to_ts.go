@@ -139,7 +139,18 @@ func genTSFields(b *strings.Builder, n ast.Node, indent int) {
 		}
 		WriteIndent(b, indent)
 		b.WriteString(exportTSFieldName(f.Key))
-		b.WriteString("?: ")
+
+		// Check if field is nullable
+		isNullable := false
+		if tag := f.Value.GetTag(); tag != nil {
+			isNullable = tag.Nullable
+		}
+
+		if isNullable {
+			b.WriteString("?: ")
+		} else {
+			b.WriteString(": ")
+		}
 		b.WriteString(getTSTypeForField(f))
 		b.WriteString(";\n")
 	}

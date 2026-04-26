@@ -1,5 +1,5 @@
 import { MMBuffer } from './buffer';
-import { Prefix, SimpleValue, StringLen1Byte, StringLen2Byte, BytesLen1Byte, BytesLen2Byte, ContainerLen1Byte, ContainerLen2Byte, ContainerMap, ContainerArray, IntLen1Byte, IntLen2Byte, IntLen3Byte, IntLen4Byte, IntLen5Byte, IntLen6Byte, IntLen7Byte, IntLen8Byte, Max1Byte, Max2Byte, Max3Byte, Max4Byte, Max5Byte, Max6Byte, Max7Byte, Max8Byte } from './constants';
+import { Prefix, SimpleValue, StringLen1Byte, StringLen2Byte, BytesLen1Byte, BytesLen2Byte, ContainerLen1Byte, ContainerLen2Byte, ContainerObject, ContainerArray, IntLen1Byte, IntLen2Byte, IntLen3Byte, IntLen4Byte, IntLen5Byte, IntLen6Byte, IntLen7Byte, IntLen8Byte, Max1Byte, Max2Byte, Max3Byte, Max4Byte, Max5Byte, Max6Byte, Max7Byte, Max8Byte } from './constants';
 import { MMValue } from './types';
 
 export class MMEncoder {
@@ -285,7 +285,7 @@ export class MMEncoder {
   encodeObject(value: Record<string, any>): void {
     const entries = Object.entries(value);
     const length = entries.length;
-    let prefix = Prefix.Container | ContainerMap;
+    let prefix = Prefix.Container | ContainerObject;
     
     if (length < ContainerLen1Byte) {
       prefix |= length;

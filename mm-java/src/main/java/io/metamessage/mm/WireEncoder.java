@@ -233,7 +233,7 @@ public final class WireEncoder {
         return encodeContainer(payload, Prefix.CONTAINER | WireConstants.CONTAINER_ARRAY);
     }
 
-    public int encodeMapPayload(byte[] payload) {
+    public int encodeObjectPayload(byte[] payload) {
         return encodeContainer(payload, Prefix.CONTAINER | WireConstants.CONTAINER_MAP);
     }
 

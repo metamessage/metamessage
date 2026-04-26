@@ -240,7 +240,7 @@ public class WireEncoder
         return _buf.Length - start;
     }
 
-    public int EncodeMapPayload(byte[] payload)
+    public int EncodeObjectPayload(byte[] payload)
     {
         int length = payload.Length;
         int start = _buf.Length;

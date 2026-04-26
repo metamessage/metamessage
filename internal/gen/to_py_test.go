@@ -28,14 +28,14 @@ func TestToPyGeneratesCode(t *testing.T) {
 	if !strings.Contains(out, "class User:") {
 		t.Fatalf("expected top-level class declaration, got:\n%s", out)
 	}
-	if !strings.Contains(out, "id: Optional[int] = None") {
-		t.Fatalf("expected id field, got:\n%s", out)
+	if !strings.Contains(out, "id: int") {
+		t.Fatalf("expected non-nullable id field (id: int), got:\n%s", out)
 	}
-	if !strings.Contains(out, "name: Optional[str] = None") {
-		t.Fatalf("expected name field, got:\n%s", out)
+	if !strings.Contains(out, "name: str") {
+		t.Fatalf("expected non-nullable name field (name: str), got:\n%s", out)
 	}
-	if !strings.Contains(out, "tags: Optional[List[str]] = None") {
-		t.Fatalf("expected tags field, got:\n%s", out)
+	if !strings.Contains(out, "tags: List[str]") {
+		t.Fatalf("expected non-nullable tags field (tags: List[str]), got:\n%s", out)
 	}
 	if !strings.Contains(out, "class Profile:") {
 		t.Fatalf("expected nested Profile class, got:\n%s", out)

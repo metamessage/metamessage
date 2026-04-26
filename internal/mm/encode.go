@@ -102,7 +102,7 @@ func (e *encoder) encodeNodeObject(obj *ast.Object) (n uint32, err error) {
 	copy(bufAll, encodedKeyArray)
 	copy(bufAll[len(encodedKeyArray):], buf.Bytes())
 
-	if n, err = e.encodeMap(bufAll); err != nil {
+	if n, err = e.encodeObject(bufAll); err != nil {
 		return
 	}
 
