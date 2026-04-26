@@ -13,7 +13,7 @@ mm-go/.idea/
 mm-go/*.exe
 
 # Java
-mm-java/target/
+mm-java/**/target/
 mm-java/.idea/
 mm-java/*.class
 mm-java/*.jar
@@ -29,6 +29,7 @@ mm-kt/build/
 mm-kt/.idea/
 mm-kt/*.class
 mm-kt/*.jar
+mm-kt/**/target/
 
 # Python
 mm-py/__pycache__/
