@@ -127,13 +127,14 @@ func (p *Parser) parse(path string) (val ast.Node, err error) {
 			if tag, err = p.consumeCommentsFor(tok.Line); err != nil {
 				return nil, err
 			}
+
+			text := tok.Literal
+
 			if tag == nil {
 				tag = ast.NewTag()
 			}
-			text := tok.Literal
-			t := tag.Type
 
-			if t == ast.ValueTypeUnknown {
+			if tag.Type == ast.ValueTypeUnknown {
 				tag.Type = ast.ValueTypeString
 			}
 
@@ -166,7 +167,7 @@ func (p *Parser) parse(path string) (val ast.Node, err error) {
 				tag.Type = ast.ValueTypeString
 
 			default:
-				switch t {
+				switch tag.Type {
 				case ast.ValueTypeString:
 					if tag.IsNull {
 						if text != "" {
@@ -360,7 +361,7 @@ func (p *Parser) parse(path string) (val ast.Node, err error) {
 					}
 
 				default:
-					return nil, fmt.Errorf("unsupported type %v for string literal", t)
+					return nil, fmt.Errorf("unsupported type %v for string literal", tag.Type)
 				}
 			}
 
@@ -380,18 +381,19 @@ func (p *Parser) parse(path string) (val ast.Node, err error) {
 			if tag, err = p.consumeCommentsFor(tok.Line); err != nil {
 				return nil, err
 			}
+
+			text := tok.Literal
+
 			if tag == nil {
 				tag = ast.NewTag()
 			}
-			text := tok.Literal
-			t := tag.Type
 
 			if strings.Contains(text, ".") {
-				if t == ast.ValueTypeUnknown {
+				if tag.Type == ast.ValueTypeUnknown {
 					tag.Type = ast.ValueTypeFloat64
 				}
 
-				switch t {
+				switch tag.Type {
 				case ast.ValueTypeFloat32:
 					if tag.IsNull {
 						if text != "0.0" {
@@ -425,14 +427,14 @@ func (p *Parser) parse(path string) (val ast.Node, err error) {
 					}
 
 				default:
-					return nil, fmt.Errorf("unsupported numeric type %v for float literal", t)
+					return nil, fmt.Errorf("unsupported numeric type %v for float literal", tag.Type)
 				}
 			} else if strings.HasPrefix(text, "-") {
-				if t == ast.ValueTypeUnknown {
+				if tag.Type == ast.ValueTypeUnknown {
 					tag.Type = ast.ValueTypeInt
 				}
 
-				switch t {
+				switch tag.Type {
 				case ast.ValueTypeInt:
 					if tag.IsNull {
 						if text != "0" {
@@ -558,14 +560,14 @@ func (p *Parser) parse(path string) (val ast.Node, err error) {
 				// 	}
 
 				default:
-					return nil, fmt.Errorf("unsupported numeric type %v for negative literal", t)
+					return nil, fmt.Errorf("unsupported numeric type %v for negative literal", tag.Type)
 				}
 			} else {
-				if t == ast.ValueTypeUnknown {
+				if tag.Type == ast.ValueTypeUnknown {
 					tag.Type = ast.ValueTypeInt
 				}
 
-				switch t {
+				switch tag.Type {
 				case ast.ValueTypeInt:
 					if tag.IsNull {
 						if text != "0" {
@@ -771,7 +773,7 @@ func (p *Parser) parse(path string) (val ast.Node, err error) {
 				// 	}
 
 				default:
-					return nil, fmt.Errorf("unsupported numeric type %v", t)
+					return nil, fmt.Errorf("unsupported numeric type %v", tag.Type)
 				}
 			}
 
