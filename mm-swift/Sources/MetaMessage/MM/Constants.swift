@@ -86,7 +86,7 @@ public enum MMConstants {
     public static let bytesLen2Byte: UInt8 = 0b11111
 
     public static let containerMask: UInt8 = 0b10000
-    public static let containerMap: UInt8 = 0b00000
+    public static let containerObject: UInt8 = 0b00000
     public static let containerArray: UInt8 = 0b10000
     public static let containerLenMask: UInt8 = 0b01111
     public static let containerLen1Byte: UInt8 = 0b01110

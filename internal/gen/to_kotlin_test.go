@@ -25,14 +25,14 @@ func TestToKotlinGeneratesCode(t *testing.T) {
 	if !strings.Contains(out, "class User") {
 		t.Fatalf("expected class declaration in output, got:\n%s", out)
 	}
-	if !strings.Contains(out, "var id: Int? = null") {
-		t.Fatalf("expected Int field declaration in output, got:\n%s", out)
+	if !strings.Contains(out, "var id: Int = 0") {
+		t.Fatalf("expected non-nullable Int field (var id: Int = 0), got:\n%s", out)
 	}
-	if !strings.Contains(out, "var name: String? = null") {
-		t.Fatalf("expected String field declaration in output, got:\n%s", out)
+	if !strings.Contains(out, "var name: String = \"\"") {
+		t.Fatalf("expected non-nullable String field (var name: String = \"\"), got:\n%s", out)
 	}
-	if !strings.Contains(out, "var tags: List<String>? = null") {
-		t.Fatalf("expected List<String> field declaration in output, got:\n%s", out)
+	if !strings.Contains(out, "var tags: List<String> = emptyList()") {
+		t.Fatalf("expected non-nullable List<String> field, got:\n%s", out)
 	}
 	if !strings.Contains(out, "val userData = User()") {
 		t.Fatalf("expected bound data instance declaration in output, got:\n%s", out)

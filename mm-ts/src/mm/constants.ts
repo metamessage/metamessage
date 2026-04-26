@@ -181,7 +181,7 @@ export const BytesLen1Byte = BytesLenMask - 1;
 export const BytesLen2Byte = BytesLenMask;
 
 export const ContainerMask = 0b10000;
-export const ContainerMap = 0b00000;
+export const ContainerObject = 0b00000;
 export const ContainerArray = 0b10000;
 export const ContainerLenMask = 0b01111;
 export const ContainerLen1Byte = ContainerLenMask - 1;

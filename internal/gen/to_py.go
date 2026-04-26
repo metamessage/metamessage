@@ -148,9 +148,22 @@ func genPyFields(b *strings.Builder, n ast.Node, indent int) {
 		}
 		WriteIndent(b, indent)
 		b.WriteString(exportPyFieldName(f.Key))
-		b.WriteString(": Optional[")
-		b.WriteString(getPyTypeForField(f))
-		b.WriteString("] = None\n")
+		b.WriteString(": ")
+
+		// Check if field is nullable
+		isNullable := false
+		if tag := f.Value.GetTag(); tag != nil {
+			isNullable = tag.Nullable
+		}
+
+		if isNullable {
+			b.WriteString("Optional[")
+			b.WriteString(getPyTypeForField(f))
+			b.WriteString("] = None\n")
+		} else {
+			b.WriteString(getPyTypeForField(f))
+			b.WriteString("\n")
+		}
 	}
 }
 

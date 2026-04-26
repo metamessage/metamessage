@@ -15,13 +15,13 @@ import (
 	"github.com/metamessage/metamessage/internal/jsonc/ast"
 )
 
-// go test ./internal/mm -v -run TestEncodeStr
+// go test ./internal/mm -v -run TestEncodeString
 //
-// go test ./internal/mm -v -run TestEncodeStr/location
+// go test ./internal/mm -v -run TestEncodeString/location
 //
-// go test ./internal/mm -bench=BenchmarkEncodeStr -benchmem
-// go test ./internal/mm -test.fullpath=true -benchmem -run=^$ -bench ^BenchmarkEncodeStr_MM$ -benchtime=1000000x
-// go test ./internal/mm -test.fullpath=true -benchmem -run=^$ -bench ^BenchmarkEncodeStr_JSON$ -benchtime=1000000x
+// go test ./internal/mm -bench=BenchmarkEncodeString -benchmem
+// go test ./internal/mm -test.fullpath=true -benchmem -run=^$ -bench ^BenchmarkEncodeString_MM$ -benchtime=1000000x
+// go test ./internal/mm -test.fullpath=true -benchmem -run=^$ -bench ^BenchmarkEncodeString_JSON$ -benchtime=1000000x
 
 type encodeStrTestCase struct {
 	name        string
@@ -31,7 +31,7 @@ type encodeStrTestCase struct {
 	expectedErr string
 }
 
-func TestEncodeStr(t *testing.T) {
+func TestEncodeString(t *testing.T) {
 	x := "hello world"
 	var y string
 	y = ""
@@ -230,7 +230,7 @@ func TestEncodeStr(t *testing.T) {
 	}
 }
 
-func BenchmarkEncodeStr_MM(b *testing.B) {
+func BenchmarkEncodeString_MM(b *testing.B) {
 	e := NewEncoder(nil)
 	data := "benchmark test data 1234567890"
 	n, err := jsonc.StructToJSONC(data, "")
@@ -244,7 +244,7 @@ func BenchmarkEncodeStr_MM(b *testing.B) {
 	}
 }
 
-func BenchmarkEncodeStr_JSON(b *testing.B) {
+func BenchmarkEncodeString_JSON(b *testing.B) {
 	data := "benchmark test data 1234567890"
 	out, _ := json.Marshal(data)
 	b.Log("out", len(out))

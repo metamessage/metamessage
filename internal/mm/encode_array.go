@@ -1,13 +1,11 @@
 package mm
 
-import (
-	"errors"
-)
+import "fmt"
 
 func (e *encoder) encodeArray(bs []byte) (n uint32, err error) {
 	length := len(bs)
 	if length > Max2Byte {
-		err = errors.New("array too long")
+		err = fmt.Errorf("array too long, max length: %d, actual: %d", Max2Byte, length)
 		return
 	}
 

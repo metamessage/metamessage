@@ -318,12 +318,12 @@ export class MMEncoder {
     const len = payload.length;
 
     if (len < 254) {
-      this.buffer.write(MMPrefix.Container | MMConstants.ContainerMap | len);
+      this.buffer.write(MMPrefix.Container | MMConstants.ContainerObject | len);
     } else if (len < 65536) {
-      this.buffer.write(MMPrefix.Container | MMConstants.ContainerMap | MMConstants.ContainerLen1Byte);
+      this.buffer.write(MMPrefix.Container | MMConstants.ContainerObject | MMConstants.ContainerLen1Byte);
       this.buffer.writeUint8(len & 0xFF);
     } else {
-      this.buffer.write(MMPrefix.Container | MMConstants.ContainerMap | MMConstants.ContainerLen2Byte);
+      this.buffer.write(MMPrefix.Container | MMConstants.ContainerObject | MMConstants.ContainerLen2Byte);
       this.buffer.writeUint8((len >> 8) & 0xFF);
       this.buffer.writeUint8(len & 0xFF);
     }

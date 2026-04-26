@@ -1,17 +1,15 @@
 package mm
 
-import (
-	"errors"
-)
+import "fmt"
 
-func (e *encoder) encodeMap(bs []byte) (n uint32, err error) {
+func (e *encoder) encodeObject(bs []byte) (n uint32, err error) {
 	length := len(bs)
 	if length > Max2Byte {
-		err = errors.New("struct/map too long")
+		err = fmt.Errorf("object too long, max length: %d, actual: %d", Max2Byte, length)
 		return
 	}
 
-	sign := Container | ContainerMap
+	sign := Container | ContainerObject
 	if length < ContainerLen1Byte {
 		sign |= Prefix(length)
 		return e.writeBytesWithPrefix(bs, byte(sign))

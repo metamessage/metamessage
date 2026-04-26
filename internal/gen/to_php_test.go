@@ -30,14 +30,14 @@ func TestToPHPGeneratesCode(t *testing.T) {
 	if !strings.Contains(out, "class Sample") {
 		t.Fatalf("expected class Sample, got:\n%s", out)
 	}
-	if !strings.Contains(out, "public ?string $name = null;") {
-		t.Fatalf("expected name property with string type, got:\n%s", out)
+	if !strings.Contains(out, "public string $name;") {
+		t.Fatalf("expected non-nullable name property (public string $name;), got:\n%s", out)
 	}
-	if !strings.Contains(out, "public ?string $data = null;") {
-		t.Fatalf("expected data property with string type, got:\n%s", out)
+	if !strings.Contains(out, "public string $data;") {
+		t.Fatalf("expected non-nullable data property (public string $data;), got:\n%s", out)
 	}
-	if !strings.Contains(out, "public ?array $ids = null;") {
-		t.Fatalf("expected ids property with array type, got:\n%s", out)
+	if !strings.Contains(out, "public array $ids;") {
+		t.Fatalf("expected non-nullable ids property (public array $ids;), got:\n%s", out)
 	}
 	if !strings.Contains(out, "class Meta") {
 		t.Fatalf("expected nested class Meta, got:\n%s", out)

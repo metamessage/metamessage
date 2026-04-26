@@ -52,7 +52,7 @@ public static class ReflectMmEncoder
             {
                 throw new Exception("Null struct");
             }
-            EncodeStruct(encoder, value, workTag);
+            EncodeObject(encoder, value, workTag);
             return;
         }
 
@@ -83,7 +83,7 @@ public static class ReflectMmEncoder
         return TypeInference.ValueTypeForType(type);
     }
 
-    private static void EncodeStruct(WireEncoder encoder, object obj, MmTag objTag)
+    private static void EncodeObject(WireEncoder encoder, object obj, MmTag objTag)
     {
         var keysPacked = new GrowableByteBuf();
         var valsPacked = new GrowableByteBuf();
@@ -124,7 +124,7 @@ public static class ReflectMmEncoder
         mapBody.WriteAll(valsPacked.ToArray());
 
         tmp.Reset();
-        tmp.EncodeMapPayload(mapBody.ToArray());
+        tmp.EncodeObjectPayload(mapBody.ToArray());
         encoder.EncodeTaggedPayload(tmp.ToByteArray(), objTag.ToBytes());
     }
 

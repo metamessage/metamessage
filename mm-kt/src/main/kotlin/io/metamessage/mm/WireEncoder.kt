@@ -244,7 +244,7 @@ class WireEncoder {
 
     fun encodeArrayPayload(payload: ByteArray): Int = encodeContainer(payload, Prefix.CONTAINER or WireConstants.CONTAINER_ARRAY)
 
-    fun encodeMapPayload(payload: ByteArray): Int = encodeContainer(payload, Prefix.CONTAINER or WireConstants.CONTAINER_MAP)
+    fun encodeObjectPayload(payload: ByteArray): Int = encodeContainer(payload, Prefix.CONTAINER or WireConstants.CONTAINER_MAP)
 
     private fun encodeContainer(payload: ByteArray, baseSign: Int): Int {
         val length = payload.size

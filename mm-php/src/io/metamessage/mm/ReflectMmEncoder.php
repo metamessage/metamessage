@@ -122,7 +122,7 @@ class ReflectMmEncoder {
         $mapBody->writeAll($tmp->toByteArray());
         $mapBody->writeAll($valsPacked->copyRange(0, $valsPacked->length()));
         $tmp->reset();
-        $tmp->encodeMapPayload($mapBody->copyRange(0, $mapBody->length()));
+        $tmp->encodeObjectPayload($mapBody->copyRange(0, $mapBody->length()));
         $enc->encodeTaggedPayload($tmp->toByteArray(), $objTag->toBytes());
     }
 

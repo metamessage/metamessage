@@ -92,11 +92,24 @@ func genPHPFields(b *strings.Builder, n ast.Node, indent int) {
 		WriteIndent(b, indent)
 		typeName := getPhpTypeForField(f)
 		b.WriteString("public ")
-		b.WriteString("?")
+
+		// Check if field is nullable
+		isNullable := false
+		if tag := f.Value.GetTag(); tag != nil {
+			isNullable = tag.Nullable
+		}
+
+		if isNullable {
+			b.WriteString("?")
+		}
 		b.WriteString(typeName)
 		b.WriteString(" $")
 		b.WriteString(exportPhpFieldName(f.Key))
-		b.WriteString(" = null;\n")
+		if isNullable {
+			b.WriteString(" = null;\n")
+		} else {
+			b.WriteString(";\n")
+		}
 	}
 }
 
