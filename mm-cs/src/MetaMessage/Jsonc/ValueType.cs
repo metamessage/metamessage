@@ -51,7 +51,7 @@ public static class ValueTypeConstants
     public const string DocStr = "doc";
     public const string ArrayStr = "arr";
     public const string SliceStr = "slice";
-    public const string StructStr = "struct";
+    public const string ObjectStr = "obj";
     public const string MapStr = "map";
     public const string StringStr = "str";
     public const string BytesStr = "bytes";
@@ -90,7 +90,7 @@ public static class ValueTypeExtensions
         { ValueTypeConstants.DocStr, ValueType.Doc },
         { ValueTypeConstants.ArrayStr, ValueType.Array },
         { ValueTypeConstants.SliceStr, ValueType.Slice },
-        { ValueTypeConstants.StructStr, ValueType.Struct },
+        { ValueTypeConstants.ObjectStr, ValueType.Struct },
         { ValueTypeConstants.MapStr, ValueType.Map },
         { ValueTypeConstants.StringStr, ValueType.String },
         { ValueTypeConstants.BytesStr, ValueType.Bytes },
@@ -129,7 +129,7 @@ public static class ValueTypeExtensions
             ValueType.Doc => ValueTypeConstants.DocStr,
             ValueType.Array => ValueTypeConstants.ArrayStr,
             ValueType.Slice => ValueTypeConstants.SliceStr,
-            ValueType.Struct => ValueTypeConstants.StructStr,
+            ValueType.Struct => ValueTypeConstants.ObjectStr,
             ValueType.Map => ValueTypeConstants.MapStr,
             ValueType.String => ValueTypeConstants.StringStr,
             ValueType.Bytes => ValueTypeConstants.BytesStr,

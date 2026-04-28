@@ -51,17 +51,17 @@ export class MMEncoder {
 
   private encodeMMValue(value: MMValue<any>): void {
     const { value: val, options } = value;
-    if (options.type === 'float') {
+    if (options.type === 'float64' || options.type === 'float32') {
       this.encodeDouble(val);
-    } else if (options.type === 'int') {
+    } else if (options.type === 'int' || options.type === 'int8' || options.type === 'int16' || options.type === 'int32' || options.type === 'int64' || options.type === 'uint' || options.type === 'uint8' || options.type === 'uint16' || options.type === 'uint32' || options.type === 'uint64' || options.type === 'bigint') {
       this.encodeInt(BigInt(val));
-    } else if (options.type === 'str') {
+    } else if (options.type === 'string') {
       this.encodeString(val);
     } else if (options.type === 'bool') {
       this.encodeBool(val);
     } else if (options.type === 'bytes') {
       this.encodeBytes(val);
-    } else if (options.type === 'array') {
+    } else if (options.type === 'array' || options.type === 'slice') {
       this.encodeArray(val);
     } else if (options.type === 'struct') {
       this.encodeObject(val);

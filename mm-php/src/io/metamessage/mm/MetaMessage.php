@@ -23,4 +23,12 @@ class MetaMessage {
         $tree = (new WireDecoder($data))->decode();
         return ReflectMmBinder::bind($tree, $clazz);
     }
+
+    /**
+     * Validate a value against a MM tag.
+     */
+    public static function validate($value, MmTag $tag): ValidationResult {
+        global $validator;
+        return $validator->validate($value, $tag);
+    }
 }

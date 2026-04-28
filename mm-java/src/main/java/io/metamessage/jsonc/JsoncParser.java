@@ -3,6 +3,7 @@ package io.metamessage.jsonc;
 import io.metamessage.mm.CamelToSnake;
 import io.metamessage.mm.MmLineParser;
 import io.metamessage.mm.MmTag;
+import io.metamessage.mm.MmValidator;
 import io.metamessage.mm.ValueType;
 import java.util.ArrayList;
 import java.util.List;
@@ -152,6 +153,13 @@ public final class JsoncParser {
                 tag = tag.copy();
                 tag.type = ValueType.STRUCT;
             }
+            
+            // 验证结构体 tag
+            MmValidator.ValidationResult structResult = MmValidator.validateStruct(tag);
+            if (!structResult.isSuccess()) {
+                throw new JsoncException(structResult.getError());
+            }
+            
             if (tag.name != null && !tag.name.isEmpty()) {
                 if (path.isEmpty()) {
                     path = tag.name;
@@ -269,6 +277,13 @@ public final class JsoncParser {
                 tag = tag.copy();
                 tag.type = tag.size > 0 ? ValueType.ARRAY : ValueType.SLICE;
             }
+            
+            // 验证数组 tag（仅验证 tag 本身，不验证数组内容）
+            MmValidator.ValidationResult arrayResult = MmValidator.validateStruct(tag);
+            if (!arrayResult.isSuccess()) {
+                throw new JsoncException(arrayResult.getError());
+            }
+            
             if (tag.name != null && !tag.name.isEmpty()) {
                 path = path + "." + tag.name;
             }

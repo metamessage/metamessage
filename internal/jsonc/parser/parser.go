@@ -900,7 +900,7 @@ func (p *Parser) parseObject(openLine int, path string) (*ast.Object, error) {
 		tag = ast.NewTag()
 	}
 	if tag.Type == ast.ValueTypeUnknown {
-		tag.Type = ast.ValueTypeStruct
+		tag.Type = ast.ValueTypeObject
 	}
 
 	if tag.Name != "" {
@@ -994,7 +994,7 @@ func (p *Parser) parseObject(openLine int, path string) (*ast.Object, error) {
 			return nil, err
 		}
 
-	case ast.ValueTypeStruct:
+	case ast.ValueTypeObject:
 		err = tag.ValidateStruct()
 		if err != nil {
 			err = fmt.Errorf("validate failed: %w", err)

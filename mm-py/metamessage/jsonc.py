@@ -5,6 +5,7 @@ from dataclasses import dataclass, field
 
 from .tag import Tag, ValueType
 from .types import Obj, Arr, Val, Field
+from .validator import MmValidator, ValidationResult
 
 
 @dataclass
@@ -193,6 +194,12 @@ class Parser:
         
         tag = self.consume_comments()
         
+        # 验证结构体 tag
+        if tag:
+            result = MmValidator.validate_struct(tag)
+            if not result.valid:
+                raise ValueError(result.error or "Struct validation failed")
+        
         fields = []
         while self.peek().type != TokenRBrace and self.peek().type != TokenEOF:
             if self.peek().type == TokenComment:
@@ -222,6 +229,12 @@ class Parser:
         self.next()
         
         tag = self.consume_comments()
+        
+        # 验证数组 tag
+        if tag:
+            result = MmValidator.validate_struct(tag)
+            if not result.valid:
+                raise ValueError(result.error or "Array validation failed")
         
         items = []
         index = 0
@@ -254,16 +267,32 @@ class Parser:
         if tok.type == TokenString:
             if tag.type == ValueType.Unknown:
                 tag.type = ValueType.String
+            # 验证值
+            result = MmValidator.validate(tok.literal, tag)
+            if not result.valid:
+                raise ValueError(result.error or "String validation failed")
             return Val(data=tok.literal, text=str(tok.literal), tag=tag, path=path)
         elif tok.type == TokenNumber:
             if tag.type == ValueType.Unknown:
-                tag.type = ValueType.Int
+                tag.type = ValueType.Float64 if isinstance(tok.literal, float) else ValueType.Int
+            # 验证值
+            result = MmValidator.validate(tok.literal, tag)
+            if not result.valid:
+                raise ValueError(result.error or "Number validation failed")
             return Val(data=tok.literal, text=str(tok.literal), tag=tag, path=path)
         elif tok.type == TokenTrue:
             tag.type = ValueType.Bool
+            # 验证值
+            result = MmValidator.validate(True, tag)
+            if not result.valid:
+                raise ValueError(result.error or "Boolean validation failed")
             return Val(data=True, text="true", tag=tag, path=path)
         elif tok.type == TokenFalse:
             tag.type = ValueType.Bool
+            # 验证值
+            result = MmValidator.validate(False, tag)
+            if not result.valid:
+                raise ValueError(result.error or "Boolean validation failed")
             return Val(data=False, text="false", tag=tag, path=path)
         elif tok.type == TokenNull:
             tag.is_null = True
@@ -417,7 +446,7 @@ def mm_tag(tag_str: str) -> Optional[Tag]:
         "f32": ValueType.Float32, "f64": ValueType.Float64, "bool": ValueType.Bool, "bytes": ValueType.Bytes,
         "bi": ValueType.BigInt, "datetime": ValueType.DateTime, "date": ValueType.Date, "time": ValueType.Time,
         "uuid": ValueType.UUID, "decimal": ValueType.Decimal, "ip": ValueType.IP, "url": ValueType.URL,
-        "email": ValueType.Email, "enum": ValueType.Enum, "arr": ValueType.Array, "struct": ValueType.Struct,
+        "email": ValueType.Email, "enum": ValueType.Enum, "arr": ValueType.Array, "obj": ValueType.Struct,
     }
     
     parts = [p.strip() for p in tag_str.split(";")]

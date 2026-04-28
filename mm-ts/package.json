@@ -1,16 +1,18 @@
 {
-  "name": "meta-message-ts",
-  "version": "0.1.0",
+  "name": "metamessage",
+  "version": "0.1.3",
   "description": "TypeScript implementation of MetaMessage",
-  "type": "module",
+  "type": "commonjs",
   "main": "dist/mm/index.js",
   "types": "dist/mm/index.d.ts",
   "exports": {
     ".": {
+      "require": "./dist/mm/index.js", 
       "import": "./dist/mm/index.js",
       "types": "./dist/mm/index.d.ts"
     },
     "./jsonc": {
+      "require": "./dist/jsonc/index.js",
       "import": "./dist/jsonc/index.js",
       "types": "./dist/jsonc/index.d.ts"
     }
@@ -22,7 +24,9 @@
     "test:coverage": "jest --coverage",
     "lint": "eslint src --ext .ts",
     "format": "prettier --write src/**/*.ts",
-    "dev": "tsc --watch"
+    "dev": "tsc --watch",
+    "publish": "npm run build && npm publish --registry=https://registry.npmjs.org --access public",
+    "publish:dry-run": "npm run build && npm publish --registry=https://registry.npmjs.org --dry-run"
   },
   "keywords": [
     "metamessage",

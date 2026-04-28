@@ -139,7 +139,7 @@ class JsoncPrinter {
                 JsoncValueType.Email -> "email"
                 JsoncValueType.Enum -> "enum"
                 JsoncValueType.Array -> "arr"
-                JsoncValueType.Struct -> "struct"
+                JsoncValueType.Struct -> "obj"
                 JsoncValueType.Null -> "null"
                 JsoncValueType.Unknown -> "unknown"
                 else -> "unknown"

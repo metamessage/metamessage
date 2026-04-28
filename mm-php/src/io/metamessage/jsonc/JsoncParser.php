@@ -2,6 +2,8 @@
 
 namespace io\metamessage\jsonc;
 
+use io\metamessage\mm\MmValidator;
+
 class JsoncParser {
     /** @var JsoncToken[] */
     private array $tokens;
@@ -62,6 +64,15 @@ class JsoncParser {
         $tag = $this->consumeComments();
         $obj = new JsoncObject($tag);
 
+        // 验证结构体 tag
+        if ($tag !== null) {
+            $mmTag = $this->convertJsoncTagToMmTag($tag);
+            $result = $GLOBALS['validator']->validate($obj, $mmTag);
+            if (!$result->isValid) {
+                throw new \Exception(implode(', ', $result->errors) ?? 'Struct validation failed');
+            }
+        }
+
         while ($this->peek()->type !== JsoncTokenType::RBrace && $this->peek()->type !== JsoncTokenType::EOF) {
             $tok = $this->peek();
             if ($tok->type === JsoncTokenType::LeadingComment || $tok->type === JsoncTokenType::TrailingComment) {
@@ -97,6 +108,15 @@ class JsoncParser {
         $tag = $this->consumeComments();
         $arr = new JsoncArray($tag);
         $index = 0;
+
+        // 验证数组 tag
+        if ($tag !== null) {
+            $mmTag = $this->convertJsoncTagToMmTag($tag);
+            $result = $GLOBALS['validator']->validate($arr, $mmTag);
+            if (!$result->isValid) {
+                throw new \Exception(implode(', ', $result->errors) ?? 'Array validation failed');
+            }
+        }
 
         while ($this->peek()->type !== JsoncTokenType::RBracket && $this->peek()->type !== JsoncTokenType::EOF) {
             $tok = $this->peek();
@@ -136,7 +156,7 @@ class JsoncParser {
         $actualToken = $this->next();
         $tag = $this->consumeComments() ?? new JsoncTag();
 
-        return match ($actualToken->type) {
+        $value = match ($actualToken->type) {
             JsoncTokenType::String => (function() use ($actualToken, $tag): JsoncValue {
                 if ($tag->type === JsoncValueType::Unknown) {
                     $tag->type = JsoncValueType::String;
@@ -166,6 +186,15 @@ class JsoncParser {
             })(),
             default => new JsoncValue(null, "", $tag),
         };
+
+        // 验证值
+        $mmTag = $this->convertJsoncTagToMmTag($tag);
+        $result = $GLOBALS['validator']->validate($value->data, $mmTag);
+        if (!$result->isValid) {
+            throw new \Exception(implode(', ', $result->errors) ?? 'Value validation failed');
+        }
+
+        return $value;
     }
 
     private function tagFromComment(string $comment): ?JsoncTag {
@@ -231,7 +260,7 @@ class JsoncParser {
                         "email" => JsoncValueType::Email,
                         "enum" => JsoncValueType::Enum,
                         "arr" => JsoncValueType::Array,
-                        "struct" => JsoncValueType::Struct,
+                        "obj" => JsoncValueType::Struct,
                         default => JsoncValueType::Unknown,
                     };
                     break;
@@ -322,6 +351,57 @@ class JsoncParser {
             $b->mime = $a->mime;
         }
         return $b;
+    }
+
+    private function convertJsoncTagToMmTag(JsoncTag $jsoncTag): \io\metamessage\mm\MmTag {
+        $mmTag = new \io\metamessage\mm\MmTag();
+
+        // 转换类型
+        switch ($jsoncTag->type) {
+            case JsoncValueType::String:
+                $mmTag->type = \io\metamessage\mm\ValueType::STRING;
+                break;
+            case JsoncValueType::Int:
+            case JsoncValueType::Int8:
+            case JsoncValueType::Int16:
+            case JsoncValueType::Int32:
+            case JsoncValueType::Int64:
+            case JsoncValueType::Uint:
+            case JsoncValueType::Uint8:
+            case JsoncValueType::Uint16:
+            case JsoncValueType::Uint32:
+            case JsoncValueType::Uint64:
+            case JsoncValueType::BigInt:
+                $mmTag->type = \io\metamessage\mm\ValueType::INT;
+                break;
+            case JsoncValueType::Float32:
+            case JsoncValueType::Float64:
+            case JsoncValueType::Decimal:
+                $mmTag->type = \io\metamessage\mm\ValueType::FLOAT64;
+                break;
+            case JsoncValueType::Bool:
+                $mmTag->type = \io\metamessage\mm\ValueType::BOOL;
+                break;
+            case JsoncValueType::Array:
+            case JsoncValueType::Slice:
+                $mmTag->type = \io\metamessage\mm\ValueType::ARRAY;
+                break;
+            case JsoncValueType::Struct:
+                $mmTag->type = \io\metamessage\mm\ValueType::STRUCT;
+                break;
+            default:
+                $mmTag->type = \io\metamessage\mm\ValueType::UNKNOWN;
+                break;
+        }
+
+        // 转换其他属性
+        $mmTag->nullable = $jsoncTag->nullable;
+        $mmTag->allowEmpty = $jsoncTag->allowEmpty;
+        $mmTag->defaultValue = $jsoncTag->defaultValue;
+        $mmTag->enumValues = $jsoncTag->enum;
+        $mmTag->pattern = $jsoncTag->pattern;
+
+        return $mmTag;
     }
 }
 

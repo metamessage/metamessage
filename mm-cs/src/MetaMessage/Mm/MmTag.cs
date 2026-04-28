@@ -15,6 +15,8 @@ public class MmTag
     public int LocationHours { get; set; } = 0;
     public int Version { get; set; } = 0;
     public string Mime { get; set; } = string.Empty;
+    public string Min { get; set; } = string.Empty;
+    public string Max { get; set; } = string.Empty;
     public string ChildDesc { get; set; } = string.Empty;
     public bool ChildNullable { get; set; } = false;
     public List<string> ChildEnum { get; set; } = new List<string>();
@@ -42,6 +44,8 @@ public class MmTag
             LocationHours = LocationHours,
             Version = Version,
             Mime = Mime,
+            Min = Min,
+            Max = Max,
             ChildDesc = ChildDesc,
             ChildNullable = ChildNullable,
             ChildEnum = new List<string>(ChildEnum),

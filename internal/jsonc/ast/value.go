@@ -13,7 +13,7 @@ const (
 	ValueTypeDoc
 	ValueTypeSlice
 	ValueTypeArray
-	ValueTypeStruct
+	ValueTypeObject
 	ValueTypeMap
 
 	ValueTypeString
@@ -55,7 +55,7 @@ const (
 	vtDocStr    = "doc"
 	vtArrayStr  = "arr"
 	vtSliceStr  = "slice"
-	vtStructStr = "struct"
+	vtObjectStr = "obj"
 	vtMapStr    = "map"
 
 	vtStringStr = "str"
@@ -102,8 +102,8 @@ func (v ValueType) String() string {
 		return vtArrayStr
 	case ValueTypeSlice:
 		return vtSliceStr
-	case ValueTypeStruct:
-		return vtStructStr
+	case ValueTypeObject:
+		return vtObjectStr
 	case ValueTypeMap:
 		return vtMapStr
 	case ValueTypeString:
@@ -170,7 +170,7 @@ var strToValueType = map[string]ValueType{
 	vtDocStr:      ValueTypeDoc,
 	vtArrayStr:    ValueTypeArray,
 	vtSliceStr:    ValueTypeSlice,
-	vtStructStr:   ValueTypeStruct,
+	vtObjectStr:   ValueTypeObject,
 	vtMapStr:      ValueTypeMap,
 	vtStringStr:   ValueTypeString,
 	vtBytesStr:    ValueTypeBytes,

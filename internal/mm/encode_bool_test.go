@@ -25,8 +25,8 @@ func TestEncodeBool(t *testing.T) {
 	}
 
 	x := false
+	xTrue := true
 	var y *bool
-	xInt8 := int8(0)
 	testCases := []testCase{
 		{
 			name:       "bool_nil_pointer",
@@ -48,140 +48,22 @@ func TestEncodeBool(t *testing.T) {
 		},
 		{
 			name:       "bool true pointer",
-			input:      true,
+			input:      &xTrue,
 			wantErr:    false,
 			wantDecode: bool(true),
 		},
 		{
-			name:       "int8 zero pointer",
-			input:      &xInt8,
+			name:       "bool false pointer",
+			input:      &x,
 			wantErr:    false,
-			wantDecode: int8(0),
+			wantDecode: bool(false),
 		},
-
-		{
-			name:       "int zero",
-			input:      0,
-			wantErr:    false,
-			wantDecode: int(0),
-		},
-		{
-			name:       "int 23",
-			input:      23,
-			wantErr:    false,
-			wantDecode: int(23),
-		},
-		{
-			name:       "int 24",
-			input:      24,
-			wantErr:    false,
-			wantDecode: int(24),
-		},
-		{
-			name:       "int positive",
-			input:      123456,
-			wantErr:    false,
-			wantDecode: int(123456),
-		},
-		{
-			name:       "int negative",
-			input:      -7890,
-			wantErr:    false,
-			wantDecode: int(-7890),
-		},
-		{
-			name:       "int8 min",
-			input:      int8(-128),
-			wantErr:    false,
-			wantDecode: int8(-128),
-		},
-		{
-			name:       "int8 max",
-			input:      int8(127),
-			wantErr:    false,
-			wantDecode: int8(127),
-		},
-		{
-			name:       "int16 min",
-			input:      int16(-32768),
-			wantErr:    false,
-			wantDecode: int16(-32768),
-		},
-		{
-			name:       "int16 max",
-			input:      int16(32767),
-			wantErr:    false,
-			wantDecode: int16(32767),
-		},
-		{
-			name:       "int32 min",
-			input:      int32(-2147483648),
-			wantErr:    false,
-			wantDecode: int32(-2147483648),
-		},
-		{
-			name:       "int32 max",
-			input:      int32(2147483647),
-			wantErr:    false,
-			wantDecode: int32(2147483647),
-		},
-		{
-			name:       "int64 min",
-			input:      int64(-9223372036854775808),
-			wantErr:    false,
-			wantDecode: int64(-9223372036854775808),
-		},
-		{
-			name:       "int64 max",
-			input:      int64(9223372036854775807),
-			wantErr:    false,
-			wantDecode: int64(9223372036854775807),
-		},
-
-		{
-			name:       "uint zero",
-			input:      uint(0),
-			wantErr:    false,
-			wantDecode: uint(0),
-		},
-		{
-			name:       "uint positive",
-			input:      uint(987654),
-			wantErr:    false,
-			wantDecode: uint(987654),
-		},
-		{
-			name:       "uint8 max",
-			input:      uint8(255),
-			wantErr:    false,
-			wantDecode: uint8(255),
-		},
-		{
-			name:       "uint16 max",
-			input:      uint16(65535),
-			wantErr:    false,
-			wantDecode: uint16(65535),
-		},
-		{
-			name:       "uint32 max",
-			input:      uint32(4294967295),
-			wantErr:    false,
-			wantDecode: uint32(4294967295),
-		},
-		{
-			name:       "uint64 max",
-			input:      uint64(18446744073709551615),
-			wantErr:    false,
-			wantDecode: uint64(18446744073709551615),
-		},
-
 		{
 			name:       "uintptr",
 			input:      uintptr(123456789),
 			wantErr:    true,
 			wantDecode: nil,
 		},
-
 		{
 			name:       "nil input",
 			input:      nil,
@@ -229,5 +111,199 @@ func BenchmarkEncodeBool(b *testing.B) {
 		enc.Reset(&o)
 		n, _ := jsonc.StructToJSONC(testInputs[i%len(testInputs)], "")
 		_, _ = enc.Encode(n)
+	}
+}
+
+// TestEncodeBoolInStruct 测试结构体中的 bool 字段
+func TestEncodeBoolInStruct(t *testing.T) {
+	type testStruct struct {
+		Active   bool `mm:"type=bool;desc=是否激活"`
+		Verified bool `mm:"type=bool;desc=是否已验证"`
+	}
+
+	testCases := []struct {
+		name  string
+		input testStruct
+	}{
+		{
+			name:  "both_true",
+			input: testStruct{Active: true, Verified: true},
+		},
+		{
+			name:  "both_false",
+			input: testStruct{Active: false, Verified: false},
+		},
+		{
+			name:  "mixed",
+			input: testStruct{Active: true, Verified: false},
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			bs, err := FromStruct(tc.input, "")
+			if err != nil {
+				t.Fatalf("encode failed: %v", err)
+			}
+
+			decoded, err := Decode(bs)
+			if err != nil {
+				t.Fatalf("decode failed: %v", err)
+			}
+
+			obj := decoded.(*ast.Object)
+			fields := obj.Fields
+			if len(fields) < 2 {
+				t.Fatalf("expected at least 2 fields, got %d", len(fields))
+			}
+
+			t.Logf("Encoded %s: %x", tc.name, bs)
+		})
+	}
+}
+
+// TestEncodeBoolArray 测试 bool 数组
+func TestEncodeBoolArray(t *testing.T) {
+	testCases := []struct {
+		name  string
+		input []bool
+	}{
+		{
+			name:  "single_true",
+			input: []bool{true},
+		},
+		{
+			name:  "single_false",
+			input: []bool{false},
+		},
+		{
+			name:  "mixed_array",
+			input: []bool{true, false, true, false, true},
+		},
+		{
+			name:  "all_true",
+			input: []bool{true, true, true, true},
+		},
+		{
+			name:  "all_false",
+			input: []bool{false, false, false, false},
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			bs, err := FromStruct(tc.input, "")
+			if err != nil {
+				t.Fatalf("encode failed: %v", err)
+			}
+
+			decoded, err := Decode(bs)
+			if err != nil {
+				t.Fatalf("decode failed: %v", err)
+			}
+
+			arr := decoded.(*ast.Array)
+			if len(arr.Items) != len(tc.input) {
+				t.Errorf("array length mismatch: expected %d, got %d", len(tc.input), len(arr.Items))
+			}
+
+			for i, item := range arr.Items {
+				val := item.(*ast.Value).Data.(bool)
+				if val != tc.input[i] {
+					t.Errorf("array[%d] mismatch: expected %v, got %v", i, tc.input[i], val)
+				}
+			}
+
+			t.Logf("Encoded %s (%d items): %x", tc.name, len(tc.input), bs)
+		})
+	}
+}
+
+// TestEncodeBoolNullable 测试可空的 bool 字段
+func TestEncodeBoolNullable(t *testing.T) {
+	type testStruct struct {
+		Active    bool  `mm:"type=bool;desc=必需"`
+		Suspended *bool `mm:"type=bool;nullable;desc=可空"`
+	}
+
+	falseVal := false
+	trueVal := true
+
+	testCases := []struct {
+		name  string
+		input testStruct
+	}{
+		{
+			name:  "nullable_nil",
+			input: testStruct{Active: true, Suspended: nil},
+		},
+		{
+			name:  "nullable_true",
+			input: testStruct{Active: true, Suspended: &trueVal},
+		},
+		{
+			name:  "nullable_false",
+			input: testStruct{Active: false, Suspended: &falseVal},
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			bs, err := FromStruct(tc.input, "")
+			if err != nil {
+				t.Fatalf("encode failed: %v", err)
+			}
+
+			_, err = Decode(bs)
+			if err != nil {
+				t.Fatalf("decode failed: %v", err)
+			}
+
+			t.Logf("Encoded %s: %x", tc.name, bs)
+		})
+	}
+}
+
+// TestEncodeBoolByteRepresentation 测试字节表示
+func TestEncodeBoolByteRepresentation(t *testing.T) {
+	testCases := []struct {
+		name  string
+		input bool
+	}{
+		{
+			name:  "true_value",
+			input: true,
+		},
+		{
+			name:  "false_value",
+			input: false,
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			bs, err := FromStruct(tc.input, "")
+			if err != nil {
+				t.Fatalf("encode failed: %v", err)
+			}
+
+			// bool 至少应该有 1 字节的编码
+			if len(bs) < 1 {
+				t.Errorf("expected encoded bool to have at least 1 byte, got %d", len(bs))
+			}
+
+			// 验证能否解码回去
+			decoded, err := Decode(bs)
+			if err != nil {
+				t.Fatalf("decode failed: %v", err)
+			}
+
+			decodedBool := decoded.(*ast.Value).Data.(bool)
+			if decodedBool != tc.input {
+				t.Errorf("value mismatch: expected %v, got %v", tc.input, decodedBool)
+			}
+
+			t.Logf("%s: %v -> %x -> %v", tc.name, tc.input, bs, decodedBool)
+		})
 	}
 }

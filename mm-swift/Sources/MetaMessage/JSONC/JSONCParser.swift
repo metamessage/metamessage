@@ -1,4 +1,5 @@
 import Foundation
+import MetaMessage
 
 public enum JSONCParserError: Error {
     case unexpectedToken(String)
@@ -155,13 +156,19 @@ public class JSONCParser {
             return try parseArray(tok.line, path)
 
         case .string:
-            var tag = try consumeCommentsFor(tok.line) ?? JSONCTag()
-            if tag.type == .unknown {
-                tag.type = .string
-            }
-            let text = tok.literal
-
-            return JSONCValue(data: text, text: text, tag: tag, path: path)
+                var tag = try consumeCommentsFor(tok.line) ?? JSONCTag()
+                if tag.type == .unknown {
+                    tag.type = .string
+                }
+                let text = tok.literal
+                
+                let value = JSONCValue(data: text, text: text, tag: tag, path: path)
+                // 验证值
+                let stringResult = validator.validate(text, tag: tag)
+                if !stringResult.isValid {
+                    throw JSONCParserError.invalidData(stringResult.errors.joined(separator: ", "))
+                }
+                return value
 
         case .number:
             var tag = try consumeCommentsFor(tok.line) ?? JSONCTag()
@@ -190,21 +197,39 @@ public class JSONCParser {
                 }
             }
 
-            return JSONCValue(data: data, text: tok.literal, tag: tag, path: path)
+            let value = JSONCValue(data: data, text: tok.literal, tag: tag, path: path)
+            // 验证值
+            let numberResult = validator.validate(data, tag: tag)
+            if !numberResult.isValid {
+                throw JSONCParserError.invalidData(numberResult.errors.joined(separator: ", "))
+            }
+            return value
 
         case .trueValue:
             var tag = try consumeCommentsFor(tok.line) ?? JSONCTag()
             if tag.type == .unknown {
                 tag.type = .bool
             }
-            return JSONCValue(data: true, text: "true", tag: tag, path: path)
+            let value = JSONCValue(data: true, text: "true", tag: tag, path: path)
+            // 验证值
+            let trueResult = validator.validate(true, tag: tag)
+            if !trueResult.isValid {
+                throw JSONCParserError.invalidData(trueResult.errors.joined(separator: ", "))
+            }
+            return value
 
         case .falseValue:
             var tag = try consumeCommentsFor(tok.line) ?? JSONCTag()
             if tag.type == .unknown {
                 tag.type = .bool
             }
-            return JSONCValue(data: false, text: "false", tag: tag, path: path)
+            let value = JSONCValue(data: false, text: "false", tag: tag, path: path)
+            // 验证值
+            let falseResult = validator.validate(false, tag: tag)
+            if !falseResult.isValid {
+                throw JSONCParserError.invalidData(falseResult.errors.joined(separator: ", "))
+            }
+            return value
 
         case .nullValue:
             var tag = try consumeCommentsFor(tok.line) ?? JSONCTag()
@@ -212,7 +237,13 @@ public class JSONCParser {
                 tag.type = .unknown
             }
             tag.isNull = true
-            return JSONCValue(data: nil, text: "null", tag: tag, path: path)
+            let value = JSONCValue(data: nil, text: "null", tag: tag, path: path)
+            // 验证值
+            let nullResult = validator.validate(nil, tag: tag)
+            if !nullResult.isValid {
+                throw JSONCParserError.invalidData(nullResult.errors.joined(separator: ", "))
+            }
+            return value
 
         default:
             throw JSONCParserError.unexpectedToken("Unexpected token: \(tok.type)")
@@ -233,6 +264,12 @@ public class JSONCParser {
         }
 
         let obj = JSONCObject(tag: tag, path: path)
+
+        // 验证结构体 tag
+        let structResult = validator.validate(obj, tag: tag)
+        if !structResult.isValid {
+            throw JSONCParserError.invalidData(structResult.errors.joined(separator: ", "))
+        }
 
         while true {
             let tok = peek()
@@ -311,6 +348,12 @@ public class JSONCParser {
         }
 
         let arr = JSONCArray(tag: tag, path: path)
+
+        // 验证数组 tag
+        let arrayResult = validator.validate(arr, tag: tag)
+        if !arrayResult.isValid {
+            throw JSONCParserError.invalidData(arrayResult.errors.joined(separator: ", "))
+        }
 
         var index = 0
         while true {

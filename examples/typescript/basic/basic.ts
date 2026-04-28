@@ -1,9 +1,11 @@
-import { encode, decode } from '../../../mm-ts/src/mm/index.js';
+import { encode, bind, mm } from '../../../mm-ts/src/mm/index.js';
 
-// 创建对象
+// 使用 mm() 函数包装值，支持 tag 和自动类型推断
 const person = {
-  name: "Ed",
-  age: 30
+  name: mm("Ed", { desc: "" }),
+  email: mm("Ed@gmail.com", { desc: "", type: "email" }),
+  score: mm(90, { desc: "", type: "uint8" }),
+  age: mm(30, { desc: "" })
 };
 
 console.log('Original:', person);
@@ -12,9 +14,9 @@ console.log('Original:', person);
 const wire = encode(person);
 console.log('Encoded:', bytesToHex(wire));
 
-// 从 Wire 解码
-const decoded = decode(wire);
-console.log('Decoded:', decoded.value);
+// 从 Wire 解码并绑定到模板
+const decoded = bind(wire, person);
+console.log('Decoded:', decoded);
 
 function bytesToHex(bytes: Uint8Array): string {
   return Array.from(bytes)

@@ -1080,7 +1080,7 @@ func anyToJSONC(obj any, tag *ast.Tag, depth int, path string) (ast.Node, error)
 		}
 	}
 
-	tag.Type = ast.ValueTypeStruct
+	tag.Type = ast.ValueTypeObject
 	tag.Name = utils.CamelToSnake(typ.Name())
 	if tag.Name != "" {
 		if path == "" {
@@ -1094,7 +1094,7 @@ func anyToJSONC(obj any, tag *ast.Tag, depth int, path string) (ast.Node, error)
 	case reflect.Struct:
 		switch val.Type() {
 		default:
-			tag.Type = ast.ValueTypeStruct
+			tag.Type = ast.ValueTypeObject
 
 			objNode := &ast.Object{
 				Tag:  tag,

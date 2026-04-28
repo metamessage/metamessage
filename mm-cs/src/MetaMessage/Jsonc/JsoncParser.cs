@@ -1,3 +1,5 @@
+using MetaMessage.Mm;
+
 namespace MetaMessage.Jsonc;
 
 public class JsoncParser
@@ -87,6 +89,18 @@ public class JsoncParser
         }
 
         ProcessTrailingComment(valueNode);
+
+        // 验证值
+        if (valueNode.Tag != null)
+        {
+            var mmTag = ConvertJsoncTagToMmTag(valueNode.Tag);
+            var result = MmValidator.Validate(valueNode.Value, mmTag);
+            if (!result.IsValid)
+            {
+                throw new Exception(string.Join(", ", result.Errors) ?? "Value validation failed");
+            }
+        }
+
         return valueNode;
     }
 
@@ -96,6 +110,17 @@ public class JsoncParser
         var obj = new JsoncObject();
 
         ProcessLeadingComment(obj);
+
+        // 验证结构体 tag
+        if (obj.Tag != null)
+        {
+            var mmTag = ConvertJsoncTagToMmTag(obj.Tag);
+            var result = MmValidator.Validate(obj, mmTag);
+            if (!result.IsValid)
+            {
+                throw new Exception(string.Join(", ", result.Errors) ?? "Struct validation failed");
+            }
+        }
 
         while (PeekToken().Type != JsoncTokenType.RBrace && PeekToken().Type != JsoncTokenType.EOF)
         {
@@ -145,6 +170,17 @@ public class JsoncParser
         var array = new JsoncArray();
 
         ProcessLeadingComment(array);
+
+        // 验证数组 tag
+        if (array.Tag != null)
+        {
+            var mmTag = ConvertJsoncTagToMmTag(array.Tag);
+            var result = MmValidator.Validate(array, mmTag);
+            if (!result.IsValid)
+            {
+                throw new Exception(string.Join(", ", result.Errors) ?? "Array validation failed");
+            }
+        }
 
         while (PeekToken().Type != JsoncTokenType.RBracket && PeekToken().Type != JsoncTokenType.EOF)
         {
@@ -207,5 +243,53 @@ public class JsoncParser
             };
             node.TrailingComment = comment;
         }
+    }
+
+    private MmTag ConvertJsoncTagToMmTag(JsoncTag jsoncTag)
+    {
+        var mmTag = new MmTag();
+
+        // 转换类型
+        switch (jsoncTag.Type)
+        {
+            case ValueType.String:
+                mmTag.Type = ValueType.STRING;
+                break;
+            case ValueType.Number:
+                mmTag.Type = ValueType.INT;
+                break;
+            case ValueType.Boolean:
+                mmTag.Type = ValueType.BOOL;
+                break;
+            case ValueType.Null:
+                mmTag.Type = ValueType.NULL;
+                break;
+            case ValueType.Object:
+                mmTag.Type = ValueType.STRUCT;
+                break;
+            case ValueType.Array:
+                mmTag.Type = ValueType.ARRAY;
+                break;
+        }
+
+        // 转换其他属性
+        mmTag.Nullable = jsoncTag.Nullable;
+        if (!string.IsNullOrEmpty(jsoncTag.MinValue) && double.TryParse(jsoncTag.MinValue, out double min))
+        {
+            mmTag.Min = min;
+        }
+        if (!string.IsNullOrEmpty(jsoncTag.MaxValue) && double.TryParse(jsoncTag.MaxValue, out double max))
+        {
+            mmTag.Max = max;
+        }
+        if (!string.IsNullOrEmpty(jsoncTag.Size) && int.TryParse(jsoncTag.Size, out int size))
+        {
+            mmTag.Size = size;
+        }
+        mmTag.Pattern = jsoncTag.Pattern;
+        mmTag.EnumValues = jsoncTag.EnumValues;
+        mmTag.DefaultValue = jsoncTag.DefaultValue;
+
+        return mmTag;
     }
 }

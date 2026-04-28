@@ -1421,10 +1421,10 @@ func (d *decoder) decodeArray(prefix byte, tag *ast.Tag, path string) (node *ast
 func (d *decoder) decodeObject(prefix byte, tag *ast.Tag, path string) (node *ast.Object, length int, err error) {
 	if tag == nil {
 		tag = ast.NewTag()
-		tag.Type = ast.ValueTypeStruct
+		tag.Type = ast.ValueTypeObject
 	}
 	if tag.Type == ast.ValueTypeUnknown {
-		tag.Type = ast.ValueTypeStruct
+		tag.Type = ast.ValueTypeObject
 	}
 	l1, l2 := ContainerLen(prefix)
 
