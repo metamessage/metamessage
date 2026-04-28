@@ -31,4 +31,9 @@ public static class MetaMessage
         // 这里需要实现一个编码器，将 MmTree 转换为二进制格式
         throw new NotImplementedException("EncodeTree not implemented yet");
     }
+
+    public static ValidationResult Validate(object value, MmTag tag)
+    {
+        return Validator.Validate(value, tag);
+    }
 }

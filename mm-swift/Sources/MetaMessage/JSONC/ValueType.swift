@@ -49,7 +49,7 @@ public enum ValueType: UInt8, Codable {
         case .doc: return "doc"
         case .slice: return "slice"
         case .array: return "arr"
-        case .structType: return "struct"
+        case .structType: return "obj"
         case .map: return "map"
         case .string: return "str"
         case .bytes: return "bytes"
@@ -87,7 +87,7 @@ public enum ValueType: UInt8, Codable {
         case "doc": return .doc
         case "slice": return .slice
         case "arr", "array": return .array
-        case "struct": return .structType
+        case "obj": return .structType
         case "map": return .map
         case "str", "string": return .string
         case "bytes": return .bytes

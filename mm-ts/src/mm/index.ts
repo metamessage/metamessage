@@ -1,8 +1,9 @@
 import { MMEncoder } from './encoder';
 import { MMDecoder, DecodedValue } from './decoder';
 import { MMBuffer, MMError } from './buffer';
-import { mm, MMValue, MMOptions } from './types';
+import { mm, MMValue, Tag, ValueType } from './types';
 import * as constants from './constants';
+import { MmValidator, validator, ValidationResult } from './validator';
 
 export function encode(value: any): Uint8Array {
   const encoder = new MMEncoder();
@@ -76,19 +77,70 @@ export function fromJSONC(jsoncString: string): Uint8Array {
   return encode(parsed);
 }
 
-export { mm, MMValue, MMOptions };
+export function bind<T>(data: Uint8Array | ArrayBuffer | number[], template: T): T {
+  const decoded = decode(data);
+  return bindDecodedToTemplate(decoded, template) as T;
+}
+
+function bindDecodedToTemplate(decoded: any, template: any): any {
+  if (template === null || template === undefined) {
+    return decoded;
+  }
+  
+  // 处理解码结果的结构 { type: string, value: any }
+  const decodedValue = decoded && typeof decoded === 'object' && 'value' in decoded ? decoded.value : decoded;
+  
+  if (typeof template === 'object' && 'value' in template && 'options' in template) {
+    // MMValue 结构
+    const mmValue = template;
+    return {
+      value: bindDecodedToTemplate(decodedValue, mmValue.value),
+      options: mmValue.options
+    };
+  } else if (Array.isArray(template)) {
+    // 数组
+    if (Array.isArray(decodedValue)) {
+      return decodedValue.map((item, index) => {
+        const templateItem = template[index];
+        return bindDecodedToTemplate(item, templateItem);
+      });
+    } else {
+      return [];
+    }
+  } else if (typeof template === 'object') {
+    // 对象
+    const result: any = {};
+    for (const key in template) {
+      if (template.hasOwnProperty(key)) {
+        const templateValue = template[key];
+        const itemValue = decodedValue && typeof decodedValue === 'object' ? decodedValue[key] : undefined;
+        result[key] = bindDecodedToTemplate(itemValue, templateValue);
+      }
+    }
+    return result;
+  } else {
+    // 基本类型
+    return decodedValue;
+  }
+}
+
+export { mm, MMValue, Tag, ValueType } from './types';
 export { MMEncoder, MMDecoder, MMBuffer, MMError };
 export type { DecodedValue } from './decoder';
 export * as constants from './constants';
+export { MmValidator, validator, ValidationResult } from './validator';
 export default {
   encode,
   decode,
   toJSONC,
   fromJSONC,
+  bind,
   mm,
   MMEncoder,
   MMDecoder,
   MMBuffer,
   MMError,
   constants,
+  MmValidator,
+  validator,
 };

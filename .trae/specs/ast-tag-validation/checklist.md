@@ -1,0 +1,154 @@
+# AST Tag Validation - Verification Checklist
+
+## 语言实现验证
+
+### Java
+- [x] 实现了 AST node 建立时的 tag 验证逻辑
+- [x] 支持 jsonc->ast 路径的验证
+- [x] 支持 struct->ast 路径的验证
+- [x] 验证逻辑与 Golang 一致
+- [x] 测试用例覆盖所有验证场景
+- [x] 错误消息与 Golang 一致
+
+### TypeScript
+- [x] 实现了 AST node 建立时的 tag 验证逻辑
+- [x] 支持 jsonc->ast 路径的验证
+- [x] 支持 struct->ast 路径的验证
+- [x] 验证逻辑与 Golang 一致
+- [x] 测试用例覆盖所有验证场景
+- [x] 错误消息与 Golang 一致
+
+### Kotlin
+- [x] 实现了 AST node 建立时的 tag 验证逻辑
+- [x] 支持 jsonc->ast 路径的验证
+- [x] 支持 struct->ast 路径的验证
+- [x] 验证逻辑与 Golang 一致
+- [x] 测试用例覆盖所有验证场景
+- [x] 错误消息与 Golang 一致
+
+### Python
+- [x] 实现了 AST node 建立时的 tag 验证逻辑
+- [x] 支持 jsonc->ast 路径的验证
+- [x] 支持 struct->ast 路径的验证
+- [x] 验证逻辑与 Golang 一致
+- [x] 测试用例覆盖所有验证场景
+- [x] 错误消息与 Golang 一致
+
+### JavaScript
+- [x] 实现了 AST node 建立时的 tag 验证逻辑
+- [x] 支持 jsonc->ast 路径的验证
+- [x] 支持 struct->ast 路径的验证
+- [x] 实现了 mmValue 以支持更多数据类型
+- [x] 验证逻辑与 Golang 一致
+- [x] 测试用例覆盖所有验证场景
+- [x] 错误消息与 Golang 一致
+
+### C#
+- [x] 实现了 AST node 建立时的 tag 验证逻辑
+- [x] 支持 jsonc->ast 路径的验证
+- [x] 支持 struct->ast 路径的验证
+- [x] 验证逻辑与 Golang 一致
+- [x] 测试用例覆盖所有验证场景
+- [x] 错误消息与 Golang 一致
+
+### Rust
+- [x] 实现了 AST node 建立时的 tag 验证逻辑
+- [x] 支持 jsonc->ast 路径的验证
+- [x] 支持 struct->ast 路径的验证
+- [x] 验证逻辑与 Golang 一致
+- [x] 测试用例覆盖所有验证场景
+- [x] 错误消息与 Golang 一致
+
+### Swift
+- [x] 实现了 AST node 建立时的 tag 验证逻辑
+- [x] 支持 jsonc->ast 路径的验证
+- [x] 支持 struct->ast 路径的验证
+- [x] 验证逻辑与 Golang 一致
+- [x] 测试用例覆盖所有验证场景
+- [x] 错误消息与 Golang 一致
+
+### PHP
+- [x] 实现了 AST node 建立时的 tag 验证逻辑
+- [x] 支持 jsonc->ast 路径的验证
+- [x] 支持 struct->ast 路径的验证
+- [x] 验证逻辑与 Golang 一致
+- [x] 测试用例覆盖所有验证场景
+- [x] 错误消息与 Golang 一致
+
+## 功能验证
+
+### 数组验证
+- [x] 空值检查
+- [x] 大小限制
+- [x] 子元素唯一性检查
+
+### 结构体验证
+- [x] 描述长度检查
+- [x] 位置设置检查
+
+### 字符串验证
+- [x] 空值检查
+- [x] 模式匹配
+- [x] 长度限制
+
+### 字节验证
+- [x] 空值检查
+- [x] 长度限制
+- [x] Base64 编码
+
+### 布尔值验证
+- [x] 空值检查
+- [x] 位置设置检查
+
+### 整数验证
+- [x] 空值检查
+- [x] 范围限制
+- [x] 所有整数类型（int、int8、int16、int32、int64、uint、uint8、uint16、uint32、uint64）
+
+### 浮点数验证
+- [x] 空值检查
+- [x] 范围限制
+- [x] 所有浮点数类型（float32、float64）
+
+### 日期时间验证
+- [x] 空值检查
+- [x] 格式验证
+- [x] 所有日期时间类型（datetime、date、time）
+
+### UUID 验证
+- [x] 空值检查
+- [x] 格式验证
+- [x] 版本检查
+
+### IP 验证
+- [x] 空值检查
+- [x] 版本检查（IPv4/IPv6）
+
+### URL 验证
+- [x] 空值检查
+- [x] 协议检查
+- [x] 主机检查
+
+### 邮箱验证
+- [x] 空值检查
+- [x] 格式验证
+
+### 枚举验证
+- [x] 空值检查
+- [x] 值存在性检查
+
+### 图像验证
+- [x] 空值检查
+- [x] 长度限制
+- [x] Base64 编码
+
+## 跨语言一致性验证
+- [x] 所有语言的验证结果一致
+- [x] 所有语言的错误消息一致
+- [x] 所有语言的验证接口设计合理
+
+## 文档验证
+- [x] 各语言的文档完整
+- [x] 文档与实现一致
+- [x] 文档提供了足够的示例
+- [x] 文档清晰易懂

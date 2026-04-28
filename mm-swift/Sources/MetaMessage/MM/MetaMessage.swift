@@ -297,6 +297,10 @@ public enum MetaMessage {
         return nodeToString(node)
     }
 
+    public static func validate(_ value: Any?, tag: JSONCTag) -> ValidationResult {
+        return validator.validate(value, tag: tag)
+    }
+
     private static func nodeToString(_ node: MMDecoder.DecodedValue) -> String {
         let printer = JSONCPrinter()
         switch node {

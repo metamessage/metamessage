@@ -157,7 +157,7 @@ func TestGenerateGoStruct2(t *testing.T) {
 		Path: "",
 		Tag: &ast.Tag{
 			Name: "user_info",
-			Type: ast.ValueTypeStruct,
+			Type: ast.ValueTypeObject,
 		},
 		Fields: []*ast.Field{
 			{
@@ -177,7 +177,7 @@ func TestGenerateGoStruct2(t *testing.T) {
 		Path: "",
 		Tag: &ast.Tag{
 			Name: "user_info",
-			Type: ast.ValueTypeStruct,
+			Type: ast.ValueTypeObject,
 		},
 		Fields: []*ast.Field{
 			{
@@ -194,7 +194,7 @@ func TestGenerateGoStruct2(t *testing.T) {
 							Path: "user_name.1",
 							Tag: &ast.Tag{
 								Name: "user_info",
-								Type: ast.ValueTypeStruct,
+								Type: ast.ValueTypeObject,
 							},
 							Fields: []*ast.Field{
 								{

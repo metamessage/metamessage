@@ -3,10 +3,12 @@ import { MMDecoder } from './decoder.js';
 import { mm } from './types.js';
 import * as constants from './constants.js';
 import { MMBuffer, MMError } from './buffer.js';
+import { MmValidator, validator, ValidationResult } from './validator.js';
 
 export { mm } from './types.js';
 export { MMEncoder, MMDecoder, MMBuffer, MMError };
 export { constants };
+export { MmValidator, validator, ValidationResult };
 
 export function encode(value) {
   const encoder = new MMEncoder();

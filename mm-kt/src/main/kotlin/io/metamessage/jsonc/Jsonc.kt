@@ -1,5 +1,7 @@
 package io.metamessage.jsonc
 
+class JsoncException(message: String) : Exception(message)
+
 object Jsonc {
     fun parseFromString(s: String): JsoncNode {
         return parseJsonc(s)

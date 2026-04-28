@@ -195,7 +195,7 @@ func (t *Tag) String() string {
 			t.Type == ValueTypeInt ||
 			t.Type == ValueTypeFloat64 ||
 			t.Type == ValueTypeBool ||
-			t.Type == ValueTypeStruct ||
+			t.Type == ValueTypeObject ||
 			t.Type == ValueTypeSlice {
 		} else {
 			if t.Type == ValueTypeArray && t.Size > 0 ||
@@ -283,7 +283,7 @@ func (t *Tag) String() string {
 			t.ChildType == ValueTypeInt ||
 			t.ChildType == ValueTypeFloat64 ||
 			t.ChildType == ValueTypeBool ||
-			t.ChildType == ValueTypeStruct ||
+			t.ChildType == ValueTypeObject ||
 			t.ChildType == ValueTypeSlice {
 		} else {
 			if t.ChildType == ValueTypeArray && t.ChildSize > 0 ||
@@ -394,7 +394,7 @@ func (t *Tag) Bytes() []byte {
 			t.Type == ValueTypeInt ||
 			t.Type == ValueTypeFloat64 ||
 			t.Type == ValueTypeBool ||
-			t.Type == ValueTypeStruct ||
+			t.Type == ValueTypeObject ||
 			t.Type == ValueTypeSlice {
 		} else {
 			if t.Type == ValueTypeArray && t.Size > 0 ||
@@ -538,7 +538,7 @@ func (t *Tag) Bytes() []byte {
 			t.ChildType == ValueTypeInt ||
 			t.ChildType == ValueTypeFloat64 ||
 			t.ChildType == ValueTypeBool ||
-			t.ChildType == ValueTypeStruct ||
+			t.ChildType == ValueTypeObject ||
 			t.ChildType == ValueTypeSlice {
 		} else {
 			if t.ChildType == ValueTypeArray && t.ChildSize > 0 ||

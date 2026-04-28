@@ -42,7 +42,7 @@ enum class ValueType {
         DOC -> "doc"
         SLICE -> "slice"
         ARRAY -> "arr"
-        STRUCT -> "struct"
+        STRUCT -> "obj"
         MAP -> "map"
         STRING -> "str"
         BYTES -> "bytes"

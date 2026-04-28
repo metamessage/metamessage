@@ -1,8 +1,63 @@
 package io.metamessage.jsonc
 
+import io.metamessage.mm.MmValidator
+import io.metamessage.mm.MmTag
+import io.metamessage.mm.ValueType
+
 class JsoncParser(private val tokens: List<JsoncToken>) {
     private var pos: Int = 0
     private val pendingComments = mutableListOf<JsoncToken>()
+    
+    // 转换 JsoncTag 为 MmTag
+    private fun convertJsoncTagToMmTag(jsoncTag: JsoncTag): MmTag {
+        val mmTag = MmTag()
+        mmTag.isNull = jsoncTag.isNull
+        mmTag.desc = jsoncTag.desc
+        mmTag.type = when (jsoncTag.type) {
+            JsoncValueType.String -> ValueType.STRING
+            JsoncValueType.Int -> ValueType.INT
+            JsoncValueType.Int8 -> ValueType.INT8
+            JsoncValueType.Int16 -> ValueType.INT16
+            JsoncValueType.Int32 -> ValueType.INT32
+            JsoncValueType.Int64 -> ValueType.INT64
+            JsoncValueType.Uint -> ValueType.UINT
+            JsoncValueType.Uint8 -> ValueType.UINT8
+            JsoncValueType.Uint16 -> ValueType.UINT16
+            JsoncValueType.Uint32 -> ValueType.UINT32
+            JsoncValueType.Uint64 -> ValueType.UINT64
+            JsoncValueType.Float32 -> ValueType.FLOAT32
+            JsoncValueType.Float64 -> ValueType.FLOAT64
+            JsoncValueType.Bool -> ValueType.BOOL
+            JsoncValueType.Bytes -> ValueType.BYTES
+            JsoncValueType.BigInt -> ValueType.BIGINT
+            JsoncValueType.DateTime -> ValueType.DATETIME
+            JsoncValueType.Date -> ValueType.DATE
+            JsoncValueType.Time -> ValueType.TIME
+            JsoncValueType.UUID -> ValueType.UUID
+            JsoncValueType.Decimal -> ValueType.DECIMAL
+            JsoncValueType.IP -> ValueType.IP
+            JsoncValueType.URL -> ValueType.URL
+            JsoncValueType.Email -> ValueType.EMAIL
+            JsoncValueType.Enum -> ValueType.ENUM
+            JsoncValueType.Array -> ValueType.ARRAY
+            JsoncValueType.Struct -> ValueType.STRUCT
+            else -> ValueType.STRING
+        }
+        mmTag.raw = jsoncTag.raw
+        mmTag.nullable = jsoncTag.nullable
+        mmTag.allowEmpty = jsoncTag.allowEmpty
+        mmTag.unique = jsoncTag.unique
+        mmTag.defaultValue = jsoncTag.defaultValue
+        mmTag.min = jsoncTag.min
+        mmTag.max = jsoncTag.max
+        mmTag.size = jsoncTag.size
+        mmTag.enumValues = jsoncTag.enum
+        mmTag.pattern = jsoncTag.pattern
+        mmTag.locationHours = jsoncTag.location.toIntOrNull() ?: 0
+        mmTag.version = jsoncTag.version
+        mmTag.mime = jsoncTag.mime
+        return mmTag
+    }
 
     private fun peek(): JsoncToken {
         return if (pos >= tokens.size) tokens.last() else tokens[pos]
@@ -49,6 +104,15 @@ class JsoncParser(private val tokens: List<JsoncToken>) {
         next()
         val tag = consumeComments()
         val obj = JsoncObject(tag = tag)
+        
+        if (tag != null) {
+            // 验证结构体 tag
+            val mmTag = convertJsoncTagToMmTag(tag)
+            val result = MmValidator.validateStruct(mmTag)
+            if (!result.valid) {
+                throw JsoncException(result.error ?: "Struct validation failed")
+            }
+        }
 
         while (peek().type != JsoncTokenType.RBrace && peek().type != JsoncTokenType.EOF) {
             val tok = peek()
@@ -83,6 +147,15 @@ class JsoncParser(private val tokens: List<JsoncToken>) {
         val tag = consumeComments()
         val arr = JsoncArray(tag = tag)
         var index = 0
+        
+        if (tag != null) {
+            // 验证数组 tag
+            val mmTag = convertJsoncTagToMmTag(tag)
+            val result = MmValidator.validateStruct(mmTag)
+            if (!result.valid) {
+                throw JsoncException(result.error ?: "Array validation failed")
+            }
+        }
 
         while (peek().type != JsoncTokenType.RBracket && peek().type != JsoncTokenType.EOF) {
             val tok = peek()
@@ -126,6 +199,14 @@ class JsoncParser(private val tokens: List<JsoncToken>) {
                 if (effectiveTag.type == JsoncValueType.Unknown) {
                     effectiveTag.type = JsoncValueType.String
                 }
+                
+                // 验证值
+                val mmTag = convertJsoncTagToMmTag(effectiveTag)
+                val result = MmValidator.validate(actualToken.literal, mmTag)
+                if (!result.valid) {
+                    throw JsoncException(result.error ?: "String validation failed")
+                }
+                
                 return JsoncValue(data = actualToken.literal, text = actualToken.literal, tag = effectiveTag)
             }
             JsoncTokenType.Number -> {
@@ -138,16 +219,40 @@ class JsoncParser(private val tokens: List<JsoncToken>) {
                 } else {
                     actualToken.literal.toLongOrNull()
                 }
+                
+                // 验证值
+                val mmTag = convertJsoncTagToMmTag(effectiveTag)
+                val result = MmValidator.validate(data, mmTag)
+                if (!result.valid) {
+                    throw JsoncException(result.error ?: "Number validation failed")
+                }
+                
                 return JsoncValue(data = data, text = actualToken.literal, tag = effectiveTag)
             }
             JsoncTokenType.True -> {
                 val effectiveTag = tag ?: JsoncTag()
                 effectiveTag.type = JsoncValueType.Bool
+                
+                // 验证值
+                val mmTag = convertJsoncTagToMmTag(effectiveTag)
+                val result = MmValidator.validate(true, mmTag)
+                if (!result.valid) {
+                    throw JsoncException(result.error ?: "Boolean validation failed")
+                }
+                
                 return JsoncValue(data = true, text = "true", tag = effectiveTag)
             }
             JsoncTokenType.False -> {
                 val effectiveTag = tag ?: JsoncTag()
                 effectiveTag.type = JsoncValueType.Bool
+                
+                // 验证值
+                val mmTag = convertJsoncTagToMmTag(effectiveTag)
+                val result = MmValidator.validate(false, mmTag)
+                if (!result.valid) {
+                    throw JsoncException(result.error ?: "Boolean validation failed")
+                }
+                
                 return JsoncValue(data = false, text = "false", tag = effectiveTag)
             }
             JsoncTokenType.Null -> {
@@ -214,7 +319,7 @@ class JsoncParser(private val tokens: List<JsoncToken>) {
                         "email" -> JsoncValueType.Email
                         "enum" -> JsoncValueType.Enum
                         "arr" -> JsoncValueType.Array
-                        "struct" -> JsoncValueType.Struct
+                        "obj" -> JsoncValueType.Struct
                         else -> JsoncValueType.Unknown
                     }
                 }

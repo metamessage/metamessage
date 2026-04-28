@@ -1,6 +1,7 @@
 package io.metamessage.jsonc;
 
 import io.metamessage.mm.MmTag;
+import io.metamessage.mm.MmValidator;
 import io.metamessage.mm.ValueType;
 import java.math.BigInteger;
 import java.net.URI;
@@ -24,6 +25,10 @@ final class JsoncValueParser {
             tag.type = ValueType.STRING;
             t = ValueType.STRING;
         }
+        
+        // 验证值
+        validateValue(text, tag);
+        
         return switch (t) {
             case STRING, EMAIL, DECIMAL, ENUM -> {
                 if (tag.isNull && !text.isEmpty()) {
@@ -101,6 +106,84 @@ final class JsoncValueParser {
             default -> throw new JsoncException("string literal for type " + t);
         };
     }
+    
+    private static void validateValue(Object value, MmTag tag) {
+        // 如果是 null 值，跳过验证
+        if (tag.isNull) {
+            return;
+        }
+        
+        MmValidator.ValidationResult result;
+        switch (tag.type) {
+            case STRING:
+                result = MmValidator.validateString((String) value, tag);
+                break;
+            case EMAIL:
+                result = MmValidator.validateEmail((String) value, tag);
+                break;
+            case URL:
+                result = MmValidator.validateURL((String) value, tag);
+                break;
+            case IP:
+                result = MmValidator.validateIP((String) value, tag);
+                break;
+            case DATETIME:
+                try {
+                    LocalDateTime datetime = LocalDateTime.parse((String) value, DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
+                    result = MmValidator.validateDateTime(datetime, tag);
+                } catch (Exception e) {
+                    throw new JsoncException("invalid datetime format");
+                }
+                break;
+            case DATE:
+                try {
+                    LocalDate date = LocalDate.parse((String) value, DateTimeFormatter.ISO_LOCAL_DATE);
+                    result = MmValidator.validateDate(date, tag);
+                } catch (Exception e) {
+                    throw new JsoncException("invalid date format");
+                }
+                break;
+            case TIME:
+                try {
+                    LocalTime time = LocalTime.parse((String) value, DateTimeFormatter.ISO_LOCAL_TIME);
+                    result = MmValidator.validateTime(time, tag);
+                } catch (Exception e) {
+                    throw new JsoncException("invalid time format");
+                }
+                break;
+            case BYTES:
+                try {
+                    byte[] bytes = Base64.getDecoder().decode((String) value);
+                    result = MmValidator.validateBytes(bytes, tag);
+                } catch (Exception e) {
+                    throw new JsoncException("invalid base64 format");
+                }
+                break;
+            case IMAGE:
+                try {
+                    byte[] bytes = Base64.getDecoder().decode((String) value);
+                    result = MmValidator.validateImage(bytes, tag);
+                } catch (Exception e) {
+                    throw new JsoncException("invalid base64 format");
+                }
+                break;
+            case UUID:
+                result = MmValidator.validateUUID((String) value, tag);
+                break;
+            case DECIMAL:
+                result = MmValidator.validateDecimal((String) value, tag);
+                break;
+            case ENUM:
+                result = MmValidator.validateEnum((String) value, tag);
+                break;
+            default:
+                return;
+        }
+        
+        if (!result.isSuccess()) {
+            throw new JsoncException(result.getError());
+        }
+    }
 
     static JcNode.JcValue numberLiteral(String text, MmTag tag, String path) {
         MmTag tg = tag;
@@ -119,6 +202,10 @@ final class JsoncValueParser {
                 tg.type = ValueType.FLOAT64;
             }
         }
+        
+        // 验证值
+        validateNumberValue(text, tg);
+        
         if (text.contains("e") || text.contains("E")) {
             double d = Double.parseDouble(text);
             return new JcNode.JcValue(d, text, tg, path);
@@ -141,6 +228,36 @@ final class JsoncValueParser {
         }
         long u = Long.parseLong(text);
         return longToJcValue(u, text, tg, path);
+    }
+    
+    private static void validateNumberValue(String text, MmTag tag) {
+        // 如果是 null 值，跳过验证
+        if (tag.isNull) {
+            return;
+        }
+        
+        MmValidator.ValidationResult result;
+        if (text.contains(".") || text.contains("e") || text.contains("E")) {
+            double value = Double.parseDouble(text);
+            result = MmValidator.validateFloat(value, tag);
+        } else if (tag.type == ValueType.BIGINT) {
+            // 对于 BIGINT 类型，跳过数值范围验证
+            // 因为 BigInteger 可以处理任意大小的整数
+            return;
+        } else {
+            try {
+                long value = Long.parseLong(text);
+                result = MmValidator.validateInt(value, tag);
+            } catch (NumberFormatException e) {
+                // 如果数值超过 long 范围，跳过验证
+                // 因为这可能是一个 BIGINT 类型的值
+                return;
+            }
+        }
+        
+        if (!result.isSuccess()) {
+            throw new JsoncException(result.getError());
+        }
     }
 
     private static JcNode.JcValue longToJcValue(long v, String text, MmTag tag, String path) {
@@ -169,6 +286,15 @@ final class JsoncValueParser {
         if (t.type != ValueType.BOOL) {
             throw new JsoncException("type mismatch for bool");
         }
+        
+        // 验证值（如果不是 null 值）
+        if (!t.isNull) {
+            MmValidator.ValidationResult result = MmValidator.validateBool(v, t);
+            if (!result.isSuccess()) {
+                throw new JsoncException(result.getError());
+            }
+        }
+        
         return new JcNode.JcValue(v, v ? "true" : "false", t, path);
     }
 }

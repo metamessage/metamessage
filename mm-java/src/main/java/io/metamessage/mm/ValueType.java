@@ -61,7 +61,7 @@ public enum ValueType {
             case DOC -> "doc";
             case SLICE -> "slice";
             case ARRAY -> "arr";
-            case STRUCT -> "struct";
+            case STRUCT -> "obj";
             case MAP -> "map";
             case STRING -> "str";
             case BYTES -> "bytes";

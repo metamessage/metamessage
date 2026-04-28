@@ -509,7 +509,7 @@ def mm_tag(tag_str: str) -> Tag:
         "f32": ValueType.Float32, "f64": ValueType.Float64, "bool": ValueType.Bool, "bytes": ValueType.Bytes,
         "bi": ValueType.BigInt, "datetime": ValueType.DateTime, "date": ValueType.Date, "time": ValueType.Time,
         "uuid": ValueType.UUID, "decimal": ValueType.Decimal, "ip": ValueType.IP, "url": ValueType.URL,
-        "email": ValueType.Email, "enum": ValueType.Enum, "arr": ValueType.Array, "struct": ValueType.Struct,
+        "email": ValueType.Email, "enum": ValueType.Enum, "arr": ValueType.Array, "obj": ValueType.Struct,
     }
     
     for p in parts:

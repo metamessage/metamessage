@@ -1,3 +1,5 @@
+import { MmValidator } from '../mm/validator.js';
+
 export const TokenType = {
   EOF: 'EOF',
   LCURLY: 'LCURLY',
@@ -304,6 +306,14 @@ class JSONCParser {
           tag.type = ValueType.String;
         }
         const text = tok.literal;
+        
+        // 验证值
+        const convertedTag = convertJSONCTagToTag(tag);
+        const result = MmValidator.validate(text, convertedTag);
+        if (!result.valid) {
+          throw new Error(result.error || 'String validation failed');
+        }
+        
         return new JSONCValue(text, text, tag, path);
       }
 
@@ -324,6 +334,16 @@ class JSONCParser {
         } else {
           data = BigInt(tok.literal);
         }
+        
+        // 验证值
+        const convertedTag = convertJSONCTagToTag(tag);
+        // 将 BigInt 转换为数字进行验证
+        const validationData = typeof data === 'bigint' ? Number(data) : data;
+        const result = MmValidator.validate(validationData, convertedTag);
+        if (!result.valid) {
+          throw new Error(result.error || 'Number validation failed');
+        }
+        
         return new JSONCValue(data, tok.literal, tag, path);
       }
 
@@ -332,6 +352,14 @@ class JSONCParser {
         if (tag.type === ValueType.Unknown) {
           tag.type = ValueType.Bool;
         }
+        
+        // 验证值
+        const convertedTag = convertJSONCTagToTag(tag);
+        const result = MmValidator.validate(true, convertedTag);
+        if (!result.valid) {
+          throw new Error(result.error || 'Boolean validation failed');
+        }
+        
         return new JSONCValue(true, 'true', tag, path);
       }
 
@@ -340,6 +368,14 @@ class JSONCParser {
         if (tag.type === ValueType.Unknown) {
           tag.type = ValueType.Bool;
         }
+        
+        // 验证值
+        const convertedTag = convertJSONCTagToTag(tag);
+        const result = MmValidator.validate(false, convertedTag);
+        if (!result.valid) {
+          throw new Error(result.error || 'Boolean validation failed');
+        }
+        
         return new JSONCValue(false, 'false', tag, path);
       }
 
@@ -366,6 +402,13 @@ class JSONCParser {
     let tag = this.consumeCommentsFor(openLine) || new JSONCTag();
     if (tag.type === ValueType.Unknown) {
       tag.type = ValueType.Struct;
+    }
+
+    // 验证结构体 tag
+    const convertedTag = convertJSONCTagToTag(tag);
+    const result = MmValidator.validateStruct(convertedTag);
+    if (!result.valid) {
+      throw new Error(result.error || 'Struct validation failed');
     }
 
     const obj = new JSONCObject(tag, path);
@@ -444,6 +487,13 @@ class JSONCParser {
       } else {
         tag.type = ValueType.Slice;
       }
+    }
+
+    // 验证数组 tag
+    const convertedTag = convertJSONCTagToTag(tag);
+    const result = MmValidator.validateStruct(convertedTag);
+    if (!result.valid) {
+      throw new Error(result.error || 'Array validation failed');
     }
 
     const arr = new JSONCArray(tag, path);
@@ -872,6 +922,46 @@ function mergeNodeTag(node, tag) {
       node.tag = merged;
     }
   }
+}
+
+// 转换 JSONCTag 为 Tag 类型
+function convertJSONCTagToTag(jsoncTag) {
+  return {
+    name: jsoncTag.name,
+    isNull: jsoncTag.isNull,
+    example: jsoncTag.example,
+    desc: jsoncTag.desc,
+    type: jsoncTag.type,
+    raw: jsoncTag.raw,
+    nullable: jsoncTag.nullable,
+    allowEmpty: jsoncTag.allowEmpty,
+    unique: jsoncTag.unique,
+    default: jsoncTag.defaultValue,
+    min: jsoncTag.min,
+    max: jsoncTag.max,
+    size: jsoncTag.size,
+    enum: jsoncTag.enumValues,
+    pattern: jsoncTag.pattern,
+    location: jsoncTag.locationOffset,
+    version: jsoncTag.version,
+    mime: jsoncTag.mime,
+    childDesc: jsoncTag.childDesc,
+    childType: jsoncTag.childType,
+    childRaw: jsoncTag.childRaw,
+    childNullable: jsoncTag.childNullable,
+    childAllowEmpty: jsoncTag.childAllowEmpty,
+    childUnique: jsoncTag.childUnique,
+    childDefault: jsoncTag.childDefault,
+    childMin: jsoncTag.childMin,
+    childMax: jsoncTag.childMax,
+    childSize: jsoncTag.childSize,
+    childEnum: jsoncTag.childEnum,
+    childPattern: jsoncTag.childPattern,
+    childLocation: jsoncTag.childLocationOffset,
+    childVersion: jsoncTag.childVersion,
+    childMime: jsoncTag.childMime,
+    isInherit: jsoncTag.isInherit
+  };
 }
 
 export { JSONCParser, JSONCTag, JSONCNode, JSONCField, JSONCObject, JSONCArray, JSONCValue };

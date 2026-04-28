@@ -22,7 +22,7 @@ func Bind(node ast.Node, out any) error {
 
 	switch n := node.(type) {
 	case *ast.Object:
-		if n.Tag.Type == ast.ValueTypeStruct {
+		if n.Tag.Type == ast.ValueTypeObject {
 			return convertStruct(n, outVal)
 		} else {
 			return convertMap(n, outVal)
@@ -540,7 +540,7 @@ func convertValue(val *ast.Value, outVal reflect.Value) error {
 
 	case ast.ValueTypeMap:
 		return fmt.Errorf("unsupported type: %s", tag.Type)
-	case ast.ValueTypeStruct:
+	case ast.ValueTypeObject:
 		return fmt.Errorf("unsupported type: %s", tag.Type)
 	case ast.ValueTypeArray:
 		return fmt.Errorf("unsupported type: %s", tag.Type)

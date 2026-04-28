@@ -1,0 +1,27 @@
+- [x] Java README 包含 Maven 依赖配置
+- [x] Java README 包含基本使用示例
+- [x] Java README 包含测试方法
+- [x] Kotlin README 包含 Maven 依赖配置
+- [x] Kotlin README 包含基本使用示例
+- [x] Kotlin README 包含测试方法
+- [x] TypeScript README 包含 npm 依赖配置
+- [x] TypeScript README 包含基本使用示例
+- [x] TypeScript README 包含测试方法
+- [x] Python README 包含 pip 安装说明
+- [x] Python README 包含基本使用示例
+- [x] Python README 包含测试方法
+- [x] JavaScript README 包含 npm 依赖配置
+- [x] JavaScript README 包含基本使用示例
+- [x] JavaScript README 包含测试方法
+- [x] C# README 包含 NuGet 依赖配置
+- [x] C# README 包含基本使用示例
+- [x] C# README 包含测试方法
+- [x] Rust README 包含 Cargo 依赖配置
+- [x] Rust README 包含基本使用示例
+- [x] Rust README 包含测试方法
+- [x] Swift README 包含 Swift Package Manager 配置
+- [x] Swift README 包含基本使用示例
+- [x] Swift README 包含测试方法
+- [x] PHP README 包含 Composer 依赖配置
+- [x] PHP README 包含基本使用示例
+- [x] PHP README 包含测试方法

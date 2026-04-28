@@ -1,5 +1,34 @@
 import { JSONCScanner, TokenType, Token } from './scanner';
 import { JSONCValue, JSONCObject, JSONCArray, JSONCDoc, JSONCTag, parseMMTag, JSONCValueType } from './ast';
+import { MmValidator } from '../mm/validator';
+import { ValueType, Tag } from '../mm/types';
+
+// 转换 JSONCTag 为 Tag 类型
+function convertJSONCTagToTag(jsoncTag: JSONCTag): Tag {
+  const tag: Tag = {
+    isNull: jsoncTag.isNull,
+    desc: jsoncTag.desc,
+    type: jsoncTag.type as unknown as ValueType,
+    raw: jsoncTag.raw,
+    nullable: jsoncTag.nullable,
+    allowEmpty: jsoncTag.allowEmpty,
+    unique: jsoncTag.unique,
+    default: jsoncTag.defaultValue,
+    min: jsoncTag.min,
+    max: jsoncTag.max,
+    size: jsoncTag.size,
+    enum: jsoncTag.enum,
+    pattern: jsoncTag.pattern,
+    version: jsoncTag.version,
+    mime: jsoncTag.mime
+  };
+  
+  if (jsoncTag.location) {
+    tag.location = parseInt(jsoncTag.location, 10);
+  }
+  
+  return tag;
+}
 
 export interface JSONCNode {
   getType(): string;
@@ -54,6 +83,12 @@ export class JSONCParser {
     const obj = new JSONCObject();
     if (tag) {
       obj.setTag(tag);
+      // 验证结构体 tag
+      const convertedTag = convertJSONCTagToTag(tag);
+      const result = MmValidator.validateStruct(convertedTag);
+      if (!result.valid) {
+        throw new Error(result.error || 'Struct validation failed');
+      }
     }
 
     this.skipLeadingComments();
@@ -99,6 +134,12 @@ export class JSONCParser {
     const arr = new JSONCArray();
     if (tag) {
       arr.setTag(tag);
+      // 验证数组 tag
+      const convertedTag = convertJSONCTagToTag(tag);
+      const result = MmValidator.validateStruct(convertedTag);
+      if (!result.valid) {
+        throw new Error(result.error || 'Array validation failed');
+      }
     }
 
     this.skipLeadingComments();
@@ -138,6 +179,21 @@ export class JSONCParser {
     if (tag.type === JSONCValueType.Unknown) {
       tag.type = JSONCValueType.String;
     }
+    
+    // 验证值
+    const convertedTag = convertJSONCTagToTag(tag);
+    let value: any = token.value;
+    
+    // 处理日期时间类型
+    if (tag.type === JSONCValueType.DateTime || tag.type === JSONCValueType.Date || tag.type === JSONCValueType.Time) {
+      value = new Date(token.value);
+    }
+    
+    const result = MmValidator.validate(value, convertedTag);
+    if (!result.valid) {
+      throw new Error(result.error || 'String validation failed');
+    }
+    
     return new JSONCValue(token.value, tag);
   }
 
@@ -149,6 +205,14 @@ export class JSONCParser {
       tag.type = token.value.includes('.') ? JSONCValueType.Float64 : JSONCValueType.Int;
     }
     const value = parseFloat(token.value);
+    
+    // 验证值
+    const convertedTag = convertJSONCTagToTag(tag);
+    const result = MmValidator.validate(value, convertedTag);
+    if (!result.valid) {
+      throw new Error(result.error || 'Number validation failed');
+    }
+    
     return new JSONCValue(value, tag);
   }
 
@@ -156,6 +220,14 @@ export class JSONCParser {
     this.expect(value ? TokenType.TRUE : TokenType.FALSE);
     const tag = this.consumeComments() || new JSONCTag();
     tag.type = JSONCValueType.Bool;
+    
+    // 验证值
+    const convertedTag = convertJSONCTagToTag(tag);
+    const result = MmValidator.validate(value, convertedTag);
+    if (!result.valid) {
+      throw new Error(result.error || 'Boolean validation failed');
+    }
+    
     return new JSONCValue(value, tag);
   }
 
