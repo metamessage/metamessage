@@ -257,7 +257,7 @@ func main() {
     }
 
     p := Person{Name: "Alice", Age: 30}
-    data, err := mm.EncodeFromStruct(p)
+    data, err := mm.EncodeFromObject(p)
     if err != nil {
         panic(err)
     }
@@ -287,7 +287,7 @@ func main() {
 #### Tóm tắt API
 
 - `NewEncoder(w io.Writer) Encoder`: tạo encoder
-- `EncodeFromStruct(in any) ([]byte, error)`: mã hóa từ struct
+- `EncodeFromObject(in any) ([]byte, error)`: mã hóa từ struct
 - `EncodeFromJSONC(in string) ([]byte, error)`: mã hóa từ chuỗi JSONC
 - `NewDecoder(r io.Reader) Decoder`: tạo decoder
 - `Decode(in []byte, out any) error`: giải mã vào struct
@@ -355,7 +355,7 @@ decoded = decode(wire)
 #### JavaScript
 
 ```javascript
-const { encode, decode } = require('@metamessage/js');
+const { encode, decode } = require('metamessage');
 
 const person = { name: "Ed", age: 30 };
 const wire = encode(person);

@@ -6,7 +6,7 @@
 使用 npm 安装：
 
 ```bash
-npm install @metamessage/js
+npm install metamessage
 ```
 
 ### 版本要求
@@ -17,7 +17,7 @@ npm install @metamessage/js
 ### 2.1 导入模块
 
 ```javascript
-const { encode, decode } = require('@metamessage/js');
+const { encode, decode } = require('metamessage');
 ```
 
 ### 2.2 编码示例
@@ -38,7 +38,7 @@ console.log('Decoded:', decoded.value);
 ### 2.4 JSONC 解析示例
 
 ```javascript
-const { parseFromString, toString } = require('@metamessage/js/jsonc');
+const { parseFromString, toString } = require('metamessage/jsonc');
 
 const jsonc = `{
     // mm: type=str; desc=姓名

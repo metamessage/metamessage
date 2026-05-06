@@ -257,7 +257,7 @@ func main() {
     }
 
     p := Person{Name: "Alice", Age: 30}
-    data, err := mm.EncodeFromStruct(p)
+    data, err := mm.EncodeFromObject(p)
     if err != nil {
         panic(err)
     }
@@ -287,7 +287,7 @@ func main() {
 #### Краткий обзор API
 
 - `NewEncoder(w io.Writer) Encoder`: создает энкодер
-- `EncodeFromStruct(in any) ([]byte, error)`: кодирует из структуры
+- `EncodeFromObject(in any) ([]byte, error)`: кодирует из структуры
 - `EncodeFromJSONC(in string) ([]byte, error)`: кодирует из строки JSONC
 - `NewDecoder(r io.Reader) Decoder`: создает декодер
 - `Decode(in []byte, out any) error`: декодирует в структуру
@@ -355,7 +355,7 @@ decoded = decode(wire)
 #### JavaScript
 
 ```javascript
-const { encode, decode } = require('@metamessage/js');
+const { encode, decode } = require('metamessage');
 
 const person = { name: "Ed", age: 30 };
 const wire = encode(person);

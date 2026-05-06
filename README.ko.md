@@ -257,7 +257,7 @@ func main() {
     }
 
     p := Person{Name: "Alice", Age: 30}
-    data, err := mm.EncodeFromStruct(p)
+    data, err := mm.EncodeFromObject(p)
     if err != nil {
         panic(err)
     }
@@ -287,7 +287,7 @@ func main() {
 #### API 요약
 
 - `NewEncoder(w io.Writer) Encoder`: 인코더 생성
-- `EncodeFromStruct(in any) ([]byte, error)`: 구조체에서 인코딩
+- `EncodeFromObject(in any) ([]byte, error)`: 구조체에서 인코딩
 - `EncodeFromJSONC(in string) ([]byte, error)`: JSONC 문자열에서 인코딩
 - `NewDecoder(r io.Reader) Decoder`: 디코더 생성
 - `Decode(in []byte, out any) error`: 구조체로 디코딩
@@ -355,7 +355,7 @@ decoded = decode(wire)
 #### JavaScript
 
 ```javascript
-const { encode, decode } = require('@metamessage/js');
+const { encode, decode } = require('metamessage');
 
 const person = { name: "Ed", age: 30 };
 const wire = encode(person);

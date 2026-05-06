@@ -81,7 +81,7 @@ func TestEncodeDecode(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			var bs []byte
-			bs, err := EncodeFromStruct(tc.input, "")
+			bs, err := EncodeFromObject(tc.input, "")
 
 			if tc.expectedErr != "" {
 				if err == nil || err.Error() != tc.expectedErr {
@@ -115,7 +115,7 @@ func BenchmarkEncodeDecode(b *testing.B) {
 	b.ResetTimer()
 
 	for i := 0; i < b.N; i++ {
-		n, _ := EncodeFromStruct(data, "")
+		n, _ := EncodeFromObject(data, "")
 		_, _ = DecodeToJSONC(n)
 	}
 }

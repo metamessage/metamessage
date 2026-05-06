@@ -245,7 +245,7 @@ func main() {
     }
 
     p := Person{Name: "Alice", Age: 30}
-    data, err := mm.EncodeFromStruct(p)
+    data, err := mm.EncodeFromObject(p)
     if err != nil {
         panic(err)
     }
@@ -275,7 +275,7 @@ func main() {
 #### Resumen de la API
 
 - `NewEncoder(w io.Writer) Encoder`: crea un codificador
-- `EncodeFromStruct(in any) ([]byte, error)`: codificar desde struct
+- `EncodeFromObject(in any) ([]byte, error)`: codificar desde struct
 - `EncodeFromJSONC(in string) ([]byte, error)`: codificar desde cadena JSONC
 - `NewDecoder(r io.Reader) Decoder`: crea un decodificador
 - `Decode(in []byte, out any) error`: decodificar a struct
@@ -343,7 +343,7 @@ decoded = decode(wire)
 #### JavaScript
 
 ```javascript
-const { encode, decode } = require('@metamessage/js');
+const { encode, decode } = require('metamessage');
 
 const person = { name: "Ed", age: 30 };
 const wire = encode(person);

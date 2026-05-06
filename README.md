@@ -284,7 +284,7 @@ func main() {
     }
     
     p := Person{Name: "Alice", Age: 30}
-    data, err := mm.EncodeFromStruct(p)
+    data, err := mm.EncodeFromObject(p)
     if err != nil {
         panic(err)
     }
@@ -318,7 +318,7 @@ func main() {
 
 - `NewEncoder(w io.Writer) Encoder`: 創建編碼器
 
-- `EncodeFromStruct(in any) ([]byte, error)`: 從結構體編碼
+- `EncodeFromObject(in any) ([]byte, error)`: 從結構體編碼
 
 - `EncodeFromJSONC(in string) ([]byte, error)`: 從 JSONC 字符串編碼
 
@@ -390,7 +390,7 @@ decoded = decode(wire)
 #### JavaScript
 
 ```javascript
-const { encode, decode } = require('@metamessage/js');
+const { encode, decode } = require('metamessage');
 
 const person = { name: "Ed", age: 30 };
 const wire = encode(person);
