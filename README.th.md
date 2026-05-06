@@ -245,7 +245,7 @@ func main() {
     }
 
     p := Person{Name: "Alice", Age: 30}
-    data, err := mm.EncodeFromStruct(p)
+    data, err := mm.EncodeFromObject(p)
     if err != nil {
         panic(err)
     }
@@ -275,7 +275,7 @@ func main() {
 #### ภาพรวม API
 
 - `NewEncoder(w io.Writer) Encoder`: สร้าง encoder
-- `EncodeFromStruct(in any) ([]byte, error)`: เข้ารหัสจาก struct
+- `EncodeFromObject(in any) ([]byte, error)`: เข้ารหัสจาก struct
 - `EncodeFromJSONC(in string) ([]byte, error)`: เข้ารหัสจากสตริง JSONC
 - `NewDecoder(r io.Reader) Decoder`: สร้าง decoder
 - `Decode(in []byte, out any) error`: ถอดรหัสเป็น struct
@@ -343,7 +343,7 @@ decoded = decode(wire)
 #### JavaScript
 
 ```javascript
-const { encode, decode } = require('@metamessage/js');
+const { encode, decode } = require('metamessage');
 
 const person = { name: "Ed", age: 30 };
 const wire = encode(person);

@@ -1157,6 +1157,12 @@ func anyToJSONC(obj any, tag *ast.Tag, depth int, path string) (ast.Node, error)
 		}
 
 	case reflect.Map:
+		mapValueType := val.Type().Elem()
+
+		if mapValueType.Kind() == reflect.Interface {
+			return nil, fmt.Errorf("path %q: map value type cannot be any/interface{}, please use concrete type (string/int/bool/struct/map etc.)", path)
+		}
+
 		tag.Type = ast.ValueTypeMap
 
 		node := &ast.Object{

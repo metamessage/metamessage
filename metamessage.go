@@ -17,7 +17,7 @@ func NewEncoder(w io.Writer) Encoder {
 	return mm.NewEncoder(w)
 }
 
-func EncodeFromStruct(in any, tag string) (out []byte, err error) {
+func EncodeFromObject(in any, tag string) (out []byte, err error) {
 	return mm.FromStruct(in, tag)
 }
 

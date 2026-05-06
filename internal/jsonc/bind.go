@@ -103,6 +103,10 @@ func convertMap(obj *ast.Object, outVal reflect.Value) error {
 		return fmt.Errorf("convertMap requires map type, got %s", outVal.Kind())
 	}
 
+	if outVal.IsNil() {
+		outVal.Set(reflect.MakeMap(outVal.Type()))
+	}
+
 	if outVal.Type().Key().Kind() != reflect.String {
 		return fmt.Errorf("convertMap requires map with string key, got %s", outVal.Type().Key().Kind())
 	}

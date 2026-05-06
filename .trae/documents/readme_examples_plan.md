@@ -34,7 +34,7 @@ func main() {
     }
 
     p := Person{Name: "Alice", Age: 30}
-    data, err := mm.EncodeFromStruct(p)
+    data, err := mm.EncodeFromObject(p)
     // ...
 }
 ```
@@ -94,7 +94,7 @@ decoded = decode(wire)
 
 ### JavaScript
 ```javascript
-const { encode, decode } = require('@metamessage/js');
+const { encode, decode } = require('metamessage');
 
 const person = { name: "Ed", age: 30 };
 const wire = encode(person);
