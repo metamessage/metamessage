@@ -1,5 +1,7 @@
 #!/bin/bash
 
+VERSION="$1"
+TARGET_HEADER="## ${VERSION}"
 in_changelog=false
 
 while IFS= read -r line; do
@@ -7,7 +9,7 @@ while IFS= read -r line; do
         continue
     fi
 
-    if [[ $in_changelog == false ]] && [[ "$line" == "## "* ]]; then
+    if [[ $in_changelog == false ]] && [[ "$line" == "${TARGET_HEADER}"* ]]; then
         in_changelog=true
         continue
     fi

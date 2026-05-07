@@ -37,8 +37,8 @@ func main() {
 	force := flag.Bool("force", false, "overwrite output file if it already exists (default: false)")
 	flag.BoolVar(force, "f", false, "shorthand for -force")
 
-	lang := flag.String("lang", "none", fmt.Sprintf("generate target language (only valid for -gen, default: none, support: %s)", strings.Join(validLangs, ", ")))
-	flag.StringVar(lang, "l", "none", "shorthand for -lang")
+	lang := flag.String("lang", "", fmt.Sprintf("generate target language (only valid for -gen, default: , support: %s)", strings.Join(validLangs, ", ")))
+	flag.StringVar(lang, "l", "", "shorthand for -lang")
 
 	flag.Usage = func() {
 		fmt.Fprintf(os.Stderr, "Usage: %s [OPTIONS]\n", os.Args[0])
@@ -51,7 +51,7 @@ func main() {
 		fmt.Fprintln(os.Stderr, "  -out, -o string    Output file path (empty = write to stdout)")
 		fmt.Fprintln(os.Stderr, "  -force, -f         Overwrite output file if it exists (default: false)")
 		fmt.Fprintln(os.Stderr, "\nGenerate Options (only for -gen):")
-		fmt.Fprintln(os.Stderr, "  -lang, -l string   Target language (default: none, support: go, java, ts, kt, py, js, cs, rs, swift, php)")
+		fmt.Fprintln(os.Stderr, "  -lang, -l string   Target language (default: , support: go, java, ts, kt, py, js, cs, rs, swift, php)")
 		fmt.Fprintln(os.Stderr, "\nExamples:")
 		fmt.Fprintln(os.Stderr, "  # Encode JSONC to MetaMessage (stdin -> stdout)")
 		fmt.Fprintln(os.Stderr, "  ", os.Args[0], "-encode -in input.jsonc -out output.MetaMessage")
@@ -59,12 +59,22 @@ func main() {
 		fmt.Fprintln(os.Stderr, "  ", os.Args[0], "-decode < input.MetaMessage > output.jsonc")
 		fmt.Fprintln(os.Stderr, "  # Generate Go struct from JSONC")
 		fmt.Fprintln(os.Stderr, "  ", os.Args[0], "-gen -lang go -in input.jsonc -out output.go")
+		fmt.Fprintln(os.Stderr, "  # Generate Java struct from JSONC")
+		fmt.Fprintln(os.Stderr, "  ", os.Args[0], "-gen -lang java -in input.jsonc -out output.java")
+		fmt.Fprintln(os.Stderr, "  # Generate Kotlin struct from JSONC")
+		fmt.Fprintln(os.Stderr, "  ", os.Args[0], "-gen -lang kt -in input.jsonc -out output.kt")
+		fmt.Fprintln(os.Stderr, "  # Generate Python struct from JSONC")
+		fmt.Fprintln(os.Stderr, "  ", os.Args[0], "-gen -lang py -in input.jsonc -out output.py")
+		fmt.Fprintln(os.Stderr, "  # Generate JavaScript class from JSONC")
+		fmt.Fprintln(os.Stderr, "  ", os.Args[0], "-gen -lang js -in input.jsonc -out output.js")
 		fmt.Fprintln(os.Stderr, "  # Generate C# class from JSONC")
 		fmt.Fprintln(os.Stderr, "  ", os.Args[0], "-gen -lang cs -in input.jsonc -out output.cs")
 		fmt.Fprintln(os.Stderr, "  # Generate Rust struct from JSONC")
 		fmt.Fprintln(os.Stderr, "  ", os.Args[0], "-gen -lang rs -in input.jsonc -out output.rs")
 		fmt.Fprintln(os.Stderr, "  # Generate Swift struct from JSONC")
 		fmt.Fprintln(os.Stderr, "  ", os.Args[0], "-gen -lang swift -in input.jsonc -out output.swift")
+		fmt.Fprintln(os.Stderr, "  # Generate PHP class from JSONC")
+		fmt.Fprintln(os.Stderr, "  ", os.Args[0], "-gen -lang php -in input.jsonc -out output.php")
 	}
 	flag.Parse()
 
@@ -93,7 +103,7 @@ func main() {
 
 	if *generate {
 		if !slices.Contains(validLangs, *lang) {
-			fmt.Fprintf(os.Stderr, "Error: Unsupported language %s! Valid options: %s, all\n", *lang, strings.Join(validLangs, ", "))
+			fmt.Fprintf(os.Stderr, "Error: Unsupported language %s! Valid options: %s\n", *lang, strings.Join(validLangs, ", "))
 			os.Exit(1)
 		}
 	}

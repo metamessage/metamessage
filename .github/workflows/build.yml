@@ -45,7 +45,7 @@ jobs:
         id: get_history
         run: |
           chmod +x history.sh
-          output=$(./history.sh)
+          output=$(./history.sh '${{ github.ref_name }}')
           echo "$output" > history.md
 
       - name: Create Release
