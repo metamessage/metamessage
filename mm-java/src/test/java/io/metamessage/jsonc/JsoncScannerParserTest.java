@@ -1,4 +1,4 @@
-package io.metamessage.jsonc;
+package io.github.metamessage.jsonc;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -7,7 +7,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import io.metamessage.mm.ValueType;
+import io.github.metamessage.mm.ValueType;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 
@@ -95,8 +95,8 @@ class JsoncScannerParserTest {
         assertTrue(out.contains("\"name\""), out);
     }
 
-    private static io.metamessage.mm.MmTag tag(ValueType type) {
-        io.metamessage.mm.MmTag t = io.metamessage.mm.MmTag.empty();
+    private static io.github.metamessage.mm.MmTag tag(ValueType type) {
+        io.github.metamessage.mm.MmTag t = io.github.metamessage.mm.MmTag.empty();
         t.type = type;
         t.desc = "d";
         return t;

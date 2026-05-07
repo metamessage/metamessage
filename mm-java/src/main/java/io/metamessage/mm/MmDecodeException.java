@@ -1,4 +1,4 @@
-package io.metamessage.mm;
+package io.github.metamessage.mm;
 
 public final class MmDecodeException extends Exception {
     public MmDecodeException(String message) {

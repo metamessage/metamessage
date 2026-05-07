@@ -1,4 +1,4 @@
-package io.metamessage.mm;
+package io.github.metamessage.mm;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 

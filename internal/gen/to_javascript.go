@@ -5,7 +5,7 @@ import (
 	"strings"
 	"unicode"
 
-	"github.com/metamessage/metamessage/internal/jsonc/ast"
+	"github.com/metamessage/metamessage/internal/ast"
 )
 
 var jsTypeMap = map[ast.ValueType]string{

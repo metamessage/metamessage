@@ -1,4 +1,4 @@
-package io.metamessage.mm;
+package io.github.metamessage.mm;
 
 import java.math.BigInteger;
 import java.net.InetAddress;

@@ -6,8 +6,8 @@ import (
 	"reflect"
 	"testing"
 
+	"github.com/metamessage/metamessage/internal/ast"
 	"github.com/metamessage/metamessage/internal/jsonc"
-	"github.com/metamessage/metamessage/internal/jsonc/ast"
 )
 
 // go test ./internal/mm -v -run TestEncodeBool
@@ -74,7 +74,7 @@ func TestEncodeBool(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			bs, err := FromStruct(tc.input, "")
+			bs, err := FromValue(tc.input, "")
 			fmt.Println("res", bs)
 
 			if (err != nil) != tc.wantErr {
@@ -87,7 +87,7 @@ func TestEncodeBool(t *testing.T) {
 					t.Fatalf("decode failed: %v", decodeErr)
 				}
 
-				fmt.Println("decoded:", jsonc.Json(gotVal), jsonc.ToString(gotVal))
+				fmt.Println("decoded:", Dump(gotVal), jsonc.ToJSONC(gotVal))
 				if !reflect.DeepEqual(gotVal.(*ast.Value).Data, tc.wantDecode) {
 					t.Errorf("value mismatch: expected %v (%T), got %v (%T)",
 						tc.wantDecode, tc.wantDecode, gotVal, gotVal)
@@ -109,7 +109,7 @@ func BenchmarkEncodeBool(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		var o bytes.Buffer
 		enc.Reset(&o)
-		n, _ := jsonc.StructToJSONC(testInputs[i%len(testInputs)], "")
+		n, _ := ValueToMM(testInputs[i%len(testInputs)], "")
 		_, _ = enc.Encode(n)
 	}
 }
@@ -141,7 +141,7 @@ func TestEncodeBoolInStruct(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			bs, err := FromStruct(tc.input, "")
+			bs, err := FromValue(tc.input, "")
 			if err != nil {
 				t.Fatalf("encode failed: %v", err)
 			}
@@ -192,7 +192,7 @@ func TestEncodeBoolArray(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			bs, err := FromStruct(tc.input, "")
+			bs, err := FromValue(tc.input, "")
 			if err != nil {
 				t.Fatalf("encode failed: %v", err)
 			}
@@ -249,7 +249,7 @@ func TestEncodeBoolNullable(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			bs, err := FromStruct(tc.input, "")
+			bs, err := FromValue(tc.input, "")
 			if err != nil {
 				t.Fatalf("encode failed: %v", err)
 			}
@@ -282,7 +282,7 @@ func TestEncodeBoolByteRepresentation(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			bs, err := FromStruct(tc.input, "")
+			bs, err := FromValue(tc.input, "")
 			if err != nil {
 				t.Fatalf("encode failed: %v", err)
 			}

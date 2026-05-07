@@ -1,4 +1,4 @@
-package io.metamessage.mm;
+package io.github.metamessage.mm;
 
 final class WireConstants {
     static final long MAX_1 = 0xFFL;

@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"strconv"
 
-	"github.com/metamessage/metamessage/internal/jsonc/ast"
+	"github.com/metamessage/metamessage/internal/ast"
 	"github.com/metamessage/metamessage/internal/utils"
 )
 

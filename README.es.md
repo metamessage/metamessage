@@ -245,14 +245,14 @@ func main() {
     }
 
     p := Person{Name: "Alice", Age: 30}
-    data, err := mm.EncodeFromObject(p)
+    data, err := mm.EncodeFromValue(p)
     if err != nil {
         panic(err)
     }
     fmt.Printf("Encoded: %x\n", data)
 
     var decoded Person
-    err = mm.Decode(data, &decoded)
+    err = mm.DecodeToValue(data, &decoded)
     if err != nil {
         panic(err)
     }
@@ -275,10 +275,10 @@ func main() {
 #### Resumen de la API
 
 - `NewEncoder(w io.Writer) Encoder`: crea un codificador
-- `EncodeFromObject(in any) ([]byte, error)`: codificar desde struct
+- `EncodeFromValue(in any) ([]byte, error)`: codificar desde struct
 - `EncodeFromJSONC(in string) ([]byte, error)`: codificar desde cadena JSONC
 - `NewDecoder(r io.Reader) Decoder`: crea un decodificador
-- `Decode(in []byte, out any) error`: decodificar a struct
+- `DecodeToValue(in []byte, out any) error`: decodificar a struct
 - `DecodeToJSONC(in []byte) (string, error)`: decodificar a cadena JSONC
 
 ### Ejemplos de otros lenguajes
@@ -286,8 +286,8 @@ func main() {
 #### Java
 
 ```java
-import io.metamessage.mm.MetaMessage;
-import io.metamessage.mm.MM;
+import io.github.metamessage.mm.MetaMessage;
+import io.github.metamessage.mm.MM;
 
 @MM
 class Person {
@@ -307,8 +307,8 @@ public class Example {
 #### Kotlin
 
 ```kotlin
-import io.metamessage.mm.MetaMessage
-import io.metamessage.mm.MM
+import io.github.metamessage.mm.MetaMessage
+import io.github.metamessage.mm.MM
 
 @MM
 class Person(var name: String = "Ed", var age: Int = 30)
@@ -323,7 +323,7 @@ fun main() {
 #### TypeScript
 
 ```typescript
-import { encode, decode } from '@metamessage/ts';
+import { encode, decode } from 'metamessage';
 
 const person = { name: "Ed", age: 30 };
 const wire = encode(person);

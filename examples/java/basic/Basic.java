@@ -1,7 +1,7 @@
-package io.metamessage.examples;
+package io.github.metamessage.examples;
 
-import io.metamessage.mm.MetaMessage;
-import io.metamessage.mm.MM;
+import io.github.metamessage.mm.MetaMessage;
+import io.github.metamessage.mm.MM;
 
 @MM
 class Person {

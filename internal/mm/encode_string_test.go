@@ -11,8 +11,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/metamessage/metamessage/internal/ast"
 	"github.com/metamessage/metamessage/internal/jsonc"
-	"github.com/metamessage/metamessage/internal/jsonc/ast"
 )
 
 // go test ./internal/mm -v -run TestEncodeString
@@ -193,7 +193,7 @@ func TestEncodeString(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			var bs []byte
-			bs, err := FromStruct(tc.input, tc.tag)
+			bs, err := FromValue(tc.input, tc.tag)
 			if err != nil {
 				fmt.Println("err", err)
 			}
@@ -218,8 +218,8 @@ func TestEncodeString(t *testing.T) {
 			if err != nil {
 				fmt.Println("decoded err", err)
 			}
-			fmt.Println("decoded:", jsonc.Json(bs2))
-			fmt.Println("jsonc:", jsonc.ToString(bs2))
+			fmt.Println("decoded:", Dump(bs2))
+			fmt.Println("jsonc:", jsonc.ToJSONC(bs2))
 			v, ok := bs2.(*ast.Value)
 			if ok {
 				if !reflect.DeepEqual(v.Data, tc.expectedOut) {
@@ -233,13 +233,13 @@ func TestEncodeString(t *testing.T) {
 func BenchmarkEncodeString_MM(b *testing.B) {
 	e := NewEncoder(nil)
 	data := "benchmark test data 1234567890"
-	n, err := jsonc.StructToJSONC(data, "")
+	n, err := ValueToMM(data, "")
 	out, _ := e.Encode(n)
 	b.Log("out", len(out), err)
 	b.ResetTimer()
 
 	for b.Loop() {
-		n, _ := jsonc.StructToJSONC(data, "")
+		n, _ := ValueToMM(data, "")
 		_, _ = e.Encode(n)
 	}
 }

@@ -6,7 +6,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/metamessage/metamessage/internal/jsonc/ast"
+	"github.com/metamessage/metamessage/internal/ast"
 )
 
 // gofmt -w . && go test ./internal/jsonc/ast -run TestGenerateGoStruct -v

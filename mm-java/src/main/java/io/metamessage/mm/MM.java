@@ -1,4 +1,4 @@
-package io.metamessage.mm;
+package io.github.metamessage.mm;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;

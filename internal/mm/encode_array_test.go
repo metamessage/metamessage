@@ -1,6 +1,7 @@
 package mm
 
 import (
+	"fmt"
 	"reflect"
 	"testing"
 
@@ -96,7 +97,7 @@ func TestEncodeArray(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			encoded, err := FromStruct(tc.input, tc.tag)
+			encoded, err := FromValue(tc.input, tc.tag)
 
 			if tc.expectedErr != "" {
 				if err == nil || err.Error() != tc.expectedErr {
@@ -109,8 +110,12 @@ func TestEncodeArray(t *testing.T) {
 				t.Fatalf("Unexpected error: %v", err)
 			}
 
-			str, _ := ToJSONC(encoded)
-			t.Log(str)
+			gotVal, decodeErr := Decode(encoded)
+			if decodeErr != nil {
+				t.Fatalf("decode failed: %v", decodeErr)
+			}
+			fmt.Println("decoded:", Dump(gotVal), jsonc.ToJSONC(gotVal))
+
 			// if !reflect.DeepEqual(str, tc.expectedBuf) {
 			// 	t.Errorf("Expected buffer: %v, actual buffer: %v", tc.expectedBuf, str)
 			// }
@@ -126,7 +131,7 @@ func BenchmarkEncodeArray(b *testing.B) {
 	b.ResetTimer()
 
 	for i := 0; i < b.N; i++ {
-		n, _ := jsonc.StructToJSONC(val, "")
+		n, _ := ValueToMM(val, "")
 		_, _ = e.Encode(n)
 	}
 }

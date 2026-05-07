@@ -5,7 +5,7 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/metamessage/metamessage/internal/jsonc/ast"
+	"github.com/metamessage/metamessage/internal/ast"
 )
 
 var csharpTypeMap = map[ast.ValueType]string{

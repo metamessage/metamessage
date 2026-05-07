@@ -8,8 +8,7 @@ import (
 	"net"
 	"time"
 
-	"github.com/metamessage/metamessage/internal/jsonc"
-	"github.com/metamessage/metamessage/internal/jsonc/ast"
+	"github.com/metamessage/metamessage/internal/ast"
 	"github.com/metamessage/metamessage/internal/utils"
 )
 
@@ -416,7 +415,7 @@ func (e *encoder) EncodeStream(in any) (n int, err error) {
 	}
 
 	var node ast.Node
-	node, err = jsonc.StructToJSONC(in, "")
+	node, err = ValueToMM(in, "")
 	if err != nil {
 		return
 	}

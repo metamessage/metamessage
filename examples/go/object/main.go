@@ -18,7 +18,7 @@ func main() {
 		Name: "Alice",
 		Age:  30,
 	}
-	encoded, err := mm.EncodeFromObject(t, "")
+	encoded, err := mm.EncodeFromValue(t, "")
 	if err != nil {
 		fmt.Println("Error:", err)
 		return
@@ -35,7 +35,7 @@ func main() {
 
 	// decode to object
 	var v T
-	err = mm.Decode(encoded, &v)
+	err = mm.DecodeToValue(encoded, &v)
 	if err != nil {
 		log.Fatalf("error: %v\n", err)
 	}

@@ -23,9 +23,9 @@ if let node = try? JSONC.parse(jsonc) {
     print(node.description)
 }
 
-// 使用 structToJSONC 转换
+// 使用 valueToJSONC 转换
 let user = User(name: "Alice", age: 25, active: true, scores: [95, 87, 92])
-if let jsoncNode = try? structToJSONC(user) {
+if let jsoncNode = try? valueToJSONC(user) {
     print("\nBound to object:")
     print(jsoncNode.description)
 }

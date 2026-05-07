@@ -1,87 +1,120 @@
 package jsonc
 
 import (
-	"encoding/json"
-	"regexp"
+	"fmt"
+	"strconv"
+	"strings"
 
-	"github.com/metamessage/metamessage/internal/jsonc/ast"
-	"github.com/metamessage/metamessage/internal/jsonc/parser"
-	"github.com/metamessage/metamessage/internal/jsonc/scanner"
-	"github.com/metamessage/metamessage/internal/jsonc/token"
+	"github.com/metamessage/metamessage/internal/ast"
 )
 
-var Email = regexp.MustCompile(`^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$`)
-var Decimal = regexp.MustCompile(`^-?\d+\.\d+$`)
+const indentUnit = "\t"
 
-func GetInt(node ast.Node, path string) (int, error) {
-	return 0, nil
+func writeIndent(b *strings.Builder, indent int) {
+	b.WriteString(strings.Repeat(indentUnit, indent))
 }
 
-func GetString(node ast.Node, path string) (string, error) {
-	return "", nil
-}
-
-func GetFloat(node ast.Node, path string) (float64, error) {
-	return 0, nil
-}
-
-func Print(n ast.Node) {
-	println(ToString(n))
-}
-
-func Json(n ast.Node) string {
-	b, _ := json.MarshalIndent(n, "", "  ")
-	return string(b)
-}
-
-func ParseFromString(in string) (out ast.Node, err error) {
-	sc := scanner.New(in)
-	var toks []token.Token
-	for {
-		t := sc.NextToken()
-		toks = append(toks, t)
-		if t.Type == token.EOF {
-			break
-		}
-	}
-
-	p := parser.New(toks)
-	out, err = p.Parse()
-	if err != nil {
-		return
-	}
-	return
-}
-
-func ParseFromBytes(in []byte) (out ast.Node, err error) {
-	return ParseFromString(string(in))
-}
-
-func BindFromString(in string, out any) (err error) {
-	var n ast.Node
-	n, err = ParseFromString(in)
-	if err != nil {
+func writeValueJSONC(b *strings.Builder, v *ast.Value) {
+	if v == nil {
 		return
 	}
 
-	return Bind(n, out)
-}
-
-func BindFromBytes(in []byte, out any) (err error) {
-	var n ast.Node
-	n, err = ParseFromBytes(in)
-	if err != nil {
+	if v.Tag == nil {
 		return
 	}
 
-	return Bind(n, out)
+	switch v.Tag.Type {
+	case ast.ValueTypeString,
+		ast.ValueTypeBytes,
+		ast.ValueTypeDateTime,
+		ast.ValueTypeDate,
+		ast.ValueTypeTime,
+		ast.ValueTypeUUID,
+		ast.ValueTypeIP,
+		ast.ValueTypeURL,
+		ast.ValueTypeEmail,
+		ast.ValueTypeEnum:
+		b.WriteString(strconv.Quote(v.Text))
+
+	case ast.ValueTypeInt, ast.ValueTypeInt8, ast.ValueTypeInt16, ast.ValueTypeInt32, ast.ValueTypeInt64,
+		ast.ValueTypeUint, ast.ValueTypeUint8, ast.ValueTypeUint16, ast.ValueTypeUint32, ast.ValueTypeUint64,
+		ast.ValueTypeBigInt,
+		ast.ValueTypeDecimal,
+		ast.ValueTypeBool:
+		b.WriteString(v.Text)
+
+	case ast.ValueTypeFloat32, ast.ValueTypeFloat64:
+		b.WriteString(v.Text)
+
+	default:
+		b.WriteString(v.Text)
+	}
 }
 
-func StructToJSONCString(value any, name string) (string, error) {
-	node, err := StructToJSONC(value, name)
-	if err != nil {
-		return "", err
+func writeArrayJSONC(b *strings.Builder, a *ast.Array, indent int) {
+	b.WriteString("[\n")
+
+	for _, item := range a.Items {
+		writeLeadingComments(b, item.GetTag(), indent+1)
+
+		writeIndent(b, indent+1)
+
+		writeNodeJSONC(b, item, indent+1)
+
+		b.WriteString(",\n")
 	}
 
-	return ToString(node), nil
+	writeIndent(b, indent)
+	b.WriteString("]")
+}
+
+func writeObjectJSONC(b *strings.Builder, o *ast.Object, indent int) {
+	b.WriteString("{\n")
+
+	for _, f := range o.Fields {
+		writeLeadingComments(b, f.Value.GetTag(), indent+1)
+
+		writeIndent(b, indent+1)
+
+		b.WriteString(strconv.Quote(f.Key))
+		b.WriteString(": ")
+
+		writeNodeJSONC(b, f.Value, indent+1)
+
+		b.WriteString(",\n")
+	}
+
+	writeIndent(b, indent)
+	b.WriteString("}")
+}
+
+func writeLeadingComments(b *strings.Builder, tag *ast.Tag, indent int) {
+	tagStr := tag.String()
+	if tagStr != "" {
+		b.WriteString("\n")
+		writeIndent(b, indent)
+		fmt.Fprintf(b, "// mm: %s\n", tagStr)
+	}
+}
+
+func writeNodeJSONC(b *strings.Builder, n ast.Node, indent int) {
+	switch v := n.(type) {
+	case *ast.Value:
+		writeValueJSONC(b, v)
+	case *ast.Object:
+		writeObjectJSONC(b, v, indent)
+	case *ast.Array:
+		writeArrayJSONC(b, v, indent)
+	default:
+	}
+}
+
+func ToJSONC(n ast.Node) string {
+	if n == nil {
+		return ""
+	}
+	var b strings.Builder
+	writeLeadingComments(&b, n.GetTag(), 0)
+	writeNodeJSONC(&b, n, 0)
+	return b.String()
 }

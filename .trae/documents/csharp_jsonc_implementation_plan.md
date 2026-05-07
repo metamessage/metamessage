@@ -77,7 +77,7 @@ mm-cs/src/MetaMessage/Jsonc/
   - `ParseFromBytes(in byte[])` -> `IJcNode`
   - `BindFromString(in string, out T)` -> `T`
   - `BindFromBytes(in byte[], out T)` -> `T`
-  - `StructToJSONCString(value)` -> `string`
+  - `ValueToJSONCString(value)` -> `string`
   - `ToString(node)` -> `string`
 
 ### 8. 创建测试用例

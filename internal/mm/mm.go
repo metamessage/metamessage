@@ -1,11 +1,15 @@
 package mm
 
 import (
+	"encoding/json"
 	"fmt"
 	"sync"
 
+	"github.com/metamessage/metamessage/internal/ast"
 	"github.com/metamessage/metamessage/internal/jsonc"
-	"github.com/metamessage/metamessage/internal/jsonc/ast"
+	"github.com/metamessage/metamessage/internal/jsonc/parser"
+	"github.com/metamessage/metamessage/internal/jsonc/scanner"
+	"github.com/metamessage/metamessage/internal/jsonc/token"
 )
 
 var encoderPool = sync.Pool{
@@ -23,15 +27,15 @@ func putEncoder(encoder Encoder) {
 	encoderPool.Put(encoder)
 }
 
-func FromStruct(v any, tag string) (bs []byte, err error) {
+func FromValue(v any, tag string) (bs []byte, err error) {
 	var node ast.Node
-	node, err = jsonc.StructToJSONC(v, tag)
+	node, err = ValueToMM(v, tag)
 	if err != nil {
 		err = fmt.Errorf("struct to jsonc error: %w", err)
 		return
 	}
 
-	// fmt.Println("FromStruct", jsonc.Json(node))
+	// fmt.Println("FromValue", jsonc.Json(node))
 
 	encoder := getEncoder()
 	defer putEncoder(encoder)
@@ -40,7 +44,7 @@ func FromStruct(v any, tag string) (bs []byte, err error) {
 
 func FromJSONC(s string) (bs []byte, err error) {
 	var node ast.Node
-	node, err = jsonc.ParseFromString(s)
+	node, err = ParseFromJSONC(s)
 	if err != nil {
 		err = fmt.Errorf("parse error: %w", err)
 		return
@@ -49,10 +53,6 @@ func FromJSONC(s string) (bs []byte, err error) {
 	encoder := getEncoder()
 	defer putEncoder(encoder)
 	return encoder.Encode(node)
-}
-
-func FromJSONCBytes(bs []byte) ([]byte, error) {
-	return FromJSONC(string(bs))
 }
 
 var decoderPool = sync.Pool{
@@ -76,34 +76,61 @@ func Decode(data []byte) (ast.Node, error) {
 	return decoder.Decode(data)
 }
 
-func ToJSONC(data []byte) (str string, err error) {
-	var node ast.Node
-	node, err = Decode(data)
+func ValueToJSONC(value any, name string) (string, error) {
+	node, err := ValueToMM(value, name)
 	if err != nil {
-		err = fmt.Errorf("decode error: %w", err)
-		return
+		return "", err
 	}
 
-	return jsonc.ToString(node), nil
+	return jsonc.ToJSONC(node), nil
 }
 
-func ToJSONCBytes(data []byte) (bs []byte, err error) {
-	str, err := ToJSONC(data)
-	if err != nil {
-		err = fmt.Errorf("to jsonc error: %w", err)
-		return
-	}
-
-	return []byte(str), nil
-}
-
-func Bind(in []byte, out any) (err error) {
+func BindFromJSONC(in string, out any) (err error) {
 	var n ast.Node
-	n, err = Decode(in)
+	n, err = ParseFromJSONC(in)
 	if err != nil {
-		err = fmt.Errorf("decode error: %w", err)
 		return
 	}
 
-	return jsonc.Bind(n, out)
+	return Bind(n, out)
+}
+
+func GetInt(node ast.Node, path string) (int, error) {
+	return 0, nil
+}
+
+func GetString(node ast.Node, path string) (string, error) {
+	return "", nil
+}
+
+func GetFloat(node ast.Node, path string) (float64, error) {
+	return 0, nil
+}
+
+func PrintJSONC(n ast.Node) {
+	println(jsonc.ToJSONC(n))
+}
+
+func ParseFromJSONC(in string) (out ast.Node, err error) {
+	sc := scanner.New(in)
+	var toks []token.Token
+	for {
+		t := sc.NextToken()
+		toks = append(toks, t)
+		if t.Type == token.EOF {
+			break
+		}
+	}
+
+	p := parser.New(toks)
+	out, err = p.Parse()
+	if err != nil {
+		return
+	}
+	return
+}
+
+func Dump(n ast.Node) string {
+	b, _ := json.MarshalIndent(n, "", "  ")
+	return string(b)
 }

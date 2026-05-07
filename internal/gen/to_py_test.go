@@ -4,7 +4,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/metamessage/metamessage/internal/jsonc/ast"
+	"github.com/metamessage/metamessage/internal/ast"
 )
 
 func TestToPyGeneratesCode(t *testing.T) {

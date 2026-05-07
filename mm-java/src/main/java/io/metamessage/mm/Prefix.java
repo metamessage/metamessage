@@ -1,4 +1,4 @@
-package io.metamessage.mm;
+package io.github.metamessage.mm;
 
 public final class Prefix {
     public static final int SIMPLE = 0b000 << 5;

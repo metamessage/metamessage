@@ -1,4 +1,4 @@
-package io.metamessage.jsonc;
+package io.github.metamessage.jsonc;
 
 import java.nio.charset.StandardCharsets;
 import java.util.List;

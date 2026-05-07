@@ -29,7 +29,7 @@ func main() {
 
 	// decode to int
 	var v int
-	err = mm.Decode(encoded, &v)
+	err = mm.DecodeToValue(encoded, &v)
 	if err != nil {
 		log.Fatalf("error: %v\n", err)
 	}

@@ -1,6 +1,6 @@
-package io.metamessage.jsonc;
+package io.github.metamessage.jsonc;
 
-import io.metamessage.mm.MmTag;
+import io.github.metamessage.mm.MmTag;
 import java.util.List;
 
 public sealed interface JcNode permits JcNode.JcValue, JcNode.JcObject, JcNode.JcArray {

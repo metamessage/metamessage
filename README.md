@@ -284,7 +284,7 @@ func main() {
     }
     
     p := Person{Name: "Alice", Age: 30}
-    data, err := mm.EncodeFromObject(p)
+    data, err := mm.EncodeFromValue(p)
     if err != nil {
         panic(err)
     }
@@ -292,7 +292,7 @@ func main() {
     
     // 解碼到結構體
     var decoded Person
-    err = mm.Decode(data, &decoded)
+    err = mm.DecodeToValue(data, &decoded)
     if err != nil {
         panic(err)
     }
@@ -318,13 +318,13 @@ func main() {
 
 - `NewEncoder(w io.Writer) Encoder`: 創建編碼器
 
-- `EncodeFromObject(in any) ([]byte, error)`: 從結構體編碼
+- `EncodeFromValue(in any) ([]byte, error)`: 從結構體編碼
 
 - `EncodeFromJSONC(in string) ([]byte, error)`: 從 JSONC 字符串編碼
 
 - `NewDecoder(r io.Reader) Decoder`: 創建解碼器
 
-- `Decode(in []byte, out any) error`: 解碼到結構體
+- `DecodeToValue(in []byte, out any) error`: 解碼到結構體
 
 - `DecodeToJSONC(in []byte) (string, error)`: 解碼到 JSONC 字符串
 
@@ -333,8 +333,8 @@ func main() {
 #### Java
 
 ```java
-import io.metamessage.mm.MetaMessage;
-import io.metamessage.mm.MM;
+import io.github.metamessage.mm.MetaMessage;
+import io.github.metamessage.mm.MM;
 
 @MM
 class Person {
@@ -354,8 +354,8 @@ public class Example {
 #### Kotlin
 
 ```kotlin
-import io.metamessage.mm.MetaMessage
-import io.metamessage.mm.MM
+import io.github.metamessage.mm.MetaMessage
+import io.github.metamessage.mm.MM
 
 @MM
 class Person(var name: String = "Ed", var age: Int = 30)
@@ -370,7 +370,7 @@ fun main() {
 #### TypeScript
 
 ```typescript
-import { encode, decode } from '@metamessage/ts';
+import { encode, decode } from 'metamessage';
 
 const person = { name: "Ed", age: 30 };
 const wire = encode(person);

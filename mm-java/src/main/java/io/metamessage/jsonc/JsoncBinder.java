@@ -1,7 +1,7 @@
-package io.metamessage.jsonc;
+package io.github.metamessage.jsonc;
 
-import io.metamessage.mm.MmTag;
-import io.metamessage.mm.ValueType;
+import io.github.metamessage.mm.MmTag;
+import io.github.metamessage.mm.ValueType;
 import java.lang.reflect.Array;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;

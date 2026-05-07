@@ -13,8 +13,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/metamessage/metamessage/internal/jsonc"
-	"github.com/metamessage/metamessage/internal/jsonc/ast"
+	"github.com/metamessage/metamessage/internal/ast"
 	"github.com/metamessage/metamessage/internal/utils"
 )
 
@@ -137,7 +136,7 @@ func (d *decoder) DecodeStream(out any) (n int, err error) {
 
 	// fmt.Println("node", jsonc.Json(node))
 
-	err = jsonc.Bind(node, out)
+	err = Bind(node, out)
 	if err != nil {
 		return
 	}
