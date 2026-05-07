@@ -6,13 +6,14 @@ import (
 	"reflect"
 	"testing"
 
+	"github.com/metamessage/metamessage/internal/ast"
 	"github.com/metamessage/metamessage/internal/jsonc"
-	"github.com/metamessage/metamessage/internal/jsonc/ast"
 )
 
 // go test -v -run TestEncodeBytes
 //
 // go test ./internal/mm -v -run TestEncodeBytes/nil_pointer
+// go test ./internal/mm -v -run TestEncodesBytesRepresentation/medium_data
 //
 // go test -bench=BenchmarkEncodeBytes -benchmem
 
@@ -69,7 +70,7 @@ func TestEncodeBytes(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			var bs []byte
-			bs, err := FromStruct(tc.input, "type=bytes")
+			bs, err := FromValue(tc.input, "type=bytes")
 
 			if tc.expectedErr != "" {
 				if err == nil || err.Error() != tc.expectedErr {
@@ -83,7 +84,7 @@ func TestEncodeBytes(t *testing.T) {
 			}
 
 			bs2, _ := Decode(bs)
-			fmt.Println("decoded:", jsonc.Json(bs2), jsonc.ToString(bs2))
+			fmt.Println("decoded:", Dump(bs2), jsonc.ToJSONC(bs2))
 			if !reflect.DeepEqual(bs2.(*ast.Value).Data, tc.expectedOut) {
 				t.Errorf("Expected output: %v %T, actual output: %v %T", tc.expectedOut, tc.expectedOut, bs2.(*ast.Value).Data, bs2.(*ast.Value).Data)
 			}
@@ -101,7 +102,7 @@ func BenchmarkEncodeBytes(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		bf := &bytes.Buffer{}
 		enc.Reset(bf)
-		n, _ := jsonc.StructToJSONC(data, "")
+		n, _ := ValueToMM(data, "")
 		_, _ = enc.Encode(n)
 		buf.Reset()
 	}
@@ -143,7 +144,7 @@ func TestEncodeBytesInStruct(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			bs, err := FromStruct(tc.input, "")
+			bs, err := FromValue(tc.input, "")
 			if err != nil {
 				t.Fatalf("encode failed: %v", err)
 			}
@@ -198,7 +199,7 @@ func TestEncodeBytesArray(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			bs, err := FromStruct(tc.input, "")
+			bs, err := FromValue(tc.input, "")
 			if err != nil {
 				t.Fatalf("encode failed: %v", err)
 			}
@@ -242,7 +243,7 @@ func TestEncodesBytesNullable(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			bs, err := FromStruct(tc.input, "")
+			bs, err := FromValue(tc.input, "")
 			if err != nil {
 				t.Fatalf("encode failed: %v", err)
 			}
@@ -288,7 +289,7 @@ func TestEncodesBytesRepresentation(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			bs, err := FromStruct(tc.input, "")
+			bs, err := FromValue(tc.input, "")
 			if err != nil {
 				t.Fatalf("encode failed: %v", err)
 			}
@@ -302,7 +303,13 @@ func TestEncodesBytesRepresentation(t *testing.T) {
 				t.Fatalf("decode failed: %v", err)
 			}
 
-			decodedBytes := decoded.(*ast.Value).Data.([]byte)
+			value, ok := decoded.(*ast.Value)
+
+			if !ok {
+				t.Fatalf("expected *ast.Value, got %T", decoded)
+			}
+
+			decodedBytes := value.Data.([]byte)
 			if !reflect.DeepEqual(decodedBytes, tc.input) {
 				t.Errorf("value mismatch: expected %v, got %v", tc.input, decodedBytes)
 			}
@@ -343,7 +350,7 @@ func TestEncodesLargeBytes(t *testing.T) {
 				tc.input[i] = byte(i % 256)
 			}
 
-			bs, err := FromStruct(tc.input, "")
+			bs, err := FromValue(tc.input, "")
 			if err != nil {
 				t.Fatalf("encode failed: %v", err)
 			}
@@ -393,7 +400,7 @@ func TestEncodesUTF8Bytes(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			bs, err := FromStruct(tc.input, "")
+			bs, err := FromValue(tc.input, "")
 			if err != nil {
 				t.Fatalf("encode failed: %v", err)
 			}
@@ -403,7 +410,12 @@ func TestEncodesUTF8Bytes(t *testing.T) {
 				t.Fatalf("decode failed: %v", err)
 			}
 
-			decodedBytes := decoded.(*ast.Value).Data.([]byte)
+			value, ok := decoded.(*ast.Value)
+			if !ok {
+				t.Fatalf("expected *ast.Value, got %T", decoded)
+			}
+
+			decodedBytes := value.Data.([]byte)
 			if !reflect.DeepEqual(decodedBytes, tc.input) {
 				t.Errorf("value mismatch: expected %s, got %s", string(tc.input), string(decodedBytes))
 			}

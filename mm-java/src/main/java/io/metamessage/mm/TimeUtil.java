@@ -1,4 +1,4 @@
-package io.metamessage.mm;
+package io.github.metamessage.mm;
 
 import java.time.Instant;
 import java.time.LocalDate;

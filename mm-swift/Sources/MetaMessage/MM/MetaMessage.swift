@@ -328,7 +328,7 @@ public enum MetaMessage {
     }
 }
 
-public func structToJSONC<T>(_ value: T, tag: String = "") throws -> JSONCNode? {
+public func valueToJSONC<T>(_ value: T, tag: String = "") throws -> JSONCNode? {
     let mirror = Mirror(reflecting: value)
     return reflectToNode(mirror, tag: tag)
 }

@@ -1,10 +1,10 @@
-package io.metamessage.jsonc;
+package io.github.metamessage.jsonc;
 
-import io.metamessage.mm.CamelToSnake;
-import io.metamessage.mm.MmLineParser;
-import io.metamessage.mm.MmTag;
-import io.metamessage.mm.MmValidator;
-import io.metamessage.mm.ValueType;
+import io.github.metamessage.mm.CamelToSnake;
+import io.github.metamessage.mm.MmLineParser;
+import io.github.metamessage.mm.MmTag;
+import io.github.metamessage.mm.MmValidator;
+import io.github.metamessage.mm.ValueType;
 import java.util.ArrayList;
 import java.util.List;
 

@@ -5,7 +5,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/metamessage/metamessage/internal/jsonc/ast"
+	"github.com/metamessage/metamessage/internal/ast"
 )
 
 var tsTypeMap = map[ast.ValueType]string{

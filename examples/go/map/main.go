@@ -9,7 +9,7 @@ import (
 
 // go run examples/go/map/*.go
 func main() {
-	encoded, err := mm.EncodeFromObject(map[string]int{"test": 123456}, "")
+	encoded, err := mm.EncodeFromValue(map[string]int{"test": 123456}, "")
 	if err != nil {
 		fmt.Println("Error:", err)
 		return
@@ -27,7 +27,7 @@ func main() {
 	// decode to map[string]int
 	type T map[string]int
 	var v T
-	err = mm.Decode(encoded, &v)
+	err = mm.DecodeToValue(encoded, &v)
 	if err != nil {
 		log.Fatalf("error: %v\n", err)
 	}

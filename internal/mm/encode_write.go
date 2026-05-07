@@ -1,6 +1,8 @@
 package mm
 
-import "errors"
+import (
+	"errors"
+)
 
 // for io.ByteWriter
 func (e *encoder) WriteByte(c byte) error {
@@ -27,13 +29,13 @@ func (e *encoder) writeBytes(bs []byte) (n uint32, err error) {
 		return
 	}
 
-	if int(e.offset)+l > cap(e.buf) {
+	if required > cap(e.buf) {
 		newCap := cap(e.buf) * 2
 		if newCap > maxCap || newCap < required {
 			newCap = required
 		}
-		newBuf := make([]byte, len(e.buf), newCap)
-		copy(newBuf, e.buf)
+		newBuf := make([]byte, newCap)
+		copy(newBuf, e.buf[:e.offset])
 		e.buf = newBuf
 	}
 
@@ -53,13 +55,13 @@ func (e *encoder) writeByte(bs ...byte) (n uint32, err error) {
 		return
 	}
 
-	if int(e.offset)+l > cap(e.buf) {
+	if required > cap(e.buf) {
 		newCap := cap(e.buf) * 2
 		if newCap > maxCap || newCap < required {
 			newCap = required
 		}
-		newBuf := make([]byte, len(e.buf), newCap)
-		copy(newBuf, e.buf)
+		newBuf := make([]byte, newCap)
+		copy(newBuf, e.buf[:e.offset])
 		e.buf = newBuf
 	}
 
@@ -77,13 +79,13 @@ func (e *encoder) writeString(s string) (n uint32, err error) {
 		return
 	}
 
-	if int(e.offset)+l > cap(e.buf) {
+	if required > cap(e.buf) {
 		newCap := cap(e.buf) * 2
 		if newCap > maxCap || newCap < required {
 			newCap = required
 		}
-		newBuf := make([]byte, len(e.buf), newCap)
-		copy(newBuf, e.buf)
+		newBuf := make([]byte, newCap)
+		copy(newBuf, e.buf[:e.offset])
 		e.buf = newBuf
 	}
 
@@ -102,13 +104,13 @@ func (e *encoder) writeBytesWithPrefix(bs []byte, prefix ...byte) (n uint32, err
 		return
 	}
 
-	if int(e.offset)+l > cap(e.buf) {
+	if required > cap(e.buf) {
 		newCap := cap(e.buf) * 2
 		if newCap > maxCap || newCap < required {
 			newCap = required
 		}
-		newBuf := make([]byte, len(e.buf), newCap)
-		copy(newBuf, e.buf)
+		newBuf := make([]byte, newCap)
+		copy(newBuf, e.buf[:e.offset])
 		e.buf = newBuf
 	}
 
@@ -128,13 +130,13 @@ func (e *encoder) writeStringWithPrefix(s string, prefix ...byte) (n uint32, err
 		return
 	}
 
-	if int(e.offset)+l > cap(e.buf) {
+	if required > cap(e.buf) {
 		newCap := cap(e.buf) * 2
 		if newCap > maxCap || newCap < required {
 			newCap = required
 		}
-		newBuf := make([]byte, len(e.buf), newCap)
-		copy(newBuf, e.buf)
+		newBuf := make([]byte, newCap)
+		copy(newBuf, e.buf[:e.offset])
 		e.buf = newBuf
 	}
 

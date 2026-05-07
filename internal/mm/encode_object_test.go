@@ -116,7 +116,7 @@ func TestEncodeObject(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			gotBytes, err := FromStruct(tc.input, tc.tag)
+			gotBytes, err := FromValue(tc.input, tc.tag)
 
 			if (err != nil) != tc.wantErr {
 				t.Fatalf("error mismatch: expected err=%t, got err=%v", tc.wantErr, err)
@@ -129,7 +129,7 @@ func TestEncodeObject(t *testing.T) {
 
 			bs2, _ := Decode(gotBytes)
 			// fmt.Println("decoded node:", jsonc.Json(bs2))
-			fmt.Println("decoded jsonc:", jsonc.ToString(bs2))
+			fmt.Println("decoded jsonc:", jsonc.ToJSONC(bs2))
 		})
 	}
 }
@@ -146,13 +146,13 @@ func BenchmarkEncodeObject_MM(b *testing.B) {
 		}{Address: ""},
 		Decimal: "0.0",
 	}
-	n, err := jsonc.StructToJSONC(data, "")
+	n, err := ValueToMM(data, "")
 	out, _ := e.Encode(n)
 	b.Log("out", len(out), err)
 	b.ResetTimer()
 
 	for b.Loop() {
-		n, _ := jsonc.StructToJSONC(data, "")
+		n, _ := ValueToMM(data, "")
 		_, _ = e.Encode(n)
 	}
 }

@@ -1,8 +1,8 @@
-package io.metamessage.jsonc;
+package io.github.metamessage.jsonc;
 
-import io.metamessage.mm.MmTag;
-import io.metamessage.mm.MmTagDirectives;
-import io.metamessage.mm.ValueType;
+import io.github.metamessage.mm.MmTag;
+import io.github.metamessage.mm.MmTagDirectives;
+import io.github.metamessage.mm.ValueType;
 
 /**
  * Renders a {@link JcNode} as JSONC text (Go {@code internal/jsonc/to_string.go}).

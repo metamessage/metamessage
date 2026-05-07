@@ -1,4 +1,4 @@
-package io.metamessage.mm;
+package io.github.metamessage.mm;
 
 /**
  * 自定义类型转换器接口，用于在 Java 类型和 MM 类型之间进行转换。

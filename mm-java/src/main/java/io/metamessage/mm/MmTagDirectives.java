@@ -1,4 +1,4 @@
-package io.metamessage.mm;
+package io.github.metamessage.mm;
 
 /**
  * Renders an {@link MmTag} as a semicolon-separated directive list (Go {@code (*Tag).String()}).

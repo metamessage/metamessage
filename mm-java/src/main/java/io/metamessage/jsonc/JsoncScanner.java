@@ -1,4 +1,4 @@
-package io.metamessage.jsonc;
+package io.github.metamessage.jsonc;
 
 import java.util.ArrayList;
 import java.util.List;

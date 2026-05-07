@@ -7,7 +7,7 @@ import (
 	"strings"
 	"unicode"
 
-	"github.com/metamessage/metamessage/internal/jsonc/ast"
+	"github.com/metamessage/metamessage/internal/ast"
 )
 
 var goTypeMap = map[ast.ValueType]string{

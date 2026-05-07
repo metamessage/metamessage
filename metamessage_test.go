@@ -8,9 +8,9 @@ import (
 	"testing"
 	"time"
 
+	"github.com/metamessage/metamessage/internal/ast"
 	"github.com/metamessage/metamessage/internal/gen"
-	"github.com/metamessage/metamessage/internal/jsonc"
-	"github.com/metamessage/metamessage/internal/jsonc/ast"
+	"github.com/metamessage/metamessage/internal/mm"
 )
 
 //go test -v -run TestEncodeDecode
@@ -81,7 +81,7 @@ func TestEncodeDecode(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			var bs []byte
-			bs, err := EncodeFromObject(tc.input, "")
+			bs, err := EncodeFromValue(tc.input, "")
 
 			if tc.expectedErr != "" {
 				if err == nil || err.Error() != tc.expectedErr {
@@ -115,7 +115,7 @@ func BenchmarkEncodeDecode(b *testing.B) {
 	b.ResetTimer()
 
 	for i := 0; i < b.N; i++ {
-		n, _ := EncodeFromObject(data, "")
+		n, _ := EncodeFromValue(data, "")
 		_, _ = DecodeToJSONC(n)
 	}
 }
@@ -141,12 +141,12 @@ func TestGenerateGoBasic(t *testing.T) {
 		Int8: 8,
 	}
 
-	astNode, err := jsonc.StructToJSONC(user, "")
+	astNode, err := mm.ValueToMM(user, "")
 	if err != nil {
 		fmt.Printf("err: %v\n", err)
 		return
 	}
-	fmt.Println("json", jsonc.Json(astNode))
+	fmt.Println("json", mm.Dump(astNode))
 	fmt.Println("=== astNode res ===")
 	fmt.Println(gen.ToGo(astNode))
 }
@@ -227,12 +227,12 @@ func TestGenerateGoStruct1(t *testing.T) {
 	}
 
 	// 3. 转换为AST
-	astNode, err := jsonc.StructToJSONC(user, "user")
+	astNode, err := mm.ValueToMM(user, "user")
 	if err != nil {
 		fmt.Printf("转换失败: %v\n", err)
 		return
 	}
-	fmt.Println("json", jsonc.Json(astNode))
+	fmt.Println("json", mm.Dump(astNode))
 	fmt.Println("=== astNode 生成结果 ===")
 	fmt.Println(gen.ToGo(astNode))
 }

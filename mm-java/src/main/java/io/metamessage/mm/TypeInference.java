@@ -1,4 +1,4 @@
-package io.metamessage.mm;
+package io.github.metamessage.mm;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.ParameterizedType;

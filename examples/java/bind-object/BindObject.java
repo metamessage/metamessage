@@ -1,8 +1,8 @@
-package io.metamessage.examples;
+package io.github.metamessage.examples;
 
-import io.metamessage.jsonc.Jsonc;
-import io.metamessage.mm.MM;
-import io.metamessage.mm.ValueType;
+import io.github.metamessage.jsonc.Jsonc;
+import io.github.metamessage.mm.MM;
+import io.github.metamessage.mm.ValueType;
 import java.util.List;
 
 @MM

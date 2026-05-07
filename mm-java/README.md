@@ -7,7 +7,7 @@
 
 ```xml
 <dependency>
-    <groupId>io.metamessage</groupId>
+    <groupId>io.github.metamessage</groupId>
     <artifactId>mm-java</artifactId>
     <version>1.0.0</version>
 </dependency>
@@ -23,7 +23,7 @@
 使用 `@MM` 注解标记需要编解码的类：
 
 ```java
-import io.metamessage.mm.MM;
+import io.github.metamessage.mm.MM;
 
 @MM
 class Person {
@@ -35,7 +35,7 @@ class Person {
 ### 2.2 编码示例
 
 ```java
-import io.metamessage.mm.MetaMessage;
+import io.github.metamessage.mm.MetaMessage;
 
 Person person = new Person();
 byte[] wire = MetaMessage.encode(person);
@@ -52,7 +52,7 @@ System.out.println("Decoded: Name=" + decoded.name + ", Age=" + decoded.age);
 ### 2.4 JSONC 解析示例
 
 ```java
-import io.metamessage.jsonc.Jsonc;
+import io.github.metamessage.jsonc.Jsonc;
 
 String jsonc = """
 {

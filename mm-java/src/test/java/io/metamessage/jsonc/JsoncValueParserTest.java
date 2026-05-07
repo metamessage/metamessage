@@ -1,4 +1,4 @@
-package io.metamessage.jsonc;
+package io.github.metamessage.jsonc;
 
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -6,8 +6,8 @@ import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import io.metamessage.mm.MmTag;
-import io.metamessage.mm.ValueType;
+import io.github.metamessage.mm.MmTag;
+import io.github.metamessage.mm.ValueType;
 import java.math.BigInteger;
 import java.net.URI;
 import java.time.LocalDate;

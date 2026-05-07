@@ -21,7 +21,7 @@ func main() {
 		Text: "abc",
 	}
 
-	bs, err := mm.FromStruct(message, "")
+	bs, err := mm.FromValue(message, "")
 	if err != nil {
 		log.Fatalf("encode error: %v\n", err)
 	}

@@ -1,4 +1,4 @@
-package io.metamessage.mm;
+package io.github.metamessage.mm;
 
 /**
  * Public entry points for the Java MM codec (binary compatible with the Go {@code mm} package).

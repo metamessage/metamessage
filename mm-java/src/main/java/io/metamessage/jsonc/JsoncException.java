@@ -1,4 +1,4 @@
-package io.metamessage.jsonc;
+package io.github.metamessage.jsonc;
 
 public final class JsoncException extends RuntimeException {
     public JsoncException(String message) {

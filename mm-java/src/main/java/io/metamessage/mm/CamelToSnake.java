@@ -1,4 +1,4 @@
-package io.metamessage.mm;
+package io.github.metamessage.mm;
 
 public final class CamelToSnake {
     private CamelToSnake() {}

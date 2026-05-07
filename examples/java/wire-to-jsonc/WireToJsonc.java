@@ -1,8 +1,8 @@
-package io.metamessage.examples;
+package io.github.metamessage.examples;
 
-import io.metamessage.jsonc.Jsonc;
-import io.metamessage.mm.MetaMessage;
-import io.metamessage.jsonc.JcNode;
+import io.github.metamessage.jsonc.Jsonc;
+import io.github.metamessage.mm.MetaMessage;
+import io.github.metamessage.jsonc.JcNode;
 
 public class WireToJsonc {
     public static void main(String[] args) throws Exception {

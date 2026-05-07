@@ -6,8 +6,8 @@ import (
 	"reflect"
 	"testing"
 
+	"github.com/metamessage/metamessage/internal/ast"
 	"github.com/metamessage/metamessage/internal/jsonc"
-	"github.com/metamessage/metamessage/internal/jsonc/ast"
 )
 
 // go test ./internal/mm -v -run TestEncodeFloat
@@ -110,7 +110,7 @@ func TestEncodeFloat(t *testing.T) {
 			var err error
 
 			var bs []byte
-			bs, err = FromStruct(tc.input, "")
+			bs, err = FromValue(tc.input, "")
 			fmt.Printf("bs %08b\n", bs)
 
 			if (err != nil) != tc.wantErr {
@@ -122,7 +122,7 @@ func TestEncodeFloat(t *testing.T) {
 				if decodeErr != nil {
 					t.Fatalf("decode failed: %v", decodeErr)
 				}
-				fmt.Println("decoded:", jsonc.Json(gotVal), jsonc.ToString(gotVal))
+				fmt.Println("decoded:", Dump(gotVal), jsonc.ToJSONC(gotVal))
 				if !reflect.DeepEqual(gotVal.(*ast.Value).Data, tc.wantDecode) {
 					t.Errorf("value mismatch: expected %v (%T), got %v (%T)",
 						tc.wantDecode, tc.wantDecode, gotVal.(*ast.Value).Data, gotVal.(*ast.Value).Data)
@@ -194,7 +194,7 @@ func TestEncodeFloatInStruct(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			bs, err := FromStruct(tc.input, "")
+			bs, err := FromValue(tc.input, "")
 			if err != nil {
 				t.Fatalf("encode failed: %v", err)
 			}
@@ -244,7 +244,7 @@ func TestEncodeFloatArray(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			bs, err := FromStruct(tc.input, "")
+			bs, err := FromValue(tc.input, "")
 			if err != nil {
 				t.Fatalf("encode failed: %v", err)
 			}
@@ -307,7 +307,7 @@ func TestEncodeFloatNullable(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			bs, err := FromStruct(tc.input, "")
+			bs, err := FromValue(tc.input, "")
 			if err != nil {
 				t.Fatalf("encode failed: %v", err)
 			}
@@ -356,7 +356,7 @@ func TestEncodeFloatBoundary(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			bs, err := FromStruct(tc.input, "")
+			bs, err := FromValue(tc.input, "")
 			if err != nil {
 				t.Fatalf("encode failed: %v", err)
 			}
@@ -410,7 +410,7 @@ func TestEncodeFloat32Precision(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			bs, err := FromStruct(tc.input, "")
+			bs, err := FromValue(tc.input, "")
 			if err != nil {
 				t.Fatalf("encode failed: %v", err)
 			}
@@ -460,7 +460,7 @@ func TestEncodeFloatRepresentation(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			bs, err := FromStruct(tc.input, "")
+			bs, err := FromValue(tc.input, "")
 			if err != nil {
 				t.Fatalf("encode failed: %v", err)
 			}

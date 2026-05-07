@@ -257,14 +257,14 @@ func main() {
     }
 
     p := Person{Name: "Alice", Age: 30}
-    data, err := mm.EncodeFromObject(p)
+    data, err := mm.EncodeFromValue(p)
     if err != nil {
         panic(err)
     }
     fmt.Printf("Encoded: %x\n", data)
 
     var decoded Person
-    err = mm.Decode(data, &decoded)
+    err = mm.DecodeToValue(data, &decoded)
     if err != nil {
         panic(err)
     }
@@ -287,10 +287,10 @@ func main() {
 #### API 요약
 
 - `NewEncoder(w io.Writer) Encoder`: 인코더 생성
-- `EncodeFromObject(in any) ([]byte, error)`: 구조체에서 인코딩
+- `EncodeFromValue(in any) ([]byte, error)`: 구조체에서 인코딩
 - `EncodeFromJSONC(in string) ([]byte, error)`: JSONC 문자열에서 인코딩
 - `NewDecoder(r io.Reader) Decoder`: 디코더 생성
-- `Decode(in []byte, out any) error`: 구조체로 디코딩
+- `DecodeToValue(in []byte, out any) error`: 구조체로 디코딩
 - `DecodeToJSONC(in []byte) (string, error)`: JSONC 문자열로 디코딩
 
 ### 다른 언어 예시
@@ -298,8 +298,8 @@ func main() {
 #### Java
 
 ```java
-import io.metamessage.mm.MetaMessage;
-import io.metamessage.mm.MM;
+import io.github.metamessage.mm.MetaMessage;
+import io.github.metamessage.mm.MM;
 
 @MM
 class Person {
@@ -319,8 +319,8 @@ public class Example {
 #### Kotlin
 
 ```kotlin
-import io.metamessage.mm.MetaMessage
-import io.metamessage.mm.MM
+import io.github.metamessage.mm.MetaMessage
+import io.github.metamessage.mm.MM
 
 @MM
 class Person(var name: String = "Ed", var age: Int = 30)
@@ -335,7 +335,7 @@ fun main() {
 #### TypeScript
 
 ```typescript
-import { encode, decode } from '@metamessage/ts';
+import { encode, decode } from 'metamessage';
 
 const person = { name: "Ed", age: 30 };
 const wire = encode(person);

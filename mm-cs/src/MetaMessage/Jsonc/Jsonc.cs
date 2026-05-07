@@ -42,7 +42,7 @@ public static class Jsonc
         binder.Bind(node, target);
     }
 
-    public static string StructToJSONCString(object value)
+    public static string ValueToMMString(object value)
     {
         var binder = new JsoncBinder();
         var node = binder.StructToNode(value);

@@ -10,8 +10,8 @@ import (
 	"slices"
 	"strings"
 
+	"github.com/metamessage/metamessage"
 	"github.com/metamessage/metamessage/internal/gen"
-	"github.com/metamessage/metamessage/internal/jsonc"
 	"github.com/metamessage/metamessage/internal/mm"
 )
 
@@ -25,7 +25,7 @@ func main() {
 	decode := flag.Bool("decode", false, "decode mode: MetaMessage -> jsonc")
 	flag.BoolVar(decode, "d", false, "shorthand for -decode")
 
-	generate := flag.Bool("generate", false, "generate mode: jsonc -> struct (support multi language)")
+	generate := flag.Bool("generate", false, "generate mode: jsonc -> value (support multi language)")
 	flag.BoolVar(generate, "g", false, "shorthand for -gen")
 
 	in := flag.String("in", "", "input file path (empty = read from stdin)")
@@ -45,7 +45,7 @@ func main() {
 		fmt.Fprintln(os.Stderr, "\nMode (mutually exclusive, choose one):")
 		fmt.Fprintln(os.Stderr, "  -encode, -e        Encode JSONC to MetaMessage format")
 		fmt.Fprintln(os.Stderr, "  -decode, -d        Decode MetaMessage to JSONC format")
-		fmt.Fprintln(os.Stderr, "  -generate, -g      Generate struct code from JSONC")
+		fmt.Fprintln(os.Stderr, "  -generate, -g      Generate value code from JSONC")
 		fmt.Fprintln(os.Stderr, "\nCommon Options:")
 		fmt.Fprintln(os.Stderr, "  -in, -i string     Input file path (empty = read from stdin)")
 		fmt.Fprintln(os.Stderr, "  -out, -o string    Output file path (empty = write to stdout)")
@@ -117,7 +117,7 @@ func main() {
 	switch {
 	case *encode:
 		fmt.Printf("Encoding Mode, Input: %s, Output: %s\n", *in, *out)
-		output, e := mm.FromJSONCBytes(data)
+		output, e := metamessage.EncodeFromJSONC(string(data))
 		if e != nil {
 			fmt.Fprintf(os.Stderr, "parse error: %v\n", err)
 			os.Exit(2)
@@ -152,7 +152,7 @@ func main() {
 
 	case *decode:
 		fmt.Printf("Decoding Mode, Input: %s, Output:%s\n", *in, *out)
-		outputStr, e := mm.ToJSONC(data)
+		outputStr, e := metamessage.DecodeToJSONC(data)
 		if e != nil {
 			fmt.Fprintf(os.Stderr, "parse error: %v\n", err)
 			os.Exit(2)
@@ -187,7 +187,7 @@ func main() {
 
 	case *generate:
 		fmt.Printf("Generation Mode, Input: %s, Output: %s, Target Language: %s\n", *in, *out, *lang)
-		node, err := jsonc.ParseFromBytes(data)
+		node, err := mm.ParseFromJSONC(string(data))
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "parse error: %v\n", err)
 			os.Exit(2)
