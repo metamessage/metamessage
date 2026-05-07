@@ -146,21 +146,65 @@ func NewTag() *Tag {
 }
 
 func (t *Tag) Inherit(tag *Tag) {
-	t.Desc = tag.ChildDesc
-	t.Type = tag.ChildType
-	t.Raw = tag.ChildRaw
-	t.Nullable = tag.ChildNullable
-	t.AllowEmpty = tag.ChildAllowEmpty
-	t.Unique = tag.ChildUnique
-	t.Default = tag.ChildDefault
-	t.Min = tag.ChildMin
-	t.Max = tag.ChildMax
-	t.Size = tag.ChildSize
-	t.Enum = tag.ChildEnum
-	t.Pattern = tag.ChildPattern
-	t.Location = tag.ChildLocation
-	t.Version = tag.ChildVersion
-	t.Mime = tag.ChildMime
+	if tag.ChildDesc != "" {
+		t.Desc = tag.ChildDesc
+	}
+
+	if tag.ChildType != ValueTypeUnknown {
+		t.Type = tag.ChildType
+	}
+
+	if tag.ChildRaw {
+		t.Raw = tag.ChildRaw
+	}
+
+	if tag.ChildNullable {
+		t.Nullable = tag.ChildNullable
+	}
+
+	if tag.ChildAllowEmpty {
+		t.AllowEmpty = tag.ChildAllowEmpty
+	}
+
+	if tag.ChildUnique {
+		t.Unique = tag.ChildUnique
+	}
+
+	if tag.ChildDefault != "" {
+		t.Default = tag.ChildDefault
+	}
+
+	if tag.ChildMin != "" {
+		t.Min = tag.ChildMin
+	}
+
+	if tag.ChildMax != "" {
+		t.Max = tag.ChildMax
+	}
+
+	if tag.ChildSize != 0 {
+		t.Size = tag.ChildSize
+	}
+
+	if tag.ChildEnum != "" {
+		t.Enum = tag.ChildEnum
+	}
+
+	if tag.ChildPattern != "" {
+		t.Pattern = tag.ChildPattern
+	}
+
+	if utils.GetLocationOffsetHour(tag.ChildLocation) != 0 {
+		t.Location = tag.ChildLocation
+	}
+
+	if tag.ChildVersion != DefaultVersion {
+		t.Version = tag.ChildVersion
+	}
+
+	if tag.ChildMime != "" {
+		t.Mime = tag.ChildMime
+	}
 }
 
 func (t *Tag) GetPattern() (*regexp.Regexp, error) {

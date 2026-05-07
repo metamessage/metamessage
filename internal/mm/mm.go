@@ -107,10 +107,6 @@ func GetFloat(node ast.Node, path string) (float64, error) {
 	return 0, nil
 }
 
-func PrintJSONC(n ast.Node) {
-	println(jsonc.ToJSONC(n))
-}
-
 func ParseFromJSONC(in string) (out ast.Node, err error) {
 	sc := scanner.New(in)
 	var toks []token.Token
@@ -128,6 +124,10 @@ func ParseFromJSONC(in string) (out ast.Node, err error) {
 		return
 	}
 	return
+}
+
+func PrintJSONC(n ast.Node) {
+	println(jsonc.ToJSONC(n))
 }
 
 func Dump(n ast.Node) string {

@@ -971,10 +971,13 @@ func (p *Parser) parseObject(openLine int, path string) (*ast.Object, error) {
 			p.next()
 			continue
 		}
+
+		// for map
 		childTag := val.GetTag()
 		if childTag != nil && tag != nil {
 			childTag.Inherit(tag)
 		}
+
 		field := &ast.Field{
 			Key:   keyStr,
 			Value: val,
