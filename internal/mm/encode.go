@@ -364,7 +364,7 @@ func (e *encoder) encodeNodeValue(val *ast.Value) (n uint32, err error) {
 		}
 
 	default:
-		return 0, fmt.Errorf("encodeNodeValue: unsupported type: %v, value: %v", val.Tag.Type, val)
+		return 0, fmt.Errorf("type error: unsupported type: %v, value: %v", val.Tag.Type, val.Data)
 	}
 
 	if err != nil {
@@ -397,8 +397,8 @@ func (e *encoder) Encode(node ast.Node) (out []byte, err error) {
 		n, err = e.encodeNodeValue(val)
 	default:
 		err = fmt.Errorf("unsupported type %T", val)
-		return
 	}
+
 	if err != nil {
 		err = fmt.Errorf("encode error: %w", err)
 		return
