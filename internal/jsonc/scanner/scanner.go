@@ -207,3 +207,15 @@ func (s *Scanner) scanLiteral() token.Token {
 		}
 	}
 }
+
+func (s *Scanner) ScanAll() []token.Token {
+	var tokens []token.Token
+	for {
+		tok := s.NextToken()
+		tokens = append(tokens, tok)
+		if tok.Type == token.EOF {
+			break
+		}
+	}
+	return tokens
+}

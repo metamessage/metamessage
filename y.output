@@ -1,0 +1,622 @@
+
+state 0
+	$accept: .Document $end 
+
+	STRING  shift 5
+	NUMBER  shift 6
+	TRUE  shift 7
+	FALSE  shift 8
+	LBRACE  shift 9
+	LBRACKET  shift 10
+	.  error
+
+	Object  goto 3
+	Array  goto 4
+	Value  goto 2
+	Document  goto 1
+
+state 1
+	$accept:  Document.$end 
+
+	$end  accept
+	.  error
+
+
+state 2
+	Document:  Value.    (1)
+
+	.  reduce 1 (src line 52)
+
+
+state 3
+	Document:  Object.    (2)
+
+	.  reduce 2 (src line 54)
+
+
+state 4
+	Document:  Array.    (3)
+
+	.  reduce 3 (src line 55)
+
+
+state 5
+	Value:  STRING.    (49)
+
+	.  reduce 49 (src line 440)
+
+
+state 6
+	Value:  NUMBER.    (50)
+
+	.  reduce 50 (src line 457)
+
+
+state 7
+	Value:  TRUE.    (51)
+
+	.  reduce 51 (src line 467)
+
+
+state 8
+	Value:  FALSE.    (52)
+
+	.  reduce 52 (src line 483)
+
+
+state 9
+	Object:  LBRACE.RBRACE 
+	Object:  LBRACE.RBRACE Tag 
+	Object:  LBRACE.FieldList RBRACE 
+	Object:  LBRACE.FieldList RBRACE Tag 
+
+	STRING  shift 15
+	RBRACE  shift 11
+	.  error
+
+	Field  goto 13
+	FieldList  goto 12
+	string_literal  goto 14
+
+state 10
+	Array:  LBRACKET.RBRACKET 
+	Array:  LBRACKET.RBRACKET Tag 
+	Array:  LBRACKET.ElementList RBRACKET 
+	Array:  LBRACKET.ElementList RBRACKET Tag 
+
+	STRING  shift 21
+	NUMBER  shift 22
+	TRUE  shift 23
+	FALSE  shift 24
+	LBRACE  shift 9
+	LBRACKET  shift 10
+	RBRACKET  shift 16
+	.  error
+
+	Object  goto 19
+	Array  goto 20
+	ElementList  goto 17
+	ValueWithTag  goto 18
+
+11: shift/reduce conflict (shift 29(0), red'n 4(0)) on TRAILING_COMMENT
+ 11: reduce/reduce conflict  (red'ns 4 and 34) on $end
+ 11: reduce/reduce conflict  (red'ns 4 and 34) on RBRACE
+ 11: reduce/reduce conflict  (red'ns 4 and 34) on RBRACKET
+ 11: reduce/reduce conflict  (red'ns 4 and 34) on COMMA
+11: shift/reduce conflict (shift 29(0), red'n 34(0)) on TRAILING_COMMENT
+state 11
+	Object:  LBRACE RBRACE.    (4)
+	Object:  LBRACE RBRACE.Tag 
+	Tag: .    (34)
+
+	LEADING_COMMENT  shift 28
+	TRAILING_COMMENT  shift 29
+	.  reduce 4 (src line 58)
+
+	Tag  goto 25
+	LeadingComment  goto 26
+	TrailingComment  goto 27
+
+state 12
+	Object:  LBRACE FieldList.RBRACE 
+	Object:  LBRACE FieldList.RBRACE Tag 
+	FieldList:  FieldList.COMMA Field 
+	FieldList:  FieldList.COMMA 
+
+	RBRACE  shift 30
+	COMMA  shift 31
+	.  error
+
+
+state 13
+	FieldList:  Field.    (8)
+
+	.  reduce 8 (src line 93)
+
+
+state 14
+	Field:  string_literal.COLON ValueWithTag 
+	Field:  string_literal.COLON ValueWithTag TrailingComment 
+	Field:  string_literal.COLON LeadingComment ValueWithTag 
+	Field:  string_literal.COLON LeadingComment ValueWithTag TrailingComment 
+	Field:  string_literal.COLON Object 
+	Field:  string_literal.COLON Object TrailingComment 
+	Field:  string_literal.COLON LeadingComment Object 
+	Field:  string_literal.COLON LeadingComment Object TrailingComment 
+	Field:  string_literal.COLON Array 
+	Field:  string_literal.COLON Array TrailingComment 
+	Field:  string_literal.COLON LeadingComment Array 
+	Field:  string_literal.COLON LeadingComment Array TrailingComment 
+
+	COLON  shift 32
+	.  error
+
+
+state 15
+	string_literal:  STRING.    (53)
+
+	.  reduce 53 (src line 501)
+
+
+16: shift/reduce conflict (shift 29(0), red'n 23(0)) on TRAILING_COMMENT
+ 16: reduce/reduce conflict  (red'ns 23 and 34) on $end
+ 16: reduce/reduce conflict  (red'ns 23 and 34) on RBRACE
+ 16: reduce/reduce conflict  (red'ns 23 and 34) on RBRACKET
+ 16: reduce/reduce conflict  (red'ns 23 and 34) on COMMA
+16: shift/reduce conflict (shift 29(0), red'n 34(0)) on TRAILING_COMMENT
+state 16
+	Array:  LBRACKET RBRACKET.    (23)
+	Array:  LBRACKET RBRACKET.Tag 
+	Tag: .    (34)
+
+	LEADING_COMMENT  shift 28
+	TRAILING_COMMENT  shift 29
+	.  reduce 23 (src line 180)
+
+	Tag  goto 33
+	LeadingComment  goto 26
+	TrailingComment  goto 27
+
+state 17
+	Array:  LBRACKET ElementList.RBRACKET 
+	Array:  LBRACKET ElementList.RBRACKET Tag 
+	ElementList:  ElementList.COMMA ValueWithTag 
+	ElementList:  ElementList.COMMA Object 
+	ElementList:  ElementList.COMMA Array 
+	ElementList:  ElementList.COMMA 
+
+	RBRACKET  shift 34
+	COMMA  shift 35
+	.  error
+
+
+state 18
+	ElementList:  ValueWithTag.    (27)
+
+	.  reduce 27 (src line 223)
+
+
+state 19
+	ElementList:  Object.    (28)
+
+	.  reduce 28 (src line 228)
+
+
+state 20
+	ElementList:  Array.    (29)
+
+	.  reduce 29 (src line 232)
+
+
+21: shift/reduce conflict (shift 29(0), red'n 34(0)) on TRAILING_COMMENT
+state 21
+	ValueWithTag:  STRING.Tag 
+	ValueWithTag:  STRING.Tag 
+	Tag: .    (34)
+
+	LEADING_COMMENT  shift 28
+	TRAILING_COMMENT  shift 29
+	.  reduce 34 (src line 251)
+
+	Tag  goto 36
+	LeadingComment  goto 26
+	TrailingComment  goto 27
+
+22: shift/reduce conflict (shift 29(0), red'n 34(0)) on TRAILING_COMMENT
+state 22
+	ValueWithTag:  NUMBER.Tag 
+	ValueWithTag:  NUMBER.Tag 
+	Tag: .    (34)
+
+	LEADING_COMMENT  shift 28
+	TRAILING_COMMENT  shift 29
+	.  reduce 34 (src line 251)
+
+	Tag  goto 37
+	LeadingComment  goto 26
+	TrailingComment  goto 27
+
+23: shift/reduce conflict (shift 29(0), red'n 34(0)) on TRAILING_COMMENT
+state 23
+	ValueWithTag:  TRUE.Tag 
+	ValueWithTag:  TRUE.Tag 
+	Tag: .    (34)
+
+	LEADING_COMMENT  shift 28
+	TRAILING_COMMENT  shift 29
+	.  reduce 34 (src line 251)
+
+	Tag  goto 38
+	LeadingComment  goto 26
+	TrailingComment  goto 27
+
+24: shift/reduce conflict (shift 29(0), red'n 34(0)) on TRAILING_COMMENT
+state 24
+	ValueWithTag:  FALSE.Tag 
+	ValueWithTag:  FALSE.Tag 
+	Tag: .    (34)
+
+	LEADING_COMMENT  shift 28
+	TRAILING_COMMENT  shift 29
+	.  reduce 34 (src line 251)
+
+	Tag  goto 39
+	LeadingComment  goto 26
+	TrailingComment  goto 27
+
+state 25
+	Object:  LBRACE RBRACE Tag.    (5)
+
+	.  reduce 5 (src line 64)
+
+
+26: shift/reduce conflict (shift 29(0), red'n 35(0)) on TRAILING_COMMENT
+state 26
+	Tag:  LeadingComment.    (35)
+	Tag:  LeadingComment.TrailingComment 
+	LeadingComment:  LeadingComment.LEADING_COMMENT 
+
+	LEADING_COMMENT  shift 41
+	TRAILING_COMMENT  shift 29
+	.  reduce 35 (src line 256)
+
+	TrailingComment  goto 40
+
+state 27
+	Tag:  TrailingComment.    (36)
+
+	.  reduce 36 (src line 257)
+
+
+state 28
+	LeadingComment:  LEADING_COMMENT.    (38)
+
+	.  reduce 38 (src line 264)
+
+
+state 29
+	TrailingComment:  TRAILING_COMMENT.    (40)
+
+	.  reduce 40 (src line 275)
+
+
+30: shift/reduce conflict (shift 29(0), red'n 6(0)) on TRAILING_COMMENT
+ 30: reduce/reduce conflict  (red'ns 6 and 34) on $end
+ 30: reduce/reduce conflict  (red'ns 6 and 34) on RBRACE
+ 30: reduce/reduce conflict  (red'ns 6 and 34) on RBRACKET
+ 30: reduce/reduce conflict  (red'ns 6 and 34) on COMMA
+30: shift/reduce conflict (shift 29(0), red'n 34(0)) on TRAILING_COMMENT
+state 30
+	Object:  LBRACE FieldList RBRACE.    (6)
+	Object:  LBRACE FieldList RBRACE.Tag 
+	Tag: .    (34)
+
+	LEADING_COMMENT  shift 28
+	TRAILING_COMMENT  shift 29
+	.  reduce 6 (src line 75)
+
+	Tag  goto 42
+	LeadingComment  goto 26
+	TrailingComment  goto 27
+
+state 31
+	FieldList:  FieldList COMMA.Field 
+	FieldList:  FieldList COMMA.    (10)
+
+	STRING  shift 15
+	.  reduce 10 (src line 102)
+
+	Field  goto 43
+	string_literal  goto 14
+
+state 32
+	Field:  string_literal COLON.ValueWithTag 
+	Field:  string_literal COLON.ValueWithTag TrailingComment 
+	Field:  string_literal COLON.LeadingComment ValueWithTag 
+	Field:  string_literal COLON.LeadingComment ValueWithTag TrailingComment 
+	Field:  string_literal COLON.Object 
+	Field:  string_literal COLON.Object TrailingComment 
+	Field:  string_literal COLON.LeadingComment Object 
+	Field:  string_literal COLON.LeadingComment Object TrailingComment 
+	Field:  string_literal COLON.Array 
+	Field:  string_literal COLON.Array TrailingComment 
+	Field:  string_literal COLON.LeadingComment Array 
+	Field:  string_literal COLON.LeadingComment Array TrailingComment 
+
+	STRING  shift 21
+	NUMBER  shift 22
+	TRUE  shift 23
+	FALSE  shift 24
+	LBRACE  shift 9
+	LBRACKET  shift 10
+	LEADING_COMMENT  shift 28
+	.  error
+
+	Object  goto 46
+	Array  goto 47
+	LeadingComment  goto 45
+	ValueWithTag  goto 44
+
+state 33
+	Array:  LBRACKET RBRACKET Tag.    (24)
+
+	.  reduce 24 (src line 186)
+
+
+34: shift/reduce conflict (shift 29(0), red'n 25(0)) on TRAILING_COMMENT
+ 34: reduce/reduce conflict  (red'ns 25 and 34) on $end
+ 34: reduce/reduce conflict  (red'ns 25 and 34) on RBRACE
+ 34: reduce/reduce conflict  (red'ns 25 and 34) on RBRACKET
+ 34: reduce/reduce conflict  (red'ns 25 and 34) on COMMA
+34: shift/reduce conflict (shift 29(0), red'n 34(0)) on TRAILING_COMMENT
+state 34
+	Array:  LBRACKET ElementList RBRACKET.    (25)
+	Array:  LBRACKET ElementList RBRACKET.Tag 
+	Tag: .    (34)
+
+	LEADING_COMMENT  shift 28
+	TRAILING_COMMENT  shift 29
+	.  reduce 25 (src line 201)
+
+	Tag  goto 48
+	LeadingComment  goto 26
+	TrailingComment  goto 27
+
+state 35
+	ElementList:  ElementList COMMA.ValueWithTag 
+	ElementList:  ElementList COMMA.Object 
+	ElementList:  ElementList COMMA.Array 
+	ElementList:  ElementList COMMA.    (33)
+
+	STRING  shift 21
+	NUMBER  shift 22
+	TRUE  shift 23
+	FALSE  shift 24
+	LBRACE  shift 9
+	LBRACKET  shift 10
+	.  reduce 33 (src line 248)
+
+	Object  goto 50
+	Array  goto 51
+	ValueWithTag  goto 49
+
+ 36: reduce/reduce conflict  (red'ns 41 and 45) on RBRACE
+ 36: reduce/reduce conflict  (red'ns 41 and 45) on RBRACKET
+ 36: reduce/reduce conflict  (red'ns 41 and 45) on COMMA
+ 36: reduce/reduce conflict  (red'ns 41 and 45) on TRAILING_COMMENT
+state 36
+	ValueWithTag:  STRING Tag.    (41)
+	ValueWithTag:  STRING Tag.    (45)
+
+	.  reduce 41 (src line 282)
+
+
+ 37: reduce/reduce conflict  (red'ns 42 and 46) on RBRACE
+ 37: reduce/reduce conflict  (red'ns 42 and 46) on RBRACKET
+ 37: reduce/reduce conflict  (red'ns 42 and 46) on COMMA
+ 37: reduce/reduce conflict  (red'ns 42 and 46) on TRAILING_COMMENT
+state 37
+	ValueWithTag:  NUMBER Tag.    (42)
+	ValueWithTag:  NUMBER Tag.    (46)
+
+	.  reduce 42 (src line 304)
+
+
+ 38: reduce/reduce conflict  (red'ns 43 and 47) on RBRACE
+ 38: reduce/reduce conflict  (red'ns 43 and 47) on RBRACKET
+ 38: reduce/reduce conflict  (red'ns 43 and 47) on COMMA
+ 38: reduce/reduce conflict  (red'ns 43 and 47) on TRAILING_COMMENT
+state 38
+	ValueWithTag:  TRUE Tag.    (43)
+	ValueWithTag:  TRUE Tag.    (47)
+
+	.  reduce 43 (src line 317)
+
+
+ 39: reduce/reduce conflict  (red'ns 44 and 48) on RBRACE
+ 39: reduce/reduce conflict  (red'ns 44 and 48) on RBRACKET
+ 39: reduce/reduce conflict  (red'ns 44 and 48) on COMMA
+ 39: reduce/reduce conflict  (red'ns 44 and 48) on TRAILING_COMMENT
+state 39
+	ValueWithTag:  FALSE Tag.    (44)
+	ValueWithTag:  FALSE Tag.    (48)
+
+	.  reduce 44 (src line 338)
+
+
+state 40
+	Tag:  LeadingComment TrailingComment.    (37)
+
+	.  reduce 37 (src line 258)
+
+
+state 41
+	LeadingComment:  LeadingComment LEADING_COMMENT.    (39)
+
+	.  reduce 39 (src line 269)
+
+
+state 42
+	Object:  LBRACE FieldList RBRACE Tag.    (7)
+
+	.  reduce 7 (src line 80)
+
+
+state 43
+	FieldList:  FieldList COMMA Field.    (9)
+
+	.  reduce 9 (src line 98)
+
+
+state 44
+	Field:  string_literal COLON ValueWithTag.    (11)
+	Field:  string_literal COLON ValueWithTag.TrailingComment 
+
+	TRAILING_COMMENT  shift 29
+	.  reduce 11 (src line 105)
+
+	TrailingComment  goto 52
+
+state 45
+	Field:  string_literal COLON LeadingComment.ValueWithTag 
+	Field:  string_literal COLON LeadingComment.ValueWithTag TrailingComment 
+	Field:  string_literal COLON LeadingComment.Object 
+	Field:  string_literal COLON LeadingComment.Object TrailingComment 
+	Field:  string_literal COLON LeadingComment.Array 
+	Field:  string_literal COLON LeadingComment.Array TrailingComment 
+	LeadingComment:  LeadingComment.LEADING_COMMENT 
+
+	STRING  shift 21
+	NUMBER  shift 22
+	TRUE  shift 23
+	FALSE  shift 24
+	LBRACE  shift 9
+	LBRACKET  shift 10
+	LEADING_COMMENT  shift 41
+	.  error
+
+	Object  goto 54
+	Array  goto 55
+	ValueWithTag  goto 53
+
+state 46
+	Field:  string_literal COLON Object.    (15)
+	Field:  string_literal COLON Object.TrailingComment 
+
+	TRAILING_COMMENT  shift 29
+	.  reduce 15 (src line 130)
+
+	TrailingComment  goto 56
+
+state 47
+	Field:  string_literal COLON Array.    (19)
+	Field:  string_literal COLON Array.TrailingComment 
+
+	TRAILING_COMMENT  shift 29
+	.  reduce 19 (src line 154)
+
+	TrailingComment  goto 57
+
+state 48
+	Array:  LBRACKET ElementList RBRACKET Tag.    (26)
+
+	.  reduce 26 (src line 206)
+
+
+state 49
+	ElementList:  ElementList COMMA ValueWithTag.    (30)
+
+	.  reduce 30 (src line 236)
+
+
+state 50
+	ElementList:  ElementList COMMA Object.    (31)
+
+	.  reduce 31 (src line 240)
+
+
+state 51
+	ElementList:  ElementList COMMA Array.    (32)
+
+	.  reduce 32 (src line 244)
+
+
+state 52
+	Field:  string_literal COLON ValueWithTag TrailingComment.    (12)
+
+	.  reduce 12 (src line 111)
+
+
+state 53
+	Field:  string_literal COLON LeadingComment ValueWithTag.    (13)
+	Field:  string_literal COLON LeadingComment ValueWithTag.TrailingComment 
+
+	TRAILING_COMMENT  shift 29
+	.  reduce 13 (src line 117)
+
+	TrailingComment  goto 58
+
+state 54
+	Field:  string_literal COLON LeadingComment Object.    (17)
+	Field:  string_literal COLON LeadingComment Object.TrailingComment 
+
+	TRAILING_COMMENT  shift 29
+	.  reduce 17 (src line 141)
+
+	TrailingComment  goto 59
+
+state 55
+	Field:  string_literal COLON LeadingComment Array.    (21)
+	Field:  string_literal COLON LeadingComment Array.TrailingComment 
+
+	TRAILING_COMMENT  shift 29
+	.  reduce 21 (src line 165)
+
+	TrailingComment  goto 60
+
+state 56
+	Field:  string_literal COLON Object TrailingComment.    (16)
+
+	.  reduce 16 (src line 135)
+
+
+state 57
+	Field:  string_literal COLON Array TrailingComment.    (20)
+
+	.  reduce 20 (src line 159)
+
+
+state 58
+	Field:  string_literal COLON LeadingComment ValueWithTag TrailingComment.    (14)
+
+	.  reduce 14 (src line 123)
+
+
+state 59
+	Field:  string_literal COLON LeadingComment Object TrailingComment.    (18)
+
+	.  reduce 18 (src line 147)
+
+
+state 60
+	Field:  string_literal COLON LeadingComment Array TrailingComment.    (22)
+
+	.  reduce 22 (src line 171)
+
+Rule not reduced: ValueWithTag:  STRING Tag 
+Rule not reduced: ValueWithTag:  NUMBER Tag 
+Rule not reduced: ValueWithTag:  TRUE Tag 
+Rule not reduced: ValueWithTag:  FALSE Tag 
+
+17 terminals, 13 nonterminals
+54 grammar rules, 61/16000 states
+13 shift/reduce, 32 reduce/reduce conflicts reported
+62 working sets used
+memory: parser 57/240000
+26 extra closures
+65 shift entries, 1 exceptions
+39 goto entries
+15 entries saved by goto default
+Optimizer space used: output 94/240000
+94 table entries, 9 zero
+maximum spread: 15, maximum offset: 55
