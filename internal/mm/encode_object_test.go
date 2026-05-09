@@ -146,13 +146,13 @@ func BenchmarkEncodeObject_MM(b *testing.B) {
 		}{Address: ""},
 		Decimal: "0.0",
 	}
-	n, err := ValueToMM(data, "")
+	n, err := ValueToNode(data, "")
 	out, _ := e.Encode(n)
 	b.Log("out", len(out), err)
 	b.ResetTimer()
 
 	for b.Loop() {
-		n, _ := ValueToMM(data, "")
+		n, _ := ValueToNode(data, "")
 		_, _ = e.Encode(n)
 	}
 }

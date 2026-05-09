@@ -29,7 +29,7 @@ func putEncoder(encoder Encoder) {
 
 func FromValue(v any, tag string) (bs []byte, err error) {
 	var node ast.Node
-	node, err = ValueToMM(v, tag)
+	node, err = ValueToNode(v, tag)
 	if err != nil {
 		err = fmt.Errorf("struct to jsonc error: %w", err)
 		return
@@ -77,7 +77,7 @@ func Decode(data []byte) (ast.Node, error) {
 }
 
 func ValueToJSONC(value any, name string) (string, error) {
-	node, err := ValueToMM(value, name)
+	node, err := ValueToNode(value, name)
 	if err != nil {
 		return "", err
 	}

@@ -1,32 +1,43 @@
 package io.github.metamessage.jsonc
 
+import io.github.metamessage.ast.Node
+import io.github.metamessage.ast.Array
+import io.github.metamessage.ast.Value
+import io.github.metamessage.ast.Object
+import io.github.metamessage.ast.ValueType
+import io.github.metamessage.ast.Tag
+import io.github.metamessage.ast.Doc
+
+
+
 class JsoncPrinter {
     companion object {
         private const val INDENT = "    "
 
-        fun toString(node: JsoncNode, indentLevel: Int = 0): String {
+        fun toString(node: Node, indentLevel: Int = 0): String {
             return when (node) {
-                is JsoncObject -> objectToString(node, indentLevel)
-                is JsoncArray -> arrayToString(node, indentLevel)
-                is JsoncValue -> valueToString(node, indentLevel)
+                is Object -> objectToString(node, indentLevel)
+                is Array -> arrayToString(node, indentLevel)
+                is Value -> valueToString(node)
+                is Doc -> docToString(node, indentLevel)
             }
         }
 
-        private fun objectToString(obj: JsoncObject, indentLevel: Int): String {
+        private fun docToString(doc: Doc, indentLevel: Int): String {
             val sb = StringBuilder()
             sb.append("{\n")
 
-            for (field in obj.fields) {
+            for (field in doc.fields) {
                 for (i in 0 until indentLevel + 1) sb.append(INDENT)
 
                 val fieldValue = field.value
-                if (fieldValue is JsoncValue && fieldValue.tag != null && fieldValue.tag!!.desc.isNotEmpty()) {
-                    sb.append("// mm: ${tagToString(fieldValue.tag!!)}\n")
+                if (fieldValue is Value && fieldValue.tag != null && fieldValue.tag!!.toString().isNotEmpty()) {
+                    sb.append("// mm: ${fieldValue.tag!!.toString()}\n")
                     for (i in 0 until indentLevel + 1) sb.append(INDENT)
                 }
 
                 sb.append("\"${field.key}\": ")
-                sb.append(toString(fieldValue ?: JsoncValue(), indentLevel + 1))
+                sb.append(toString(fieldValue, indentLevel + 1))
                 sb.append(",\n")
             }
 
@@ -35,7 +46,29 @@ class JsoncPrinter {
             return sb.toString()
         }
 
-        private fun arrayToString(arr: JsoncArray, indentLevel: Int): String {
+        private fun objectToString(obj: Object, indentLevel: Int): String {
+            val sb = StringBuilder()
+            sb.append("{\n")
+
+            for (field in obj.fields) {
+                for (i in 0 until indentLevel + 1) sb.append(INDENT)
+
+                val fieldValue = field.value
+                if (fieldValue.tag != null && fieldValue.tag!!.toString().isNotEmpty()) {
+                    sb.append("// mm: ${fieldValue.tag!!.toString()}\n")
+                    for (i in 0 until indentLevel + 1) sb.append(INDENT)
+                }
+                sb.append("\"${field.key}\": ")
+                sb.append(toString(fieldValue, indentLevel + 1))
+                sb.append(",\n")
+            }
+
+            for (i in 0 until indentLevel) sb.append(INDENT)
+            sb.append("}")
+            return sb.toString()
+        }
+
+        private fun arrayToString(arr: Array, indentLevel: Int): String {
             val sb = StringBuilder()
             sb.append("[\n")
 
@@ -50,31 +83,27 @@ class JsoncPrinter {
             return sb.toString()
         }
 
-        private fun valueToString(value: JsoncValue, indentLevel: Int): String {
+        private fun valueToString(value: Value): String {
             val sb = StringBuilder()
-            if (value.tag != null && value.tag!!.desc.isNotEmpty()) {
-                sb.append("// mm: ${tagToString(value.tag!!)}\n")
-                for (i in 0 until indentLevel) sb.append(INDENT)
-            }
             sb.append(valueToStringOnly(value))
             return sb.toString()
         }
 
-        private fun valueToStringOnly(value: JsoncValue): String {
+        private fun valueToStringOnly(value: Value): String {
             val tag = value.tag
-            val type = tag?.type ?: JsoncValueType.Unknown
+            val type = tag?.type ?: ValueType.UNKNOWN
 
             val needsQuotes = when (type) {
-                JsoncValueType.String,
-                JsoncValueType.Bytes,
-                JsoncValueType.DateTime,
-                JsoncValueType.Date,
-                JsoncValueType.Time,
-                JsoncValueType.UUID,
-                JsoncValueType.IP,
-                JsoncValueType.URL,
-                JsoncValueType.Email,
-                JsoncValueType.Enum -> true
+                ValueType.STRING,
+                ValueType.BYTES,
+                ValueType.DATETIME,
+                ValueType.DATE,
+                ValueType.TIME,
+                ValueType.UUID,
+                ValueType.IP,
+                ValueType.URL,
+                ValueType.EMAIL,
+                ValueType.ENUM -> true
                 else -> false
             }
 
@@ -85,90 +114,33 @@ class JsoncPrinter {
             }
         }
 
-        private fun tagToString(tag: JsoncTag): String {
-            val parts = mutableListOf<String>()
-            if (tag.type != JsoncValueType.Unknown) {
-                parts.add("type=${typeToString(tag.type)}")
-            }
-            if (tag.desc.isNotEmpty()) {
-                parts.add("desc=${tag.desc}")
-            }
-            if (tag.nullable) {
-                parts.add("nullable")
-            }
-            if (tag.isNull) {
-                parts.add("is_null")
-            }
-            if (tag.raw) {
-                parts.add("raw")
-            }
-            if (tag.defaultValue.isNotEmpty()) {
-                parts.add("default=${tag.defaultValue}")
-            }
-            if (tag.enum.isNotEmpty()) {
-                parts.add("enum=${tag.enum}")
-            }
-            return parts.joinToString("; ")
-        }
-
-        private fun typeToString(type: JsoncValueType): String {
-            return when (type) {
-                JsoncValueType.String -> "str"
-                JsoncValueType.Int -> "i"
-                JsoncValueType.Int8 -> "i8"
-                JsoncValueType.Int16 -> "i16"
-                JsoncValueType.Int32 -> "i32"
-                JsoncValueType.Int64 -> "i64"
-                JsoncValueType.Uint -> "u"
-                JsoncValueType.Uint8 -> "u8"
-                JsoncValueType.Uint16 -> "u16"
-                JsoncValueType.Uint32 -> "u32"
-                JsoncValueType.Uint64 -> "u64"
-                JsoncValueType.Float32 -> "f32"
-                JsoncValueType.Float64 -> "f64"
-                JsoncValueType.Bool -> "bool"
-                JsoncValueType.Bytes -> "bytes"
-                JsoncValueType.BigInt -> "bi"
-                JsoncValueType.DateTime -> "datetime"
-                JsoncValueType.Date -> "date"
-                JsoncValueType.Time -> "time"
-                JsoncValueType.UUID -> "uuid"
-                JsoncValueType.Decimal -> "decimal"
-                JsoncValueType.IP -> "ip"
-                JsoncValueType.URL -> "url"
-                JsoncValueType.Email -> "email"
-                JsoncValueType.Enum -> "enum"
-                JsoncValueType.Array -> "arr"
-                JsoncValueType.Struct -> "obj"
-                JsoncValueType.Null -> "null"
-                JsoncValueType.Unknown -> "unknown"
-                else -> "unknown"
-            }
-        }
-
-        fun toCompactString(node: JsoncNode): String {
+        fun toCompactString(node: Node): String {
             return when (node) {
-                is JsoncObject -> compactObject(node)
-                is JsoncArray -> compactArray(node)
-                is JsoncValue -> compactValue(node)
+                is Object -> compactObject(node)
+                is Array -> compactArray(node)
+                is Value -> compactValue(node)
+                is Doc -> compactDoc(node)
             }
         }
 
-        private fun compactObject(obj: JsoncObject): String {
-            val fields = obj.fields.map { "\"${it.key}\": ${toCompactString(it.value ?: JsoncValue())}" }
+        private fun compactDoc(doc: Doc): String {
+            val fields = doc.fields.map { "\"${it.key}\": ${toCompactString(it.value)}" }
             return "{${fields.joinToString(",")}}"
         }
 
-        private fun compactArray(arr: JsoncArray): String {
+        private fun compactObject(obj: Object): String {
+            val fields = obj.fields.map { "\"${it.key}\": ${toCompactString(it.value)}" }
+            return "{${fields.joinToString(",")}}"
+        }
+
+        private fun compactArray(arr: Array): String {
             val items = arr.items.map { toCompactString(it) }
             return "[${items.joinToString(",")}]"
         }
 
-        private fun compactValue(value: JsoncValue): String {
+        private fun compactValue(value: Value): String {
             return valueToStringOnly(value)
         }
     }
 }
 
-fun printJsonc(node: JsoncNode): String = JsoncPrinter.toString(node)
-fun printJsoncCompact(node: JsoncNode): String = JsoncPrinter.toCompactString(node)

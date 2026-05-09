@@ -89,7 +89,7 @@ func writeObjectJSONC(b *strings.Builder, o *ast.Object, indent int) {
 }
 
 func writeLeadingComments(b *strings.Builder, tag *ast.Tag, indent int) {
-	tagStr := tag.String()
+	tagStr := tag.ToString()
 	if tagStr != "" {
 		b.WriteString("\n")
 		writeIndent(b, indent)

@@ -667,7 +667,7 @@ func BenchmarkEncodeInt(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		var o bytes.Buffer
 		enc.Reset(&o)
-		n, _ := ValueToMM(testInputs[i%len(testInputs)], "")
+		n, _ := ValueToNode(testInputs[i%len(testInputs)], "")
 		_, _ = enc.Encode(n)
 	}
 }

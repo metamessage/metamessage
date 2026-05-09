@@ -1,4 +1,5 @@
 package io.github.metamessage.mm
+import io.github.metamessage.ast.ValueType
 
 @Target(AnnotationTarget.FIELD, AnnotationTarget.CLASS)
 @Retention(AnnotationRetention.RUNTIME)
@@ -12,11 +13,11 @@ annotation class MM(
     val nullable: Boolean = false,
     val allowEmpty: Boolean = false,
     val unique: Boolean = false,
-    val defaultValue: String = "",
+    val default: String = "",
     val min: String = "",
     val max: String = "",
     val size: Int = 0,
-    val enumValues: String = "",
+    val enum: String = "",
     val pattern: String = "",
     val location: Int = 0,
     val version: Int = 0,

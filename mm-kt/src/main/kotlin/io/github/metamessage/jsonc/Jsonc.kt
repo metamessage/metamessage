@@ -1,25 +1,28 @@
 package io.github.metamessage.jsonc
 
+import io.github.metamessage.ast.Node
+
 class JsoncException(message: String) : Exception(message)
 
 object Jsonc {
-    fun parseFromString(s: String): JsoncNode {
+    fun parseFromString(s: String): Node? {
         return parseJsonc(s)
     }
 
-    fun parseFromBytes(b: ByteArray): JsoncNode {
+    fun parseFromBytes(b: ByteArray): Node? {
         return parseJsonc(String(b, Charsets.UTF_8))
     }
 
-    fun toString(n: JsoncNode): String {
+    fun toJsonc(n: Node): String {
         return JsoncPrinter.toString(n)
     }
+}
 
-    fun toCompactString(n: JsoncNode): String {
-        return JsoncPrinter.toCompactString(n)
+fun toJsonc(node: Node): String {
+    val sb = StringBuilder()
+    if (node.tag != null && node.tag!!.toString().isNotEmpty()) {
+        sb.append("// mm: ${node.tag!!.toString()}\n")
     }
-
-    fun print(n: JsoncNode) {
-        println(toString(n))
-    }
+    sb.append(JsoncPrinter.toString(node))
+    return sb.toString()
 }

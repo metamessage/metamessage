@@ -15,6 +15,7 @@ Golang 是基準實現，需要確保 10 種語言（go, java, ts, kt, py, js, c
 | Kotlin JSONC 實現 | ✅ 完成 | 完整實現 + 23 tests |
 | PHP JSONC 實現 | ✅ 完成 | 完整實現 + 9 tests |
 | JSONC MM 對齊 | ✅ 完成 | 所有語言支持 `mm:` tag 和類型感知打印 |
+| MM Validator 對齊 | ✅ 完成 | JavaScript/Kotlin 驗證器功能完善 |
 
 ---
 
@@ -67,6 +68,13 @@ MM 特定 JSONC 格式：註釋中的 `mm:` tag 和類型感知打印。
 | Swift | ✅ | ✅ | - |
 | PHP | ✅ | ✅ | 9 tests |
 
+### 4. MM Validator 對齊
+
+| 語言 | 新增類型 | 測試覆蓋 |
+|------|----------|----------|
+| JavaScript | decimal, ip, url, slice | 新增 170+ 行 |
+| Kotlin | 完整 Validator 測試 | 新增 2000+ 行 |
+
 ---
 
 ## MM JSONC 特性
@@ -94,9 +102,9 @@ MM 特定 JSONC 格式：註釋中的 `mm:` tag 和類型感知打印。
 |------|------|
 | Java | `mm-java/src/main/java/io/metamessage/` |
 | Kotlin | `mm-kt/src/main/kotlin/io/metamessage/` |
-| TypeScript | `mm-ts/src/jsonc/` |
+| TypeScript | `mm-ts/src/jsonc/`, `mm-ts/src/mm/` |
 | Python | `mm-py/` |
-| JavaScript | `mm-js/src/jsonc/` |
+| JavaScript | `mm-js/src/jsonc/`, `mm-js/src/mm/` |
 | C# | `mm-cs/src/MetaMessage/` |
 | Rust | `mm-rs/src/jsonc/` |
 | Swift | `mm-swift/Sources/MetaMessage/JSONC/` |
@@ -115,6 +123,9 @@ MM 特定 JSONC 格式：註釋中的 `mm:` tag 和類型感知打印。
 
 ### Requirement: MM JSONC 類型感知打印
 MM JSONC 應該根據 tag.type 決定是否為字符串加引號。
+
+### Requirement: MM Validator 完整性
+所有語言的 Validator 應該支持所有 Golang 中的驗證類型。
 
 ## MODIFIED Requirements
 無

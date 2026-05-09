@@ -18,5 +18,7 @@ while IFS= read -r line; do
         break
     fi
 
-    echo "$line"
+    if [[ $in_changelog == true ]]; then
+        echo "$line"
+    fi
 done < HISTORY.md

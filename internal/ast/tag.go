@@ -146,6 +146,8 @@ func NewTag() *Tag {
 }
 
 func (t *Tag) Inherit(tag *Tag) {
+	tag.IsInherit = true
+
 	if tag.ChildDesc != "" {
 		t.Desc = tag.ChildDesc
 	}
@@ -219,7 +221,7 @@ func (t *Tag) Json() string {
 	return string(b)
 }
 
-func (t *Tag) String() string {
+func (t *Tag) ToString() string {
 	if t == nil {
 		return ""
 	}

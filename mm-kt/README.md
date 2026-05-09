@@ -75,6 +75,7 @@ val person = Jsonc.bindFromString(jsonc, Person::class.java)
 ```bash
 # 在 mm-kt 目录下运行
 mvn test
+mvn -f mm-kt/pom.xml test -Dtest=MetaMessageTest
 ```
 
 ### 3.2 测试框架

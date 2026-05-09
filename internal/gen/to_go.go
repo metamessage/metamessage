@@ -485,7 +485,7 @@ func genStructFields(b *strings.Builder, n ast.Node, indent int) {
 			b.WriteString(getGoType(f.Value))
 		}
 
-		if tag := strings.TrimSpace(f.Value.GetTag().String()); tag != "" {
+		if tag := strings.TrimSpace(f.Value.GetTag().ToString()); tag != "" {
 			b.WriteString(" `mm:\"")
 			b.WriteString(tag)
 			b.WriteString("\"`")
@@ -524,7 +524,7 @@ func genStructFieldsWithCollector(b *strings.Builder, fields []*ast.Field, inden
 			b.WriteString(fieldType)
 		}
 
-		if tag := strings.TrimSpace(f.Value.GetTag().String()); tag != "" {
+		if tag := strings.TrimSpace(f.Value.GetTag().ToString()); tag != "" {
 			b.WriteString(" `mm:\"")
 			b.WriteString(tag)
 			b.WriteString("\"`")

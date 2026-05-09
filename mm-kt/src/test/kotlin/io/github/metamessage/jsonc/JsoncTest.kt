@@ -3,22 +3,29 @@ package io.github.metamessage.jsonc
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.Assertions.*
 
+import io.github.metamessage.ast.Object as AstObject
+import io.github.metamessage.ast.Value
+import io.github.metamessage.ast.ValueType
+import io.github.metamessage.ast.Tag
+import io.github.metamessage.ast.Field
+import io.github.metamessage.ast.Array as AstArray
+
 class JsoncParserTest {
 
     @Test
     fun parseEmptyObject() {
         val source = "{}"
         val result = parseJsonc(source)
-        assertTrue(result is JsoncObject)
-        assertEquals(0, (result as JsoncObject).fields.size)
+        assertTrue(result is AstObject)
+        assertEquals(0, (result as AstObject).fields.size)
     }
 
     @Test
     fun parseSimpleObject() {
         val source = """{"key": "value"}"""
         val result = parseJsonc(source)
-        assertTrue(result is JsoncObject)
-        val obj = result as JsoncObject
+        assertTrue(result is AstObject)
+        val obj = result as AstObject
         assertEquals(1, obj.fields.size)
         assertEquals("key", obj.fields[0].key)
     }
@@ -27,8 +34,8 @@ class JsoncParserTest {
     fun parseNumber() {
         val source = "123"
         val result = parseJsonc(source)
-        assertTrue(result is JsoncValue)
-        val value = result as JsoncValue
+        assertTrue(result is Value)
+        val value = result as Value
         assertEquals(123L, value.data)
     }
 
@@ -36,8 +43,8 @@ class JsoncParserTest {
     fun parseFloat() {
         val source = "3.14"
         val result = parseJsonc(source)
-        assertTrue(result is JsoncValue)
-        val value = result as JsoncValue
+        assertTrue(result is Value)
+        val value = result as Value
         assertEquals(3.14, value.data)
     }
 
@@ -45,21 +52,21 @@ class JsoncParserTest {
     fun parseBoolean() {
         val sourceTrue = "true"
         val resultTrue = parseJsonc(sourceTrue)
-        assertTrue(resultTrue is JsoncValue)
-        assertEquals(true, (resultTrue as JsoncValue).data)
+        assertTrue(resultTrue is Value)
+        assertEquals(true, (resultTrue as Value).data)
 
         val sourceFalse = "false"
         val resultFalse = parseJsonc(sourceFalse)
-        assertTrue(resultFalse is JsoncValue)
-        assertEquals(false, (resultFalse as JsoncValue).data)
+        assertTrue(resultFalse is Value)
+        assertEquals(false, (resultFalse as Value).data)
     }
 
     @Test
     fun parseNull() {
         val source = "null"
         val result = parseJsonc(source)
-        assertTrue(result is JsoncValue)
-        val value = result as JsoncValue
+        assertTrue(result is Value)
+        val value = result as Value
         assertNull(value.data)
         assertTrue(value.tag?.isNull == true)
     }
@@ -68,8 +75,8 @@ class JsoncParserTest {
     fun parseArray() {
         val source = "[1, 2, 3]"
         val result = parseJsonc(source)
-        assertTrue(result is JsoncArray)
-        val arr = result as JsoncArray
+        assertTrue(result is AstArray)
+        val arr = result as AstArray
         assertEquals(3, arr.items.size)
     }
 
@@ -77,11 +84,11 @@ class JsoncParserTest {
     fun parseNestedObject() {
         val source = """{"outer": {"inner": "value"}}"""
         val result = parseJsonc(source)
-        assertTrue(result is JsoncObject)
-        val outer = result as JsoncObject
+        assertTrue(result is AstObject)
+        val outer = result as AstObject
         assertEquals("outer", outer.fields[0].key)
-        assertTrue(outer.fields[0].value is JsoncObject)
-        val inner = outer.fields[0].value as JsoncObject
+        assertTrue(outer.fields[0].value is AstObject)
+        val inner = outer.fields[0].value as AstObject
         assertEquals("inner", inner.fields[0].key)
     }
 
@@ -94,7 +101,7 @@ class JsoncParserTest {
             }
         """.trimIndent()
         val result = parseJsonc(source)
-        assertTrue(result is JsoncObject)
+        assertTrue(result is AstObject)
     }
 
     @Test
@@ -107,15 +114,15 @@ class JsoncParserTest {
             }
         """.trimIndent()
         val result = parseJsonc(source)
-        assertTrue(result is JsoncObject)
+        assertTrue(result is AstObject)
     }
 
     @Test
     fun parseWithTrailingComma() {
         val source = """{"key": "value",}"""
         val result = parseJsonc(source)
-        assertTrue(result is JsoncObject)
-        val obj = result as JsoncObject
+        assertTrue(result is AstObject)
+        val obj = result as AstObject
         assertEquals(1, obj.fields.size)
     }
 }
@@ -124,7 +131,7 @@ class JsoncPrinterTest {
 
     @Test
     fun printEmptyObject() {
-        val obj = JsoncObject()
+        val obj = AstObject()
         val result = JsoncPrinter.toString(obj)
         assertTrue(result.contains("{"))
         assertTrue(result.contains("}"))
@@ -132,16 +139,16 @@ class JsoncPrinterTest {
 
     @Test
     fun printSimpleObject() {
-        val obj = JsoncObject()
-        obj.fields.add(JsoncField("key", JsoncValue(data = "value", text = "\"value\"")))
+        val obj = AstObject()
+        obj.fields.add(Field("key", Value(data = "value", text = "\"value\"")))
         val result = JsoncPrinter.toString(obj)
         assertTrue(result.contains("key"))
     }
 
     @Test
     fun printCompact() {
-        val obj = JsoncObject()
-        obj.fields.add(JsoncField("key", JsoncValue(data = "value", text = "\"value\"")))
+        val obj = AstObject()
+        obj.fields.add(Field("key", Value(data = "value", text = "\"value\"")))
         val result = JsoncPrinter.toCompactString(obj)
         assertFalse(result.contains("\n"))
     }

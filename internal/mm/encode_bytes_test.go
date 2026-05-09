@@ -102,7 +102,7 @@ func BenchmarkEncodeBytes(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		bf := &bytes.Buffer{}
 		enc.Reset(bf)
-		n, _ := ValueToMM(data, "")
+		n, _ := ValueToNode(data, "")
 		_, _ = enc.Encode(n)
 		buf.Reset()
 	}

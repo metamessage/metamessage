@@ -131,7 +131,7 @@ func BenchmarkEncodeArray(b *testing.B) {
 	b.ResetTimer()
 
 	for i := 0; i < b.N; i++ {
-		n, _ := ValueToMM(val, "")
+		n, _ := ValueToNode(val, "")
 		_, _ = e.Encode(n)
 	}
 }
