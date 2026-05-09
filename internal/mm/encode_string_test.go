@@ -233,13 +233,13 @@ func TestEncodeString(t *testing.T) {
 func BenchmarkEncodeString_MM(b *testing.B) {
 	e := NewEncoder(nil)
 	data := "benchmark test data 1234567890"
-	n, err := ValueToMM(data, "")
+	n, err := ValueToNode(data, "")
 	out, _ := e.Encode(n)
 	b.Log("out", len(out), err)
 	b.ResetTimer()
 
 	for b.Loop() {
-		n, _ := ValueToMM(data, "")
+		n, _ := ValueToNode(data, "")
 		_, _ = e.Encode(n)
 	}
 }

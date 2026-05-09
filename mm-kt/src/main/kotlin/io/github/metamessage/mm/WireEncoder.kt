@@ -1,8 +1,11 @@
 package io.github.metamessage.mm
 
 import java.nio.charset.StandardCharsets
+import java.util.concurrent.LinkedBlockingQueue
+
 
 class WireEncoder {
+
     private val buf = GrowableByteBuf()
 
     fun toByteArray(): ByteArray = buf.copyRange(0, buf.length())

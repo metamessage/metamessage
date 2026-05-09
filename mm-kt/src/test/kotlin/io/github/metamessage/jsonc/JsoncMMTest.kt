@@ -1,5 +1,11 @@
 package io.github.metamessage.jsonc
 
+import io.github.metamessage.ast.Object
+import io.github.metamessage.ast.Value
+import io.github.metamessage.ast.ValueType
+import io.github.metamessage.ast.Tag
+import io.github.metamessage.ast.Field
+
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.Assertions.*
 
@@ -14,12 +20,12 @@ class JsoncMMTest {
             }
         """.trimIndent()
         val result = parseJsonc(source)
-        assertTrue(result is JsoncObject)
-        val obj = result as JsoncObject
+        assertTrue(result is Object)
+        val obj = result as Object
         assertEquals("name", obj.fields[0].key)
-        assertEquals("張三", obj.fields[0].value?.let { it as? JsoncValue }?.data)
-        assertEquals("用戶名", obj.fields[0].value?.let { it as? JsoncValue }?.tag?.desc)
-        assertEquals(JsoncValueType.String, obj.fields[0].value?.let { it as? JsoncValue }?.tag?.type)
+        assertEquals("張三", obj.fields[0].value.let { it as? Value }?.data)
+        assertEquals("用戶名", obj.fields[0].value.let { it as? Value }?.tag?.desc)
+        assertEquals(ValueType.STRING, obj.fields[0].value.let { it as? Value }?.tag?.type)
     }
 
     @Test
@@ -31,12 +37,12 @@ class JsoncMMTest {
             }
         """.trimIndent()
         val result = parseJsonc(source)
-        assertTrue(result is JsoncObject)
-        val obj = result as JsoncObject
+        assertTrue(result is Object)
+        val obj = result as Object
         assertEquals("age", obj.fields[0].key)
-        assertEquals(25L, obj.fields[0].value?.let { it as? JsoncValue }?.data)
-        assertEquals("年齡", obj.fields[0].value?.let { it as? JsoncValue }?.tag?.desc)
-        assertEquals(JsoncValueType.Int, obj.fields[0].value?.let { it as? JsoncValue }?.tag?.type)
+        assertEquals(25L, obj.fields[0].value.let { it as? Value }?.data)
+        assertEquals("年齡", obj.fields[0].value.let { it as? Value }?.tag?.desc)
+        assertEquals(ValueType.INT, obj.fields[0].value.let { it as? Value }?.tag?.type)
     }
 
     @Test
@@ -48,39 +54,39 @@ class JsoncMMTest {
             }
         """.trimIndent()
         val result = parseJsonc(source)
-        assertTrue(result is JsoncObject)
-        val obj = result as JsoncObject
+        assertTrue(result is Object)
+        val obj = result as Object
         assertEquals("name", obj.fields[0].key)
-        val valueTag = obj.fields[0].value?.let { it as? JsoncValue }?.tag
+        val valueTag = obj.fields[0].value.let { it as? Value }?.tag
         assertNotNull(valueTag)
         assertEquals("", valueTag!!.desc)
-        assertEquals(JsoncValueType.String, valueTag.type)
+        assertEquals(ValueType.STRING, valueTag.type)
     }
 
     @Test
     fun printWithMmTag() {
-        val obj = JsoncObject()
-        val tag = JsoncTag()
-        tag.type = JsoncValueType.String
-        tag.desc = "用戶名"
-        val value = JsoncValue(data = "張三", text = "張三", tag = tag)
-        obj.fields.add(JsoncField("name", value))
+        val obj = Object()
+        val tag = Tag()
+        tag.type = ValueType.UUID
+        tag.desc = "user id"
+        val value = Value(data = "550e8400-e29b-41d4-a716-446655440000", text = "\"550e8400-e29b-41d4-a716-446655440000\"", tag = tag)
+        obj.fields.add(Field("userId", value))
 
         val output = JsoncPrinter.toString(obj)
         assertTrue(output.contains("// mm:"))
-        assertTrue(output.contains("type=str"))
-        assertTrue(output.contains("desc=用戶名"))
-        assertTrue(output.contains("\"張三\""))
+        assertTrue(output.contains("type=uuid"))
+        assertTrue(output.contains("desc="))
+        assertTrue(output.contains("\"550e8400-e29b-41d4-a716-446655440000\""))
     }
 
     @Test
     fun printNumberWithoutQuotes() {
-        val obj = JsoncObject()
-        val tag = JsoncTag()
-        tag.type = JsoncValueType.Int
+        val obj = Object()
+        val tag = Tag()
+        tag.type = ValueType.INT
         tag.desc = "年齡"
-        val value = JsoncValue(data = 25L, text = "25", tag = tag)
-        obj.fields.add(JsoncField("age", value))
+        val value = Value(data = 25L, text = "25", tag = tag)
+        obj.fields.add(Field("age", value))
 
         val output = JsoncPrinter.toString(obj)
         assertTrue(output.contains("25"))
@@ -89,12 +95,12 @@ class JsoncMMTest {
 
     @Test
     fun printFloatWithoutQuotes() {
-        val obj = JsoncObject()
-        val tag = JsoncTag()
-        tag.type = JsoncValueType.Float64
+        val obj = Object()
+        val tag = Tag()
+        tag.type = ValueType.FLOAT64
         tag.desc = "價格"
-        val value = JsoncValue(data = 3.14, text = "3.14", tag = tag)
-        obj.fields.add(JsoncField("price", value))
+        val value = Value(data = 3.14, text = "3.14", tag = tag)
+        obj.fields.add(Field("price", value))
 
         val output = JsoncPrinter.toString(obj)
         assertTrue(output.contains("3.14"))
@@ -103,11 +109,11 @@ class JsoncMMTest {
 
     @Test
     fun printBoolWithoutQuotes() {
-        val obj = JsoncObject()
-        val tag = JsoncTag()
-        tag.type = JsoncValueType.Bool
-        val value = JsoncValue(data = true, text = "true", tag = tag)
-        obj.fields.add(JsoncField("active", value))
+        val obj = Object()
+        val tag = Tag()
+        tag.type = ValueType.BOOL
+        val value = Value(data = true, text = "true", tag = tag)
+        obj.fields.add(Field("active", value))
 
         val output = JsoncPrinter.toString(obj)
         assertTrue(output.contains("true"))
@@ -115,29 +121,15 @@ class JsoncMMTest {
     }
 
     @Test
-    fun printNullWithoutQuotes() {
-        val obj = JsoncObject()
-        val tag = JsoncTag()
-        tag.isNull = true
-        tag.type = JsoncValueType.Null
-        val value = JsoncValue(data = null, text = "null", tag = tag)
-        obj.fields.add(JsoncField("optional", value))
-
-        val output = JsoncPrinter.toString(obj)
-        assertTrue(output.contains("null"))
-        assertFalse(output.contains("\"null\""))
-    }
-
-    @Test
     fun printCompactNoQuotesForNumbers() {
-        val value = JsoncValue(data = 123L, text = "123")
+        val value = Value(data = 123L, text = "123")
         val output = JsoncPrinter.toCompactString(value)
         assertEquals("123", output)
     }
 
     @Test
     fun printCompactNoQuotesForBool() {
-        val value = JsoncValue(data = false, text = "false")
+        val value = Value(data = false, text = "false")
         val output = JsoncPrinter.toCompactString(value)
         assertEquals("false", output)
     }

@@ -1,61 +1,64 @@
 package io.github.metamessage.mm
 
 import java.nio.charset.StandardCharsets
+import io.github.metamessage.ast.Tag
+import io.github.metamessage.ast.ValueType
+import io.github.metamessage.ast.Mime
 
 object TagFieldParser {
-    fun parseOne(c: Cursor, tag: MmTag): Int {
+    fun parseOne(c: Cursor, tag: Tag): Int {
         val start = c.pos
         val b = c.read()
         val prefix = b and 0xF8
         val low = b and 0x07
         when (prefix) {
-            MmTag.TagKey.K_IS_NULL -> {
+            Tag.TagKey.K_IS_NULL -> {
                 tag.isNull = (low and 1) == 1
                 if (tag.isNull) tag.nullable = true
             }
-            MmTag.TagKey.K_EXAMPLE -> tag.example = (low and 1) == 1
-            MmTag.TagKey.K_DESC -> readSizedUtf8(c, tag, low, 0)
-            MmTag.TagKey.K_TYPE -> tag.type = ValueType.fromCode(c.read())
-            MmTag.TagKey.K_RAW -> tag.raw = (low and 1) == 1
-            MmTag.TagKey.K_NULLABLE -> tag.nullable = (low and 1) == 1
-            MmTag.TagKey.K_ALLOW_EMPTY -> tag.allowEmpty = (low and 1) == 1
-            MmTag.TagKey.K_UNIQUE -> tag.unique = (low and 1) == 1
-            MmTag.TagKey.K_DEFAULT -> tag.defaultValue = readShortUtf8(c, low)
-            MmTag.TagKey.K_MIN -> tag.min = readShortUtf8(c, low)
-            MmTag.TagKey.K_MAX -> tag.max = readShortUtf8(c, low)
-            MmTag.TagKey.K_SIZE -> tag.size = readUintN(c, low)
-            MmTag.TagKey.K_ENUM -> {
+            Tag.TagKey.K_EXAMPLE -> tag.example = (low and 1) == 1
+            Tag.TagKey.K_DESC -> readSizedUtf8(c, tag, low, 0)
+            Tag.TagKey.K_TYPE -> tag.type = ValueType.fromCode(c.read())
+            Tag.TagKey.K_RAW -> tag.raw = (low and 1) == 1
+            Tag.TagKey.K_NULLABLE -> tag.nullable = (low and 1) == 1
+            Tag.TagKey.K_ALLOW_EMPTY -> tag.allowEmpty = (low and 1) == 1
+            Tag.TagKey.K_UNIQUE -> tag.unique = (low and 1) == 1
+            Tag.TagKey.K_DEFAULT -> tag.default = readShortUtf8(c, low)
+            Tag.TagKey.K_MIN -> tag.min = readShortUtf8(c, low)
+            Tag.TagKey.K_MAX -> tag.max = readShortUtf8(c, low)
+            Tag.TagKey.K_SIZE -> tag.size = readUintN(c, low)
+            Tag.TagKey.K_ENUM -> {
                 tag.type = ValueType.ENUM
-                tag.enumValues = readSizedUtf8Only(c, low)
+                tag.enum = readSizedUtf8Only(c, low)
             }
-            MmTag.TagKey.K_PATTERN -> tag.pattern = readShortUtf8(c, low)
-            MmTag.TagKey.K_LOCATION -> tag.locationHours = readAscii(c, low).toInt()
-            MmTag.TagKey.K_VERSION -> tag.version = readUintN(c, low)
-            MmTag.TagKey.K_MIME -> readMime(c, tag, low, true)
-            MmTag.TagKey.K_CHILD_DESC -> readSizedUtf8(c, tag, low, 1)
-            MmTag.TagKey.K_CHILD_TYPE -> tag.childType = ValueType.fromCode(c.read())
-            MmTag.TagKey.K_CHILD_RAW -> tag.childRaw = (low and 1) == 1
-            MmTag.TagKey.K_CHILD_NULLABLE -> tag.childNullable = (low and 1) == 1
-            MmTag.TagKey.K_CHILD_ALLOW_EMPTY -> tag.childAllowEmpty = (low and 1) == 1
-            MmTag.TagKey.K_CHILD_UNIQUE -> tag.childUnique = (low and 1) == 1
-            MmTag.TagKey.K_CHILD_DEFAULT -> tag.childDefault = readShortUtf8(c, low)
-            MmTag.TagKey.K_CHILD_MIN -> tag.childMin = readShortUtf8(c, low)
-            MmTag.TagKey.K_CHILD_MAX -> tag.childMax = readShortUtf8(c, low)
-            MmTag.TagKey.K_CHILD_SIZE -> tag.childSize = readUintN(c, low)
-            MmTag.TagKey.K_CHILD_ENUM -> {
+            Tag.TagKey.K_PATTERN -> tag.pattern = readShortUtf8(c, low)
+            Tag.TagKey.K_LOCATION -> tag.location = readAscii(c, low).toInt()
+            Tag.TagKey.K_VERSION -> tag.version = readUintN(c, low)
+            Tag.TagKey.K_MIME -> readMime(c, tag, low, true)
+            Tag.TagKey.K_CHILD_DESC -> readSizedUtf8(c, tag, low, 1)
+            Tag.TagKey.K_CHILD_TYPE -> tag.childType = ValueType.fromCode(c.read())
+            Tag.TagKey.K_CHILD_RAW -> tag.childRaw = (low and 1) == 1
+            Tag.TagKey.K_CHILD_NULLABLE -> tag.childNullable = (low and 1) == 1
+            Tag.TagKey.K_CHILD_ALLOW_EMPTY -> tag.childAllowEmpty = (low and 1) == 1
+            Tag.TagKey.K_CHILD_UNIQUE -> tag.childUnique = (low and 1) == 1
+            Tag.TagKey.K_CHILD_DEFAULT -> tag.childDefault = readShortUtf8(c, low)
+            Tag.TagKey.K_CHILD_MIN -> tag.childMin = readShortUtf8(c, low)
+            Tag.TagKey.K_CHILD_MAX -> tag.childMax = readShortUtf8(c, low)
+            Tag.TagKey.K_CHILD_SIZE -> tag.childSize = readUintN(c, low)
+            Tag.TagKey.K_CHILD_ENUM -> {
                 tag.childType = ValueType.ENUM
                 tag.childEnum = readSizedUtf8Only(c, low)
             }
-            MmTag.TagKey.K_CHILD_PATTERN -> tag.childPattern = readShortUtf8(c, low)
-            MmTag.TagKey.K_CHILD_LOCATION -> tag.childLocationHours = readAscii(c, low).toInt()
-            MmTag.TagKey.K_CHILD_VERSION -> tag.childVersion = readUintN(c, low)
-            MmTag.TagKey.K_CHILD_MIME -> readMime(c, tag, low, false)
+            Tag.TagKey.K_CHILD_PATTERN -> tag.childPattern = readShortUtf8(c, low)
+            Tag.TagKey.K_CHILD_LOCATION -> tag.childLocation = readAscii(c, low).toInt()
+            Tag.TagKey.K_CHILD_VERSION -> tag.childVersion = readUintN(c, low)
+            Tag.TagKey.K_CHILD_MIME -> readMime(c, tag, low, false)
             else -> throw MmDecodeException("invalid tag field prefix: 0x${Integer.toHexString(prefix)}")
         }
         return c.pos - start
     }
 
-    private fun readSizedUtf8(c: Cursor, tag: MmTag, low: Int, mode: Int) {
+    private fun readSizedUtf8(c: Cursor, tag: Tag, low: Int, mode: Int) {
         val s = readSizedUtf8Only(c, low)
         if (mode == 0) tag.desc = s else tag.childDesc = s
     }
@@ -96,14 +99,14 @@ object TagFieldParser {
         return v
     }
 
-    private fun readMime(c: Cursor, tag: MmTag, low: Int, self: Boolean) {
+    private fun readMime(c: Cursor, tag: Tag, low: Int, self: Boolean) {
         if (low < 7) {
-            if (self) tag.mime = MimeWire.toString(low)
-            else tag.childMime = MimeWire.toString(low)
+            if (self) tag.mime = Mime.toString(low)
+            else tag.childMime = Mime.toString(low)
         } else {
             val l2 = c.read()
-            if (self) tag.mime = MimeWire.toString(l2)
-            else tag.childMime = MimeWire.toString(l2)
+            if (self) tag.mime = Mime.toString(l2)
+            else tag.childMime = Mime.toString(l2)
         }
     }
 

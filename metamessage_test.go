@@ -141,7 +141,7 @@ func TestGenerateGoBasic(t *testing.T) {
 		Int8: 8,
 	}
 
-	astNode, err := mm.ValueToMM(user, "")
+	astNode, err := mm.ValueToNode(user, "")
 	if err != nil {
 		fmt.Printf("err: %v\n", err)
 		return
@@ -227,7 +227,7 @@ func TestGenerateGoStruct1(t *testing.T) {
 	}
 
 	// 3. 转换为AST
-	astNode, err := mm.ValueToMM(user, "user")
+	astNode, err := mm.ValueToNode(user, "user")
 	if err != nil {
 		fmt.Printf("转换失败: %v\n", err)
 		return

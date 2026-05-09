@@ -415,7 +415,7 @@ func (e *encoder) EncodeStream(in any) (n int, err error) {
 	}
 
 	var node ast.Node
-	node, err = ValueToMM(in, "")
+	node, err = ValueToNode(in, "")
 	if err != nil {
 		return
 	}

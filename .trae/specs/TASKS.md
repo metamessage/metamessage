@@ -54,6 +54,28 @@
 
 ---
 
+## 4. MM Validator 對齊 ✅
+
+### JavaScript Validator 增強
+- [x] 添加 decimal 類型驗證
+- [x] 添加 IP 類型驗證 (IPv4/IPv6)
+- [x] 添加 URL 類型驗證
+- [x] 添加 slice 類型驗證
+- [x] 添加 date/time 單獨驗證方法
+- [x] 更新 types.js 添加 options 參數支持
+- [x] 更新 types.ts 添加完整方法定義
+
+### Kotlin Validator 測試
+- [x] 創建 ValidatorTest.kt 測試文件
+- [x] 整數類型測試 (int8/16/32/64, uint/uint8/16/32/64)
+- [x] 浮點類型測試 (float32/float64)
+- [x] 字符串和特殊類型測試 (string, uuid, email, enum, datetime)
+- [x] 數組和結構體測試 (array, struct, image)
+- [x] 邊界條件測試
+- [x] 錯誤處理測試
+
+---
+
 ## 已修復的問題
 
 ### Kotlin
@@ -67,21 +89,32 @@
 ### TypeScript/JavaScript/Python/C#/Rust/Swift/PHP
 - 對齊 Golang 基準實現
 
+### JavaScript types.js
+- 移除不必要的 `null` 和 `nil` 方法
+- 為所有方法添加 `options` 參數支持
+
+### TypeScript types.ts
+- 修正 `int` 類型定義 (number | bigint → number)
+- 為所有方法添加 `options` 參數支持
+- 添加缺失的方法定義 (uuid, datetime, date, time, email, url, ip, decimal, i8/16/32/64, u/8/16/32/64, f32/64)
+- 修正 `i64` 和 `u64` 使用 `bigint` 類型
+- 移除不必要的 `null` 方法
+
 ---
 
 ## 驗證標準
 
-| 語言 | Wire 測試 | JSONC 基本測試 | JSONC MM 測試 |
-|------|-----------|----------------|---------------|
-| Golang | - | 基準 | 基準 |
-| Java | 22 | 15 | 22 |
-| Kotlin | 5 | 23 | 10 |
-| TypeScript | 35 | 35 | 49 |
-| Python | 68 | 68 | 68 |
-| JavaScript | - | - | 55 |
-| C# | - | - | - |
-| Rust | 4 | 4 | 3 |
-| Swift | - | - | - |
-| PHP | 9 | 9 | 9 |
+| 語言 | Wire 測試 | JSONC 基本測試 | JSONC MM 測試 | Validator 測試 |
+|------|-----------|----------------|---------------|----------------|
+| Golang | - | 基準 | 基準 | - |
+| Java | 22 | 15 | 22 | - |
+| Kotlin | 5 | 23 | 10 | ✅ 完整 |
+| TypeScript | 35 | 35 | 49 | - |
+| Python | 68 | 68 | 68 | - |
+| JavaScript | - | - | 55 | ✅ 增強 |
+| C# | - | - | - | - |
+| Rust | 4 | 4 | 3 | - |
+| Swift | - | - | - | - |
+| PHP | 9 | 9 | 9 | - |
 
 **所有任務已完成 ✅**
