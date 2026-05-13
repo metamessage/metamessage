@@ -1015,14 +1015,15 @@ func (d *decoder) decodeFloat(prefix byte, tag *ast.Tag, path string) (node ast.
 
 	switch tag.Type {
 	case ast.ValueTypeFloat32:
-		data = float32(v)
-		text = utils.FormatFloat32(data.(float32))
+		f := float32(v)
+		data = f
+		text = utils.FormatFloat32(f)
 	case ast.ValueTypeFloat64:
 		data = v
-		text = utils.FormatFloat64(data.(float64))
+		text = utils.FormatFloat64(v)
 	case ast.ValueTypeDecimal:
-		data = v
-		text = utils.FormatFloat64(data.(float64))
+		text = utils.FormatFloat64(v)
+		data = text
 	default:
 		err = fmt.Errorf("unsupported value types: %v", tag.Type)
 		return

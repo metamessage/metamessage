@@ -1,83 +1,75 @@
 import { MMEncoder } from './encoder';
-import { MMDecoder, DecodedValue } from './decoder';
+import { MMDecoder } from './decoder';
 import { MMBuffer, MMError } from './buffer';
-import { mm, MMValue, Tag, ValueType } from './types';
+import { mm } from './mm';
 import * as constants from './constants';
-import { MmValidator, validator, ValidationResult } from './validator';
+import { Tag } from '../ast/tag';
+import { ValueType } from '../ast/value-type';
+import { Node, MMValue, MMObject, MMArray } from '../ast/ast';
+import { ValueToNode } from './value-to-node';
 
-export function encode(value: any): Uint8Array {
+import { parseJSONC, toJSONC } from '../jsonc/index';
+
+export function encodeNode(node: Node): Uint8Array {
   const encoder = new MMEncoder();
-  encoder.encode(value);
-  return encoder.result;
+  return encoder.encodeNode(node);
 }
 
-export function decode(data: Uint8Array | ArrayBuffer | number[]): DecodedValue {
+export function encodeValue(value: any, tag?: Tag): Uint8Array {
+  const encoder = new MMEncoder();
+  return encoder.encodeValue(value, tag);
+}
+
+export const fromValue = encodeValue;
+
+export function fromJSONC(jsonc: string): Uint8Array {
+  const node = parseJSONC(jsonc);
+  const encoder = new MMEncoder();
+  return encoder.encodeNode(node);
+}
+
+function nodeToDecodedValue(node: Node): DecodedValue {
+  if (node instanceof MMValue) {
+    return {
+      type: node.getTag().type,
+      value: node.getValue(),
+    };
+  } else if (node instanceof MMObject) {
+    const props = node.getProperties();
+    const value: Record<string, any> = {};
+    for (const [key, valNode] of Object.entries(props)) {
+      value[key] = nodeToDecodedValue(valNode).value;
+    }
+    return { type: ValueType.Object, value };
+  } else if (node instanceof MMArray) {
+    const elements = node.getElements();
+    const value = elements.map((e) => nodeToDecodedValue(e).value);
+    return { type: ValueType.Array, value };
+  }
+  return { type: ValueType.Unknown, value: null };
+}
+
+export interface DecodedValue {
+  type: ValueType;
+  value: any;
+}
+
+export function decode(data: Uint8Array): Node {
   const decoder = new MMDecoder(data);
   return decoder.decode();
 }
 
-export function toJSONC(data: Uint8Array | ArrayBuffer | number[]): string {
-  const decoded = decode(data);
-  return jsoncFromDecoded(decoded);
+export function decodeToValue(data: Uint8Array): DecodedValue {
+  const node = decode(data);
+  return nodeToDecodedValue(node);
 }
 
-function jsoncFromDecoded(decoded: { type: string; value: any }): string {
-  switch (decoded.type) {
-    case 'null':
-      return 'null';
-    case 'bool':
-      return decoded.value ? 'true' : 'false';
-    case 'int':
-      return decoded.value.toString();
-    case 'float':
-      return decoded.value.toString();
-    case 'string':
-      return JSON.stringify(decoded.value);
-    case 'bytes':
-      return JSON.stringify(Array.from(decoded.value));
-    case 'array':
-      return '[' + decoded.value.map((v: any) => {
-        if (typeof v === 'object' && v !== null && 'type' in v && 'value' in v) {
-          return jsoncFromDecoded(v as { type: string; value: any });
-        }
-        return jsoncFromDecoded({ type: getTypeFromValue(v), value: v });
-      }).join(', ') + ']';
-    case 'object':
-      const entries = Object.entries(decoded.value);
-      return '{' + entries.map(([k, v]) => {
-        const keyStr = JSON.stringify(k);
-        if (typeof v === 'object' && v !== null && 'type' in v && 'value' in v) {
-          return keyStr + ': ' + jsoncFromDecoded(v as { type: string; value: any });
-        }
-        return keyStr + ': ' + jsoncFromDecoded({ type: getTypeFromValue(v), value: v });
-      }).join(', ') + '}';
-    case 'simple':
-      return decoded.value.toString();
-    case 'tag':
-      return JSON.stringify(decoded.value);
-    default:
-      return 'null';
-  }
+export function decodeToJSONC(data: Uint8Array): string {
+  const node = decode(data);
+  return toJSONC(node);
 }
 
-function getTypeFromValue(value: any): string {
-  if (value === null) return 'null';
-  if (typeof value === 'boolean') return 'bool';
-  if (typeof value === 'number') return 'float';
-  if (typeof value === 'bigint') return 'int';
-  if (typeof value === 'string') return 'string';
-  if (value instanceof Uint8Array) return 'bytes';
-  if (Array.isArray(value)) return 'array';
-  if (typeof value === 'object') return 'object';
-  return 'null';
-}
-
-export function fromJSONC(jsoncString: string): Uint8Array {
-  const parsed = JSON.parse(jsoncString);
-  return encode(parsed);
-}
-
-export function bind<T>(data: Uint8Array | ArrayBuffer | number[], template: T): T {
+export function bind<T>(data: Uint8Array, template: T): T {
   const decoded = decode(data);
   return bindDecodedToTemplate(decoded, template) as T;
 }
@@ -86,16 +78,23 @@ function bindDecodedToTemplate(decoded: any, template: any): any {
   if (template === null || template === undefined) {
     return decoded;
   }
-  
+
   // 处理解码结果的结构 { type: string, value: any }
-  const decodedValue = decoded && typeof decoded === 'object' && 'value' in decoded ? decoded.value : decoded;
-  
-  if (typeof template === 'object' && 'value' in template && 'options' in template) {
+  const decodedValue =
+    decoded && typeof decoded === 'object' && 'value' in decoded
+      ? decoded.value
+      : decoded;
+
+  if (
+    typeof template === 'object' &&
+    'value' in template &&
+    'options' in template
+  ) {
     // MMValue 结构
     const mmValue = template;
     return {
       value: bindDecodedToTemplate(decodedValue, mmValue.value),
-      options: mmValue.options
+      options: mmValue.options,
     };
   } else if (Array.isArray(template)) {
     // 数组
@@ -113,7 +112,10 @@ function bindDecodedToTemplate(decoded: any, template: any): any {
     for (const key in template) {
       if (template.hasOwnProperty(key)) {
         const templateValue = template[key];
-        const itemValue = decodedValue && typeof decodedValue === 'object' ? decodedValue[key] : undefined;
+        const itemValue =
+          decodedValue && typeof decodedValue === 'object'
+            ? decodedValue[key]
+            : undefined;
         result[key] = bindDecodedToTemplate(itemValue, templateValue);
       }
     }
@@ -124,15 +126,14 @@ function bindDecodedToTemplate(decoded: any, template: any): any {
   }
 }
 
-export { mm, MMValue, Tag, ValueType } from './types';
+export { mm } from './mm';
 export { MMEncoder, MMDecoder, MMBuffer, MMError };
-export type { DecodedValue } from './decoder';
 export * as constants from './constants';
-export { MmValidator, validator, ValidationResult } from './validator';
+export { ValueToNode } from './value-to-node';
 export default {
-  encode,
+  encodeNode,
   decode,
-  toJSONC,
+  decodeToJSONC,
   fromJSONC,
   bind,
   mm,
@@ -141,6 +142,5 @@ export default {
   MMBuffer,
   MMError,
   constants,
-  MmValidator,
-  validator,
+  ValueToNode,
 };

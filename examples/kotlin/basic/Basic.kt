@@ -1,7 +1,7 @@
 package io.github.metamessage.examples
 
-import io.github.metamessage.mm.MetaMessage
-import io.github.metamessage.mm.MM
+import io.github.metamessage.MetaMessage
+import io.github.metamessage.MM
 
 @MM
 class Person(var name: String = "Ed", var age: Int = 30)
@@ -12,11 +12,11 @@ fun main() {
     println("Original: Name=${person.name}, Age=${person.age}")
 
     // 编码到 Wire 格式
-    val wire = MetaMessage.encode(person)
+    val wire = MetaMessage.encodeFromValue(person)
     println("Encoded: ${bytesToHex(wire)}")
 
     // 从 Wire 解码
-    val decoded = MetaMessage.decode(wire, Person::class.java)
+    val decoded = MetaMessage.decodeToValue(wire, Person::class.java)
     println("Decoded: Name=${decoded.name}, Age=${decoded.age}")
 }
 

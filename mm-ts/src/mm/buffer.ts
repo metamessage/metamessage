@@ -31,7 +31,7 @@ export class MMBuffer {
     const newCapacity = Math.max(this.capacity * 2, this.position + required);
     const newBuffer = new ArrayBuffer(newCapacity);
     const newView = new DataView(newBuffer);
-    
+
     for (let i = 0; i < this.position; i++) {
       newView.setUint8(i, this.view.getUint8(i));
     }
@@ -105,7 +105,7 @@ export class MMBuffer {
     this.position += 8;
   }
 
-  writeBytes(bytes: Uint8Array | number[]): void {
+  writeBytes(bytes: Uint8Array): void {
     const length = bytes.length;
     this.ensureCapacity(length);
     for (let i = 0; i < length; i++) {
@@ -221,9 +221,38 @@ export class MMBuffer {
     return this.position;
   }
 
+  get offset(): number {
+    return this.position;
+  }
+
+  private lastWrittenLength: number = 0;
+
+  setLastWrittenLength(length: number): void {
+    this.lastWrittenLength = length;
+  }
+
+  getLastWrittenLength(): number {
+    return this.lastWrittenLength;
+  }
+
+  getBytes(startOffset: number): Uint8Array {
+    if (startOffset < 0 || startOffset > this.position) {
+      throw new Error('Invalid start offset');
+    }
+    return new Uint8Array(
+      this.buffer,
+      startOffset,
+      this.position - startOffset,
+    );
+  }
+
   slice(start: number, end?: number): MMBuffer {
     const newBuffer = new MMBuffer(end ? end - start : this.position - start);
-    const slice = new Uint8Array(this.buffer, start, end ? end - start : this.position - start);
+    const slice = new Uint8Array(
+      this.buffer,
+      start,
+      end ? end - start : this.position - start,
+    );
     newBuffer.writeBytes(slice);
     return newBuffer;
   }

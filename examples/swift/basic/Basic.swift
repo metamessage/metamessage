@@ -9,7 +9,7 @@ let wire = MetaMessage.encode(Person(name: "Ed", age: 30))
 print("Encoded: \(bytesToHex(wire))")
 
 // 从 Wire 解码
-if let decoded = try? MetaMessage.decode(wire) {
+if let decoded = try? MetaMessage.decodeToValue(wire) {
     print("Decoded: \(decoded)")
 }
 

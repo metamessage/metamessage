@@ -2,7 +2,7 @@ package io.github.metamessage.ast
 
 
 import io.github.metamessage.mm.WireConstants
-import io.github.metamessage.mm.MM
+import io.github.metamessage.MM
 
 import java.math.BigInteger
 import java.time.LocalDate
@@ -1490,7 +1490,6 @@ class Tag(
         }
 
         if (version != DEFAULT_VERSION) {
-            val cleanValue = value.replace("-", "")
             val uuidVersion = cleanValue.substring(12, 13).toInt(16)
             if (version != uuidVersion) {
                 return ValidationResult(false, "invalid uuid version")

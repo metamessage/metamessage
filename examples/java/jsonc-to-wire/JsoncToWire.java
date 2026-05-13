@@ -1,7 +1,7 @@
 package io.github.metamessage.examples;
 
 import io.github.metamessage.jsonc.Jsonc;
-import io.github.metamessage.mm.MetaMessage;
+import io.github.metamessage.MetaMessage;
 import io.github.metamessage.jsonc.JcNode;
 
 public class JsoncToWire {

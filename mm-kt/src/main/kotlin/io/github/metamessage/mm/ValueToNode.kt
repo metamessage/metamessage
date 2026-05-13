@@ -24,6 +24,7 @@ import io.github.metamessage.ast.Node
 import io.github.metamessage.ast.Value as AstValue
 import io.github.metamessage.ast.Array as AstArray
 import io.github.metamessage.ast.Object as AstObject
+import io.github.metamessage.MM
 
 private const val maxDepth = 32
 

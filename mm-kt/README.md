@@ -24,7 +24,7 @@
 使用 `@MM` 注解标记需要编解码的类：
 
 ```kotlin
-import io.github.metamessage.mm.MM
+import io.github.metamessage.MM
 
 @MM
 class Person(var name: String = "Ed", var age: Int = 30)
@@ -33,17 +33,17 @@ class Person(var name: String = "Ed", var age: Int = 30)
 ### 2.2 编码示例
 
 ```kotlin
-import io.github.metamessage.mm.MetaMessage
+import io.github.metamessage.MetaMessage
 
 val person = Person()
-val wire = MetaMessage.encode(person)
+val wire = MetaMessage.encodeFromValue(person)
 println("Encoded: ${bytesToHex(wire)}")
 ```
 
 ### 2.3 解码示例
 
 ```kotlin
-val decoded = MetaMessage.decode(wire, Person::class.java)
+val decoded = MetaMessage.decodeToValue(wire, Person::class.java)
 println("Decoded: Name=${decoded.name}, Age=${decoded.age}")
 ```
 

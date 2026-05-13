@@ -35,7 +35,7 @@ func FromValue(v any, tag string) (bs []byte, err error) {
 		return
 	}
 
-	// fmt.Println("FromValue", jsonc.Json(node))
+	// fmt.Println("FromValue", Dump(node))
 
 	encoder := getEncoder()
 	defer putEncoder(encoder)

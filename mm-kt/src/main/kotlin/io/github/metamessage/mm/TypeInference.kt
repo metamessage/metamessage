@@ -10,6 +10,7 @@ import kotlin.reflect.KClass
 import kotlin.reflect.KProperty
 import io.github.metamessage.ast.Tag
 import io.github.metamessage.ast.ValueType
+import io.github.metamessage.MM
 
 
 object TypeInference {

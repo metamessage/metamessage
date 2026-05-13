@@ -25,7 +25,7 @@ public struct JSONCField {
     }
 }
 
-public class JSONCObject: JSONCNode {
+public class MMObject: JSONCNode {
     public var fields: [JSONCField]
     public var tag: JSONCTag?
     public var path: String
@@ -53,7 +53,7 @@ public class JSONCObject: JSONCNode {
     }
 }
 
-public class JSONCArray: JSONCNode {
+public class MMArray: JSONCNode {
     public var items: [JSONCNode]
     public var tag: JSONCTag?
     public var path: String
@@ -111,7 +111,7 @@ public class JSONCValue: JSONCNode {
     }
 }
 
-public class JSONCDoc: JSONCNode {
+public class MMDoc: JSONCNode {
     public var fields: [JSONCField]
     public var tag: JSONCTag?
     public var path: String

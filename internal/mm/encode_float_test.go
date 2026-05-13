@@ -12,7 +12,7 @@ import (
 
 // go test ./internal/mm -v -run TestEncodeFloat
 //
-// go test ./internal/mm -v -run TestEncodeFloat/float32_nil_pointer
+// go test ./internal/mm -v -run TestEncodeFloat/3_14
 //
 // go test ./internal/mm -v -run TestEncodeFloat
 //
@@ -103,6 +103,14 @@ func TestEncodeFloat(t *testing.T) {
 			wantErr:    false,
 			wantDecode: float64(654.321),
 		},
+
+		// [105 254 1 58]
+		{
+			name:       "3_14",
+			input:      float64(3.14),
+			wantErr:    false,
+			wantDecode: float64(3.14),
+		},
 	}
 
 	for _, tc := range testCases {
@@ -111,7 +119,7 @@ func TestEncodeFloat(t *testing.T) {
 
 			var bs []byte
 			bs, err = FromValue(tc.input, "")
-			fmt.Printf("bs %08b\n", bs)
+			fmt.Println("bs", bs)
 
 			if (err != nil) != tc.wantErr {
 				t.Fatalf("Mismatch in error status: expected = %t, actual = %v", tc.wantErr, err)

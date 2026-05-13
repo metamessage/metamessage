@@ -3,6 +3,7 @@
 ## 1. 安装
 
 ### npm 依赖
+
 使用 npm 安装：
 
 ```bash
@@ -10,6 +11,7 @@ npm i metamessage@latest
 ```
 
 ### 版本要求
+
 - Node.js 18 或更高版本
 - TypeScript 5.0 或更高版本
 
@@ -84,10 +86,12 @@ npm test
 ```
 
 ### 3.2 测试框架
+
 - Jest
 - TypeScript Compiler
 
 ### 3.3 测试覆盖范围
+
 - 编码测试
 - 解码测试
 - JSONC 解析测试
@@ -95,20 +99,24 @@ npm test
 ## 4. 常见问题
 
 ### 4.1 依赖问题
+
 - **问题**: npm 依赖安装失败
   **解决**: 检查网络连接，或使用 npm 镜像
 
 ### 4.2 编译问题
+
 - **问题**: TypeScript 编译错误
   **解决**: 确保 tsconfig.json 配置正确
 
 ### 4.3 运行时问题
+
 - **问题**: 编码/解码失败
   **解决**: 检查数据类型是否正确
 
 ## 5. 示例代码
 
 查看 `examples/typescript/` 目录下的示例代码：
+
 - `basic/` - 基本使用示例
 - `jsonc-to-wire/` - JSONC 转 Wire 格式
 

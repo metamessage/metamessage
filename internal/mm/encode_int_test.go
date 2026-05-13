@@ -2,6 +2,8 @@ package mm
 
 import (
 	"bytes"
+	"fmt"
+	"math/big"
 	"reflect"
 	"testing"
 
@@ -9,6 +11,7 @@ import (
 	"github.com/metamessage/metamessage/internal/jsonc"
 )
 
+// go test ./internal/mm -v -run TestEncodeInt/int8
 func TestEncodeInt(t *testing.T) {
 	type testCase struct {
 		name       string
@@ -29,6 +32,8 @@ func TestEncodeInt(t *testing.T) {
 	var u64 *uint64
 	xInt8 := int8(1)
 	xInt := 1
+
+	bigint, _ := new(big.Int).SetString("9007199254740991", 10)
 
 	testCases := []testCase{
 		{
@@ -134,6 +139,12 @@ func TestEncodeInt(t *testing.T) {
 			wantDecode: int(-7890),
 		},
 		{
+			name:       "int8",
+			input:      int8(127),
+			wantErr:    false,
+			wantDecode: int8(127),
+		},
+		{
 			name:       "int8 min",
 			input:      int8(-128),
 			wantErr:    false,
@@ -229,11 +240,18 @@ func TestEncodeInt(t *testing.T) {
 			wantErr:    true,
 			wantDecode: nil,
 		},
+		{
+			name:       "bigint",
+			input:      *bigint,
+			wantErr:    false,
+			wantDecode: *bigint,
+		},
 	}
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			bs, err := FromValue(tc.input, "")
+			fmt.Println("bs", bs)
 
 			if (err != nil) != tc.wantErr {
 				t.Fatalf("error mismatch: expected err=%t, got err=%v", tc.wantErr, err)

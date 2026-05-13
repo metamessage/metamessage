@@ -48,14 +48,14 @@ struct Person {
 }
 
 let person = Person()
-let wire = MetaMessage.encode(person)
+let wire = MetaMessage.encodeFromValue(person)
 print("Encoded: \(wire)")
 ```
 
 ### 2.3 解码示例
 
 ```swift
-if let decoded = try? MetaMessage.decode(wire) {
+if let decoded = try? MetaMessage.decodeToValue(wire) {
     print("Decoded: \(decoded)")
 }
 ```

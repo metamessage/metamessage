@@ -17,6 +17,7 @@ import io.github.metamessage.ast.Object as AstObject
 
 import io.github.metamessage.jsonc.toJsonc
 import io.github.metamessage.ast.dump
+import io.github.metamessage.MM
 
 object Encoder {
 

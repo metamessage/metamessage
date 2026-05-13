@@ -358,7 +358,7 @@ private func reflectToNode(_ mirror: Mirror, tag: String) -> JSONCNode? {
             }
         }
 
-        return JSONCObject(fields: fields, tag: nodeTag)
+        return MMObject(fields: fields, tag: nodeTag)
     } else if mirror.displayStyle == .array || mirror.displayStyle == .collection {
         var items: [JSONCNode] = []
 
@@ -368,7 +368,7 @@ private func reflectToNode(_ mirror: Mirror, tag: String) -> JSONCNode? {
             }
         }
 
-        return JSONCArray(items: items)
+        return MMArray(items: items)
     } else if mirror.displayStyle == .dictionary {
         return nil
     }

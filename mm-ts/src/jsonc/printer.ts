@@ -1,25 +1,6 @@
-import { JSONCValue, JSONCObject, JSONCArray, JSONCDoc, JSONCTag, JSONCValueType } from './ast';
-
-export interface JSONCNode {
-  getType(): string;
-  getTag(): any;
-  getPath(): string;
-  setPath(path: string): void;
-  setTag(tag: any): void;
-}
-
-const QUOTED_TYPES: JSONCValueType[] = [
-  JSONCValueType.String,
-  JSONCValueType.Bytes,
-  JSONCValueType.DateTime,
-  JSONCValueType.Date,
-  JSONCValueType.Time,
-  JSONCValueType.UUID,
-  JSONCValueType.IP,
-  JSONCValueType.URL,
-  JSONCValueType.Email,
-  JSONCValueType.Enum,
-];
+import { MMValue, MMObject, MMArray, MMDoc } from '../ast/ast';
+import { ValueType } from '../ast/value-type';
+import { Node } from '../ast/ast';
 
 export class JSONCPrinter {
   private indent: string;
@@ -30,47 +11,47 @@ export class JSONCPrinter {
     this.indentLevel = 0;
   }
 
-  print(node: JSONCNode): string {
+  print(node: Node): string {
     this.indentLevel = 0;
     return this.printNode(node);
   }
 
-  printCompact(node: JSONCNode): string {
+  printCompact(node: Node): string {
     this.indentLevel = 0;
     return this.printNodeCompact(node);
   }
 
-  private printNode(node: JSONCNode): string {
-    if (node instanceof JSONCValue) {
+  private printNode(node: Node): string {
+    if (node instanceof MMValue) {
       return this.printValue(node);
-    } else if (node instanceof JSONCObject) {
+    } else if (node instanceof MMObject) {
       return this.printObject(node);
-    } else if (node instanceof JSONCArray) {
+    } else if (node instanceof MMArray) {
       return this.printArray(node);
-    } else if (node instanceof JSONCDoc) {
+    } else if (node instanceof MMDoc) {
       return this.printNode(node.getRoot());
     }
     return '';
   }
 
-  private printNodeCompact(node: JSONCNode): string {
-    if (node instanceof JSONCValue) {
+  private printNodeCompact(node: Node): string {
+    if (node instanceof MMValue) {
       return this.printValueCompact(node);
-    } else if (node instanceof JSONCObject) {
+    } else if (node instanceof MMObject) {
       return this.printObjectCompact(node);
-    } else if (node instanceof JSONCArray) {
+    } else if (node instanceof MMArray) {
       return this.printArrayCompact(node);
-    } else if (node instanceof JSONCDoc) {
+    } else if (node instanceof MMDoc) {
       return this.printNodeCompact(node.getRoot());
     }
     return '';
   }
 
-  private printValue(value: JSONCValue): string {
+  private printValue(value: MMValue): string {
     const tag = value.getTag();
     let result = '';
 
-    if (tag && tag.desc) {
+    if (tag.toString() !== '') {
       result += `// mm: ${tag.toString()}\n${this.getIndent()}`;
     }
 
@@ -78,31 +59,74 @@ export class JSONCPrinter {
     return result;
   }
 
-  private printValueCompact(value: JSONCValue): string {
+  private printValueCompact(value: MMValue): string {
     return this.valueToStringOnly(value);
   }
 
-  private valueToStringOnly(value: JSONCValue): string {
+  private valueToStringOnly(value: MMValue): string {
     const tag = value.getTag();
-    const type = tag?.type || JSONCValueType.Unknown;
-    const needsQuotes = QUOTED_TYPES.includes(type);
-
+    const type = tag.type;
     const val = value.getValue();
-    if (val === null) {
-      return 'null';
-    } else if (typeof val === 'boolean') {
-      return val ? 'true' : 'false';
-    } else if (typeof val === 'number') {
-      return val.toString();
-    } else if (typeof val === 'string') {
-      return needsQuotes ? `"${val}"` : JSON.stringify(val);
+    switch (type) {
+      case ValueType.Unknown:
+        return 'null';
+      case ValueType.BigInt:
+        return val.toString();
+
+      case ValueType.Bool:
+        return val ? 'true' : 'false';
+      case ValueType.String:
+        return `"${val}"`;
+      case ValueType.Bytes:
+        return `"${Buffer.from(val).toString('base64')}"`;
+      case ValueType.DateTime:
+        return val.toString();
+      case ValueType.Date:
+        return val.toString();
+      case ValueType.Time:
+        return val.toString();
+      case ValueType.UUID:
+        return `"${val}"`;
+      case ValueType.IP:
+        return val.toString();
+      case ValueType.URL:
+        return val.toString();
+      case ValueType.Email:
+        return `"${val}"`;
+      case ValueType.Enum:
+        return val.toString();
+      case ValueType.Int:
+        return val.toString();
+      case ValueType.Int8:
+        return val.toString();
+      case ValueType.Int16:
+        return val.toString();
+      case ValueType.Int32:
+        return val.toString();
+      case ValueType.Int64:
+        return val.toString();
+      case ValueType.Uint:
+        return val.toString();
+      case ValueType.Uint8:
+        return val.toString();
+      case ValueType.Uint16:
+        return val.toString();
+      case ValueType.Uint32:
+        return val.toString();
+      case ValueType.Uint64:
+        return val.toString();
+      case ValueType.Float32:
+        return val.toString();
+      case ValueType.Float64:
+        return val.toString();
+      default:
+        return val.toString();
     }
-    return 'null';
   }
 
-  private printObject(obj: JSONCObject): string {
+  private printObject(obj: MMObject): string {
     const properties = obj.getProperties();
-    if (properties.size === 0) {
+    if (Object.keys(properties).length === 0) {
       return '{}';
     }
 
@@ -110,10 +134,10 @@ export class JSONCPrinter {
     const indent = this.getIndent();
     const entries: string[] = [];
 
-    for (const [key, value] of properties.entries()) {
+    for (const [key, value] of Object.entries(properties)) {
       const tag = value.getTag();
       let entry = '';
-      if (tag && tag.desc && value instanceof JSONCValue) {
+      if (tag && tag.desc && value instanceof MMValue) {
         entry += `${indent}// mm: ${tag.toString()}\n${indent}`;
       }
       entry += `${JSON.stringify(key)}: ${this.printNode(value)}`;
@@ -126,21 +150,21 @@ export class JSONCPrinter {
     return `{\n${entries.join(',\n')}\n${closingIndent}}`;
   }
 
-  private printObjectCompact(obj: JSONCObject): string {
+  private printObjectCompact(obj: MMObject): string {
     const properties = obj.getProperties();
-    if (properties.size === 0) {
+    if (Object.keys(properties).length === 0) {
       return '{}';
     }
 
     const entries: string[] = [];
-    for (const [key, value] of properties.entries()) {
+    for (const [key, value] of Object.entries(properties)) {
       entries.push(`${JSON.stringify(key)}:${this.printNodeCompact(value)}`);
     }
 
     return `{${entries.join(',')}}`;
   }
 
-  private printArray(array: JSONCArray): string {
+  private printArray(array: MMArray): string {
     const elements = array.getElements();
     if (elements.length === 0) {
       return '[]';
@@ -160,7 +184,7 @@ export class JSONCPrinter {
     return `[\n${entries.join(',\n')}\n${closingIndent}]`;
   }
 
-  private printArrayCompact(array: JSONCArray): string {
+  private printArrayCompact(array: MMArray): string {
     const elements = array.getElements();
     if (elements.length === 0) {
       return '[]';
@@ -179,12 +203,12 @@ export class JSONCPrinter {
   }
 }
 
-export function printJSONC(node: JSONCNode): string {
+export function toJSONC(node: Node): string {
   const printer = new JSONCPrinter();
   return printer.print(node);
 }
 
-export function printJSONCCompact(node: JSONCNode): string {
+export function printJSONCCompact(node: Node): string {
   const printer = new JSONCPrinter();
   return printer.printCompact(node);
 }

@@ -1,45 +1,25 @@
 import { JSONCScanner, TokenType, jsoncScanner } from './scanner.js';
-import { JSONCValue, JSONCObject, JSONCArray, JSONCDoc, JSONCTag, JSONCValueType, parseMMTag } from './ast.js';
 import { JSONCParser, parseJSONC } from './parser.js';
-import { JSONCPrinter, printJSONC, printJSONCCompact } from './printer.js';
-import { JSONCBinder, bindJSONC } from './binder.js';
+import { JSONCPrinter, toJSONC, printJSONCCompact } from './printer.js';
 
 export {
   JSONCScanner,
   TokenType,
   jsoncScanner,
-  JSONCValue,
-  JSONCObject,
-  JSONCArray,
-  JSONCDoc,
-  JSONCTag,
-  JSONCValueType,
-  parseMMTag,
   JSONCParser,
   parseJSONC,
   JSONCPrinter,
-  printJSONC,
+  toJSONC,
   printJSONCCompact,
-  JSONCBinder,
-  bindJSONC,
 };
 
 export default {
   JSONCScanner,
   TokenType,
   jsoncScanner,
-  JSONCValue,
-  JSONCObject,
-  JSONCArray,
-  JSONCDoc,
-  JSONCTag,
-  JSONCValueType,
-  parseMMTag,
   JSONCParser,
   parseJSONC,
   JSONCPrinter,
-  printJSONC,
+  toJSONC,
   printJSONCCompact,
-  JSONCBinder,
-  bindJSONC,
 };

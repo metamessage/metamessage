@@ -8,7 +8,7 @@ import java.time.LocalTime
 import java.math.BigInteger
 import java.util.UUID
 
-import io.github.metamessage.mm.MM
+import io.github.metamessage.MM
 import io.github.metamessage.ast.ValueType
 
 class MetaMessageTest {

@@ -16,13 +16,13 @@ public class JSONCPrinter {
 
         switch node.getType() {
         case .object:
-            return printObject(node as! JSONCObject)
+            return printObject(node as! MMObject)
         case .array:
-            return printArray(node as! JSONCArray)
+            return printArray(node as! MMArray)
         case .value:
             return printValue(node as! JSONCValue)
         case .doc:
-            return printObject(node as! JSONCDoc)
+            return printObject(node as! MMDoc)
         case .unknown:
             return ""
         }
@@ -43,7 +43,7 @@ public class JSONCPrinter {
         indentLevel = max(0, indentLevel - 1)
     }
 
-    private func printObject(_ obj: JSONCObject) -> String {
+    private func printObject(_ obj: MMObject) -> String {
         if obj.fields.isEmpty {
             return "{}"
         }
@@ -61,13 +61,13 @@ public class JSONCPrinter {
 
             switch field.value.getType() {
             case .object:
-                result += printObject(field.value as! JSONCObject)
+                result += printObject(field.value as! MMObject)
             case .array:
-                result += printArray(field.value as! JSONCArray)
+                result += printArray(field.value as! MMArray)
             case .value:
                 result += printValue(field.value as! JSONCValue)
             case .doc:
-                result += printObject(field.value as! JSONCDoc)
+                result += printObject(field.value as! MMDoc)
             case .unknown:
                 result += "null"
             }
@@ -84,7 +84,7 @@ public class JSONCPrinter {
         return result
     }
 
-    private func printArray(_ arr: JSONCArray) -> String {
+    private func printArray(_ arr: MMArray) -> String {
         if arr.items.isEmpty {
             return "[]"
         }
@@ -97,13 +97,13 @@ public class JSONCPrinter {
 
             switch item.getType() {
             case .object:
-                result += printObject(item as! JSONCObject)
+                result += printObject(item as! MMObject)
             case .array:
-                result += printArray(item as! JSONCArray)
+                result += printArray(item as! MMArray)
             case .value:
                 result += printValue(item as! JSONCValue)
             case .doc:
-                result += printObject(item as! JSONCDoc)
+                result += printObject(item as! MMDoc)
             case .unknown:
                 result += "null"
             }
@@ -227,19 +227,19 @@ public class JSONCPrinter {
 
         switch node.getType() {
         case .object:
-            return printObjectCompact(node as! JSONCObject)
+            return printObjectCompact(node as! MMObject)
         case .array:
-            return printArrayCompact(node as! JSONCArray)
+            return printArrayCompact(node as! MMArray)
         case .value:
             return printValueCompact(node as! JSONCValue)
         case .doc:
-            return printObjectCompact(node as! JSONCDoc)
+            return printObjectCompact(node as! MMDoc)
         case .unknown:
             return ""
         }
     }
 
-    private func printObjectCompact(_ obj: JSONCObject) -> String {
+    private func printObjectCompact(_ obj: MMObject) -> String {
         var parts: [String] = []
 
         for field in obj.fields {
@@ -247,13 +247,13 @@ public class JSONCPrinter {
 
             switch field.value.getType() {
             case .object:
-                part += printObjectCompact(field.value as! JSONCObject)
+                part += printObjectCompact(field.value as! MMObject)
             case .array:
-                part += printArrayCompact(field.value as! JSONCArray)
+                part += printArrayCompact(field.value as! MMArray)
             case .value:
                 part += printValueCompact(field.value as! JSONCValue)
             case .doc:
-                part += printObjectCompact(field.value as! JSONCDoc)
+                part += printObjectCompact(field.value as! MMDoc)
             case .unknown:
                 part += "null"
             }
@@ -264,7 +264,7 @@ public class JSONCPrinter {
         return "{" + parts.joined(separator: ",") + "}"
     }
 
-    private func printArrayCompact(_ arr: JSONCArray) -> String {
+    private func printArrayCompact(_ arr: MMArray) -> String {
         var parts: [String] = []
 
         for item in arr.items {
@@ -272,13 +272,13 @@ public class JSONCPrinter {
 
             switch item.getType() {
             case .object:
-                part += printObjectCompact(item as! JSONCObject)
+                part += printObjectCompact(item as! MMObject)
             case .array:
-                part += printArrayCompact(item as! JSONCArray)
+                part += printArrayCompact(item as! MMArray)
             case .value:
                 part += printValueCompact(item as! JSONCValue)
             case .doc:
-                part += printObjectCompact(item as! JSONCDoc)
+                part += printObjectCompact(item as! MMDoc)
             case .unknown:
                 part += "null"
             }

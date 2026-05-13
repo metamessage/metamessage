@@ -1,7 +1,7 @@
 package io.github.metamessage.examples;
 
-import io.github.metamessage.mm.MetaMessage;
-import io.github.metamessage.mm.MM;
+import io.github.metamessage.MetaMessage;
+import io.github.metamessage.MM;
 
 @MM
 class Person {
@@ -16,11 +16,11 @@ public class Basic {
         System.out.println("Original: Name=" + person.name + ", Age=" + person.age);
 
         // 编码到 Wire 格式
-        byte[] wire = MetaMessage.encode(person);
+        byte[] wire = MetaMessage.encodeFromValue(person);
         System.out.println("Encoded: " + bytesToHex(wire));
 
         // 从 Wire 解码
-        Person decoded = MetaMessage.decode(wire, Person.class);
+        Person decoded = MetaMessage.decodeToValue(wire, Person.class);
         System.out.println("Decoded: Name=" + decoded.name + ", Age=" + decoded.age);
     }
 

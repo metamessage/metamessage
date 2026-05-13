@@ -1,4 +1,4 @@
-package io.github.metamessage.mm
+package io.github.metamessage
 import io.github.metamessage.ast.ValueType
 
 @Target(AnnotationTarget.FIELD, AnnotationTarget.CLASS)

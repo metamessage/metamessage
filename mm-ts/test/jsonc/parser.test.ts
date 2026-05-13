@@ -1,5 +1,8 @@
-import { parseJSONC, printJSONC, printJSONCCompact, parseMMTag, JSONCValueType } from '../../src/jsonc/index';
+import { parseJSONC, toJSONC, printJSONCCompact } from '../../src/jsonc/index';
+import { ValueType } from '../../src/ast/value-type';
+import { parseMMTag } from '../../src/ast/tag';
 
+// npm test test/jsonc/parser.test.ts -- -t ""
 describe('JSONC Parser', () => {
   test('should parse empty object', () => {
     const input = '{}';
@@ -23,14 +26,16 @@ describe('JSONC Parser', () => {
   });
 
   test('should parse nested structure', () => {
-    const input = '{ "person": { "name": "test", "age": 25, "hobbies": ["reading", "gaming"] } }';
+    const input =
+      '{ "person": { "name": "test", "age": 25, "hobbies": ["reading", "gaming"] } }';
     const doc = parseJSONC(input);
     const root = doc.getRoot();
     expect(root.getType()).toBe('object');
   });
 
   test('should parse with line comments', () => {
-    const input = '{ // This is a comment\n  "name": "test" // Another comment\n}';
+    const input =
+      '{ // This is a comment\n  "name": "test" // Another comment\n}';
     const doc = parseJSONC(input);
     const root = doc.getRoot();
     expect(root.getType()).toBe('object');
@@ -94,7 +99,7 @@ describe('JSONC Printer', () => {
   test('should print object', () => {
     const input = '{ "name": "test", "age": 25 }';
     const doc = parseJSONC(input);
-    const printed = printJSONC(doc);
+    const printed = toJSONC(doc);
     expect(printed).toContain('name');
     expect(printed).toContain('test');
     expect(printed).toContain('age');
@@ -111,7 +116,7 @@ describe('JSONC Printer', () => {
   test('should print desc tag as comment', () => {
     const input = `{ /* mm: type=str;desc=name field */ "name": "test" }`;
     const doc = parseJSONC(input);
-    const printed = printJSONC(doc);
+    const printed = toJSONC(doc);
     expect(printed).toContain('// mm:');
     expect(printed).toContain('desc=name field');
   });
@@ -119,14 +124,14 @@ describe('JSONC Printer', () => {
   test('should quote UUID type values', () => {
     const input = `{ /* mm: type=uuid;desc=id */ "id": "550e8400-e29b-41d4-a716-446655440000" }`;
     const doc = parseJSONC(input);
-    const printed = printJSONC(doc);
+    const printed = toJSONC(doc);
     expect(printed).toContain('"550e8400-e29b-41d4-a716-446655440000"');
   });
 
   test('should quote Email type values', () => {
     const input = `{ /* mm: type=email;desc=email */ "email": "test@example.com" }`;
     const doc = parseJSONC(input);
-    const printed = printJSONC(doc);
+    const printed = toJSONC(doc);
     expect(printed).toContain('"test@example.com"');
   });
 
@@ -149,13 +154,13 @@ describe('JSONC Tag Parser', () => {
   test('should parse simple tag', () => {
     const tagStr = 'type=str';
     const tag = parseMMTag(tagStr);
-    expect(tag.type).toBe(JSONCValueType.String);
+    expect(tag.type).toBe(ValueType.String);
   });
 
   test('should parse multiple tags', () => {
     const tagStr = 'type=str;desc=test;nullable';
     const tag = parseMMTag(tagStr);
-    expect(tag.type).toBe(JSONCValueType.String);
+    expect(tag.type).toBe(ValueType.String);
     expect(tag.desc).toBe('test');
     expect(tag.nullable).toBe(true);
   });
@@ -170,37 +175,37 @@ describe('JSONC Tag Parser', () => {
   test('should parse empty tag', () => {
     const tagStr = '';
     const tag = parseMMTag(tagStr);
-    expect(tag.type).toBe(JSONCValueType.Unknown);
+    expect(tag.type).toBe(ValueType.Unknown);
   });
 
   test('should parse all type abbreviations', () => {
-    const types: [string, JSONCValueType][] = [
-      ['i', JSONCValueType.Int],
-      ['i8', JSONCValueType.Int8],
-      ['i16', JSONCValueType.Int16],
-      ['i32', JSONCValueType.Int32],
-      ['i64', JSONCValueType.Int64],
-      ['u', JSONCValueType.Uint],
-      ['u8', JSONCValueType.Uint8],
-      ['u16', JSONCValueType.Uint16],
-      ['u32', JSONCValueType.Uint32],
-      ['u64', JSONCValueType.Uint64],
-      ['f32', JSONCValueType.Float32],
-      ['f64', JSONCValueType.Float64],
-      ['bool', JSONCValueType.Bool],
-      ['bytes', JSONCValueType.Bytes],
-      ['bi', JSONCValueType.BigInt],
-      ['datetime', JSONCValueType.DateTime],
-      ['date', JSONCValueType.Date],
-      ['time', JSONCValueType.Time],
-      ['uuid', JSONCValueType.UUID],
-      ['decimal', JSONCValueType.Decimal],
-      ['ip', JSONCValueType.IP],
-      ['url', JSONCValueType.URL],
-      ['email', JSONCValueType.Email],
-      ['enum', JSONCValueType.Enum],
-      ['arr', JSONCValueType.Array],
-      ['struct', JSONCValueType.Struct],
+    const types: [string, ValueType][] = [
+      ['i', ValueType.Int],
+      ['i8', ValueType.Int8],
+      ['i16', ValueType.Int16],
+      ['i32', ValueType.Int32],
+      ['i64', ValueType.Int64],
+      ['u', ValueType.Uint],
+      ['u8', ValueType.Uint8],
+      ['u16', ValueType.Uint16],
+      ['u32', ValueType.Uint32],
+      ['u64', ValueType.Uint64],
+      ['f32', ValueType.Float32],
+      ['f64', ValueType.Float64],
+      ['bool', ValueType.Bool],
+      ['bytes', ValueType.Bytes],
+      ['bi', ValueType.BigInt],
+      ['datetime', ValueType.DateTime],
+      ['date', ValueType.Date],
+      ['time', ValueType.Time],
+      ['uuid', ValueType.UUID],
+      ['decimal', ValueType.Decimal],
+      ['ip', ValueType.IP],
+      ['url', ValueType.URL],
+      ['email', ValueType.Email],
+      ['enum', ValueType.Enum],
+      ['arr', ValueType.Array],
+      ['struct', ValueType.Object],
     ];
 
     for (const [abbr, expectedType] of types) {

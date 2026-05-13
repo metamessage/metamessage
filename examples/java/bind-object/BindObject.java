@@ -1,7 +1,7 @@
 package io.github.metamessage.examples;
 
 import io.github.metamessage.jsonc.Jsonc;
-import io.github.metamessage.mm.MM;
+import io.github.metamessage.MM;
 import io.github.metamessage.mm.ValueType;
 import java.util.List;
 

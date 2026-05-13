@@ -250,7 +250,7 @@ public class JSONCParser {
         }
     }
 
-    private func parseObject(_ openLine: Int, _ path: String) throws -> JSONCObject {
+    private func parseObject(_ openLine: Int, _ path: String) throws -> MMObject {
         depth += 1
         if depth > maxDepth {
             throw JSONCParserError.maxDepthExceeded
@@ -263,7 +263,7 @@ public class JSONCParser {
             tag.type = .structType
         }
 
-        let obj = JSONCObject(tag: tag, path: path)
+        let obj = MMObject(tag: tag, path: path)
 
         // 验证结构体 tag
         let structResult = validator.validate(obj, tag: tag)
@@ -330,7 +330,7 @@ public class JSONCParser {
         return obj
     }
 
-    private func parseArray(_ openLine: Int, _ path: String) throws -> JSONCArray {
+    private func parseArray(_ openLine: Int, _ path: String) throws -> MMArray {
         depth += 1
         if depth > maxDepth {
             throw JSONCParserError.maxDepthExceeded
@@ -347,7 +347,7 @@ public class JSONCParser {
             }
         }
 
-        let arr = JSONCArray(tag: tag, path: path)
+        let arr = MMArray(tag: tag, path: path)
 
         // 验证数组 tag
         let arrayResult = validator.validate(arr, tag: tag)
@@ -411,10 +411,10 @@ public class JSONCParser {
 
         if node is JSONCValue {
             (node as? JSONCValue)?.tag = mergeTag(existing, tag)
-        } else if node is JSONCObject {
-            (node as? JSONCObject)?.tag = mergeTag(existing, tag)
-        } else if node is JSONCArray {
-            (node as? JSONCArray)?.tag = mergeTag(existing, tag)
+        } else if node is MMObject {
+            (node as? MMObject)?.tag = mergeTag(existing, tag)
+        } else if node is MMArray {
+            (node as? MMArray)?.tag = mergeTag(existing, tag)
         }
     }
 }

@@ -197,7 +197,7 @@ final class MetaMessageIntegrationTests: XCTestCase {
         XCTAssertTrue(output.contains("test"))
     }
 
-    func testJSONCBinder() throws {
+    func testBinder() throws {
         let json = """
         {
             "name": "test",
@@ -208,7 +208,7 @@ final class MetaMessageIntegrationTests: XCTestCase {
         let node = try parseJSONC(json)
         XCTAssertNotNil(node)
 
-        let binder = JSONCBinder()
+        let binder = Binder()
         let result = try binder.bind(node, to: TestStruct.self)
         XCTAssertEqual(result.name, "test")
     }

@@ -333,8 +333,8 @@ func main() {
 #### Java
 
 ```java
-import io.github.metamessage.mm.MetaMessage;
-import io.github.metamessage.mm.MM;
+import io.github.metamessage.MetaMessage;
+import io.github.metamessage.MM;
 
 @MM
 class Person {
@@ -345,8 +345,8 @@ class Person {
 public class Example {
     public static void main(String[] args) throws Exception {
         Person person = new Person();
-        byte[] wire = MetaMessage.encode(person);
-        Person decoded = MetaMessage.decode(wire, Person.class);
+        byte[] wire = MetaMessage.encodeFromValue(person);
+        Person decoded = MetaMessage.decodeToValue(wire, Person.class);
     }
 }
 ```
@@ -354,16 +354,16 @@ public class Example {
 #### Kotlin
 
 ```kotlin
-import io.github.metamessage.mm.MetaMessage
-import io.github.metamessage.mm.MM
+import io.github.metamessage.MetaMessage
+import io.github.metamessage.MM
 
 @MM
 class Person(var name: String = "Ed", var age: Int = 30)
 
 fun main() {
     val person = Person()
-    val wire = MetaMessage.encode(person)
-    val decoded = MetaMessage.decode(wire, Person::class.java)
+    val wire = MetaMessage.encodeFromValue(person)
+    val decoded = MetaMessage.decodeToValue(wire, Person::class.java)
 }
 ```
 
@@ -423,8 +423,8 @@ let decoded = decode(&wire).unwrap();
 import MetaMessage
 
 let person = Person(name: "Ed", age: 30)
-let wire = MetaMessage.encode(person)
-let decoded = try MetaMessage.decode(wire)
+let wire = MetaMessage.encodeFromValue(person)
+let decoded = try MetaMessage.decodeToValue(wire)
 ```
 
 #### PHP

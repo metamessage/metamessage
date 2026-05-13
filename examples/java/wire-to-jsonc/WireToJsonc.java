@@ -1,7 +1,7 @@
 package io.github.metamessage.examples;
 
 import io.github.metamessage.jsonc.Jsonc;
-import io.github.metamessage.mm.MetaMessage;
+import io.github.metamessage.MetaMessage;
 import io.github.metamessage.jsonc.JcNode;
 
 public class WireToJsonc {
@@ -30,7 +30,7 @@ public class WireToJsonc {
         System.out.println(bytesToHex(wire));
 
         // 从 Wire 解码到 JcNode
-        JcNode decodedNode = MetaMessage.decode(wire, JcNode.class);
+        JcNode decodedNode = MetaMessage.decodeToValue(wire, JcNode.class);
 
         // 转换回 JSONC
         String outputJsonc = Jsonc.toString(decodedNode);
