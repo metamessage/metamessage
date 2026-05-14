@@ -1,6 +1,6 @@
 {
   "name": "metamessage",
-  "version": "0.1.4",
+  "version": "0.1.5",
   "description": "TypeScript implementation of MetaMessage",
   "type": "commonjs",
   "main": "dist/mm/index.js",

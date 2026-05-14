@@ -180,7 +180,6 @@ func (d *decoder) decodeTagBytes(tag *ast.Tag) (length int, err error) {
 				if err != nil {
 					return
 				}
-
 				tag.Size = tag.Size<<8 | int(b)
 			}
 			length = 2 + l
@@ -274,7 +273,7 @@ func (d *decoder) decodeTagBytes(tag *ast.Tag) (length int, err error) {
 
 	case ast.KVersion:
 		if l < 8 {
-			for i := 0; i < l; i++ {
+			for i := 0; i < l+1; i++ {
 				var b byte
 				b, err = d.ReadByte()
 				if err != nil {
@@ -282,7 +281,7 @@ func (d *decoder) decodeTagBytes(tag *ast.Tag) (length int, err error) {
 				}
 				tag.Version = tag.Version<<8 | int(b)
 			}
-			length = 1 + l
+			length = 2 + l
 		}
 
 	case ast.KMime:
@@ -439,7 +438,7 @@ func (d *decoder) decodeTagBytes(tag *ast.Tag) (length int, err error) {
 
 	case ast.KChildSize:
 		if l < 8 {
-			for i := 0; i < l; i++ {
+			for i := 0; i < l+1; i++ {
 				var b byte
 				b, err = d.ReadByte()
 				if err != nil {
@@ -447,7 +446,7 @@ func (d *decoder) decodeTagBytes(tag *ast.Tag) (length int, err error) {
 				}
 				tag.ChildSize = tag.ChildSize<<8 | int(b)
 			}
-			length = 1 + l
+			length = 2 + l
 		}
 
 	case ast.KChildEnum:
@@ -535,7 +534,7 @@ func (d *decoder) decodeTagBytes(tag *ast.Tag) (length int, err error) {
 
 	case ast.KChildVersion:
 		if l < 8 {
-			for i := 0; i < l; i++ {
+			for i := 0; i < l+1; i++ {
 				var b byte
 				b, err = d.ReadByte()
 				if err != nil {
@@ -543,7 +542,7 @@ func (d *decoder) decodeTagBytes(tag *ast.Tag) (length int, err error) {
 				}
 				tag.ChildVersion = tag.ChildVersion<<8 | int(b)
 			}
-			length = 1 + l
+			length = 2 + l
 		}
 
 	case ast.KChildMime:

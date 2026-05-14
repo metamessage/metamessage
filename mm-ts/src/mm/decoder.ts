@@ -53,6 +53,7 @@ import {
   Tag,
 } from '../ast/tag';
 import { MMValue, MMObject, MMArray, Node } from '../ast/ast';
+import { uint8ToBase64 } from '../jsonc/printer';
 
 export class MMDecoder {
   private buffer: MMBuffer;
@@ -395,13 +396,13 @@ export class MMDecoder {
 
       case KVersion:
         if (l < 8) {
-          for (let i = 0; i < l; i++) {
+          for (let i = 0; i < l + 1; i++) {
             const byteVal = this.readByte();
             tag.version = (tag.version << 8) | byteVal;
           }
-          return 1 + l;
+          return 2 + l;
         }
-        return 1;
+        throw new Error('size 不能超过 8 字节');
 
       case KMime:
         if (l < 7) {
@@ -496,13 +497,13 @@ export class MMDecoder {
 
       case KChildSize:
         if (l < 8) {
-          for (let i = 0; i < l; i++) {
+          for (let i = 0; i < l + 1; i++) {
             const byteVal = this.readByte();
             tag.childSize = (tag.childSize << 8n) | BigInt(byteVal);
           }
-          return 1 + l;
+          return 2 + l;
         }
-        return 1;
+        throw new Error('size 不能超过 8 字节');
 
       case KChildEnum:
         tag.childType = ValueType.Enum;
@@ -550,13 +551,13 @@ export class MMDecoder {
 
       case KChildVersion:
         if (l < 8) {
-          for (let i = 0; i < l; i++) {
+          for (let i = 0; i < l + 1; i++) {
             const byteVal = this.readByte();
             tag.childVersion = (tag.childVersion << 8) | byteVal;
           }
-          return 1 + l;
+          return 2 + l;
         }
-        return 1;
+        throw new Error('size 不能超过 8 字节');
 
       case KChildMime:
         if (l < 7) {
@@ -1051,7 +1052,7 @@ export class MMDecoder {
         break;
       case ValueType.Bytes:
         data = bs;
-        text = Buffer.from(bs).toString('base64');
+        text = uint8ToBase64(bs);
         break;
       case ValueType.UUID:
         data = bs;

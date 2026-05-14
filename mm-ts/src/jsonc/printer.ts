@@ -212,6 +212,6 @@ export function printJSONCCompact(node: Node): string {
   return printer.printCompact(node);
 }
 
-function uint8ToBase64(bytes: Uint8Array): string {
+export function uint8ToBase64(bytes: Uint8Array): string {
   return btoa(Array.from(bytes, (c) => String.fromCharCode(c)).join(''));
 }
