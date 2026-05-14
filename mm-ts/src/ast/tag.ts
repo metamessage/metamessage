@@ -1,3 +1,4 @@
+import { uint8ToBase64 } from '../jsonc/printer';
 import { ValueType, stringToType, typeToString } from './value-type';
 
 export const KIsNull = 0 << 3;
@@ -863,7 +864,7 @@ export class Tag {
     return {
       valid: true,
       data: arr,
-      text: Buffer.from(arr).toString('base64'),
+      text: uint8ToBase64(arr),
     };
   }
 
@@ -1662,7 +1663,7 @@ export class Tag {
     return {
       valid: true,
       data: arr,
-      text: Buffer.from(arr).toString('base64'),
+      text: uint8ToBase64(arr),
     };
   }
 

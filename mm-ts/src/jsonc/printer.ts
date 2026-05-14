@@ -215,3 +215,15 @@ export function printJSONCCompact(node: Node): string {
 export function uint8ToBase64(bytes: Uint8Array): string {
   return btoa(Array.from(bytes, (c) => String.fromCharCode(c)).join(''));
 }
+
+export function base64ToUint8(base64: string): Uint8Array {
+  const binaryString = atob(base64);
+  const length = binaryString.length;
+  const bytes = new Uint8Array(length);
+
+  for (let i = 0; i < length; i++) {
+    bytes[i] = binaryString.charCodeAt(i);
+  }
+
+  return bytes;
+}

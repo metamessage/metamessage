@@ -4,6 +4,7 @@ import { ValidationResult } from '../ast/tag';
 import { ValueType } from '../ast/value-type';
 import { Tag, parseMMTag } from '../ast/tag';
 import { Node } from '../ast/ast';
+import { base64ToUint8 } from './printer';
 
 const maxDepth = 32;
 
@@ -141,7 +142,7 @@ export class JSONCParser {
                 data = new Uint8Array();
               } else {
                 try {
-                  const decoded = Buffer.from(text, 'base64');
+                  const decoded = base64ToUint8(text);
                   const result = strTag.validateBytes(decoded);
                   if (!result.valid) {
                     throw new Error(result.error || 'Bytes validation failed');
@@ -246,7 +247,7 @@ export class JSONCParser {
                 data = new Uint8Array();
               } else {
                 try {
-                  const decoded = Buffer.from(text, 'base64');
+                  const decoded = base64ToUint8(text);
                   const result = strTag.validateImage(decoded);
                   if (!result.valid) {
                     throw new Error(result.error || 'Image validation failed');

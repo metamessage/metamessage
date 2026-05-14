@@ -9,6 +9,7 @@ import io.github.metamessage.ast.Node
 import io.github.metamessage.ast.Object
 import io.github.metamessage.ast.Array
 import io.github.metamessage.ast.Value
+import io.github.metamessage.MM
 
 object Binder {
     fun <T> bind(node: Node, clazz: Class<T>): T {
