@@ -12,7 +12,7 @@ import (
 //
 // go test ./internal/mm -v -run TestEncodeArray
 //
-// go test ./internal/mm -v -run TestEncodeArray/child_location_1
+// go test ./internal/mm -v -run TestEncodeArray/12345
 //
 // go test ./internal/mm -bench=BenchmarkEncodeArray -benchtime=1000000x
 
@@ -93,12 +93,18 @@ func TestEncodeArray(t *testing.T) {
 		// 	expectedBuf: nil,
 		// 	expectedErr: "encodeArrayOrSlice: not array/slice type",
 		// },
+		{
+			name:        "12345",
+			input:       [5]int{1, 2, 3, 4, 5},
+			expectedBuf: [5]int{1, 2, 3, 4, 5},
+			expectedErr: "",
+		},
 	}
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			encoded, err := FromValue(tc.input, tc.tag)
-
+			fmt.Println("encoded", encoded)
 			if tc.expectedErr != "" {
 				if err == nil || err.Error() != tc.expectedErr {
 					t.Errorf("Expected error: %s, Actual error: %v", tc.expectedErr, err)

@@ -10,180 +10,157 @@ export class Binder {
     // const result = new Type();
     const result =
       typeof type === 'function' ? new (type as Constructor<T>)() : type;
-    const err = this.bindNode(node, result);
-    if (err) {
-      throw new Error(err);
+    // console.log('result', result);
+    const { error } = this.bindNode(node, result);
+    if (error) {
+      throw new Error(error);
     }
     return result;
   }
 
-  bindNode(node: Node, target: any): string | null {
+  bindNode(node: Node, target: any): { value: any; error: string | null } {
     if (node instanceof MMValue) {
       return this.convertValue(node, target);
-    } else if (node instanceof MMObject) {
+    }
+
+    if (node instanceof MMObject) {
       const tag = node.getTag();
-      if (tag && tag.type === ValueType.Object) {
+      if (tag?.type === ValueType.Object) {
         return this.convertStruct(node, target);
       } else {
         return this.convertMap(node, target);
       }
-    } else if (node instanceof MMArray) {
+    }
+
+    if (node instanceof MMArray) {
       const tag = node.getTag();
-      if (tag && tag.type === ValueType.Array) {
+      if (tag?.type === ValueType.Array) {
         return this.convertArray(node, target);
       } else {
         return this.convertSlice(node, target);
       }
     }
-    return `unsupported node type: ${typeof node}`;
+
+    return { value: target, error: `unsupported node type: ${typeof node}` };
   }
 
-  private convertStruct(obj: MMObject, target: any): string | null {
+  private convertStruct(
+    obj: MMObject,
+    target: any,
+  ): { value: any; error: string | null } {
     const tag = obj.getTag();
-    if (tag && tag.nullable) {
-      if (target === null || typeof target !== 'object') {
-        return 'convertStruct requires object type, got null or non-object';
-      }
+    if (tag?.nullable && target === null) {
+      return {
+        value: target,
+        error: 'convertStruct requires object type, got null',
+      };
     }
-
-    const targetType = typeof target;
-    if (targetType !== 'object' || target === null) {
-      return `convertStruct requires object type, got ${targetType}`;
-    }
-
-    const properties = obj.getProperties();
-    for (const [key, valueNode] of Object.entries(properties)) {
-      const fieldKey = key;
-      const upperKey = fieldKey.charAt(0).toUpperCase() + fieldKey.slice(1);
-
-      let found = false;
-      for (const prop in target) {
-        if (prop === upperKey || prop === fieldKey) {
-          found = true;
-          if (!target.hasOwnProperty(prop)) {
-            continue;
-          }
-
-          const fieldVal = target[prop];
-          const err = this.bindNode(valueNode, fieldVal);
-          if (err) {
-            return `failed to bind struct field ${fieldKey}: ${err}`;
-          }
-          break;
-        }
-      }
-
-      if (!found) {
-        return `struct has no field '${fieldKey}'`;
-      }
-    }
-
-    return null;
-  }
-
-  private convertMap(obj: MMObject, target: any): string | null {
-    const tag = obj.getTag();
-    if (tag && tag.nullable) {
-      if (target === null || typeof target !== 'object') {
-        return 'convertMap requires object type, got null or non-object';
-      }
-    }
-
     if (typeof target !== 'object' || target === null) {
-      return `convertMap requires object type, got ${typeof target}`;
-    }
-
-    if (Array.isArray(target)) {
-      return 'convertMap requires object type, got array';
+      return {
+        value: target,
+        error: `convertStruct requires object type, got ${typeof target}`,
+      };
     }
 
     const properties = obj.getProperties();
     for (const [key, valueNode] of Object.entries(properties)) {
-      const fieldKey = key;
-      const err = this.bindNode(valueNode, target[fieldKey]);
-      if (err) {
-        return `failed to convert field ${fieldKey}: ${err}`;
+      const camelKey = key.replace(/_([a-z])/g, (_, c) => c.toUpperCase());
+      if (!(camelKey in target)) {
+        return { value: target, error: `struct has no field '${camelKey}'` };
       }
+
+      // 🔥 拿到子节点的值，直接赋值！
+      const { value, error } = this.bindNode(valueNode, target[camelKey]);
+      if (error) {
+        return {
+          value: target,
+          error: `failed to bind field ${camelKey}: ${error}`,
+        };
+      }
+
+      // ✅ 赋值生效！解决指针问题！
+      target[camelKey] = value;
     }
 
-    return null;
+    return { value: target, error: null };
   }
 
-  private convertArray(arr: MMArray, target: any): string | null {
-    const tag = arr.getTag();
-    if (tag && tag.nullable) {
-      if (target === null || !Array.isArray(target)) {
-        return 'convertArray requires array type, got null or non-array';
-      }
+  private convertMap(
+    obj: MMObject,
+    target: any,
+  ): { value: any; error: string | null } {
+    if (
+      typeof target !== 'object' ||
+      target === null ||
+      Array.isArray(target)
+    ) {
+      return { value: target, error: `convertMap requires object` };
     }
 
+    const properties = obj.getProperties();
+    for (const [key, valueNode] of Object.entries(properties)) {
+      const { value, error } = this.bindNode(valueNode, target[key]);
+      if (error) {
+        return { value: target, error: `field ${key}: ${error}` };
+      }
+      target[key] = value;
+    }
+    return { value: target, error: null };
+  }
+
+  private convertArray(
+    arr: MMArray,
+    target: any,
+  ): { value: any; error: string | null } {
     if (!Array.isArray(target)) {
-      return `convertArray requires array type, got ${typeof target}`;
+      return { value: target, error: `convertArray requires array` };
     }
 
     const elements = arr.getElements();
-    const arrayLen = target.length;
-    const size = tag?.size || elements.length;
+    const size = arr.getTag()?.size || elements.length;
 
-    if (size !== arrayLen) {
-      return `array length mismatch: target array length ${arrayLen}, got ${size} items`;
+    if (target.length !== size) {
+      return {
+        value: target,
+        error: `array length mismatch: expected ${size}, got ${target.length}`,
+      };
     }
 
     for (let i = 0; i < elements.length; i++) {
-      const element = elements[i];
-      if (!element) {
-        continue;
+      const el = elements[i];
+      if (!el) continue;
+
+      const { value, error } = this.bindNode(el, target[i]);
+      if (error) {
+        return { value: target, error: `array[${i}]: ${error}` };
       }
-      const err = this.bindNode(element, target[i]);
-      if (err) {
-        return `failed to convert array item ${i}: ${err}`;
-      }
+      target[i] = value;
     }
 
-    return null;
+    return { value: target, error: null };
   }
 
-  private convertSlice(arr: MMArray, target: any[]): string | null {
-    const tag = arr.getTag();
-    if (tag && tag.nullable) {
-      if (!Array.isArray(target)) {
-        return 'convertSlice requires array type, got non-array';
-      }
-    }
-
+  private convertSlice(
+    arr: MMArray,
+    target: any[],
+  ): { value: any; error: string | null } {
     if (!Array.isArray(target)) {
-      return `convertSlice requires array type, got ${typeof target}`;
+      return { value: target, error: `convertSlice requires array` };
     }
 
     const elements = arr.getElements();
     target.length = 0;
 
-    for (let i = 0; i < elements.length; i++) {
-      const item = elements[i];
-      if (!item) {
-        continue;
+    for (const el of elements) {
+      const defaultValue = this.createDefaultValue(el.getTag());
+      const { value, error } = this.bindNode(el, defaultValue);
+      if (error) {
+        return { value: target, error };
       }
-      let result: any;
-
-      if (item instanceof MMValue) {
-        result = this.createDefaultValue(item.getTag());
-      } else if (item instanceof MMObject) {
-        result = {};
-      } else if (item instanceof MMArray) {
-        result = [];
-      } else {
-        result = null;
-      }
-
-      const err = this.bindNode(item, result);
-      if (err) {
-        return `failed to convert array item ${i}: ${err}`;
-      }
-
-      target.push(result);
+      target.push(value);
     }
 
-    return null;
+    return { value: target, error: null };
   }
 
   private createDefaultValue(tag: Tag | null): any {
@@ -229,20 +206,16 @@ export class Binder {
     }
   }
 
-  private convertValue(val: MMValue, target: any): string | null {
+  private convertValue(
+    val: MMValue,
+    target: any,
+  ): { value: any; error: string | null } {
     const tag = val.getTag();
-    if (!tag) {
-      return 'tag is null';
-    }
+    if (!tag) return { value: target, error: 'tag is null' };
 
     const data = val.getValue();
 
-    if (tag.nullable) {
-      if (target === null) {
-        return null;
-      }
-    }
-
+    // 直接返回新值，不赋值！
     switch (tag.type) {
       case ValueType.Int:
       case ValueType.Int8:
@@ -254,105 +227,48 @@ export class Binder {
       case ValueType.Uint16:
       case ValueType.Uint32:
       case ValueType.Uint64:
-        if (typeof target !== 'number' && typeof target !== 'bigint') {
-          return `target type must be number or bigint, got ${typeof target}`;
-        }
-        if (typeof data === 'bigint') {
-          if (typeof target === 'number') {
-            target = Number(data);
-          } else {
-            target = data;
-          }
-        } else {
-          target = data;
-        }
-        break;
+        return typeof data === 'bigint'
+          ? { value: Number(data), error: null }
+          : { value: data, error: null };
 
       case ValueType.Float32:
       case ValueType.Float64:
-        if (typeof target !== 'number') {
-          return `target type must be number, got ${typeof target}`;
-        }
-        target = typeof data === 'number' ? data : Number(data);
-        break;
+        return { value: Number(data), error: null };
 
       case ValueType.String:
       case ValueType.Email:
       case ValueType.URL:
       case ValueType.IP:
       case ValueType.Decimal:
-        if (typeof target !== 'string') {
-          return `target type must be string, got ${typeof target}`;
-        }
-        target = String(data);
-        break;
+      case ValueType.Enum:
+        return { value: String(data), error: null };
 
       case ValueType.Bool:
-        if (typeof target !== 'boolean') {
-          return `target type must be boolean, got ${typeof target}`;
-        }
-        target = Boolean(data);
-        break;
+        return { value: Boolean(data), error: null };
 
       case ValueType.Bytes:
-        if (!(target instanceof Uint8Array)) {
-          return `target type must be Uint8Array, got ${typeof target}`;
-        }
-        target = data instanceof Uint8Array ? data : new Uint8Array(data);
-        break;
+        return { value: new Uint8Array(data), error: null };
 
       case ValueType.BigInt:
-        if (typeof target !== 'bigint') {
-          return `target type must be bigint, got ${typeof target}`;
-        }
-        target = typeof data === 'bigint' ? data : BigInt(data);
-        break;
+        return { value: BigInt(data), error: null };
 
       case ValueType.DateTime:
       case ValueType.Date:
       case ValueType.Time:
-        if (!(target instanceof Date)) {
-          return `target type must be Date, got ${typeof target}`;
-        }
-        target = data instanceof Date ? data : new Date(data);
-        break;
+        return { value: new Date(data), error: null };
 
       case ValueType.UUID:
-        if (typeof target !== 'string') {
-          return `target type must be string, got ${typeof target}`;
-        }
         if (data instanceof Uint8Array) {
-          const uuidStr = Array.from(data)
+          const s = Array.from(data)
             .map((b) => b.toString(16).padStart(2, '0'))
             .join('');
-          target = `${uuidStr.slice(0, 8)}-${uuidStr.slice(8, 12)}-${uuidStr.slice(12, 16)}-${uuidStr.slice(16, 20)}-${uuidStr.slice(20)}`;
-        } else {
-          target = String(data);
+          const uuid = `${s.slice(0, 8)}-${s.slice(8, 12)}-${s.slice(12, 16)}-${s.slice(16, 20)}-${s.slice(20)}`;
+          return { value: uuid, error: null };
         }
-        break;
-
-      case ValueType.Enum:
-        if (typeof target !== 'string') {
-          return `target type must be string, got ${typeof target}`;
-        }
-        target = String(data);
-        break;
-
-      case ValueType.Image:
-      case ValueType.Video:
-      case ValueType.Doc:
-        return `unsupported type: ${tag.type}`;
-
-      case ValueType.Map:
-      case ValueType.Object:
-      case ValueType.Array:
-      case ValueType.Slice:
-      case ValueType.Unknown:
-      default:
-        return `unsupported type: ${tag.type}`;
+        return { value: String(data), error: null };
     }
 
-    return null;
+    return { value: target, error: `unsupported value type: ${tag.type}` };
   }
 }
 

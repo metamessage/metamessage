@@ -21,7 +21,7 @@ export function ValueToNode(v: any, tag?: Tag): Node {
 
 function valueToNode(v: any, tag: Tag, depth: number, path: string): Node {
   const meta = v?.constructor?.[META_KEY] ?? {};
-  console.log('meta', meta, tag);
+  // console.log('meta', meta, tag);
   if (meta) {
     Object.assign(tag, meta.__class);
   }
@@ -78,8 +78,6 @@ function valueToNode(v: any, tag: Tag, depth: number, path: string): Node {
       break;
 
     case 'number':
-      console.log('number v', v);
-      console.log('number tag', tag);
       if (tag.type === ValueType.Unknown) {
         tag.type = Number.isInteger(v) ? ValueType.Int : ValueType.Float64;
       }

@@ -17,7 +17,41 @@ import {
   FloatPositiveNegativeMask,
 } from './constants';
 import { ValueType, typeToString } from '../ast/value-type';
-import { Tag } from '../ast/tag';
+import {
+  KAllowEmpty,
+  KChildAllowEmpty,
+  KChildDefault,
+  KChildDesc,
+  KChildEnum,
+  KChildLocation,
+  KChildMax,
+  KChildMime,
+  KChildMin,
+  KChildNullable,
+  KChildPattern,
+  KChildRaw,
+  KChildSize,
+  KChildType,
+  KChildUnique,
+  KChildVersion,
+  KDefault,
+  KDesc,
+  KEnum,
+  KExample,
+  KIsNull,
+  KLocation,
+  KMax,
+  KMime,
+  KMin,
+  KNullable,
+  KPattern,
+  KRaw,
+  KSize,
+  KType,
+  KUnique,
+  KVersion,
+  Tag,
+} from '../ast/tag';
 import { MMValue, MMObject, MMArray, Node } from '../ast/ast';
 
 export class MMDecoder {
@@ -34,40 +68,62 @@ export class MMDecoder {
   }
 
   decode(): Node {
-    return this.decodeNode(null, '');
+    return this.decodeNode(null, '').node;
   }
 
-  decodeNode(tag: Tag | null, path: string): Node {
+  decodeNode(tag: Tag | null, path: string): { n: number; node: Node } {
     if (this.offset >= this.data.length) {
       throw new Error(
         `Unexpected end of data ${this.offset} ${this.data.length}`,
       );
     }
-    console.log('this.data', this.data, this.data.length);
+
+    const start = this.offset;
+
     const b = this.readByte();
     const prefix = getPrefix(b) ?? 0;
-    const suffix = getSuffix(b) ?? 0;
 
+    let node: Node;
     switch (prefix) {
       case Prefix.Tag:
-        return this.decodeTag(b, path);
+        node = this.decodeTag(b, path);
+        break;
+
       case Prefix.Simple:
-        return this.decodeSimple(b, tag, path);
+        node = this.decodeSimple(b, tag, path);
+        break;
+
       case Prefix.PositiveInt:
-        return this.decodePositiveInt(b, tag, path);
+        node = this.decodePositiveInt(b, tag, path);
+        break;
+
       case Prefix.NegativeInt:
-        return this.decodeNegativeInt(b, tag, path);
+        node = this.decodeNegativeInt(b, tag, path);
+        break;
+
       case Prefix.Float:
-        return this.decodeFloat(b, tag, path);
+        node = this.decodeFloat(b, tag, path);
+        break;
+
       case Prefix.String:
-        return this.decodeString(b, tag, path);
+        node = this.decodeString(b, tag, path);
+        break;
+
       case Prefix.Bytes:
-        return this.decodeBytes(b, tag, path);
+        node = this.decodeBytes(b, tag, path);
+        break;
+
       case Prefix.Container:
-        return this.decodeContainer(b, tag, path);
+        node = this.decodeContainer(b, tag, path);
+        break;
+
       default:
         throw new Error(`Unknown prefix: ${prefix}`);
     }
+
+    const n = this.offset - start;
+
+    return { n, node };
   }
 
   private readByte(): number {
@@ -129,8 +185,6 @@ export class MMDecoder {
       l -= n;
     }
 
-    console.log('tagtag', tag);
-
     if (tag.isNull) {
       switch (tag.type) {
         case ValueType.DateTime:
@@ -166,49 +220,10 @@ export class MMDecoder {
         case ValueType.IP:
           return new MMValue(tag.version === 4 ? '0.0.0.0' : '::', tag);
         default:
-          return this.decodeNode(tag, path);
+          return this.decodeNode(tag, path).node;
       }
     } else {
-      return this.decodeNode(tag, path);
-      // switch (tag.type) {
-      //   case ValueType.DateTime:
-      //   case ValueType.Date:
-      //   case ValueType.Time:
-      //     return new MMValue(new Date(0), tag);
-      //   case ValueType.Int8:
-      //     console.log('ValueType.Int8ValueType.Int8ValueType.Int8ValueType.Int8')
-      //     const int8 = this.readByte();
-      //     return new MMValue(int8, tag);
-      //   case ValueType.Int16:
-      //   case ValueType.Int32:
-      //   case ValueType.Int64:
-      //   case ValueType.Uint:
-      //   case ValueType.Uint8:
-      //   case ValueType.Uint16:
-      //   case ValueType.Uint32:
-      //   case ValueType.Uint64:
-      //   case ValueType.Int:
-      //     return new MMValue(0, tag);
-      //   case ValueType.Float32:
-      //   case ValueType.Float64:
-      //     return new MMValue(0.0, tag);
-      //   case ValueType.Email:
-      //   case ValueType.UUID:
-      //   case ValueType.Decimal:
-      //   case ValueType.URL:
-      //   case ValueType.String:
-      //     return new MMValue('', tag);
-      //   case ValueType.BigInt:
-      //     return new MMValue(BigInt(0), tag);
-      //   case ValueType.Bool:
-      //     return new MMValue(false, tag);
-      //   case ValueType.Bytes:
-      //     return new MMValue(new Uint8Array(0), tag);
-      //   case ValueType.IP:
-      //     return new MMValue(tag.version === 4 ? '0.0.0.0' : '::', tag);
-      //   default:
-      //     return this.decodeNode(tag, path);
-      // }
+      return this.decodeNode(tag, path).node;
     }
   }
 
@@ -231,18 +246,19 @@ export class MMDecoder {
     const l = b & 0x07;
 
     switch (prefix) {
-      case 0 << 3:
+      case KIsNull:
+        console.log('l & 0x01', l & 0x01);
         tag.isNull = (l & 0x01) === 1;
         if (tag.isNull) {
           tag.nullable = true;
         }
         return 1;
 
-      case 1 << 3:
+      case KExample:
         tag.example = (l & 0x01) === 1;
         return 1;
 
-      case 2 << 3:
+      case KDesc:
         let lenDesc = l;
         if (lenDesc <= 5) {
           const bs = this.readBytes(lenDesc);
@@ -266,28 +282,28 @@ export class MMDecoder {
         }
         return 1;
 
-      case 3 << 3:
+      case KType:
         const typeB = this.readByte();
         tag.type = typeB;
         return 1 + 1;
 
-      case 4 << 3:
+      case KRaw:
         tag.raw = (l & 0x01) === 1;
         return 1;
 
-      case 5 << 3:
+      case KNullable:
         tag.nullable = (l & 0x01) === 1;
         return 1;
 
-      case 6 << 3:
+      case KAllowEmpty:
         tag.allowEmpty = (l & 0x01) === 1;
         return 1;
 
-      case 7 << 3:
+      case KUnique:
         tag.unique = (l & 0x01) === 1;
         return 1;
 
-      case 8 << 3:
+      case KDefault:
         if (l < 7) {
           const bs = this.readBytes(l);
           tag.default = new TextDecoder('utf-8').decode(bs);
@@ -299,7 +315,7 @@ export class MMDecoder {
           return 1 + 1 + l2;
         }
 
-      case 9 << 3:
+      case KMin:
         if (l < 7) {
           const bs = this.readBytes(l);
           tag.min = new TextDecoder('utf-8').decode(bs);
@@ -311,7 +327,7 @@ export class MMDecoder {
           return 1 + 1 + l2;
         }
 
-      case 10 << 3:
+      case KMax:
         if (l < 7) {
           const bs = this.readBytes(l);
           tag.max = new TextDecoder('utf-8').decode(bs);
@@ -323,17 +339,17 @@ export class MMDecoder {
           return 1 + 1 + l2;
         }
 
-      case 11 << 3:
+      case KSize:
         if (l < 8) {
-          for (let i = 0; i < l; i++) {
+          for (let i = 0; i < l + 1; i++) {
             const byteVal = this.readByte();
             tag.size = (tag.size << 8n) | BigInt(byteVal);
           }
-          return 1 + l;
+          return 2 + l;
         }
-        return 1;
+        throw new Error('size 不能超过 8 字节');
 
-      case 12 << 3:
+      case KEnum:
         tag.type = ValueType.Enum;
         let lenEnum = l;
         if (lenEnum <= 5) {
@@ -358,7 +374,7 @@ export class MMDecoder {
         }
         return 1;
 
-      case 13 << 3:
+      case KPattern:
         if (l < 7) {
           const bs = this.readBytes(l);
           tag.pattern = new TextDecoder('utf-8').decode(bs);
@@ -370,14 +386,14 @@ export class MMDecoder {
           return 1 + 1 + l2;
         }
 
-      case 14 << 3:
+      case KLocation:
         const locBs = this.readBytes(l);
         const locNum =
           parseInt(new TextDecoder('utf-8').decode(locBs), 10) || 0;
         tag.location = locNum;
         return 1 + l;
 
-      case 15 << 3:
+      case KVersion:
         if (l < 8) {
           for (let i = 0; i < l; i++) {
             const byteVal = this.readByte();
@@ -387,7 +403,7 @@ export class MMDecoder {
         }
         return 1;
 
-      case 16 << 3:
+      case KMime:
         if (l < 7) {
           tag.mime = this.mimeToString(l);
           return 1;
@@ -397,7 +413,7 @@ export class MMDecoder {
           return 1 + 1;
         }
 
-      case 17 << 3:
+      case KChildDesc:
         let lenChildDesc = l;
         if (lenChildDesc <= 5) {
           const bs = this.readBytes(lenChildDesc);
@@ -421,28 +437,28 @@ export class MMDecoder {
         }
         return 1;
 
-      case 18 << 3:
+      case KChildType:
         const childTypeB = this.readByte();
         tag.childType = childTypeB;
         return 1 + 1;
 
-      case 19 << 3:
+      case KChildRaw:
         tag.childRaw = (l & 0x01) === 1;
         return 1;
 
-      case 20 << 3:
+      case KChildNullable:
         tag.childNullable = (l & 0x01) === 1;
         return 1;
 
-      case 21 << 3:
+      case KChildAllowEmpty:
         tag.childAllowEmpty = (l & 0x01) === 1;
         return 1;
 
-      case 22 << 3:
+      case KChildUnique:
         tag.childUnique = (l & 0x01) === 1;
         return 1;
 
-      case 23 << 3:
+      case KChildDefault:
         if (l < 7) {
           const bs = this.readBytes(l);
           tag.childDefault = new TextDecoder('utf-8').decode(bs);
@@ -454,7 +470,7 @@ export class MMDecoder {
           return 1 + 1 + l2;
         }
 
-      case 24 << 3:
+      case KChildMin:
         if (l < 7) {
           const bs = this.readBytes(l);
           tag.childMin = new TextDecoder('utf-8').decode(bs);
@@ -466,7 +482,7 @@ export class MMDecoder {
           return 1 + 1 + l2;
         }
 
-      case 25 << 3:
+      case KChildMax:
         if (l < 7) {
           const bs = this.readBytes(l);
           tag.childMax = new TextDecoder('utf-8').decode(bs);
@@ -478,17 +494,17 @@ export class MMDecoder {
           return 1 + 1 + l2;
         }
 
-      case 26 << 3:
+      case KChildSize:
         if (l < 8) {
           for (let i = 0; i < l; i++) {
             const byteVal = this.readByte();
-            tag.childSize = (tag.childSize << 8) | byteVal;
+            tag.childSize = (tag.childSize << 8n) | BigInt(byteVal);
           }
           return 1 + l;
         }
         return 1;
 
-      case 27 << 3:
+      case KChildEnum:
         tag.childType = ValueType.Enum;
         let lenChildEnum = l;
         if (lenChildEnum <= 5) {
@@ -513,7 +529,7 @@ export class MMDecoder {
         }
         return 1;
 
-      case 28 << 3:
+      case KChildPattern:
         if (l < 7) {
           const bs = this.readBytes(l);
           tag.childPattern = new TextDecoder('utf-8').decode(bs);
@@ -525,14 +541,14 @@ export class MMDecoder {
           return 1 + 1 + l2;
         }
 
-      case 29 << 3:
+      case KChildLocation:
         const childLocBs = this.readBytes(l);
         const childLocNum =
           parseInt(new TextDecoder('utf-8').decode(childLocBs), 10) || 0;
         tag.childLocation = childLocNum;
         return 1 + l;
 
-      case 30 << 3:
+      case KChildVersion:
         if (l < 8) {
           for (let i = 0; i < l; i++) {
             const byteVal = this.readByte();
@@ -542,7 +558,7 @@ export class MMDecoder {
         }
         return 1;
 
-      case 31 << 3:
+      case KChildMime:
         if (l < 7) {
           tag.childMime = this.mimeToString(l);
           return 1;
@@ -1106,11 +1122,22 @@ export class MMDecoder {
     arr.setTag(tag);
     arr.setPath(path);
 
-    for (let i = 0; i < length; i++) {
+    // for (let i = 0; i < length; i++) {
+    //   const itemTag = new Tag();
+    //   itemTag.inherit(tag);
+    //   const itemPath = `${path}[${i}]`;
+    //   const (item, n) = this.decodeNode(itemTag, itemPath);
+    //   arr.addElement(item);
+    // }
+    const startOffset = this.offset;
+
+    while (this.offset < startOffset + length) {
       const itemTag = new Tag();
       itemTag.inherit(tag);
-      const itemPath = `${path}[${i}]`;
-      const item = this.decodeNode(itemTag, itemPath);
+      const itemPath = `${path}[${arr.getElements().length}]`;
+
+      const { node: item, n } = this.decodeNode(itemTag, itemPath);
+
       arr.addElement(item);
     }
 
@@ -1140,7 +1167,7 @@ export class MMDecoder {
     }
 
     const lArray = this.readByte();
-    const keysNode = this.decodeArray(lArray, tag, path);
+    const keysNode = this.decodeArray(lArray, null, path);
 
     const obj = new MMObject();
     obj.setTag(tag);
@@ -1154,7 +1181,7 @@ export class MMDecoder {
       fieldTag.inherit(tag);
       const fieldPath = path ? `${path}.${key}` : key;
       const value = this.decodeNode(fieldTag, fieldPath);
-      obj.setProperty(key, value);
+      obj.setProperty(key, value.node);
     }
 
     return obj;

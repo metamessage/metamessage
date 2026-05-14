@@ -10,7 +10,7 @@ import (
 
 // go test ./internal/mm -v -run TestEncodeObject
 //
-// go test ./internal/mm -v -run TestEncodeObject/invalid_uuid
+// go test ./internal/mm -v -run TestEncodeObject/t1
 //
 // go test ./internal/mm -test.fullpath=true -benchmem -run=^$ -bench ^BenchmarkEncodeObject_MM$ -benchtime=1000000x
 // go test ./internal/mm -test.fullpath=true -benchmem -run=^$ -bench ^BenchmarkEncodeObject_JSON$ -benchtime=1000000x
@@ -29,9 +29,14 @@ type User struct {
 	Nullable *string ``
 }
 
+type T1 struct {
+	Name string
+	Age  int
+}
+
 type encodeTestCase struct {
 	name    string
-	input   User
+	input   any
 	tag     string
 	wantErr bool
 }
@@ -112,12 +117,20 @@ func TestEncodeObject(t *testing.T) {
 			},
 			wantErr: false,
 		},
+		{
+			name: "t1",
+			input: T1{
+				Name: "test",
+				Age:  25,
+			},
+			wantErr: false,
+		},
 	}
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			gotBytes, err := FromValue(tc.input, tc.tag)
-
+			fmt.Println("gotBytes", gotBytes)
 			if (err != nil) != tc.wantErr {
 				t.Fatalf("error mismatch: expected err=%t, got err=%v", tc.wantErr, err)
 			}

@@ -77,38 +77,71 @@ export function typeToString(value: ValueType): string {
 
 export function stringToType(value: string): ValueType {
   switch (value) {
-    case 'doc': return ValueType.Doc;
-    case 'arr': return ValueType.Array;
-    case 'slice': return ValueType.Slice;
-    case 'obj': return ValueType.Object;
-    case 'map': return ValueType.Map;
-    case 'str': return ValueType.String;
-    case 'bytes': return ValueType.Bytes;
-    case 'bool': return ValueType.Bool;
-    case 'i': return ValueType.Int;
-    case 'i8': return ValueType.Int8;
-    case 'i16': return ValueType.Int16;
-    case 'i32': return ValueType.Int32;
-    case 'i64': return ValueType.Int64;
-    case 'u': return ValueType.Uint;
-    case 'u8': return ValueType.Uint8;
-    case 'u16': return ValueType.Uint16;
-    case 'u32': return ValueType.Uint32;
-    case 'u64': return ValueType.Uint64;
-    case 'f32': return ValueType.Float32;
-    case 'f64': return ValueType.Float64;
-    case 'bi': return ValueType.BigInt;
-    case 'datetime': return ValueType.DateTime;
-    case 'date': return ValueType.Date;
-    case 'time': return ValueType.Time;
-    case 'uuid': return ValueType.UUID;
-    case 'decimal': return ValueType.Decimal;
-    case 'ip': return ValueType.IP;
-    case 'url': return ValueType.URL;
-    case 'email': return ValueType.Email;
-    case 'enum': return ValueType.Enum;
-    case 'image': return ValueType.Image;
-    case 'video': return ValueType.Video;
-    default: return ValueType.Unknown;
+    case 'doc':
+      return ValueType.Doc;
+    case 'arr':
+      return ValueType.Array;
+    case 'slice':
+      return ValueType.Slice;
+    case 'obj':
+      return ValueType.Object;
+    case 'map':
+      return ValueType.Map;
+    case 'str':
+      return ValueType.String;
+    case 'bytes':
+      return ValueType.Bytes;
+    case 'bool':
+      return ValueType.Bool;
+    case 'i':
+      return ValueType.Int;
+    case 'i8':
+      return ValueType.Int8;
+    case 'i16':
+      return ValueType.Int16;
+    case 'i32':
+      return ValueType.Int32;
+    case 'i64':
+      return ValueType.Int64;
+    case 'u':
+      return ValueType.Uint;
+    case 'u8':
+      return ValueType.Uint8;
+    case 'u16':
+      return ValueType.Uint16;
+    case 'u32':
+      return ValueType.Uint32;
+    case 'u64':
+      return ValueType.Uint64;
+    case 'f32':
+      return ValueType.Float32;
+    case 'f64':
+      return ValueType.Float64;
+    case 'bi':
+      return ValueType.BigInt;
+    case 'datetime':
+      return ValueType.DateTime;
+    case 'date':
+      return ValueType.Date;
+    case 'time':
+      return ValueType.Time;
+    case 'uuid':
+      return ValueType.UUID;
+    case 'decimal':
+      return ValueType.Decimal;
+    case 'ip':
+      return ValueType.IP;
+    case 'url':
+      return ValueType.URL;
+    case 'email':
+      return ValueType.Email;
+    case 'enum':
+      return ValueType.Enum;
+    case 'image':
+      return ValueType.Image;
+    case 'video':
+      return ValueType.Video;
+    default:
+      return ValueType.Unknown;
   }
 }

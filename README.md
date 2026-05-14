@@ -370,11 +370,18 @@ fun main() {
 #### TypeScript
 
 ```typescript
-import { encode, decode } from 'metamessage';
+import { encodeFromValue, decodeToValue } from 'metamessage';
 
+@mm({ desc: '' })
+class Person {
+    @mm({ desc: '' })
+    name: string = ''
+    @mm({ desc: '' })
+    age: number = 0
+}
 const person = { name: "Ed", age: 30 };
-const wire = encode(person);
-const decoded = decode(wire);
+const wire = encodeFromValue(person);
+const decoded = decodeToValue(wire, Person);
 ```
 
 #### Python

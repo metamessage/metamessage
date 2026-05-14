@@ -174,16 +174,20 @@ func (d *decoder) decodeTagBytes(tag *ast.Tag) (length int, err error) {
 
 	case ast.KSize:
 		if l < 8 {
-			for i := 0; i < l; i++ {
+			for i := 0; i < l+1; i++ {
 				var b byte
 				b, err = d.ReadByte()
 				if err != nil {
 					return
 				}
+
 				tag.Size = tag.Size<<8 | int(b)
 			}
-			length = 1 + l
+			length = 2 + l
+			return
 		}
+		err = fmt.Errorf("size is too large")
+		return
 
 	case ast.KEnum:
 		tag.Type = ast.ValueTypeEnum

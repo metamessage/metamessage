@@ -974,7 +974,7 @@ func (p *Parser) parseObject(openLine int, path string) (*ast.Object, error) {
 
 		// for map
 		childTag := val.GetTag()
-		if childTag != nil && tag != nil {
+		if childTag != nil && tag != nil && childTag.Type == ast.ValueTypeMap {
 			childTag.Inherit(tag)
 		}
 
