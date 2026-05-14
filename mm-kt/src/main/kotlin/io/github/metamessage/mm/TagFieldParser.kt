@@ -1,9 +1,9 @@
 package io.github.metamessage.mm
 
-import java.nio.charset.StandardCharsets
+import io.github.metamessage.ast.Mime
 import io.github.metamessage.ast.Tag
 import io.github.metamessage.ast.ValueType
-import io.github.metamessage.ast.Mime
+import java.nio.charset.StandardCharsets
 
 object TagFieldParser {
     fun parseOne(c: Cursor, tag: Tag): Int {
@@ -53,7 +53,10 @@ object TagFieldParser {
             Tag.TagKey.K_CHILD_LOCATION -> tag.childLocation = readAscii(c, low).toInt()
             Tag.TagKey.K_CHILD_VERSION -> tag.childVersion = readUintN(c, low)
             Tag.TagKey.K_CHILD_MIME -> readMime(c, tag, low, false)
-            else -> throw MmDecodeException("invalid tag field prefix: 0x${Integer.toHexString(prefix)}")
+            else ->
+                    throw MmDecodeException(
+                            "invalid tag field prefix: 0x${Integer.toHexString(prefix)}"
+                    )
         }
         return c.pos - start
     }
@@ -93,7 +96,7 @@ object TagFieldParser {
     private fun readUintN(c: Cursor, low: Int): Int {
         require(low < 8) { "uint field length" }
         var v = 0
-        for (i in 0 until low) {
+        for (i in 0..low) {
             v = (v shl 8) or c.read()
         }
         return v
@@ -101,12 +104,10 @@ object TagFieldParser {
 
     private fun readMime(c: Cursor, tag: Tag, low: Int, self: Boolean) {
         if (low < 7) {
-            if (self) tag.mime = Mime.toString(low)
-            else tag.childMime = Mime.toString(low)
+            if (self) tag.mime = Mime.toString(low) else tag.childMime = Mime.toString(low)
         } else {
             val l2 = c.read()
-            if (self) tag.mime = Mime.toString(l2)
-            else tag.childMime = Mime.toString(l2)
+            if (self) tag.mime = Mime.toString(l2) else tag.childMime = Mime.toString(l2)
         }
     }
 

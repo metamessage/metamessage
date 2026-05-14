@@ -3,6 +3,7 @@ import { Tag } from './ast/tag';
 import { Binder, Constructor } from './mm/binder.js';
 
 export { ValueType } from './ast/value-type';
+export { mm } from './mm/mm';
 
 export function encodeFromValue(value: any, tag?: Tag): Uint8Array {
   return fromValue(value, tag);

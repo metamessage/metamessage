@@ -255,6 +255,7 @@ func (d *decoder) decodeTag(prefix byte, path string) (node ast.Node, length int
 				Data: utils.DefaultTime,
 				Text: text,
 				Tag:  tag,
+				Path: path,
 			}
 		case ast.ValueTypeDate:
 			var text string
@@ -267,6 +268,7 @@ func (d *decoder) decodeTag(prefix byte, path string) (node ast.Node, length int
 				Data: utils.DefaultTime,
 				Text: text,
 				Tag:  tag,
+				Path: path,
 			}
 		case ast.ValueTypeTime:
 			var text string
@@ -279,6 +281,7 @@ func (d *decoder) decodeTag(prefix byte, path string) (node ast.Node, length int
 				Data: utils.DefaultTime,
 				Text: text,
 				Tag:  tag,
+				Path: path,
 			}
 
 		case ast.ValueTypeInt8:
@@ -286,78 +289,91 @@ func (d *decoder) decodeTag(prefix byte, path string) (node ast.Node, length int
 				Data: int8(0),
 				Text: "0",
 				Tag:  tag,
+				Path: path,
 			}
 		case ast.ValueTypeInt16:
 			node = &ast.Value{
 				Data: int16(0),
 				Text: "0",
 				Tag:  tag,
+				Path: path,
 			}
 		case ast.ValueTypeInt32:
 			node = &ast.Value{
 				Data: int32(0),
 				Text: "0",
 				Tag:  tag,
+				Path: path,
 			}
 		case ast.ValueTypeInt64:
 			node = &ast.Value{
 				Data: int64(0),
 				Text: "0",
 				Tag:  tag,
+				Path: path,
 			}
 		case ast.ValueTypeUint:
 			node = &ast.Value{
 				Data: uint(0),
 				Text: "0",
 				Tag:  tag,
+				Path: path,
 			}
 		case ast.ValueTypeUint8:
 			node = &ast.Value{
 				Data: uint8(0),
 				Text: "0",
 				Tag:  tag,
+				Path: path,
 			}
 		case ast.ValueTypeUint16:
 			node = &ast.Value{
 				Data: uint16(0),
 				Text: "0",
 				Tag:  tag,
+				Path: path,
 			}
 		case ast.ValueTypeUint32:
 			node = &ast.Value{
 				Data: uint32(0),
 				Text: "0",
 				Tag:  tag,
+				Path: path,
 			}
 		case ast.ValueTypeUint64:
 			node = &ast.Value{
 				Data: uint64(0),
 				Text: "0",
 				Tag:  tag,
+				Path: path,
 			}
 		case ast.ValueTypeFloat32:
 			node = &ast.Value{
 				Data: float32(0.0),
 				Text: "0.0",
 				Tag:  tag,
+				Path: path,
 			}
 		case ast.ValueTypeEmail, ast.ValueTypeUUID, ast.ValueTypeDecimal:
 			node = &ast.Value{
 				Data: "",
 				Text: "",
 				Tag:  tag,
+				Path: path,
 			}
 		case ast.ValueTypeBigInt:
 			node = &ast.Value{
 				Data: big.Int{},
 				Text: "0",
 				Tag:  tag,
+				Path: path,
 			}
 		case ast.ValueTypeURL:
 			node = &ast.Value{
 				Data: url.URL{},
 				Text: "",
 				Tag:  tag,
+				Path: path,
 			}
 		case ast.ValueTypeIP:
 			var text string
@@ -376,6 +392,7 @@ func (d *decoder) decodeTag(prefix byte, path string) (node ast.Node, length int
 				Data: net.IP{},
 				Text: text,
 				Tag:  tag,
+				Path: path,
 			}
 		default:
 			node, length, err = d.decode(tag, path)
@@ -463,6 +480,7 @@ func (d *decoder) decodeString(prefix byte, tag *ast.Tag, path string) (node ast
 		Data: data,
 		Text: text,
 		Tag:  tag,
+		Path: path,
 	}
 
 	length = l1 + 1 + l2
@@ -546,6 +564,7 @@ func (d *decoder) decodeBytes(prefix byte, tag *ast.Tag, path string) (node ast.
 		Data: data,
 		Text: text,
 		Tag:  tag,
+		Path: path,
 	}
 
 	length = l1 + 1 + l2
@@ -727,6 +746,7 @@ func (d *decoder) decodePositiveInt(prefix byte, tag *ast.Tag, path string) (nod
 		Data: data,
 		Text: text,
 		Tag:  tag,
+		Path: path,
 	}
 
 	length = l1 + 1
@@ -866,6 +886,7 @@ func (d *decoder) decodeNegativeInt(prefix byte, tag *ast.Tag, path string) (nod
 		Data: data,
 		Text: text,
 		Tag:  tag,
+		Path: path,
 	}
 
 	length = l1 + 1
@@ -1033,6 +1054,7 @@ func (d *decoder) decodeFloat(prefix byte, tag *ast.Tag, path string) (node ast.
 		Data: data,
 		Text: text,
 		Tag:  tag,
+		Path: path,
 	}
 
 	return
@@ -1050,6 +1072,7 @@ func (d *decoder) decodeSimple(prefix byte, tag *ast.Tag, path string) (node ast
 			Data: false,
 			Text: ast.False,
 			Tag:  tag,
+			Path: path,
 		}
 
 	case SimpleTrue:
@@ -1058,6 +1081,7 @@ func (d *decoder) decodeSimple(prefix byte, tag *ast.Tag, path string) (node ast
 			Data: true,
 			Text: ast.True,
 			Tag:  tag,
+			Path: path,
 		}
 
 	case SimpleNullBool:
@@ -1071,6 +1095,7 @@ func (d *decoder) decodeSimple(prefix byte, tag *ast.Tag, path string) (node ast
 			Data: false,
 			Text: ast.False,
 			Tag:  tag,
+			Path: path,
 		}
 
 	case SimpleNullFloat:
@@ -1086,12 +1111,14 @@ func (d *decoder) decodeSimple(prefix byte, tag *ast.Tag, path string) (node ast
 				Data: float32(0.0),
 				Text: "0.0",
 				Tag:  tag,
+				Path: path,
 			}
 		case ast.ValueTypeFloat64:
 			node = &ast.Value{
 				Data: 0.0,
 				Text: "0.0",
 				Tag:  tag,
+				Path: path,
 			}
 		default:
 			err = fmt.Errorf("unsupported value types: %v", tag.Type)
@@ -1111,6 +1138,7 @@ func (d *decoder) decodeSimple(prefix byte, tag *ast.Tag, path string) (node ast
 				Data: 0,
 				Text: "0",
 				Tag:  tag,
+				Path: path,
 			}
 
 		default:
@@ -1131,6 +1159,7 @@ func (d *decoder) decodeSimple(prefix byte, tag *ast.Tag, path string) (node ast
 				Data: "",
 				Text: "",
 				Tag:  tag,
+				Path: path,
 			}
 
 		default:
@@ -1151,6 +1180,7 @@ func (d *decoder) decodeSimple(prefix byte, tag *ast.Tag, path string) (node ast
 				Data: []byte{},
 				Text: "",
 				Tag:  tag,
+				Path: path,
 			}
 
 		default:
@@ -1164,6 +1194,7 @@ func (d *decoder) decodeSimple(prefix byte, tag *ast.Tag, path string) (node ast
 			Data: nil,
 			Text: ast.SimpleCodeStr,
 			Tag:  tag,
+			Path: path,
 		}
 	case SimpleMessage:
 		tag.Type = ast.ValueTypeString
@@ -1171,6 +1202,7 @@ func (d *decoder) decodeSimple(prefix byte, tag *ast.Tag, path string) (node ast
 			Data: nil,
 			Text: ast.SimpleMessageStr,
 			Tag:  tag,
+			Path: path,
 		}
 	case SimpleData:
 		tag.Type = ast.ValueTypeString
@@ -1178,6 +1210,7 @@ func (d *decoder) decodeSimple(prefix byte, tag *ast.Tag, path string) (node ast
 			Data: nil,
 			Text: ast.SimpleDataStr,
 			Tag:  tag,
+			Path: path,
 		}
 	case SimpleSuccess:
 		tag.Type = ast.ValueTypeString
@@ -1185,6 +1218,7 @@ func (d *decoder) decodeSimple(prefix byte, tag *ast.Tag, path string) (node ast
 			Data: nil,
 			Text: ast.SimpleSuccessStr,
 			Tag:  tag,
+			Path: path,
 		}
 	case SimpleError:
 		tag.Type = ast.ValueTypeString
@@ -1192,6 +1226,7 @@ func (d *decoder) decodeSimple(prefix byte, tag *ast.Tag, path string) (node ast
 			Data: nil,
 			Text: ast.SimpleErrorStr,
 			Tag:  tag,
+			Path: path,
 		}
 	case SimpleUnknown:
 		tag.Type = ast.ValueTypeString
@@ -1199,6 +1234,7 @@ func (d *decoder) decodeSimple(prefix byte, tag *ast.Tag, path string) (node ast
 			Data: nil,
 			Text: ast.SimpleUnknownStr,
 			Tag:  tag,
+			Path: path,
 		}
 	case SimplePage:
 		tag.Type = ast.ValueTypeString
@@ -1206,6 +1242,7 @@ func (d *decoder) decodeSimple(prefix byte, tag *ast.Tag, path string) (node ast
 			Data: nil,
 			Text: ast.SimplePageStr,
 			Tag:  tag,
+			Path: path,
 		}
 	case SimpleLimit:
 		tag.Type = ast.ValueTypeString
@@ -1213,6 +1250,7 @@ func (d *decoder) decodeSimple(prefix byte, tag *ast.Tag, path string) (node ast
 			Data: nil,
 			Text: ast.SimpleLimitStr,
 			Tag:  tag,
+			Path: path,
 		}
 	case SimpleOffset:
 		tag.Type = ast.ValueTypeString
@@ -1220,6 +1258,7 @@ func (d *decoder) decodeSimple(prefix byte, tag *ast.Tag, path string) (node ast
 			Data: nil,
 			Text: ast.SimpleOffsetStr,
 			Tag:  tag,
+			Path: path,
 		}
 	case SimpleTotal:
 		tag.Type = ast.ValueTypeString
@@ -1227,6 +1266,7 @@ func (d *decoder) decodeSimple(prefix byte, tag *ast.Tag, path string) (node ast
 			Data: nil,
 			Text: ast.SimpleTotalStr,
 			Tag:  tag,
+			Path: path,
 		}
 	case SimpleId:
 		tag.Type = ast.ValueTypeString
@@ -1234,6 +1274,7 @@ func (d *decoder) decodeSimple(prefix byte, tag *ast.Tag, path string) (node ast
 			Data: nil,
 			Text: ast.SimpleIdStr,
 			Tag:  tag,
+			Path: path,
 		}
 	case SimpleName:
 		tag.Type = ast.ValueTypeString
@@ -1241,6 +1282,7 @@ func (d *decoder) decodeSimple(prefix byte, tag *ast.Tag, path string) (node ast
 			Data: nil,
 			Text: ast.SimpleNameStr,
 			Tag:  tag,
+			Path: path,
 		}
 	case SimpleDescription:
 		tag.Type = ast.ValueTypeString
@@ -1248,6 +1290,7 @@ func (d *decoder) decodeSimple(prefix byte, tag *ast.Tag, path string) (node ast
 			Data: nil,
 			Text: ast.SimpleDescriptionStr,
 			Tag:  tag,
+			Path: path,
 		}
 	case SimpleType:
 		tag.Type = ast.ValueTypeString
@@ -1255,6 +1298,7 @@ func (d *decoder) decodeSimple(prefix byte, tag *ast.Tag, path string) (node ast
 			Data: nil,
 			Text: ast.SimpleTypeStr,
 			Tag:  tag,
+			Path: path,
 		}
 	case SimpleVersion:
 		tag.Type = ast.ValueTypeString
@@ -1262,6 +1306,7 @@ func (d *decoder) decodeSimple(prefix byte, tag *ast.Tag, path string) (node ast
 			Data: nil,
 			Text: ast.SimpleVersionStr,
 			Tag:  tag,
+			Path: path,
 		}
 	case SimpleStatus:
 		tag.Type = ast.ValueTypeString
@@ -1269,6 +1314,7 @@ func (d *decoder) decodeSimple(prefix byte, tag *ast.Tag, path string) (node ast
 			Data: nil,
 			Text: ast.SimpleStatusStr,
 			Tag:  tag,
+			Path: path,
 		}
 	case SimpleUrl:
 		tag.Type = ast.ValueTypeString
@@ -1276,6 +1322,7 @@ func (d *decoder) decodeSimple(prefix byte, tag *ast.Tag, path string) (node ast
 			Data: nil,
 			Text: ast.SimpleUrlStr,
 			Tag:  tag,
+			Path: path,
 		}
 	case SimpleCreateTime:
 		tag.Type = ast.ValueTypeString
@@ -1283,6 +1330,7 @@ func (d *decoder) decodeSimple(prefix byte, tag *ast.Tag, path string) (node ast
 			Data: nil,
 			Text: ast.SimpleCreateTimeStr,
 			Tag:  tag,
+			Path: path,
 		}
 	case SimpleUpdateTime:
 		tag.Type = ast.ValueTypeString
@@ -1290,6 +1338,7 @@ func (d *decoder) decodeSimple(prefix byte, tag *ast.Tag, path string) (node ast
 			Data: nil,
 			Text: ast.SimpleUpdateTimeStr,
 			Tag:  tag,
+			Path: path,
 		}
 	case SimpleDeleteTime:
 		tag.Type = ast.ValueTypeString
@@ -1297,6 +1346,7 @@ func (d *decoder) decodeSimple(prefix byte, tag *ast.Tag, path string) (node ast
 			Data: nil,
 			Text: ast.SimpleDeleteTimeStr,
 			Tag:  tag,
+			Path: path,
 		}
 	case SimpleAccount:
 		tag.Type = ast.ValueTypeString
@@ -1304,6 +1354,7 @@ func (d *decoder) decodeSimple(prefix byte, tag *ast.Tag, path string) (node ast
 			Data: nil,
 			Text: ast.SimpleAccountStr,
 			Tag:  tag,
+			Path: path,
 		}
 	case SimpleToken:
 		tag.Type = ast.ValueTypeString
@@ -1311,6 +1362,7 @@ func (d *decoder) decodeSimple(prefix byte, tag *ast.Tag, path string) (node ast
 			Data: nil,
 			Text: ast.SimpleTokenStr,
 			Tag:  tag,
+			Path: path,
 		}
 	case SimpleExpireTime:
 		tag.Type = ast.ValueTypeString
@@ -1318,6 +1370,7 @@ func (d *decoder) decodeSimple(prefix byte, tag *ast.Tag, path string) (node ast
 			Data: nil,
 			Text: ast.SimpleExpireTimeStr,
 			Tag:  tag,
+			Path: path,
 		}
 	case SimpleKey:
 		tag.Type = ast.ValueTypeString
@@ -1325,6 +1378,7 @@ func (d *decoder) decodeSimple(prefix byte, tag *ast.Tag, path string) (node ast
 			Data: nil,
 			Text: ast.SimpleKeyStr,
 			Tag:  tag,
+			Path: path,
 		}
 	case SimpleVal:
 		tag.Type = ast.ValueTypeString
@@ -1332,6 +1386,7 @@ func (d *decoder) decodeSimple(prefix byte, tag *ast.Tag, path string) (node ast
 			Data: nil,
 			Text: ast.SimpleValStr,
 			Tag:  tag,
+			Path: path,
 		}
 	default:
 		err = fmt.Errorf("unsupported value: %v", prefix)
@@ -1403,7 +1458,7 @@ func (d *decoder) decodeArray(prefix byte, tag *ast.Tag, path string) (node *ast
 		tagValue := ast.NewTag()
 		tagValue.Inherit(tag)
 
-		p := fmt.Sprintf("%s.%s", path, strconv.Itoa(index))
+		p := fmt.Sprintf("%s[%d]", path, index)
 		n, l, e := d.decode(tagValue, p)
 		if e != nil || l <= 0 {
 			err = fmt.Errorf("%s: %w", p, e)

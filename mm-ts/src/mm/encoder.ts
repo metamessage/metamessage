@@ -61,9 +61,11 @@ export class MMEncoder {
 
   encodeValue(value: any, tag?: Tag): Uint8Array {
     const node = ValueToNode(value, tag);
-    console.log('node', node);
+    // console.log('node1', (node as MMObject).getProperties().id?.getTag());
+    // console.log('node2', (node as MMObject).getProperties().name?.getTag());
+    // console.log('node3', (node as MMObject).getProperties().age?.getTag());
     const jsonc = toJSONC(node);
-    console.log('jsonc', jsonc);
+    // console.log('jsonc', jsonc);
     return this.encodeNode(node);
   }
 
@@ -92,14 +94,9 @@ export class MMEncoder {
 
     const keysBuffer = new MMBuffer();
     const valuesBuffer = new MMBuffer();
-    let n = 0;
     for (const [key, valueNode] of Object.entries(properties)) {
-      const tempEncoder = new MMEncoder();
-      tempEncoder.encodeNode(valueNode);
-
-      valuesBuffer.writeBytes(tempEncoder.result);
-
       keysBuffer.writeBytes(this.encodeStringToBytes(key));
+      valuesBuffer.writeBytes(this.encodeNode(valueNode));
     }
 
     const keysEncoded = this.encodeArrayToBytes(keysBuffer.result);
@@ -109,9 +106,11 @@ export class MMEncoder {
     combined.set(keysEncoded, 0);
     combined.set(valuesEncoded, keysEncoded.length);
 
-    const objectEncoded = this.encodeObjectToBytes(combined);
-
-    const n1 = this.encodeComment(objectEncoded, tag);
+    const n = this.encodeObjectToBytes(combined);
+    const n1 = this.encodeComment(
+      this.buffer.getBytes(this.buffer.offset - n),
+      tag,
+    );
     if (n1 === 0) {
       return n;
     }
@@ -131,7 +130,6 @@ export class MMEncoder {
     }
 
     const arrayEncoded = this.encodeArrayToBytes(valuesBuffer.result);
-
     const n1 = this.encodeComment(arrayEncoded, tag);
 
     if (n1 === 0) {
@@ -291,7 +289,6 @@ export class MMEncoder {
   }
 
   private encodeComment(payload: Uint8Array, tag: Tag): number {
-    console.log('tag', tag);
     if (!(tag instanceof Tag)) {
       tag = new Tag(tag);
     }
@@ -716,10 +713,9 @@ export class MMEncoder {
   }
 
   private encodeStringToBytes(value: string): Uint8Array {
-    const tempBuffer = new MMBuffer();
-    const tempEncoder = new MMEncoder();
-    tempEncoder.encodeString(value);
-    return tempEncoder.result;
+    const startOffset = this.buffer.offset;
+    this.encodeString(value);
+    return this.buffer.getBytes(startOffset);
   }
 
   encodeBytes(value: Uint8Array): number {
@@ -851,82 +847,50 @@ export class MMEncoder {
   }
 
   private encodeArrayToBytes(value: Uint8Array): Uint8Array {
-    const length = value.length;
-    const result = new MMBuffer();
+    const startOffset = this.buffer.offset;
 
     let prefix = Prefix.Container | ContainerArray;
-
+    const length = value.length;
     if (length < ContainerLen1Byte) {
       prefix |= length;
-      result.writeUint8(prefix);
+      this.buffer.writeUint8(prefix);
     } else if (length < 256) {
       prefix |= ContainerLen1Byte;
-      result.writeUint8(prefix);
-      result.writeUint8(length);
+      this.buffer.writeUint8(prefix);
+      this.buffer.writeUint8(length);
     } else {
       prefix |= ContainerLen2Byte;
-      result.writeUint8(prefix);
-      result.writeUint16LE(length);
+      this.buffer.writeUint8(prefix);
+      this.buffer.writeUint16LE(length);
     }
 
-    result.writeBytes(value);
-    return result.result;
+    this.buffer.writeBytes(value);
+    return this.buffer.getBytes(startOffset);
   }
 
-  private encodeObjectToBytes(value: Uint8Array): Uint8Array {
+  private encodeObjectToBytes(value: Uint8Array): number {
     const length = value.length;
-    const result = new MMBuffer();
+    let n = 0;
 
     let prefix = Prefix.Container | ContainerObject;
 
     if (length < ContainerLen1Byte) {
       prefix |= length;
-      result.writeUint8(prefix);
+      this.buffer.writeUint8(prefix);
+      n = 1 + length;
     } else if (length < 256) {
       prefix |= ContainerLen1Byte;
-      result.writeUint8(prefix);
-      result.writeUint8(length);
+      this.buffer.writeUint8(prefix);
+      this.buffer.writeUint8(length);
+      n = 2 + length;
     } else {
       prefix |= ContainerLen2Byte;
-      result.writeUint8(prefix);
-      result.writeUint16LE(length);
+      this.buffer.writeUint8(prefix);
+      this.buffer.writeUint16LE(length);
+      n = 3 + length;
     }
 
-    result.writeBytes(value);
-    return result.result;
-  }
-
-  encodeArray(value: any[]): void {
-    const tempEncoder = new MMEncoder();
-    for (const item of value) {
-      tempEncoder.encodeNode(item);
-    }
-    const encoded = this.encodeArrayToBytes(tempEncoder.result);
-    this.buffer.writeBytes(encoded);
-  }
-
-  encodeObject(value: Record<string, any>): void {
-    const keys: string[] = [];
-    const tempEncoder = new MMEncoder();
-
-    for (const key of Object.keys(value)) {
-      keys.push(key);
-      tempEncoder.encodeNode(value[key]);
-    }
-
-    const keysBuffer = new MMBuffer();
-    for (const key of keys) {
-      keysBuffer.writeBytes(this.encodeStringToBytes(key));
-    }
-
-    const keysEncoded = this.encodeArrayToBytes(keysBuffer.result);
-    const valuesEncoded = tempEncoder.result;
-
-    const combined = new Uint8Array(keysEncoded.length + valuesEncoded.length);
-    combined.set(keysEncoded, 0);
-    combined.set(valuesEncoded, keysEncoded.length);
-
-    const objectEncoded = this.encodeObjectToBytes(combined);
-    this.buffer.writeBytes(objectEncoded);
+    this.buffer.writeBytes(value);
+    return n;
   }
 }

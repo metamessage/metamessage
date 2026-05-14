@@ -146,7 +146,7 @@ func NewTag() *Tag {
 }
 
 func (t *Tag) Inherit(tag *Tag) {
-	tag.IsInherit = true
+	t.IsInherit = true
 
 	if tag.ChildDesc != "" {
 		t.Desc = tag.ChildDesc

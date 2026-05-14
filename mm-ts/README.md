@@ -20,18 +20,20 @@ npm i metamessage@latest
 ### 2.1 引用
 
 ```typescript
-import { encode, decode, mm, bind } from 'metamessage';
+import { encodeFromValue, decodeToValue } from 'metamessage';
 ```
 
 or
 
 ```typescript
-const { encode, decode, mm, bind } = require('metamessage');
+const { encodeFromValue, decodeToValue } = require('metamessage');
 ```
 
 ### 2.2 编码示例
 
-```typescript
+javascript
+
+```javascript
 // 使用 mm() 函数创建带类型信息的对象
 const person = {
   name: mm("Ed", { desc: "" }),
@@ -40,40 +42,94 @@ const person = {
   age: mm(30, { desc: "" })
 };
 
-const wire = encode(person);
-console.log('Encoded:', bytesToHex(wire));
+const wire = encodeFromValue(person);
+console.log('wire', wire);
+```
+
+typescript
+
+```typescript
+@mm({ desc: '用户' })
+class User {
+  @mm({ type: ValueType.Int64, desc: '用户ID', nullable: false })
+  id: bigint = 0n;
+  @mm({ desc: '昵称' })
+  name: string = '';
+  @mm({ type: ValueType.Uint8 })
+  age: number = 0;
+}
+
+const u = new User();
+u.id = 666n;
+u.name = 'abc';
+u.age = 20;
+
+const wire = encodeFromValue(u);
+console.log('wire', wire);
 ```
 
 ### 2.3 解码示例
 
-```typescript
-const decoded = decode(wire);
-console.log('Decoded:', decoded.value);
+typescript
 
-// 绑定到模板
-const bound = bind(wire, person);
-console.log('Bound:', bound);
+```typescript
+```
+
+typescript
+
+```typescript
+const decoded = decodeToValue(wire, Person);
+console.log('Decoded:', decoded);
 ```
 
 ### 2.4 JSONC 解析示例
 
-```typescript
-import { toJSONC, fromJSONC, mm } from 'metamessage';
+javascript
 
-const person = {
-  name: mm("Ed", { desc: "" }),
-  age: mm(30, { desc: "" })
-};
+```javascript
+import { encodeFromJSONC, decodeToJSONC } from 'metamessage';
 
-// 编码为 Wire 格式，再转换为 JSONC
-const wire = encode(person);
-const jsoncString = toJSONC(wire);
+const jsonc = `
+        // mm: desc="用户"
+        {
+        
+                // mm: type=i64; desc="用户ID"
+                "id": 666,
+        
+                // mm: desc="昵称"
+                "name": "abc",
+        
+                // mm: type=u8
+                "age": 20,
+        }
+`
+const wire = encodeFromJSONC(jsonc);
+const jsoncString = decodeToJSONC(wire);
 console.log('JSONC:', jsoncString);
+```
 
-// 从 JSONC 转换回 Wire 格式，再解码
-const wireFromJsonc = fromJSONC(jsoncString);
-const decoded = decode(wireFromJsonc);
-console.log('Decoded from JSONC:', decoded.value);
+typescript
+
+```typescript
+import { encodeFromJSONC, decodeToJSONC } from 'metamessage';
+
+const jsonc = `
+        // mm: desc="用户"
+        {
+        
+                // mm: type=i64; desc="用户ID"
+                "id": 666,
+        
+                // mm: desc="昵称"
+                "name": "abc",
+        
+                // mm: type=u8
+                "age": 20,
+        }
+`
+const wire = encodeFromJSONC(jsonc);
+const jsoncString = decodeToJSONC(wire);
+console.log('JSONC:', jsoncString);
 ```
 
 ## 3. 测试方法

@@ -1,45 +1,45 @@
 import { ValueType, stringToType, typeToString } from './value-type';
 
-const KIsNull = 0 << 3;
-const KExample = 1 << 3;
-const KDesc = 2 << 3;
-const KType = 3 << 3;
-const KRaw = 4 << 3;
-const KNullable = 5 << 3;
-const KAllowEmpty = 6 << 3;
-const KUnique = 7 << 3;
-const KDefault = 8 << 3;
-const KMin = 9 << 3;
-const KMax = 10 << 3;
-const KSize = 11 << 3;
-const KEnum = 12 << 3;
-const KPattern = 13 << 3;
-const KLocation = 14 << 3;
-const KVersion = 15 << 3;
-const KMime = 16 << 3;
-const KChildDesc = 17 << 3;
-const KChildType = 18 << 3;
-const KChildRaw = 19 << 3;
-const KChildNullable = 20 << 3;
-const KChildAllowEmpty = 21 << 3;
-const KChildUnique = 22 << 3;
-const KChildDefault = 23 << 3;
-const KChildMin = 24 << 3;
-const KChildMax = 25 << 3;
-const KChildSize = 26 << 3;
-const KChildEnum = 27 << 3;
-const KChildPattern = 28 << 3;
-const KChildLocation = 29 << 3;
-const KChildVersion = 30 << 3;
-const KChildMime = 31 << 3;
+export const KIsNull = 0 << 3;
+export const KExample = 1 << 3;
+export const KDesc = 2 << 3;
+export const KType = 3 << 3;
+export const KRaw = 4 << 3;
+export const KNullable = 5 << 3;
+export const KAllowEmpty = 6 << 3;
+export const KUnique = 7 << 3;
+export const KDefault = 8 << 3;
+export const KMin = 9 << 3;
+export const KMax = 10 << 3;
+export const KSize = 11 << 3;
+export const KEnum = 12 << 3;
+export const KPattern = 13 << 3;
+export const KLocation = 14 << 3;
+export const KVersion = 15 << 3;
+export const KMime = 16 << 3;
+export const KChildDesc = 17 << 3;
+export const KChildType = 18 << 3;
+export const KChildRaw = 19 << 3;
+export const KChildNullable = 20 << 3;
+export const KChildAllowEmpty = 21 << 3;
+export const KChildUnique = 22 << 3;
+export const KChildDefault = 23 << 3;
+export const KChildMin = 24 << 3;
+export const KChildMax = 25 << 3;
+export const KChildSize = 26 << 3;
+export const KChildEnum = 27 << 3;
+export const KChildPattern = 28 << 3;
+export const KChildLocation = 29 << 3;
+export const KChildVersion = 30 << 3;
+export const KChildMime = 31 << 3;
 
-const Max1Byte = 0xFF;
-const Max2Byte = 0xFFFF;
-const Max3Byte = 0xFFFFFF;
-const Max4Byte = 0xFFFFFFFF;
-const Max5Byte = 0xFFFFFFFFFFn;
-const Max6Byte = 0xFFFFFFFFFFFFn;
-const Max7Byte = 0xFFFFFFFFFFFFFFn;
+const Max1Byte = 0xff;
+const Max2Byte = 0xffff;
+const Max3Byte = 0xffffff;
+const Max4Byte = 0xffffffff;
+const Max5Byte = 0xffffffffffn;
+const Max6Byte = 0xffffffffffffn;
+const Max7Byte = 0xffffffffffffffn;
 
 export interface ValidationResult {
   valid: boolean;
@@ -50,7 +50,8 @@ export interface ValidationResult {
 
 const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
 const decimalRegex = /^-?\d+\.\d+$/;
-const uuidRegex = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/;
+const uuidRegex =
+  /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/;
 
 export class Tag {
   name?: string;
@@ -71,22 +72,22 @@ export class Tag {
   location: number = 0;
   version: number = 0;
   mime: string = '';
-  childDesc: string= '';
+  childDesc: string = '';
   childType: ValueType = ValueType.Unknown;
   childRaw: boolean = false;
-  childNullable: boolean=false;
-  childAllowEmpty: boolean=false;
-  childUnique: boolean=false;
-  childDefault: string='';
-  childMin: string='';
-  childMax: string='';
-  childSize: number=0;
-  childEnum: string='';
-  childPattern: string='';
-  childLocation: number=0;
-  childVersion: number=0;
-  childMime: string='';
-  isInherit: boolean=false;
+  childNullable: boolean = false;
+  childAllowEmpty: boolean = false;
+  childUnique: boolean = false;
+  childDefault: string = '';
+  childMin: string = '';
+  childMax: string = '';
+  childSize: bigint = 0n;
+  childEnum: string = '';
+  childPattern: string = '';
+  childLocation: number = 0;
+  childVersion: number = 0;
+  childMime: string = '';
+  isInherit: boolean = false;
 
   constructor(data: Partial<Tag> = {}) {
     Object.assign(this, data);
@@ -94,98 +95,66 @@ export class Tag {
 
   inherit(tag: Tag): void {
     if (!tag) return;
-    
-    if (this.type === ValueType.Unknown) {
-      this.type = tag.type;
+
+    this.isInherit = true;
+
+    if (this.childType !== ValueType.Unknown) {
+      this.type = tag.childType;
     }
-    if (!this.desc) {
-      this.desc = tag.desc;
+    if (this.childDesc !== '') {
+      this.desc = tag.childDesc;
     }
-    if (!this.nullable) {
-      this.nullable = tag.nullable;
+    if (this.childNullable) {
+      this.nullable = tag.childNullable;
     }
-    if (!this.allowEmpty) {
-      this.allowEmpty = tag.allowEmpty;
+    if (this.childAllowEmpty) {
+      this.allowEmpty = tag.childAllowEmpty;
     }
-    if (!this.unique) {
-      this.unique = tag.unique;
+    if (this.childUnique) {
+      this.unique = tag.childUnique;
     }
-    if (!this.min) {
-      this.min = tag.min;
+    if (this.childMin !== '') {
+      this.min = tag.childMin;
     }
-    if (!this.max) {
-      this.max = tag.max;
+    if (this.childMax !== '') {
+      this.max = tag.childMax;
     }
-    if (this.size === 0n) {
-      this.size = tag.size;
+    if (this.childSize !== 0n) {
+      this.size = tag.childSize;
     }
-    if (!this.enum) {
-      this.enum = tag.enum;
+    if (this.childEnum !== '') {
+      this.enum = tag.childEnum;
     }
-    if (!this.pattern) {
-      this.pattern = tag.pattern;
+    if (this.childPattern !== '') {
+      this.pattern = tag.childPattern;
     }
-    if (!this.location) {
-      this.location = tag.location;
+    if (this.childLocation !== 0) {
+      this.location = tag.childLocation;
     }
-    if (this.version === 0) {
-      this.version = tag.version;
+    if (this.childVersion !== 0) {
+      this.version = tag.childVersion;
     }
-    if (!this.mime) {
-      this.mime = tag.mime;
-    }
-    
-    if (!this.childType) {
-      this.childType = tag.childType;
-    }
-    if (!this.childDesc) {
-      this.childDesc = tag.childDesc;
-    }
-    if (!this.childNullable) {
-      this.childNullable = tag.childNullable;
-    }
-    if (!this.childAllowEmpty) {
-      this.childAllowEmpty = tag.childAllowEmpty;
-    }
-    if (!this.childUnique) {
-      this.childUnique = tag.childUnique;
-    }
-    if (!this.childMin) {
-      this.childMin = tag.childMin;
-    }
-    if (!this.childMax) {
-      this.childMax = tag.childMax;
-    }
-    if (!this.childSize) {
-      this.childSize = tag.childSize;
-    }
-    if (!this.childEnum) {
-      this.childEnum = tag.childEnum;
-    }
-    if (!this.childPattern) {
-      this.childPattern = tag.childPattern;
-    }
-    if (!this.childLocation) {
-      this.childLocation = tag.childLocation;
-    }
-    if (!this.childVersion) {
-      this.childVersion = tag.childVersion;
-    }
-    if (!this.childMime) {
-      this.childMime = tag.childMime;
+    if (this.childMime !== '') {
+      this.mime = tag.childMime;
     }
   }
 
   toString(): string {
     const parts: string[] = [];
     if (this.type !== ValueType.Unknown) {
-      if (this.type === ValueType.Int ||
-          this.type === ValueType.Float64 ||
-          this.type === ValueType.Bool ||
-          this.type === ValueType.Slice) {
+      if (
+        this.type === ValueType.String ||
+        this.type === ValueType.Int ||
+        this.type === ValueType.Float64 ||
+        this.type === ValueType.Bool ||
+        this.type === ValueType.Object ||
+        this.type === ValueType.Slice
+      ) {
       } else {
-        if (this.type === ValueType.Array && this.size > 0 ||
-            this.type === ValueType.Enum && this.enum !== "") {
+        if (
+          (this.type === ValueType.Array && this.size > 0) ||
+          (this.type === ValueType.Enum && this.enum !== '')
+        ) {
         } else {
           parts.push(`type=${typeToString(this.type)}`);
         }
@@ -263,15 +232,21 @@ export class Tag {
     }
 
     if (this.childType) {
-      if (this.childType === ValueType.String ||
-          this.childType === ValueType.Int ||
-          this.childType === ValueType.Float64 ||
-          this.childType === ValueType.Bool ||
-          this.childType === ValueType.Object ||
-          this.childType === ValueType.Slice) {
+      if (
+        this.childType === ValueType.String ||
+        this.childType === ValueType.Int ||
+        this.childType === ValueType.Float64 ||
+        this.childType === ValueType.Bool ||
+        this.childType === ValueType.Object ||
+        this.childType === ValueType.Slice
+      ) {
       } else {
-        if (this.childType === ValueType.Array && this.childSize && this.childSize > 0 ||
-            this.childType === ValueType.Enum && this.childEnum) {
+        if (
+          (this.childType === ValueType.Array &&
+            this.childSize &&
+            this.childSize > 0) ||
+          (this.childType === ValueType.Enum && this.childEnum)
+        ) {
         } else {
           parts.push(`child_type=${this.childType}`);
         }
@@ -346,80 +321,80 @@ export class Tag {
     if (uv <= Max1Byte) {
       sign |= 0;
       buf.push(sign);
-      buf.push(uvNum & 0xFF);
+      buf.push(uvNum & 0xff);
     } else if (uv <= Max2Byte) {
       sign |= 1;
       buf.push(sign);
-      buf.push((uvNum >> 8) & 0xFF);
-      buf.push(uvNum & 0xFF);
+      buf.push((uvNum >> 8) & 0xff);
+      buf.push(uvNum & 0xff);
     } else if (uv <= Max3Byte) {
       sign |= 2;
       buf.push(sign);
-      buf.push((uvNum >> 16) & 0xFF);
-      buf.push((uvNum >> 8) & 0xFF);
-      buf.push(uvNum & 0xFF);
+      buf.push((uvNum >> 16) & 0xff);
+      buf.push((uvNum >> 8) & 0xff);
+      buf.push(uvNum & 0xff);
     } else if (uv <= Max4Byte) {
       sign |= 3;
       buf.push(sign);
-      buf.push((uvNum >> 24) & 0xFF);
-      buf.push((uvNum >> 16) & 0xFF);
-      buf.push((uvNum >> 8) & 0xFF);
-      buf.push(uvNum & 0xFF);
+      buf.push((uvNum >> 24) & 0xff);
+      buf.push((uvNum >> 16) & 0xff);
+      buf.push((uvNum >> 8) & 0xff);
+      buf.push(uvNum & 0xff);
     } else if (uv <= Max5Byte) {
       sign |= 4;
       buf.push(sign);
       const uv32 = uvNum;
       const uv32High = Math.floor(uv32 / 0x100000000);
-      buf.push(uv32High & 0xFF);
-      buf.push((uv32 >> 24) & 0xFF);
-      buf.push((uv32 >> 16) & 0xFF);
-      buf.push((uv32 >> 8) & 0xFF);
-      buf.push(uv32 & 0xFF);
+      buf.push(uv32High & 0xff);
+      buf.push((uv32 >> 24) & 0xff);
+      buf.push((uv32 >> 16) & 0xff);
+      buf.push((uv32 >> 8) & 0xff);
+      buf.push(uv32 & 0xff);
     } else if (uv <= Max6Byte) {
       sign |= 5;
       buf.push(sign);
       const uv32 = uvNum;
       const uv32High = Math.floor(uv32 / 0x100000000);
       const uv40 = Math.floor(uv32High / 0x100);
-      buf.push(uv40 & 0xFF);
-      buf.push(uv32High & 0xFF);
-      buf.push((uv32 >> 24) & 0xFF);
-      buf.push((uv32 >> 16) & 0xFF);
-      buf.push((uv32 >> 8) & 0xFF);
-      buf.push(uv32 & 0xFF);
+      buf.push(uv40 & 0xff);
+      buf.push(uv32High & 0xff);
+      buf.push((uv32 >> 24) & 0xff);
+      buf.push((uv32 >> 16) & 0xff);
+      buf.push((uv32 >> 8) & 0xff);
+      buf.push(uv32 & 0xff);
     } else if (uv <= Max7Byte) {
       sign |= 6;
       buf.push(sign);
       const uv32 = uvNum;
       const uv32High = Math.floor(uv32 / 0x100000000);
       const uv48 = Math.floor(uv32High / 0x10000);
-      buf.push(uv48 & 0xFF);
-      buf.push((uv48 >> 8) & 0xFF);
-      buf.push(uv32High & 0xFF);
-      buf.push((uv32 >> 24) & 0xFF);
-      buf.push((uv32 >> 16) & 0xFF);
-      buf.push((uv32 >> 8) & 0xFF);
-      buf.push(uv32 & 0xFF);
+      buf.push(uv48 & 0xff);
+      buf.push((uv48 >> 8) & 0xff);
+      buf.push(uv32High & 0xff);
+      buf.push((uv32 >> 24) & 0xff);
+      buf.push((uv32 >> 16) & 0xff);
+      buf.push((uv32 >> 8) & 0xff);
+      buf.push(uv32 & 0xff);
     } else {
       sign |= 7;
       buf.push(sign);
       const uv32 = uvNum;
       const uv32High = Math.floor(uv32 / 0x100000000);
       const uv56 = Math.floor(uv32High / 0x1000000);
-      buf.push(uv56 & 0xFF);
-      buf.push((uv56 >> 8) & 0xFF);
-      buf.push((uv56 >> 16) & 0xFF);
-      buf.push(uv32High & 0xFF);
-      buf.push((uv32 >> 24) & 0xFF);
-      buf.push((uv32 >> 16) & 0xFF);
-      buf.push((uv32 >> 8) & 0xFF);
-      buf.push(uv32 & 0xFF);
+      buf.push(uv56 & 0xff);
+      buf.push((uv56 >> 8) & 0xff);
+      buf.push((uv56 >> 16) & 0xff);
+      buf.push(uv32High & 0xff);
+      buf.push((uv32 >> 24) & 0xff);
+      buf.push((uv32 >> 16) & 0xff);
+      buf.push((uv32 >> 8) & 0xff);
+      buf.push(uv32 & 0xff);
     }
   }
 
   toBytes(): Uint8Array {
     const buf: number[] = [];
-    
+
     if (this.example) {
       buf.push(KExample | 1);
     }
@@ -434,37 +409,41 @@ export class Tag {
       }
     }
 
-    if (this.desc !== "" && !this.isInherit) {
-      const l = this.desc.length;
+    if (this.desc !== '' && !this.isInherit) {
       const encoder = new TextEncoder();
       const descBytes = encoder.encode(this.desc);
-      
+      const l = descBytes.length;
+
       if (l <= 5) {
         buf.push(KDesc | l);
         buf.push(...descBytes);
-      } else if (l <= 0xFF) {
+      } else if (l <= 0xff) {
         buf.push(KDesc | 6);
         buf.push(l);
         buf.push(...descBytes);
-      } else if (l <= 0xFFFF) {
+      } else if (l <= 0xffff) {
         buf.push(KDesc | 7);
-        buf.push((l >> 8) & 0xFF);
-        buf.push(l & 0xFF);
+        buf.push((l >> 8) & 0xff);
+        buf.push(l & 0xff);
         buf.push(...descBytes);
       }
     }
 
     if (this.type !== ValueType.Unknown && !this.isInherit) {
-      if (this.type === ValueType.String ||
-          this.type === ValueType.Bytes ||
-          this.type === ValueType.Int ||
-          this.type === ValueType.Float64 ||
-          this.type === ValueType.Bool ||
-          this.type === ValueType.Object ||
-          this.type === ValueType.Slice) {
+      if (
+        this.type === ValueType.String ||
+        this.type === ValueType.Bytes ||
+        this.type === ValueType.Int ||
+        this.type === ValueType.Float64 ||
+        this.type === ValueType.Bool ||
+        this.type === ValueType.Object ||
+        this.type === ValueType.Slice
+      ) {
       } else {
-        if (this.type === ValueType.Array && this.size > 0 ||
-            this.type === ValueType.Enum && this.enum !== "") {
+        if (
+          (this.type === ValueType.Array && this.size > 0) ||
+          (this.type === ValueType.Enum && this.enum !== '')
+        ) {
         } else {
           buf.push(KType);
           buf.push(this.type);
@@ -484,11 +463,11 @@ export class Tag {
       buf.push(KUnique | 1);
     }
 
-    if (this.default !== "" && !this.isInherit) {
-      const l = this.default.length;
+    if (this.default !== '' && !this.isInherit) {
       const encoder = new TextEncoder();
       const defaultBytes = encoder.encode(this.default);
-      
+      const l = defaultBytes.length;
+
       if (l < 7) {
         buf.push(KDefault | l);
         buf.push(...defaultBytes);
@@ -499,11 +478,11 @@ export class Tag {
       }
     }
 
-    if (this.min !== "" && !this.isInherit) {
-      const l = this.min.length;
+    if (this.min !== '' && !this.isInherit) {
       const encoder = new TextEncoder();
       const minBytes = encoder.encode(this.min);
-      
+      const l = minBytes.length;
+
       if (l < 7) {
         buf.push(KMin | l);
         buf.push(...minBytes);
@@ -514,11 +493,11 @@ export class Tag {
       }
     }
 
-    if (this.max !== "" && !this.isInherit) {
-      const l = this.max.length;
+    if (this.max !== '' && !this.isInherit) {
       const encoder = new TextEncoder();
       const maxBytes = encoder.encode(this.max);
-      
+      const l = maxBytes.length;
+
       if (l < 7) {
         buf.push(KMax | l);
         buf.push(...maxBytes);
@@ -533,31 +512,31 @@ export class Tag {
       this.encodeUint64(buf, KSize, this.size);
     }
 
-    if (this.enum !== "" && !this.isInherit) {
-      const l = this.enum.length;
+    if (this.enum !== '' && !this.isInherit) {
       const encoder = new TextEncoder();
       const enumBytes = encoder.encode(this.enum);
-      
+      const l = enumBytes.length;
+
       if (l <= 5) {
         buf.push(KEnum | l);
         buf.push(...enumBytes);
-      } else if (l <= 0xFF) {
+      } else if (l <= 0xff) {
         buf.push(KEnum | 6);
         buf.push(l);
         buf.push(...enumBytes);
-      } else if (l <= 0xFFFF) {
+      } else if (l <= 0xffff) {
         buf.push(KEnum | 7);
-        buf.push((l >> 8) & 0xFF);
-        buf.push(l & 0xFF);
+        buf.push((l >> 8) & 0xff);
+        buf.push(l & 0xff);
         buf.push(...enumBytes);
       }
     }
 
-    if (this.pattern !== "" && !this.isInherit) {
-      const l = this.pattern.length;
+    if (this.pattern !== '' && !this.isInherit) {
       const encoder = new TextEncoder();
       const patternBytes = encoder.encode(this.pattern);
-      
+      const l = patternBytes.length;
+
       if (l < 7) {
         buf.push(KPattern | l);
         buf.push(...patternBytes);
@@ -581,7 +560,7 @@ export class Tag {
       this.encodeUint64(buf, KVersion, BigInt(this.version));
     }
 
-    if (this.mime !== "" && !this.isInherit) {
+    if (this.mime !== '' && !this.isInherit) {
       const l = this.parseMIME(this.mime);
       if (l < 7) {
         buf.push(KMime | l);
@@ -591,36 +570,40 @@ export class Tag {
       }
     }
 
-    if (this.childDesc !== "") {
-      const l = this.childDesc.length;
+    if (this.childDesc !== '') {
       const encoder = new TextEncoder();
       const childDescBytes = encoder.encode(this.childDesc);
-      
+      const l = childDescBytes.length;
+
       if (l <= 5) {
         buf.push(KChildDesc | l);
         buf.push(...childDescBytes);
-      } else if (l <= 0xFF) {
+      } else if (l <= 0xff) {
         buf.push(KChildDesc | 6);
         buf.push(l);
         buf.push(...childDescBytes);
-      } else if (l <= 0xFFFF) {
+      } else if (l <= 0xffff) {
         buf.push(KChildDesc | 7);
-        buf.push((l >> 8) & 0xFF);
-        buf.push(l & 0xFF);
+        buf.push((l >> 8) & 0xff);
+        buf.push(l & 0xff);
         buf.push(...childDescBytes);
       }
     }
 
     if (this.childType !== ValueType.Unknown) {
-      if (this.childType === ValueType.String ||
-          this.childType === ValueType.Int ||
-          this.childType === ValueType.Float64 ||
-          this.childType === ValueType.Bool ||
-          this.childType === ValueType.Object ||
-          this.childType === ValueType.Slice) {
+      if (
+        this.childType === ValueType.String ||
+        this.childType === ValueType.Int ||
+        this.childType === ValueType.Float64 ||
+        this.childType === ValueType.Bool ||
+        this.childType === ValueType.Object ||
+        this.childType === ValueType.Slice
+      ) {
       } else {
-        if (this.childType === ValueType.Array && this.childSize > 0 ||
-            this.childType === ValueType.Enum && this.childEnum !== "") {
+        if (
+          (this.childType === ValueType.Array && this.childSize > 0) ||
+          (this.childType === ValueType.Enum && this.childEnum !== '')
+        ) {
         } else {
           buf.push(KChildType);
           buf.push(this.childType);
@@ -644,11 +627,11 @@ export class Tag {
       buf.push(KChildUnique | 1);
     }
 
-    if (this.childDefault !== "") {
-      const l = this.childDefault.length;
+    if (this.childDefault !== '') {
       const encoder = new TextEncoder();
       const childDefaultBytes = encoder.encode(this.childDefault);
-      
+      const l = childDefaultBytes.length;
+
       if (l < 7) {
         buf.push(KChildDefault | l);
         buf.push(...childDefaultBytes);
@@ -659,11 +642,11 @@ export class Tag {
       }
     }
 
-    if (this.childMin !== "") {
-      const l = this.childMin.length;
+    if (this.childMin !== '') {
       const encoder = new TextEncoder();
       const childMinBytes = encoder.encode(this.childMin);
-      
+      const l = childMinBytes.length;
+
       if (l < 7) {
         buf.push(KChildMin | l);
         buf.push(...childMinBytes);
@@ -674,11 +657,11 @@ export class Tag {
       }
     }
 
-    if (this.childMax !== "") {
-      const l = this.childMax.length;
+    if (this.childMax !== '') {
       const encoder = new TextEncoder();
       const childMaxBytes = encoder.encode(this.childMax);
-      
+      const l = childMaxBytes.length;
+
       if (l < 7) {
         buf.push(KChildMax | l);
         buf.push(...childMaxBytes);
@@ -689,35 +672,35 @@ export class Tag {
       }
     }
 
-    if (this.childSize !== 0) {
+    if (this.childSize !== 0n) {
       this.encodeUint64(buf, KChildSize, BigInt(this.childSize));
     }
 
-    if (this.childEnum !== "") {
-      const l = this.childEnum.length;
+    if (this.childEnum !== '') {
       const encoder = new TextEncoder();
       const childEnumBytes = encoder.encode(this.childEnum);
-      
+      const l = childEnumBytes.length;
+
       if (l <= 5) {
         buf.push(KChildEnum | l);
         buf.push(...childEnumBytes);
-      } else if (l <= 0xFF) {
+      } else if (l <= 0xff) {
         buf.push(KChildEnum | 6);
         buf.push(l);
         buf.push(...childEnumBytes);
-      } else if (l <= 0xFFFF) {
+      } else if (l <= 0xffff) {
         buf.push(KChildEnum | 7);
-        buf.push((l >> 8) & 0xFF);
-        buf.push(l & 0xFF);
+        buf.push((l >> 8) & 0xff);
+        buf.push(l & 0xff);
         buf.push(...childEnumBytes);
       }
     }
 
-    if (this.childPattern !== "") {
-      const l = this.childPattern.length;
+    if (this.childPattern !== '') {
       const encoder = new TextEncoder();
       const childPatternBytes = encoder.encode(this.childPattern);
-      
+      const l = childPatternBytes.length;
+
       if (l < 7) {
         buf.push(KChildPattern | l);
         buf.push(...childPatternBytes);
@@ -728,7 +711,9 @@ export class Tag {
       }
     }
 
-    const childLocationOffsetHour = this.getLocationOffsetHour(this.childLocation);
+    const childLocationOffsetHour = this.getLocationOffsetHour(
+      this.childLocation,
+    );
     if (childLocationOffsetHour !== 0) {
       const v = String(childLocationOffsetHour);
       const encoder = new TextEncoder();
@@ -741,7 +726,7 @@ export class Tag {
       this.encodeUint64(buf, KChildVersion, BigInt(this.childVersion));
     }
 
-    if (this.childMime !== "") {
+    if (this.childMime !== '') {
       const l = this.parseMIME(this.childMime);
       if (l < 7) {
         buf.push(KChildMime | l);
@@ -759,17 +744,26 @@ export class Tag {
       if (this.allowEmpty) {
         return { valid: true, data: val, text: val };
       }
-      return { valid: false, error: `type string not allow empty value "${val}"` };
+      return {
+        valid: false,
+        error: `type string not allow empty value "${val}"`,
+      };
     }
 
     if (this.pattern) {
       try {
         const regex = new RegExp(this.pattern);
         if (!regex.test(val)) {
-          return { valid: false, error: `value "${val}" does not match pattern ${this.pattern}` };
+          return {
+            valid: false,
+            error: `value "${val}" does not match pattern ${this.pattern}`,
+          };
         }
       } catch (error) {
-        return { valid: false, error: `pattern "${this.pattern}" compile err: ${error}` };
+        return {
+          valid: false,
+          error: `pattern "${this.pattern}" compile err: ${error}`,
+        };
       }
     }
 
@@ -779,7 +773,10 @@ export class Tag {
       const mini = parseInt(this.min, 10);
       if (!isNaN(mini)) {
         if (length < mini) {
-          return { valid: false, error: `string length ${length} is less than the minimum limit ${mini}` };
+          return {
+            valid: false,
+            error: `string length ${length} is less than the minimum limit ${mini}`,
+          };
         }
       }
     }
@@ -788,14 +785,20 @@ export class Tag {
       const maxi = parseInt(this.max, 10);
       if (!isNaN(maxi)) {
         if (length > maxi) {
-          return { valid: false, error: `string length ${length} exceeds the maximum limit ${maxi}` };
+          return {
+            valid: false,
+            error: `string length ${length} exceeds the maximum limit ${maxi}`,
+          };
         }
       }
     }
 
     if (this.size !== 0n) {
       if (BigInt(length) !== this.size) {
-        return { valid: false, error: `string length ${length} != size ${this.size}` };
+        return {
+          valid: false,
+          error: `string length ${length} != size ${this.size}`,
+        };
       }
     }
 
@@ -814,14 +817,20 @@ export class Tag {
       if (this.allowEmpty) {
         return { valid: true, data: arr, text: '' };
       }
-      return { valid: false, error: 'type []byte not allow empty value []byte{}' };
+      return {
+        valid: false,
+        error: 'type []byte not allow empty value []byte{}',
+      };
     }
 
     if (this.min) {
       const mini = parseInt(this.min, 10);
       if (!isNaN(mini)) {
         if (length < mini) {
-          return { valid: false, error: `[]byte length ${length} is less than the minimum limit ${mini}` };
+          return {
+            valid: false,
+            error: `[]byte length ${length} is less than the minimum limit ${mini}`,
+          };
         }
       }
     }
@@ -830,14 +839,20 @@ export class Tag {
       const maxi = parseInt(this.max, 10);
       if (!isNaN(maxi)) {
         if (length > maxi) {
-          return { valid: false, error: `[]byte length ${length} exceeds the maximum limit ${maxi}` };
+          return {
+            valid: false,
+            error: `[]byte length ${length} exceeds the maximum limit ${maxi}`,
+          };
         }
       }
     }
 
     if (this.size !== 0n) {
       if (BigInt(length) !== this.size) {
-        return { valid: false, error: `[]byte length ${length} != size ${this.size}` };
+        return {
+          valid: false,
+          error: `[]byte length ${length} != size ${this.size}`,
+        };
       }
     }
 
@@ -845,7 +860,11 @@ export class Tag {
       return { valid: false, error: 'desc length exceeds 65535 bytes' };
     }
 
-    return { valid: true, data: arr, text: Buffer.from(arr).toString('base64') };
+    return {
+      valid: true,
+      data: arr,
+      text: Buffer.from(arr).toString('base64'),
+    };
   }
 
   validateBool(val: boolean): ValidationResult {
@@ -874,7 +893,10 @@ export class Tag {
       const mini = parseInt(this.min, 10);
       if (!isNaN(mini)) {
         if (val64 < mini) {
-          return { valid: false, error: `value ${val64} is less than the minimum limit ${mini}` };
+          return {
+            valid: false,
+            error: `value ${val64} is less than the minimum limit ${mini}`,
+          };
         }
       }
     }
@@ -883,7 +905,10 @@ export class Tag {
       const maxi = parseInt(this.max, 10);
       if (!isNaN(maxi)) {
         if (val64 > maxi) {
-          return { valid: false, error: `value ${val64} exceeds the maximum limit ${maxi}` };
+          return {
+            valid: false,
+            error: `value ${val64} exceeds the maximum limit ${maxi}`,
+          };
         }
       }
     }
@@ -909,7 +934,10 @@ export class Tag {
       const mini = parseInt(this.min, 10);
       if (!isNaN(mini)) {
         if (val64 < mini) {
-          return { valid: false, error: `value ${val64} is less than the minimum limit ${mini}` };
+          return {
+            valid: false,
+            error: `value ${val64} is less than the minimum limit ${mini}`,
+          };
         }
       }
     }
@@ -918,7 +946,10 @@ export class Tag {
       const maxi = parseInt(this.max, 10);
       if (!isNaN(maxi)) {
         if (val64 > maxi) {
-          return { valid: false, error: `value ${val64} exceeds the maximum limit ${maxi}` };
+          return {
+            valid: false,
+            error: `value ${val64} exceeds the maximum limit ${maxi}`,
+          };
         }
       }
     }
@@ -944,7 +975,10 @@ export class Tag {
       const mini = parseInt(this.min, 10);
       if (!isNaN(mini)) {
         if (val64 < mini) {
-          return { valid: false, error: `value ${val64} is less than the minimum limit ${mini}` };
+          return {
+            valid: false,
+            error: `value ${val64} is less than the minimum limit ${mini}`,
+          };
         }
       }
     }
@@ -953,7 +987,10 @@ export class Tag {
       const maxi = parseInt(this.max, 10);
       if (!isNaN(maxi)) {
         if (val64 > maxi) {
-          return { valid: false, error: `value ${val64} exceeds the maximum limit ${maxi}` };
+          return {
+            valid: false,
+            error: `value ${val64} exceeds the maximum limit ${maxi}`,
+          };
         }
       }
     }
@@ -979,7 +1016,10 @@ export class Tag {
       const mini = parseInt(this.min, 10);
       if (!isNaN(mini)) {
         if (val64 < mini) {
-          return { valid: false, error: `value ${val64} is less than the minimum limit ${mini}` };
+          return {
+            valid: false,
+            error: `value ${val64} is less than the minimum limit ${mini}`,
+          };
         }
       }
     }
@@ -988,7 +1028,10 @@ export class Tag {
       const maxi = parseInt(this.max, 10);
       if (!isNaN(maxi)) {
         if (val64 > maxi) {
-          return { valid: false, error: `value ${val64} exceeds the maximum limit ${maxi}` };
+          return {
+            valid: false,
+            error: `value ${val64} exceeds the maximum limit ${maxi}`,
+          };
         }
       }
     }
@@ -1011,14 +1054,20 @@ export class Tag {
     if (this.min) {
       const mini = parseInt(this.min, 10);
       if (val < mini) {
-        return { valid: false, error: `value ${val} is less than the minimum limit ${mini}` };
+        return {
+          valid: false,
+          error: `value ${val} is less than the minimum limit ${mini}`,
+        };
       }
     }
 
     if (this.max) {
       const maxi = parseInt(this.max, 10);
       if (val > maxi) {
-        return { valid: false, error: `value ${val} exceeds the maximum limit ${maxi}` };
+        return {
+          valid: false,
+          error: `value ${val} exceeds the maximum limit ${maxi}`,
+        };
       }
     }
 
@@ -1043,7 +1092,10 @@ export class Tag {
       const mini = parseInt(this.min, 10);
       if (!isNaN(mini)) {
         if (val64 < mini) {
-          return { valid: false, error: `value ${val} is less than the minimum limit ${mini}` };
+          return {
+            valid: false,
+            error: `value ${val} is less than the minimum limit ${mini}`,
+          };
         }
       }
     }
@@ -1052,7 +1104,10 @@ export class Tag {
       const maxi = parseInt(this.max, 10);
       if (!isNaN(maxi)) {
         if (val64 > maxi) {
-          return { valid: false, error: `value ${val} exceeds the maximum limit ${maxi}` };
+          return {
+            valid: false,
+            error: `value ${val} exceeds the maximum limit ${maxi}`,
+          };
         }
       }
     }
@@ -1078,7 +1133,10 @@ export class Tag {
       const mini = parseInt(this.min, 10);
       if (!isNaN(mini)) {
         if (val64 < mini) {
-          return { valid: false, error: `value ${val} is less than the minimum limit ${mini}` };
+          return {
+            valid: false,
+            error: `value ${val} is less than the minimum limit ${mini}`,
+          };
         }
       }
     }
@@ -1087,7 +1145,10 @@ export class Tag {
       const maxi = parseInt(this.max, 10);
       if (!isNaN(maxi)) {
         if (val64 > maxi) {
-          return { valid: false, error: `value ${val} exceeds the maximum limit ${maxi}` };
+          return {
+            valid: false,
+            error: `value ${val} exceeds the maximum limit ${maxi}`,
+          };
         }
       }
     }
@@ -1104,7 +1165,10 @@ export class Tag {
       if (this.allowEmpty) {
         return { valid: true, data: val, text: '0' };
       }
-      return { valid: false, error: `type uint16 not allow empty value ${val}` };
+      return {
+        valid: false,
+        error: `type uint16 not allow empty value ${val}`,
+      };
     }
 
     const val64 = val;
@@ -1113,7 +1177,10 @@ export class Tag {
       const mini = parseInt(this.min, 10);
       if (!isNaN(mini)) {
         if (val64 < mini) {
-          return { valid: false, error: `value ${val} is less than the minimum limit ${mini}` };
+          return {
+            valid: false,
+            error: `value ${val} is less than the minimum limit ${mini}`,
+          };
         }
       }
     }
@@ -1122,7 +1189,10 @@ export class Tag {
       const maxi = parseInt(this.max, 10);
       if (!isNaN(maxi)) {
         if (val64 > maxi) {
-          return { valid: false, error: `value ${val} exceeds the maximum limit ${maxi}` };
+          return {
+            valid: false,
+            error: `value ${val} exceeds the maximum limit ${maxi}`,
+          };
         }
       }
     }
@@ -1139,7 +1209,10 @@ export class Tag {
       if (this.allowEmpty) {
         return { valid: true, data: val, text: '0' };
       }
-      return { valid: false, error: `type uint32 not allow empty value ${val}` };
+      return {
+        valid: false,
+        error: `type uint32 not allow empty value ${val}`,
+      };
     }
 
     const val64 = val;
@@ -1148,7 +1221,10 @@ export class Tag {
       const mini = parseInt(this.min, 10);
       if (!isNaN(mini)) {
         if (val64 < mini) {
-          return { valid: false, error: `value ${val} is less than the minimum limit ${mini}` };
+          return {
+            valid: false,
+            error: `value ${val} is less than the minimum limit ${mini}`,
+          };
         }
       }
     }
@@ -1157,7 +1233,10 @@ export class Tag {
       const maxi = parseInt(this.max, 10);
       if (!isNaN(maxi)) {
         if (val64 > maxi) {
-          return { valid: false, error: `value ${val} exceeds the maximum limit ${maxi}` };
+          return {
+            valid: false,
+            error: `value ${val} exceeds the maximum limit ${maxi}`,
+          };
         }
       }
     }
@@ -1174,20 +1253,29 @@ export class Tag {
       if (this.allowEmpty) {
         return { valid: true, data: val, text: '0' };
       }
-      return { valid: false, error: `type uint64 not allow empty value ${val}` };
+      return {
+        valid: false,
+        error: `type uint64 not allow empty value ${val}`,
+      };
     }
 
     if (this.min) {
       const mini = parseInt(this.min, 10);
       if (val < mini) {
-        return { valid: false, error: `value ${val} is less than the minimum limit ${mini}` };
+        return {
+          valid: false,
+          error: `value ${val} is less than the minimum limit ${mini}`,
+        };
       }
     }
 
     if (this.max) {
       const maxi = parseInt(this.max, 10);
       if (val > maxi) {
-        return { valid: false, error: `value ${val} exceeds the maximum limit ${maxi}` };
+        return {
+          valid: false,
+          error: `value ${val} exceeds the maximum limit ${maxi}`,
+        };
       }
     }
 
@@ -1358,7 +1446,10 @@ export class Tag {
     }
 
     if (!uuidRegex.test(val)) {
-      return { valid: false, error: `value '${val}' does not match UUID pattern` };
+      return {
+        valid: false,
+        error: `value '${val}' does not match UUID pattern`,
+      };
     }
 
     const uuidBytes = new Uint8Array(16);
@@ -1394,7 +1485,10 @@ export class Tag {
     }
 
     if (!decimalRegex.test(val)) {
-      return { valid: false, error: `invalid decimal "${val}", must be like "0.0"` };
+      return {
+        valid: false,
+        error: `invalid decimal "${val}", must be like "0.0"`,
+      };
     }
 
     if (this.desc && this.desc.length > 65535) {
@@ -1469,7 +1563,10 @@ export class Tag {
     }
 
     if (!emailRegex.test(val)) {
-      return { valid: false, error: `value '${val}' does not match email pattern` };
+      return {
+        valid: false,
+        error: `value '${val}' does not match email pattern`,
+      };
     }
 
     if (this.desc && this.desc.length > 65535) {
@@ -1498,7 +1595,10 @@ export class Tag {
     }
 
     if (idx === -1) {
-      return { valid: false, error: `value '${val}' not found in enum: ${enums}` };
+      return {
+        valid: false,
+        error: `value '${val}' not found in enum: ${enums}`,
+      };
     }
 
     if (this.desc && this.desc.length > 65535) {
@@ -1516,14 +1616,20 @@ export class Tag {
       if (this.allowEmpty) {
         return { valid: true, data: arr, text: '' };
       }
-      return { valid: false, error: 'type image not allow empty value []byte{}' };
+      return {
+        valid: false,
+        error: 'type image not allow empty value []byte{}',
+      };
     }
 
     if (this.min) {
       const mini = parseInt(this.min, 10);
       if (!isNaN(mini)) {
         if (length < mini) {
-          return { valid: false, error: `[]byte length ${length} < min ${mini}` };
+          return {
+            valid: false,
+            error: `[]byte length ${length} < min ${mini}`,
+          };
         }
       }
     }
@@ -1532,14 +1638,20 @@ export class Tag {
       const maxi = parseInt(this.max, 10);
       if (!isNaN(maxi)) {
         if (length > maxi) {
-          return { valid: false, error: `[]byte length ${length} > max ${maxi}` };
+          return {
+            valid: false,
+            error: `[]byte length ${length} > max ${maxi}`,
+          };
         }
       }
     }
 
     if (this.size !== 0n) {
       if (BigInt(length) !== this.size) {
-        return { valid: false, error: `[]byte length ${length} != size ${this.size}` };
+        return {
+          valid: false,
+          error: `[]byte length ${length} != size ${this.size}`,
+        };
       }
     }
 
@@ -1547,7 +1659,11 @@ export class Tag {
       return { valid: false, error: 'desc length exceeds 65535 bytes' };
     }
 
-    return { valid: true, data: arr, text: Buffer.from(arr).toString('base64') };
+    return {
+      valid: true,
+      data: arr,
+      text: Buffer.from(arr).toString('base64'),
+    };
   }
 
   validateStruct(): ValidationResult {
@@ -1556,7 +1672,10 @@ export class Tag {
     }
 
     if (this.location && this.location !== 0) {
-      return { valid: false, error: `type struct not support location UTC${this.location}` };
+      return {
+        valid: false,
+        error: `type struct not support location UTC${this.location}`,
+      };
     }
 
     return { valid: true };
@@ -1568,7 +1687,10 @@ export class Tag {
     }
 
     if (this.location && this.location !== 0) {
-      return { valid: false, error: `type map not support location UTC${this.location}` };
+      return {
+        valid: false,
+        error: `type map not support location UTC${this.location}`,
+      };
     }
 
     return { valid: true };
@@ -1580,7 +1702,10 @@ export class Tag {
     }
 
     if (this.location && this.location !== 0) {
-      return { valid: false, error: `type slice not support location UTC${this.location}` };
+      return {
+        valid: false,
+        error: `type slice not support location UTC${this.location}`,
+      };
     }
 
     const length = value.length;
@@ -1598,7 +1723,10 @@ export class Tag {
         const data = value[i];
         const key = typeof data === 'object' ? JSON.stringify(data) : data;
         if (seen.has(key)) {
-          return { valid: false, error: `slice duplicate value found: ${data}, index: ${i}` };
+          return {
+            valid: false,
+            error: `slice duplicate value found: ${data}, index: ${i}`,
+          };
         }
         seen.add(key);
       }
@@ -1613,7 +1741,10 @@ export class Tag {
     }
 
     if (this.location && this.location !== 0) {
-      return { valid: false, error: `type array not support location UTC${this.location}` };
+      return {
+        valid: false,
+        error: `type array not support location UTC${this.location}`,
+      };
     }
 
     const length = value.length;
@@ -1635,7 +1766,10 @@ export class Tag {
         const data = value[i];
         const key = typeof data === 'object' ? JSON.stringify(data) : data;
         if (seen.has(key)) {
-          return { valid: false, error: `array duplicate value found: ${data}, index: ${i}` };
+          return {
+            valid: false,
+            error: `array duplicate value found: ${data}, index: ${i}`,
+          };
         }
         seen.add(key);
       }
@@ -1655,7 +1789,7 @@ export function parseMMTag(tagStr: string): Tag {
     const kv = trimmed.split('=', 2);
     if (kv.length === 0 || !kv[0]) continue;
     const key = kv[0].toLowerCase();
-    const value = (kv.length > 1 && kv[1]) ? kv[1].trim() : '';
+    const value = kv.length > 1 && kv[1] ? kv[1].trim() : '';
 
     switch (key) {
       case 'is_null':
@@ -1743,7 +1877,7 @@ export function parseMMTag(tagStr: string): Tag {
         tag.childMax = value;
         break;
       case 'child_size':
-        tag.childSize = parseInt(value, 10) || 0;
+        tag.childSize = BigInt(value) || 0n;
         break;
       case 'child_enum':
         tag.childEnum = value;

@@ -1,6 +1,7 @@
 package mm
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/metamessage/metamessage/internal/jsonc"
@@ -8,7 +9,7 @@ import (
 
 // go test -v -run TestStrToJsonc
 //
-// go test internal/jsonc/*.go -v -run TestStrToJsonc/with_name
+// go test internal/mm/*.go -v -run TestStrToJsonc/user
 func TestStrToJsonc(t *testing.T) {
 	tests := []struct {
 		name    string
@@ -124,20 +125,44 @@ func TestStrToJsonc(t *testing.T) {
 			input:   "",
 			wantErr: true,
 		},
+		{
+			name: "user",
+			input: `
+			
+			// mm: desc=用户
+    {
+      // mm: type=i64; desc=用户ID
+      "id": 666,
+      // mm: desc=昵称
+      "name": "abc",
+	        // mm: type=u8
+    "age": 20
+    }
+			
+			`,
+			wantErr: false,
+		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := ParseFromJSONC(tt.input)
+			node, err := ParseFromJSONC(tt.input)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("ParseFromJSONC error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
-			t.Log(Dump(got))
-			t.Log(jsonc.ToJSONC(got))
-			if !tt.wantErr && jsonc.ToJSONC(got) != tt.want {
-				t.Errorf("ToJSONC() = \n%v, want \n%v", got, tt.want)
+			t.Log(Dump(node))
+			t.Log(jsonc.ToJSONC(node))
+			if !tt.wantErr && jsonc.ToJSONC(node) != tt.want {
+				t.Errorf("ToJSONC() = \n%v, want \n%v", node, tt.want)
 			}
+
+			encoder := getEncoder()
+			defer putEncoder(encoder)
+			wire, err := encoder.Encode(node)
+			fmt.Println("wire", wire)
+			_, _ = Decode(wire)
+
 		})
 	}
 }

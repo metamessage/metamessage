@@ -2,7 +2,7 @@ import { encodeNode, decodeToValue, mm } from '../../src/mm/index.js';
 import { ValueType } from '../../src/ast/value-type.js';
 import { Tag } from '../../src/ast/tag.js';
 
-// npm test test/mm/encoder.test.ts -- -t "should encode and decode array of numbers"
+// npm test test/mm/encoder.test.ts -- -t "should encode and decode non-empty object"
 describe('MM Encoder/Decoder', () => {
   describe('Boolean', () => {
     test('should encode and decode true', () => {
@@ -74,7 +74,6 @@ describe('MM Encoder/Decoder', () => {
     test('should encode and decode int8', () => {
       const node = mm.i8(127);
       const encoded = encodeNode(node);
-      console.log('encoded', encoded);
       const decoded = decodeToValue(encoded);
       expect(decoded.type).toBe(ValueType.Int8);
       expect(decoded.value).toBe(127);
@@ -141,7 +140,6 @@ describe('MM Encoder/Decoder', () => {
     test('should encode and decode non-zero float', () => {
       const encoded = encodeNode(mm.f64(3.14));
       const decoded = decodeToValue(encoded);
-      console.log('decoded', decoded);
       expect(decoded.type).toBe(ValueType.Float64);
       expect(decoded.value).toBeCloseTo(3.14);
     });
@@ -304,11 +302,11 @@ describe('MM Encoder/Decoder', () => {
       const decoded = decodeToValue(encoded);
       expect(decoded.type).toBe(ValueType.Array);
       expect(decoded.value.length).toBe(5);
-      expect(decoded.value[0].toString()).toBe('1');
-      expect(decoded.value[1].toString()).toBe('2');
-      expect(decoded.value[2].toString()).toBe('3');
-      expect(decoded.value[3].toString()).toBe('4');
-      expect(decoded.value[4].toString()).toBe('5');
+      expect(decoded.value[0]).toBe(1n);
+      expect(decoded.value[1]).toBe(2n);
+      expect(decoded.value[2]).toBe(3n);
+      expect(decoded.value[3]).toBe(4n);
+      expect(decoded.value[4]).toBe(5n);
     });
 
     // test('should encode and decode array of mixed types without null', () => {

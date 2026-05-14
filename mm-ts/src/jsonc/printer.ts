@@ -13,7 +13,14 @@ export class JSONCPrinter {
 
   print(node: Node): string {
     this.indentLevel = 0;
-    return this.printNode(node);
+    const tag = node.getTag();
+    let result = '';
+
+    if (tag.toString() !== '') {
+      result += `// mm: ${tag.toString()}\n`;
+    }
+
+    return (result += this.printNode(node));
   }
 
   printCompact(node: Node): string {
@@ -48,15 +55,7 @@ export class JSONCPrinter {
   }
 
   private printValue(value: MMValue): string {
-    const tag = value.getTag();
-    let result = '';
-
-    if (tag.toString() !== '') {
-      result += `// mm: ${tag.toString()}\n${this.getIndent()}`;
-    }
-
-    result += this.valueToStringOnly(value);
-    return result;
+    return `${this.valueToStringOnly(value)}`;
   }
 
   private printValueCompact(value: MMValue): string {
@@ -78,7 +77,7 @@ export class JSONCPrinter {
       case ValueType.String:
         return `"${val}"`;
       case ValueType.Bytes:
-        return `"${Buffer.from(val).toString('base64')}"`;
+        return `"${uint8ToBase64(val)}"`;
       case ValueType.DateTime:
         return val.toString();
       case ValueType.Date:
@@ -137,7 +136,7 @@ export class JSONCPrinter {
     for (const [key, value] of Object.entries(properties)) {
       const tag = value.getTag();
       let entry = '';
-      if (tag && tag.desc && value instanceof MMValue) {
+      if (tag.toString() !== '') {
         entry += `${indent}// mm: ${tag.toString()}\n${indent}`;
       }
       entry += `${JSON.stringify(key)}: ${this.printNode(value)}`;
@@ -147,7 +146,7 @@ export class JSONCPrinter {
     this.indentLevel--;
     const closingIndent = this.getIndent();
 
-    return `{\n${entries.join(',\n')}\n${closingIndent}}`;
+    return `{\n${entries.join(',\n\n')}\n${closingIndent}}`;
   }
 
   private printObjectCompact(obj: MMObject): string {
@@ -211,4 +210,8 @@ export function toJSONC(node: Node): string {
 export function printJSONCCompact(node: Node): string {
   const printer = new JSONCPrinter();
   return printer.printCompact(node);
+}
+
+export function uint8ToBase64(bytes: Uint8Array): string {
+  return btoa(Array.from(bytes, (c) => String.fromCharCode(c)).join(''));
 }

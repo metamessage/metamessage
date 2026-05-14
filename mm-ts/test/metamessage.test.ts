@@ -314,10 +314,8 @@ describe('encode and decode', () => {
       class User {
         @mm({ type: ValueType.Int64, desc: '用户ID', nullable: false })
         id: bigint = 0n;
-
         @mm({ desc: '昵称' })
         name: string = '';
-
         @mm({ type: ValueType.Uint8 })
         age: number = 0;
       }

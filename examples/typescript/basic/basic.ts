@@ -1,25 +1,35 @@
-import { encode, bind, mm } from '../../../mm-ts/src/mm/index.js';
+import {
+  encodeFromValue,
+  decodeToValue,
+  mm,
+  ValueType,
+} from "../../../mm-ts/src/metamessage";
 
-// 使用 mm() 函数包装值，支持 tag 和自动类型推断
-const person = {
-  name: mm("Ed", { desc: "" }),
-  email: mm("Ed@gmail.com", { desc: "", type: "email" }),
-  score: mm(90, { desc: "", type: "uint8" }),
-  age: mm(30, { desc: "" })
-};
+@mm({ desc: "用户" })
+class User {
+  @mm({ type: ValueType.Int64, desc: "用户ID", nullable: false })
+  id: bigint = 0n;
+  @mm({ desc: "昵称" })
+  name: string = "";
+  @mm({ type: ValueType.Uint8 })
+  age: number = 0;
+}
 
-console.log('Original:', person);
+const u = new User();
+u.id = 666n;
+u.name = "abc";
+u.age = 20;
 
-// 编码到 Wire 格式
-const wire = encode(person);
-console.log('Encoded:', bytesToHex(wire));
+// const node = ValueToNode(u);
+// console.log('ValueToNode', node);
+const wire = encodeFromValue(u);
+console.log("wire", wire);
+const u2 = decodeToValue(wire, User);
 
-// 从 Wire 解码并绑定到模板
-const decoded = bind(wire, person);
-console.log('Decoded:', decoded);
+console.log(u2);
 
 function bytesToHex(bytes: Uint8Array): string {
   return Array.from(bytes)
-    .map(b => b.toString(16).padStart(2, '0'))
-    .join('');
+    .map((b) => b.toString(16).padStart(2, "0"))
+    .join("");
 }

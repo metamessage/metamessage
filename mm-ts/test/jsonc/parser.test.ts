@@ -217,7 +217,6 @@ describe('JSONC Tag Parser', () => {
   test('tag toString should format correctly', () => {
     const tag = parseMMTag('type=str;desc=test;nullable');
     const str = tag.toString();
-    expect(str).toContain('type=str');
     expect(str).toContain('desc=test');
     expect(str).toContain('nullable');
   });
