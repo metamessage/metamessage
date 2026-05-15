@@ -330,8 +330,8 @@ describe('encode and decode', () => {
       const wire = encodeFromValue(u);
       console.log('wire', wire);
       const u2 = decodeToValue(wire, User);
-
       console.log(u2);
+      console.log(u2.id);
     });
   });
 });
