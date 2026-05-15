@@ -9,7 +9,7 @@ import java.math.BigInteger
 import java.util.UUID
 
 import io.github.metamessage.MM
-import io.github.metamessage.ast.ValueType
+import io.github.metamessage.ir.ValueType
 
 class MetaMessageTest {
 

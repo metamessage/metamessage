@@ -1,6 +1,6 @@
-import { MMValue, MMObject, MMArray, MMDoc } from '../ast/ast';
-import { ValueType } from '../ast/value-type';
-import { Node } from '../ast/ast';
+import { MMValue, MMObject, MMArray, MMDoc } from '../ir/ast';
+import { ValueType } from '../ir/value-type';
+import { Node } from '../ir/ast';
 
 export class JSONCPrinter {
   private indent: string;

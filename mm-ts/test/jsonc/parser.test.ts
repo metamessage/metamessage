@@ -1,6 +1,6 @@
 import { parseJSONC, toJSONC, printJSONCCompact } from '../../src/jsonc/index';
-import { ValueType } from '../../src/ast/value-type';
-import { parseMMTag } from '../../src/ast/tag';
+import { ValueType } from '../../src/ir/value-type';
+import { parseMMTag } from '../../src/ir/tag';
 
 // npm test test/jsonc/parser.test.ts -- -t ""
 describe('JSONC Parser', () => {

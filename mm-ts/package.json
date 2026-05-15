@@ -3,13 +3,13 @@
   "version": "0.1.5",
   "description": "TypeScript implementation of MetaMessage",
   "type": "commonjs",
-  "main": "dist/mm/index.js",
-  "types": "dist/mm/index.d.ts",
+  "main": "dist/core/index.js",
+  "types": "dist/core/index.d.ts",
   "exports": {
     ".": {
-      "require": "./dist/mm/index.js",
-      "import": "./dist/mm/index.js",
-      "types": "./dist/mm/index.d.ts"
+      "require": "./dist/core/index.js",
+      "import": "./dist/core/index.js",
+      "types": "./dist/core/index.d.ts"
     },
     "./jsonc": {
       "require": "./dist/jsonc/index.js",

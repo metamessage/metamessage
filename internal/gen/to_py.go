@@ -6,49 +6,49 @@ import (
 	"strings"
 	"unicode"
 
-	"github.com/metamessage/metamessage/internal/ast"
+	"github.com/metamessage/metamessage/internal/ir"
 )
 
-var pyTypeMap = map[ast.ValueType]string{
-	ast.ValueTypeUnknown:  "Any",
-	ast.ValueTypeString:   "str",
-	ast.ValueTypeBytes:    "bytes",
-	ast.ValueTypeBool:     "bool",
-	ast.ValueTypeArray:    "List[Any]",
-	ast.ValueTypeSlice:    "List[Any]",
-	ast.ValueTypeMap:      "Dict[str, Any]",
-	ast.ValueTypeInt:      "int",
-	ast.ValueTypeInt8:     "int",
-	ast.ValueTypeInt16:    "int",
-	ast.ValueTypeInt32:    "int",
-	ast.ValueTypeInt64:    "int",
-	ast.ValueTypeUint:     "int",
-	ast.ValueTypeUint8:    "int",
-	ast.ValueTypeUint16:   "int",
-	ast.ValueTypeUint32:   "int",
-	ast.ValueTypeUint64:   "int",
-	ast.ValueTypeFloat32:  "float",
-	ast.ValueTypeFloat64:  "float",
-	ast.ValueTypeBigInt:   "int",
-	ast.ValueTypeDateTime: "str",
-	ast.ValueTypeDate:     "str",
-	ast.ValueTypeTime:     "str",
-	ast.ValueTypeUUID:     "str",
-	ast.ValueTypeDecimal:  "str",
-	ast.ValueTypeEmail:    "str",
-	ast.ValueTypeIP:       "str",
-	ast.ValueTypeURL:      "str",
-	ast.ValueTypeEnum:     "str",
-	ast.ValueTypeImage:    "str",
+var pyTypeMap = map[ir.ValueType]string{
+	ir.ValueTypeUnknown:  "Any",
+	ir.ValueTypeString:   "str",
+	ir.ValueTypeBytes:    "bytes",
+	ir.ValueTypeBool:     "bool",
+	ir.ValueTypeArray:    "List[Any]",
+	ir.ValueTypeSlice:    "List[Any]",
+	ir.ValueTypeMap:      "Dict[str, Any]",
+	ir.ValueTypeInt:      "int",
+	ir.ValueTypeInt8:     "int",
+	ir.ValueTypeInt16:    "int",
+	ir.ValueTypeInt32:    "int",
+	ir.ValueTypeInt64:    "int",
+	ir.ValueTypeUint:     "int",
+	ir.ValueTypeUint8:    "int",
+	ir.ValueTypeUint16:   "int",
+	ir.ValueTypeUint32:   "int",
+	ir.ValueTypeUint64:   "int",
+	ir.ValueTypeFloat32:  "float",
+	ir.ValueTypeFloat64:  "float",
+	ir.ValueTypeBigInt:   "int",
+	ir.ValueTypeDateTime: "str",
+	ir.ValueTypeDate:     "str",
+	ir.ValueTypeTime:     "str",
+	ir.ValueTypeUUID:     "str",
+	ir.ValueTypeDecimal:  "str",
+	ir.ValueTypeEmail:    "str",
+	ir.ValueTypeIP:       "str",
+	ir.ValueTypeURL:      "str",
+	ir.ValueTypeEnum:     "str",
+	ir.ValueTypeImage:    "str",
 }
 
-func ToPy(n ast.Node) string {
+func ToPy(n ir.Node) string {
 	if n == nil {
 		return ""
 	}
 
 	topName := "Obj"
-	if obj, ok := n.(*ast.Object); ok && obj.Tag != nil && obj.Tag.Name != "" {
+	if obj, ok := n.(*ir.Object); ok && obj.Tag != nil && obj.Tag.Name != "" {
 		topName = exportPyClassName(obj.Tag.Name)
 	}
 
@@ -78,20 +78,20 @@ func ToPy(n ast.Node) string {
 	return sb.String()
 }
 
-func getPyTypeForField(f *ast.Field) string {
+func getPyTypeForField(f *ir.Field) string {
 	switch v := f.Value.(type) {
-	case *ast.Value:
+	case *ir.Value:
 		return getPyType(v)
-	case *ast.Object:
+	case *ir.Object:
 		return getPyObjectType(f.Key, v)
-	case *ast.Array:
+	case *ir.Array:
 		return getPyArrayType(f.Key, v)
 	default:
 		return "Any"
 	}
 }
 
-func getPyType(v *ast.Value) string {
+func getPyType(v *ir.Value) string {
 	if v != nil && v.Tag != nil {
 		if t, ok := pyTypeMap[v.Tag.Type]; ok {
 			return t
@@ -100,19 +100,19 @@ func getPyType(v *ast.Value) string {
 	return "Any"
 }
 
-func getPyObjectType(fieldKey string, obj *ast.Object) string {
+func getPyObjectType(fieldKey string, obj *ir.Object) string {
 	if obj != nil && obj.Tag != nil && obj.Tag.Name != "" {
 		return exportPyClassName(obj.Tag.Name)
 	}
 	return exportPyClassName(fieldKey)
 }
 
-func getPyArrayType(fieldKey string, a *ast.Array) string {
+func getPyArrayType(fieldKey string, a *ir.Array) string {
 	if a == nil {
 		return "List[Any]"
 	}
 
-	if a.Tag != nil && a.Tag.ChildType != ast.ValueTypeUnknown {
+	if a.Tag != nil && a.Tag.ChildType != ir.ValueTypeUnknown {
 		if t, ok := pyTypeMap[a.Tag.ChildType]; ok {
 			return "List[" + t + "]"
 		}
@@ -120,9 +120,9 @@ func getPyArrayType(fieldKey string, a *ast.Array) string {
 
 	if len(a.Items) > 0 {
 		switch item := a.Items[0].(type) {
-		case *ast.Object:
+		case *ir.Object:
 			return "List[" + getPyObjectType(fieldKey, item) + "]"
-		case *ast.Value:
+		case *ir.Value:
 			return "List[" + getPyType(item) + "]"
 		}
 	}
@@ -130,8 +130,8 @@ func getPyArrayType(fieldKey string, a *ast.Array) string {
 	return "List[Any]"
 }
 
-func genPyFields(b *strings.Builder, n ast.Node, indent int) {
-	obj, ok := n.(*ast.Object)
+func genPyFields(b *strings.Builder, n ir.Node, indent int) {
+	obj, ok := n.(*ir.Object)
 	if !ok {
 		return
 	}
@@ -167,8 +167,8 @@ func genPyFields(b *strings.Builder, n ast.Node, indent int) {
 	}
 }
 
-func genPyNestedClasses(b *strings.Builder, n ast.Node, generated map[string]struct{}) {
-	obj, ok := n.(*ast.Object)
+func genPyNestedClasses(b *strings.Builder, n ir.Node, generated map[string]struct{}) {
+	obj, ok := n.(*ir.Object)
 	if !ok {
 		return
 	}
@@ -179,7 +179,7 @@ func genPyNestedClasses(b *strings.Builder, n ast.Node, generated map[string]str
 		}
 
 		switch v := f.Value.(type) {
-		case *ast.Object:
+		case *ir.Object:
 			className := getPyObjectType(f.Key, v)
 			if _, ok := generated[className]; ok {
 				continue
@@ -192,7 +192,7 @@ func genPyNestedClasses(b *strings.Builder, n ast.Node, generated map[string]str
 			genPyFields(b, v, 1)
 			b.WriteString("\n")
 			genPyNestedClasses(b, v, generated)
-		case *ast.Array:
+		case *ir.Array:
 			if nestedObj := findFirstObjectInArrayPy(v); nestedObj != nil {
 				className := getPyObjectType(f.Key, nestedObj)
 				if _, ok := generated[className]; ok {
@@ -211,12 +211,12 @@ func genPyNestedClasses(b *strings.Builder, n ast.Node, generated map[string]str
 	}
 }
 
-func findFirstObjectInArrayPy(a *ast.Array) *ast.Object {
+func findFirstObjectInArrayPy(a *ir.Array) *ir.Object {
 	if a == nil {
 		return nil
 	}
 	for _, item := range a.Items {
-		if obj, ok := item.(*ast.Object); ok {
+		if obj, ok := item.(*ir.Object); ok {
 			return obj
 		}
 	}
@@ -264,20 +264,20 @@ func exportPyInstanceName(name string) string {
 	return strings.ToLower(string(name[0])) + name[1:] + "_data"
 }
 
-func genPyValue(b *strings.Builder, n ast.Node, fieldKey string, indent int) {
+func genPyValue(b *strings.Builder, n ir.Node, fieldKey string, indent int) {
 	switch v := n.(type) {
-	case *ast.Value:
+	case *ir.Value:
 		b.WriteString(formatPyValueLiteral(v))
-	case *ast.Object:
+	case *ir.Object:
 		genPyObjectInstance(b, v, fieldKey, indent)
-	case *ast.Array:
+	case *ir.Array:
 		genPyArrayInstance(b, v, fieldKey, indent)
 	default:
 		b.WriteString("None")
 	}
 }
 
-func genPyObjectInstance(b *strings.Builder, obj *ast.Object, fieldKey string, indent int) {
+func genPyObjectInstance(b *strings.Builder, obj *ir.Object, fieldKey string, indent int) {
 	className := getPyObjectType(fieldKey, obj)
 	if obj == nil || len(obj.Fields) == 0 {
 		b.WriteString(className)
@@ -301,7 +301,7 @@ func genPyObjectInstance(b *strings.Builder, obj *ast.Object, fieldKey string, i
 	b.WriteString(")")
 }
 
-func genPyArrayInstance(b *strings.Builder, a *ast.Array, fieldKey string, indent int) {
+func genPyArrayInstance(b *strings.Builder, a *ir.Array, fieldKey string, indent int) {
 	if a == nil || len(a.Items) == 0 {
 		b.WriteString("[]")
 		return
@@ -311,9 +311,9 @@ func genPyArrayInstance(b *strings.Builder, a *ast.Array, fieldKey string, inden
 	for _, item := range a.Items {
 		WriteIndent(b, indent+1)
 		switch v := item.(type) {
-		case *ast.Object:
+		case *ir.Object:
 			genPyObjectInstance(b, v, fieldKey, indent+1)
-		case *ast.Value:
+		case *ir.Value:
 			b.WriteString(formatPyValueLiteral(v))
 		default:
 			b.WriteString("None")
@@ -324,7 +324,7 @@ func genPyArrayInstance(b *strings.Builder, a *ast.Array, fieldKey string, inden
 	b.WriteString("]")
 }
 
-func formatPyValueLiteral(v *ast.Value) string {
+func formatPyValueLiteral(v *ir.Value) string {
 	if v == nil {
 		return "None"
 	}
@@ -353,6 +353,6 @@ func formatPyValueLiteral(v *ast.Value) string {
 	return strconv.Quote(v.Text)
 }
 
-func PrintPyStruct(n ast.Node) {
+func PrintPyStruct(n ir.Node) {
 	fmt.Println(ToPy(n))
 }

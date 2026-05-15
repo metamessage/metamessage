@@ -5,49 +5,49 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/metamessage/metamessage/internal/ast"
+	"github.com/metamessage/metamessage/internal/ir"
 )
 
-var tsTypeMap = map[ast.ValueType]string{
-	ast.ValueTypeUnknown:  "any",
-	ast.ValueTypeString:   "string",
-	ast.ValueTypeBytes:    "Uint8Array",
-	ast.ValueTypeBool:     "boolean",
-	ast.ValueTypeArray:    "Array<any>",
-	ast.ValueTypeSlice:    "Array<any>",
-	ast.ValueTypeMap:      "Record<string, any>",
-	ast.ValueTypeInt:      "number",
-	ast.ValueTypeInt8:     "number",
-	ast.ValueTypeInt16:    "number",
-	ast.ValueTypeInt32:    "number",
-	ast.ValueTypeInt64:    "number",
-	ast.ValueTypeUint:     "number",
-	ast.ValueTypeUint8:    "number",
-	ast.ValueTypeUint16:   "number",
-	ast.ValueTypeUint32:   "number",
-	ast.ValueTypeUint64:   "number",
-	ast.ValueTypeFloat32:  "number",
-	ast.ValueTypeFloat64:  "number",
-	ast.ValueTypeBigInt:   "string",
-	ast.ValueTypeDateTime: "string",
-	ast.ValueTypeDate:     "string",
-	ast.ValueTypeTime:     "string",
-	ast.ValueTypeUUID:     "string",
-	ast.ValueTypeDecimal:  "string",
-	ast.ValueTypeEmail:    "string",
-	ast.ValueTypeIP:       "string",
-	ast.ValueTypeURL:      "string",
-	ast.ValueTypeEnum:     "string",
-	ast.ValueTypeImage:    "string",
+var tsTypeMap = map[ir.ValueType]string{
+	ir.ValueTypeUnknown:  "any",
+	ir.ValueTypeString:   "string",
+	ir.ValueTypeBytes:    "Uint8Array",
+	ir.ValueTypeBool:     "boolean",
+	ir.ValueTypeArray:    "Array<any>",
+	ir.ValueTypeSlice:    "Array<any>",
+	ir.ValueTypeMap:      "Record<string, any>",
+	ir.ValueTypeInt:      "number",
+	ir.ValueTypeInt8:     "number",
+	ir.ValueTypeInt16:    "number",
+	ir.ValueTypeInt32:    "number",
+	ir.ValueTypeInt64:    "number",
+	ir.ValueTypeUint:     "number",
+	ir.ValueTypeUint8:    "number",
+	ir.ValueTypeUint16:   "number",
+	ir.ValueTypeUint32:   "number",
+	ir.ValueTypeUint64:   "number",
+	ir.ValueTypeFloat32:  "number",
+	ir.ValueTypeFloat64:  "number",
+	ir.ValueTypeBigInt:   "string",
+	ir.ValueTypeDateTime: "string",
+	ir.ValueTypeDate:     "string",
+	ir.ValueTypeTime:     "string",
+	ir.ValueTypeUUID:     "string",
+	ir.ValueTypeDecimal:  "string",
+	ir.ValueTypeEmail:    "string",
+	ir.ValueTypeIP:       "string",
+	ir.ValueTypeURL:      "string",
+	ir.ValueTypeEnum:     "string",
+	ir.ValueTypeImage:    "string",
 }
 
-func ToTS(n ast.Node) string {
+func ToTS(n ir.Node) string {
 	if n == nil {
 		return ""
 	}
 
 	topName := "Obj"
-	if obj, ok := n.(*ast.Object); ok && obj.Tag != nil && obj.Tag.Name != "" {
+	if obj, ok := n.(*ir.Object); ok && obj.Tag != nil && obj.Tag.Name != "" {
 		topName = exportTSInterfaceName(obj.Tag.Name)
 	}
 
@@ -71,20 +71,20 @@ func ToTS(n ast.Node) string {
 	return sb.String()
 }
 
-func getTSTypeForField(f *ast.Field) string {
+func getTSTypeForField(f *ir.Field) string {
 	switch v := f.Value.(type) {
-	case *ast.Value:
+	case *ir.Value:
 		return getTSType(v)
-	case *ast.Object:
+	case *ir.Object:
 		return getTSObjectType(f.Key, v)
-	case *ast.Array:
+	case *ir.Array:
 		return getTSArrayType(f.Key, v)
 	default:
 		return "any"
 	}
 }
 
-func getTSType(v *ast.Value) string {
+func getTSType(v *ir.Value) string {
 	if v != nil && v.Tag != nil {
 		if t, ok := tsTypeMap[v.Tag.Type]; ok {
 			return t
@@ -93,19 +93,19 @@ func getTSType(v *ast.Value) string {
 	return "any"
 }
 
-func getTSObjectType(fieldKey string, obj *ast.Object) string {
+func getTSObjectType(fieldKey string, obj *ir.Object) string {
 	if obj != nil && obj.Tag != nil && obj.Tag.Name != "" {
 		return exportTSInterfaceName(obj.Tag.Name)
 	}
 	return exportTSInterfaceName(fieldKey)
 }
 
-func getTSArrayType(fieldKey string, a *ast.Array) string {
+func getTSArrayType(fieldKey string, a *ir.Array) string {
 	if a == nil {
 		return "Array<any>"
 	}
 
-	if a.Tag != nil && a.Tag.ChildType != ast.ValueTypeUnknown {
+	if a.Tag != nil && a.Tag.ChildType != ir.ValueTypeUnknown {
 		if t, ok := tsTypeMap[a.Tag.ChildType]; ok {
 			return "Array<" + t + ">"
 		}
@@ -113,9 +113,9 @@ func getTSArrayType(fieldKey string, a *ast.Array) string {
 
 	if len(a.Items) > 0 {
 		switch item := a.Items[0].(type) {
-		case *ast.Object:
+		case *ir.Object:
 			return "Array<" + getTSObjectType(fieldKey, item) + ">"
-		case *ast.Value:
+		case *ir.Value:
 			if item.Tag != nil {
 				if t, ok := tsTypeMap[item.Tag.Type]; ok {
 					return "Array<" + t + ">"
@@ -127,8 +127,8 @@ func getTSArrayType(fieldKey string, a *ast.Array) string {
 	return "Array<any>"
 }
 
-func genTSFields(b *strings.Builder, n ast.Node, indent int) {
-	obj, ok := n.(*ast.Object)
+func genTSFields(b *strings.Builder, n ir.Node, indent int) {
+	obj, ok := n.(*ir.Object)
 	if !ok {
 		return
 	}
@@ -156,8 +156,8 @@ func genTSFields(b *strings.Builder, n ast.Node, indent int) {
 	}
 }
 
-func genTSNestedInterfaces(b *strings.Builder, n ast.Node, indent int) {
-	obj, ok := n.(*ast.Object)
+func genTSNestedInterfaces(b *strings.Builder, n ir.Node, indent int) {
+	obj, ok := n.(*ir.Object)
 	if !ok {
 		return
 	}
@@ -168,7 +168,7 @@ func genTSNestedInterfaces(b *strings.Builder, n ast.Node, indent int) {
 		}
 
 		switch v := f.Value.(type) {
-		case *ast.Object:
+		case *ir.Object:
 			className := getTSObjectType(f.Key, v)
 			b.WriteString("\nexport interface ")
 			b.WriteString(className)
@@ -176,7 +176,7 @@ func genTSNestedInterfaces(b *strings.Builder, n ast.Node, indent int) {
 			genTSFields(b, v, 1)
 			b.WriteString("}\n")
 			genTSNestedInterfaces(b, v, indent+1)
-		case *ast.Array:
+		case *ir.Array:
 			if nestedObj := findFirstObjectInArrayTS(v); nestedObj != nil {
 				className := getTSObjectType(f.Key, nestedObj)
 				b.WriteString("\nexport interface ")
@@ -190,12 +190,12 @@ func genTSNestedInterfaces(b *strings.Builder, n ast.Node, indent int) {
 	}
 }
 
-func findFirstObjectInArrayTS(a *ast.Array) *ast.Object {
+func findFirstObjectInArrayTS(a *ir.Array) *ir.Object {
 	if a == nil {
 		return nil
 	}
 	for _, item := range a.Items {
-		if obj, ok := item.(*ast.Object); ok {
+		if obj, ok := item.(*ir.Object); ok {
 			return obj
 		}
 	}
@@ -231,20 +231,20 @@ func exportTSConstName(name string) string {
 	return strings.ToLower(string(name[0])) + name[1:] + "Data"
 }
 
-func genTSValue(b *strings.Builder, n ast.Node, indent int) {
+func genTSValue(b *strings.Builder, n ir.Node, indent int) {
 	switch v := n.(type) {
-	case *ast.Value:
+	case *ir.Value:
 		b.WriteString(formatTSValueLiteral(v))
-	case *ast.Object:
+	case *ir.Object:
 		genTSObjectLiteral(b, v, indent)
-	case *ast.Array:
+	case *ir.Array:
 		genTSArrayLiteral(b, v, indent)
 	default:
 		b.WriteString("null")
 	}
 }
 
-func genTSObjectLiteral(b *strings.Builder, obj *ast.Object, indent int) {
+func genTSObjectLiteral(b *strings.Builder, obj *ir.Object, indent int) {
 	if obj == nil {
 		b.WriteString("null")
 		return
@@ -273,7 +273,7 @@ func genTSObjectLiteral(b *strings.Builder, obj *ast.Object, indent int) {
 	b.WriteString("}")
 }
 
-func genTSArrayLiteral(b *strings.Builder, a *ast.Array, indent int) {
+func genTSArrayLiteral(b *strings.Builder, a *ir.Array, indent int) {
 	if a == nil {
 		b.WriteString("[]")
 		return
@@ -292,7 +292,7 @@ func genTSArrayLiteral(b *strings.Builder, a *ast.Array, indent int) {
 	b.WriteString("]")
 }
 
-func formatTSValueLiteral(v *ast.Value) string {
+func formatTSValueLiteral(v *ir.Value) string {
 	if v == nil {
 		return "null"
 	}
@@ -322,6 +322,6 @@ func formatTSValueLiteral(v *ast.Value) string {
 	return strconv.Quote(v.Text)
 }
 
-func PrintTSStruct(n ast.Node) {
+func PrintTSStruct(n ir.Node) {
 	fmt.Println(ToTS(n))
 }

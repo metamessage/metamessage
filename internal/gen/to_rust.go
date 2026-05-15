@@ -5,49 +5,49 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/metamessage/metamessage/internal/ast"
+	"github.com/metamessage/metamessage/internal/ir"
 )
 
-var rustTypeMap = map[ast.ValueType]string{
-	ast.ValueTypeUnknown:  "serde_json::Value",
-	ast.ValueTypeString:   "String",
-	ast.ValueTypeBytes:    "Vec<u8>",
-	ast.ValueTypeBool:     "bool",
-	ast.ValueTypeArray:    "Vec<serde_json::Value>",
-	ast.ValueTypeSlice:    "Vec<serde_json::Value>",
-	ast.ValueTypeMap:      "HashMap<String, serde_json::Value>",
-	ast.ValueTypeInt:      "i32",
-	ast.ValueTypeInt8:     "i8",
-	ast.ValueTypeInt16:    "i16",
-	ast.ValueTypeInt32:    "i32",
-	ast.ValueTypeInt64:    "i64",
-	ast.ValueTypeUint:     "u32",
-	ast.ValueTypeUint8:    "u8",
-	ast.ValueTypeUint16:   "u16",
-	ast.ValueTypeUint32:   "u32",
-	ast.ValueTypeUint64:   "u64",
-	ast.ValueTypeFloat32:  "f32",
-	ast.ValueTypeFloat64:  "f64",
-	ast.ValueTypeBigInt:   "String",
-	ast.ValueTypeDateTime: "String",
-	ast.ValueTypeDate:     "String",
-	ast.ValueTypeTime:     "String",
-	ast.ValueTypeUUID:     "String",
-	ast.ValueTypeDecimal:  "String",
-	ast.ValueTypeEmail:    "String",
-	ast.ValueTypeIP:       "String",
-	ast.ValueTypeURL:      "String",
-	ast.ValueTypeEnum:     "String",
-	ast.ValueTypeImage:    "String",
+var rustTypeMap = map[ir.ValueType]string{
+	ir.ValueTypeUnknown:  "serde_json::Value",
+	ir.ValueTypeString:   "String",
+	ir.ValueTypeBytes:    "Vec<u8>",
+	ir.ValueTypeBool:     "bool",
+	ir.ValueTypeArray:    "Vec<serde_json::Value>",
+	ir.ValueTypeSlice:    "Vec<serde_json::Value>",
+	ir.ValueTypeMap:      "HashMap<String, serde_json::Value>",
+	ir.ValueTypeInt:      "i32",
+	ir.ValueTypeInt8:     "i8",
+	ir.ValueTypeInt16:    "i16",
+	ir.ValueTypeInt32:    "i32",
+	ir.ValueTypeInt64:    "i64",
+	ir.ValueTypeUint:     "u32",
+	ir.ValueTypeUint8:    "u8",
+	ir.ValueTypeUint16:   "u16",
+	ir.ValueTypeUint32:   "u32",
+	ir.ValueTypeUint64:   "u64",
+	ir.ValueTypeFloat32:  "f32",
+	ir.ValueTypeFloat64:  "f64",
+	ir.ValueTypeBigInt:   "String",
+	ir.ValueTypeDateTime: "String",
+	ir.ValueTypeDate:     "String",
+	ir.ValueTypeTime:     "String",
+	ir.ValueTypeUUID:     "String",
+	ir.ValueTypeDecimal:  "String",
+	ir.ValueTypeEmail:    "String",
+	ir.ValueTypeIP:       "String",
+	ir.ValueTypeURL:      "String",
+	ir.ValueTypeEnum:     "String",
+	ir.ValueTypeImage:    "String",
 }
 
-func ToRust(n ast.Node) string {
+func ToRust(n ir.Node) string {
 	if n == nil {
 		return ""
 	}
 
 	topName := "Obj"
-	if obj, ok := n.(*ast.Object); ok && obj.Tag != nil && obj.Tag.Name != "" {
+	if obj, ok := n.(*ir.Object); ok && obj.Tag != nil && obj.Tag.Name != "" {
 		topName = exportRustStructName(obj.Tag.Name)
 	}
 
@@ -80,7 +80,7 @@ func ToRust(n ast.Node) string {
 	sb.WriteString("    ")
 	sb.WriteString(topName)
 	sb.WriteString(" {\n")
-	if obj, ok := n.(*ast.Object); ok {
+	if obj, ok := n.(*ir.Object); ok {
 		genRustObjectInitializer(&sb, obj, 2)
 	}
 	sb.WriteString("    }\n")
@@ -89,7 +89,7 @@ func ToRust(n ast.Node) string {
 	return sb.String()
 }
 
-func collectRustImports(n ast.Node) []string {
+func collectRustImports(n ir.Node) []string {
 	imports := make(map[string]struct{})
 	collectRustImportsRec(n, imports)
 
@@ -105,24 +105,24 @@ func collectRustImports(n ast.Node) []string {
 	return packages
 }
 
-func collectRustImportsRec(n ast.Node, imports map[string]struct{}) {
+func collectRustImportsRec(n ir.Node, imports map[string]struct{}) {
 	if n == nil {
 		return
 	}
 
 	switch v := n.(type) {
-	case *ast.Value:
+	case *ir.Value:
 		if v.Tag != nil {
 			addRustImportForType(v.Tag.Type, imports)
 		}
-	case *ast.Array:
-		if v.Tag != nil && v.Tag.ChildType != ast.ValueTypeUnknown {
+	case *ir.Array:
+		if v.Tag != nil && v.Tag.ChildType != ir.ValueTypeUnknown {
 			addRustImportForType(v.Tag.ChildType, imports)
 		}
 		for _, item := range v.Items {
 			collectRustImportsRec(item, imports)
 		}
-	case *ast.Object:
+	case *ir.Object:
 		for _, f := range v.Fields {
 			if f != nil {
 				collectRustImportsRec(f.Value, imports)
@@ -131,33 +131,33 @@ func collectRustImportsRec(n ast.Node, imports map[string]struct{}) {
 	}
 }
 
-func addRustImportForType(typ ast.ValueType, imports map[string]struct{}) {
+func addRustImportForType(typ ir.ValueType, imports map[string]struct{}) {
 	switch typ {
-	case ast.ValueTypeUnknown:
+	case ir.ValueTypeUnknown:
 		imports["serde_json::Value"] = struct{}{}
-	case ast.ValueTypeMap:
+	case ir.ValueTypeMap:
 		imports["std::collections::HashMap"] = struct{}{}
-	case ast.ValueTypeBigInt:
+	case ir.ValueTypeBigInt:
 		// BigInt is represented as String for simplicity.
-	case ast.ValueTypeArray, ast.ValueTypeSlice:
+	case ir.ValueTypeArray, ir.ValueTypeSlice:
 		imports["serde_json::Value"] = struct{}{}
 	}
 }
 
-func getRustTypeForField(f *ast.Field) string {
+func getRustTypeForField(f *ir.Field) string {
 	switch v := f.Value.(type) {
-	case *ast.Value:
+	case *ir.Value:
 		return getRustType(v)
-	case *ast.Object:
+	case *ir.Object:
 		return getRustObjectType(f.Key, v)
-	case *ast.Array:
+	case *ir.Array:
 		return getRustArrayType(f.Key, v)
 	default:
 		return "serde_json::Value"
 	}
 }
 
-func getRustType(v *ast.Value) string {
+func getRustType(v *ir.Value) string {
 	if v != nil && v.Tag != nil {
 		if t, ok := rustTypeMap[v.Tag.Type]; ok {
 			return t
@@ -166,19 +166,19 @@ func getRustType(v *ast.Value) string {
 	return "serde_json::Value"
 }
 
-func getRustObjectType(fieldKey string, obj *ast.Object) string {
+func getRustObjectType(fieldKey string, obj *ir.Object) string {
 	if obj != nil && obj.Tag != nil && obj.Tag.Name != "" {
 		return exportRustStructName(obj.Tag.Name)
 	}
 	return exportRustStructName(fieldKey)
 }
 
-func getRustArrayType(fieldKey string, a *ast.Array) string {
+func getRustArrayType(fieldKey string, a *ir.Array) string {
 	if a == nil {
 		return "Vec<serde_json::Value>"
 	}
 
-	if a.Tag != nil && a.Tag.ChildType != ast.ValueTypeUnknown {
+	if a.Tag != nil && a.Tag.ChildType != ir.ValueTypeUnknown {
 		if t, ok := rustTypeMap[a.Tag.ChildType]; ok {
 			return "Vec<" + t + ">"
 		}
@@ -186,9 +186,9 @@ func getRustArrayType(fieldKey string, a *ast.Array) string {
 
 	if len(a.Items) > 0 {
 		switch item := a.Items[0].(type) {
-		case *ast.Object:
+		case *ir.Object:
 			return "Vec<" + getRustObjectType(fieldKey, item) + ">"
-		case *ast.Value:
+		case *ir.Value:
 			if item.Tag != nil {
 				if t, ok := rustTypeMap[item.Tag.Type]; ok {
 					return "Vec<" + t + ">"
@@ -200,8 +200,8 @@ func getRustArrayType(fieldKey string, a *ast.Array) string {
 	return "Vec<serde_json::Value>"
 }
 
-func genRustFields(b *strings.Builder, n ast.Node, indent int) {
-	obj, ok := n.(*ast.Object)
+func genRustFields(b *strings.Builder, n ir.Node, indent int) {
+	obj, ok := n.(*ir.Object)
 	if !ok {
 		return
 	}
@@ -232,8 +232,8 @@ func genRustFields(b *strings.Builder, n ast.Node, indent int) {
 	}
 }
 
-func genRustNestedStructs(b *strings.Builder, n ast.Node, indent int) {
-	obj, ok := n.(*ast.Object)
+func genRustNestedStructs(b *strings.Builder, n ir.Node, indent int) {
+	obj, ok := n.(*ir.Object)
 	if !ok {
 		return
 	}
@@ -244,7 +244,7 @@ func genRustNestedStructs(b *strings.Builder, n ast.Node, indent int) {
 		}
 
 		switch v := f.Value.(type) {
-		case *ast.Object:
+		case *ir.Object:
 			structName := getRustObjectType(f.Key, v)
 			b.WriteString("\n#[derive(Debug, Clone)]\n")
 			b.WriteString("pub struct ")
@@ -253,7 +253,7 @@ func genRustNestedStructs(b *strings.Builder, n ast.Node, indent int) {
 			genRustFields(b, v, indent+1)
 			b.WriteString("}\n")
 			genRustNestedStructs(b, v, indent+1)
-		case *ast.Array:
+		case *ir.Array:
 			if nestedObj := findFirstObjectInArrayRust(v); nestedObj != nil {
 				structName := getRustObjectType(f.Key, nestedObj)
 				b.WriteString("\n#[derive(Debug, Clone)]\n")
@@ -268,12 +268,12 @@ func genRustNestedStructs(b *strings.Builder, n ast.Node, indent int) {
 	}
 }
 
-func findFirstObjectInArrayRust(a *ast.Array) *ast.Object {
+func findFirstObjectInArrayRust(a *ir.Array) *ir.Object {
 	if a == nil {
 		return nil
 	}
 	for _, item := range a.Items {
-		if obj, ok := item.(*ast.Object); ok {
+		if obj, ok := item.(*ir.Object); ok {
 			return obj
 		}
 	}
@@ -318,7 +318,7 @@ func exportRustInstanceName(name string) string {
 	return strings.ToLower(name[:1]) + name[1:] + "_data"
 }
 
-func genRustObjectInitializer(b *strings.Builder, obj *ast.Object, indent int) {
+func genRustObjectInitializer(b *strings.Builder, obj *ir.Object, indent int) {
 	if obj == nil {
 		return
 	}
@@ -335,20 +335,20 @@ func genRustObjectInitializer(b *strings.Builder, obj *ast.Object, indent int) {
 	}
 }
 
-func genRustValue(b *strings.Builder, n ast.Node, fieldKey string, indent int) {
+func genRustValue(b *strings.Builder, n ir.Node, fieldKey string, indent int) {
 	switch v := n.(type) {
-	case *ast.Value:
+	case *ir.Value:
 		b.WriteString(formatRustValueLiteral(v))
-	case *ast.Object:
+	case *ir.Object:
 		genRustObjectValue(b, v, fieldKey, indent)
-	case *ast.Array:
+	case *ir.Array:
 		genRustArrayValue(b, v, fieldKey, indent)
 	default:
 		b.WriteString("serde_json::Value::Null")
 	}
 }
 
-func genRustObjectValue(b *strings.Builder, obj *ast.Object, fieldKey string, indent int) {
+func genRustObjectValue(b *strings.Builder, obj *ir.Object, fieldKey string, indent int) {
 	structName := exportRustStructName(obj.Tag.Name)
 	if obj.Tag == nil || obj.Tag.Name == "" {
 		structName = exportRustStructName(fieldKey)
@@ -370,16 +370,16 @@ func genRustObjectValue(b *strings.Builder, obj *ast.Object, fieldKey string, in
 	b.WriteString(" }")
 }
 
-func genRustArrayValue(b *strings.Builder, a *ast.Array, fieldKey string, indent int) {
+func genRustArrayValue(b *strings.Builder, a *ir.Array, fieldKey string, indent int) {
 	b.WriteString("vec![")
 	for i, item := range a.Items {
 		if i > 0 {
 			b.WriteString(", ")
 		}
 		switch iv := item.(type) {
-		case *ast.Object:
+		case *ir.Object:
 			genRustObjectValue(b, iv, fieldKey, indent)
-		case *ast.Value:
+		case *ir.Value:
 			b.WriteString(formatRustValueLiteral(iv))
 		default:
 			b.WriteString("serde_json::Value::Null")
@@ -388,7 +388,7 @@ func genRustArrayValue(b *strings.Builder, a *ast.Array, fieldKey string, indent
 	b.WriteString("]")
 }
 
-func formatRustValueLiteral(v *ast.Value) string {
+func formatRustValueLiteral(v *ir.Value) string {
 	if v == nil {
 		return "serde_json::Value::Null"
 	}
@@ -416,6 +416,6 @@ func formatRustValueLiteral(v *ast.Value) string {
 	return "\"" + strings.ReplaceAll(v.Text, "\"", "\\\"") + "\".to_string()"
 }
 
-func PrintRustStruct(n ast.Node) {
+func PrintRustStruct(n ir.Node) {
 	fmt.Println(ToRust(n))
 }

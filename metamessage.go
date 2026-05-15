@@ -3,9 +3,9 @@ package metamessage
 import (
 	"io"
 
-	"github.com/metamessage/metamessage/internal/ast"
+	"github.com/metamessage/metamessage/internal/core"
+	"github.com/metamessage/metamessage/internal/ir"
 	jc "github.com/metamessage/metamessage/internal/jsonc"
-	"github.com/metamessage/metamessage/internal/mm"
 )
 
 type Encoder interface {
@@ -14,15 +14,15 @@ type Encoder interface {
 }
 
 func NewEncoder(w io.Writer) Encoder {
-	return mm.NewEncoder(w)
+	return core.NewEncoder(w)
 }
 
 func EncodeFromValue(value any, tag string) (wire []byte, err error) {
-	return mm.FromValue(value, tag)
+	return core.FromValue(value, tag)
 }
 
 func EncodeFromJSONC(jsonc string) (wire []byte, err error) {
-	return mm.FromJSONC(jsonc)
+	return core.FromJSONC(jsonc)
 }
 
 type Decoder interface {
@@ -31,22 +31,22 @@ type Decoder interface {
 }
 
 func NewDecoder(r io.Reader) Decoder {
-	return mm.NewDecoder(r)
+	return core.NewDecoder(r)
 }
 
 func DecodeToValue(wire []byte, value any) (err error) {
-	var node ast.Node
-	node, err = mm.Decode(wire)
+	var node ir.Node
+	node, err = core.Decode(wire)
 	if err != nil {
 		return
 	}
 
-	return mm.Bind(node, value)
+	return core.Bind(node, value)
 }
 
 func DecodeToJSONC(wire []byte) (jsonc string, err error) {
-	var node ast.Node
-	node, err = mm.Decode(wire)
+	var node ir.Node
+	node, err = core.Decode(wire)
 	if err != nil {
 		return
 	}

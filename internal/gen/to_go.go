@@ -7,64 +7,64 @@ import (
 	"strings"
 	"unicode"
 
-	"github.com/metamessage/metamessage/internal/ast"
+	"github.com/metamessage/metamessage/internal/ir"
 )
 
-var goTypeMap = map[ast.ValueType]string{
-	ast.ValueTypeUnknown:  "any",
-	ast.ValueTypeString:   "string",
-	ast.ValueTypeBytes:    "[]byte",
-	ast.ValueTypeBool:     "bool",
-	ast.ValueTypeArray:    "[]any",
-	ast.ValueTypeSlice:    "[]any",
-	ast.ValueTypeMap:      "map[string]any",
-	ast.ValueTypeInt:      "int",
-	ast.ValueTypeInt8:     "int8",
-	ast.ValueTypeInt16:    "int16",
-	ast.ValueTypeInt32:    "int32",
-	ast.ValueTypeInt64:    "int64",
-	ast.ValueTypeUint:     "uint",
-	ast.ValueTypeUint8:    "uint8",
-	ast.ValueTypeUint16:   "uint16",
-	ast.ValueTypeUint32:   "uint32",
-	ast.ValueTypeUint64:   "uint64",
-	ast.ValueTypeFloat32:  "float32",
-	ast.ValueTypeFloat64:  "float64",
-	ast.ValueTypeBigInt:   "big.Int",
-	ast.ValueTypeDateTime: "time.Time",
-	ast.ValueTypeDate:     "time.Time",
-	ast.ValueTypeTime:     "time.Time",
-	ast.ValueTypeUUID:     "string",
-	ast.ValueTypeDecimal:  "string",
-	ast.ValueTypeEmail:    "string",
-	ast.ValueTypeIP:       "net.IP",
-	ast.ValueTypeURL:      "url.URL",
-	ast.ValueTypeEnum:     "string",
-	ast.ValueTypeImage:    "string",
+var goTypeMap = map[ir.ValueType]string{
+	ir.ValueTypeUnknown:  "any",
+	ir.ValueTypeString:   "string",
+	ir.ValueTypeBytes:    "[]byte",
+	ir.ValueTypeBool:     "bool",
+	ir.ValueTypeArray:    "[]any",
+	ir.ValueTypeSlice:    "[]any",
+	ir.ValueTypeMap:      "map[string]any",
+	ir.ValueTypeInt:      "int",
+	ir.ValueTypeInt8:     "int8",
+	ir.ValueTypeInt16:    "int16",
+	ir.ValueTypeInt32:    "int32",
+	ir.ValueTypeInt64:    "int64",
+	ir.ValueTypeUint:     "uint",
+	ir.ValueTypeUint8:    "uint8",
+	ir.ValueTypeUint16:   "uint16",
+	ir.ValueTypeUint32:   "uint32",
+	ir.ValueTypeUint64:   "uint64",
+	ir.ValueTypeFloat32:  "float32",
+	ir.ValueTypeFloat64:  "float64",
+	ir.ValueTypeBigInt:   "big.Int",
+	ir.ValueTypeDateTime: "time.Time",
+	ir.ValueTypeDate:     "time.Time",
+	ir.ValueTypeTime:     "time.Time",
+	ir.ValueTypeUUID:     "string",
+	ir.ValueTypeDecimal:  "string",
+	ir.ValueTypeEmail:    "string",
+	ir.ValueTypeIP:       "net.IP",
+	ir.ValueTypeURL:      "url.URL",
+	ir.ValueTypeEnum:     "string",
+	ir.ValueTypeImage:    "string",
 }
 
 // structDef represents a struct definition that needs to be generated
 type structDef struct {
 	name   string
-	fields []*ast.Field
-	node   *ast.Object // Keep reference to original node
+	fields []*ir.Field
+	node   *ir.Object // Keep reference to original node
 }
 
 // structCollector collects all structs that need to be generated
 type structCollector struct {
 	structs map[string]*structDef
-	nodeMap map[*ast.Object]string // Map of AST node to struct name
+	nodeMap map[*ir.Object]string // Map of AST node to struct name
 	counter int
 }
 
 func newStructCollector() *structCollector {
 	return &structCollector{
 		structs: make(map[string]*structDef),
-		nodeMap: make(map[*ast.Object]string),
+		nodeMap: make(map[*ir.Object]string),
 	}
 }
 
-func (sc *structCollector) addStruct(name string, obj *ast.Object) string {
+func (sc *structCollector) addStruct(name string, obj *ir.Object) string {
 	// Check if this node was already added
 	if existingName, exists := sc.nodeMap[obj]; exists {
 		return existingName
@@ -153,14 +153,14 @@ func (sc *structCollector) getSortedStructs() []*structDef {
 	return structs
 }
 
-func ToGo(n ast.Node) string {
+func ToGo(n ir.Node) string {
 	if n == nil {
 		return ""
 	}
 
 	var sb strings.Builder
 	topName := "Obj"
-	if obj, ok := n.(*ast.Object); ok && obj.Tag != nil && obj.Tag.Name != "" {
+	if obj, ok := n.(*ir.Object); ok && obj.Tag != nil && obj.Tag.Name != "" {
 		topName = exportName(obj.Tag.Name)
 	}
 
@@ -179,7 +179,7 @@ func ToGo(n ast.Node) string {
 		sb.WriteString(")\n\n")
 	}
 
-	if obj, ok := n.(*ast.Object); ok {
+	if obj, ok := n.(*ir.Object); ok {
 		collector.addStruct(topName, obj)
 		collectNestedStructs(obj, collector)
 	}
@@ -202,16 +202,16 @@ func ToGo(n ast.Node) string {
 }
 
 // collectNestedStructs recursively collects all nested structs and complex collection types
-func collectNestedStructs(n ast.Node, collector *structCollector) {
+func collectNestedStructs(n ir.Node, collector *structCollector) {
 	if n == nil {
 		return
 	}
 
 	switch v := n.(type) {
-	case *ast.Object:
+	case *ir.Object:
 		for _, f := range v.Fields {
 			if f != nil {
-				if obj, ok := f.Value.(*ast.Object); ok {
+				if obj, ok := f.Value.(*ir.Object); ok {
 					// Add nested object as a separate struct
 					name := ""
 					if obj.Tag != nil && obj.Tag.Name != "" {
@@ -224,10 +224,10 @@ func collectNestedStructs(n ast.Node, collector *structCollector) {
 				}
 			}
 		}
-	case *ast.Array:
+	case *ir.Array:
 		// Check if array contains objects or complex nested types
 		for _, item := range v.Items {
-			if obj, ok := item.(*ast.Object); ok {
+			if obj, ok := item.(*ir.Object); ok {
 				name := ""
 				if obj.Tag != nil && obj.Tag.Name != "" {
 					name = exportName(obj.Tag.Name)
@@ -238,12 +238,12 @@ func collectNestedStructs(n ast.Node, collector *structCollector) {
 				collectNestedStructs(item, collector)
 			}
 		}
-	case *ast.Value:
+	case *ir.Value:
 		// No nested structs in values
 	}
 }
 
-func collectGoImports(n ast.Node) []string {
+func collectGoImports(n ir.Node) []string {
 	imports := make(map[string]struct{})
 	collectImports(n, imports)
 
@@ -259,24 +259,24 @@ func collectGoImports(n ast.Node) []string {
 	return packages
 }
 
-func collectImports(n ast.Node, imports map[string]struct{}) {
+func collectImports(n ir.Node, imports map[string]struct{}) {
 	if n == nil {
 		return
 	}
 
 	switch v := n.(type) {
-	case *ast.Value:
+	case *ir.Value:
 		if v.Tag != nil {
 			addGoImportForType(v.Tag.Type, imports)
 		}
-	case *ast.Array:
-		if v.Tag != nil && v.Tag.ChildType != ast.ValueTypeUnknown {
+	case *ir.Array:
+		if v.Tag != nil && v.Tag.ChildType != ir.ValueTypeUnknown {
 			addGoImportForType(v.Tag.ChildType, imports)
 		}
 		for _, item := range v.Items {
 			collectImports(item, imports)
 		}
-	case *ast.Object:
+	case *ir.Object:
 		for _, f := range v.Fields {
 			if f != nil {
 				collectImports(f.Value, imports)
@@ -285,31 +285,31 @@ func collectImports(n ast.Node, imports map[string]struct{}) {
 	}
 }
 
-func addGoImportForType(typ ast.ValueType, imports map[string]struct{}) {
+func addGoImportForType(typ ir.ValueType, imports map[string]struct{}) {
 	switch typ {
-	case ast.ValueTypeBigInt:
+	case ir.ValueTypeBigInt:
 		imports["math/big"] = struct{}{}
-	case ast.ValueTypeDateTime, ast.ValueTypeDate, ast.ValueTypeTime:
+	case ir.ValueTypeDateTime, ir.ValueTypeDate, ir.ValueTypeTime:
 		imports["time"] = struct{}{}
-	case ast.ValueTypeIP:
+	case ir.ValueTypeIP:
 		imports["net"] = struct{}{}
-	case ast.ValueTypeURL:
+	case ir.ValueTypeURL:
 		imports["net/url"] = struct{}{}
 	}
 }
 
-func getGoType(n ast.Node) string {
+func getGoType(n ir.Node) string {
 	switch v := n.(type) {
-	case *ast.Value:
+	case *ir.Value:
 		if v != nil && v.Tag != nil {
 			if t, ok := goTypeMap[v.Tag.Type]; ok {
 				return t
 			}
 		}
 		return "any"
-	case *ast.Array:
+	case *ir.Array:
 		if v != nil {
-			if v.Tag != nil && v.Tag.ChildType != ast.ValueTypeUnknown {
+			if v.Tag != nil && v.Tag.ChildType != ir.ValueTypeUnknown {
 				if t, ok := goTypeMap[v.Tag.ChildType]; ok {
 					return "[]" + t
 				}
@@ -319,7 +319,7 @@ func getGoType(n ast.Node) string {
 			}
 		}
 		return "[]any"
-	case *ast.Object:
+	case *ir.Object:
 		return "any"
 	default:
 		return "any"
@@ -327,18 +327,18 @@ func getGoType(n ast.Node) string {
 }
 
 // getGoTypeWithCollector returns the Go type for a node, extracting nested complex types to separate structs
-func getGoTypeWithCollector(n ast.Node, collector *structCollector) string {
+func getGoTypeWithCollector(n ir.Node, collector *structCollector) string {
 	switch v := n.(type) {
-	case *ast.Value:
+	case *ir.Value:
 		if v != nil && v.Tag != nil {
 			if t, ok := goTypeMap[v.Tag.Type]; ok {
 				return t
 			}
 		}
 		return "any"
-	case *ast.Array:
+	case *ir.Array:
 		if v != nil {
-			if v.Tag != nil && v.Tag.ChildType != ast.ValueTypeUnknown {
+			if v.Tag != nil && v.Tag.ChildType != ir.ValueTypeUnknown {
 				if t, ok := goTypeMap[v.Tag.ChildType]; ok {
 					return "[]" + t
 				}
@@ -352,11 +352,11 @@ func getGoTypeWithCollector(n ast.Node, collector *structCollector) string {
 					name = strings.ReplaceAll(name, "[]", "")
 					name = strings.ReplaceAll(name, "map", "")
 					if _, exists := collector.structs[name]; !exists {
-						wrapperObj := &ast.Object{
-							Fields: []*ast.Field{
+						wrapperObj := &ir.Object{
+							Fields: []*ir.Field{
 								{
 									Key: "items",
-									Value: &ast.Array{
+									Value: &ir.Array{
 										Items: v.Items,
 										Tag:   v.Tag,
 									},
@@ -373,7 +373,7 @@ func getGoTypeWithCollector(n ast.Node, collector *structCollector) string {
 			}
 		}
 		return "[]any"
-	case *ast.Object:
+	case *ir.Object:
 		return "any"
 	default:
 		return "any"
@@ -381,29 +381,29 @@ func getGoTypeWithCollector(n ast.Node, collector *structCollector) string {
 }
 
 // getItemType determines the type of array items
-func getItemType(item ast.Node) string {
+func getItemType(item ir.Node) string {
 	switch v := item.(type) {
-	case *ast.Value:
+	case *ir.Value:
 		if v != nil && v.Tag != nil {
 			if t, ok := goTypeMap[v.Tag.Type]; ok {
 				return t
 			}
 		}
 		return "any"
-	case *ast.Array:
+	case *ir.Array:
 		if v != nil && len(v.Items) > 0 {
 			itemType := getItemType(v.Items[0])
 			return "[]" + itemType
 		}
 		return "[]any"
-	case *ast.Object:
+	case *ir.Object:
 		return "any"
 	default:
 		return "any"
 	}
 }
 
-func formatValueLiteral(v *ast.Value) string {
+func formatValueLiteral(v *ir.Value) string {
 	if v == nil {
 		return "nil"
 	}
@@ -411,23 +411,23 @@ func formatValueLiteral(v *ast.Value) string {
 	t := getGoType(v)
 
 	// switch v.Tag.Type {
-	// case ast.ValueTypeString,
-	// 	ast.ValueTypeBytes,
-	// 	ast.ValueTypeDateTime,
-	// 	ast.ValueTypeDate,
-	// 	ast.ValueTypeTime,
-	// 	ast.ValueTypeUUID,
-	// 	ast.ValueTypeIP,
-	// 	ast.ValueTypeURL,
-	// 	ast.ValueTypeEmail,
-	// 	ast.ValueTypeEnum:
+	// case ir.ValueTypeString,
+	// 	ir.ValueTypeBytes,
+	// 	ir.ValueTypeDateTime,
+	// 	ir.ValueTypeDate,
+	// 	ir.ValueTypeTime,
+	// 	ir.ValueTypeUUID,
+	// 	ir.ValueTypeIP,
+	// 	ir.ValueTypeURL,
+	// 	ir.ValueTypeEmail,
+	// 	ir.ValueTypeEnum:
 	// 	b.WriteString(strconv.Quote(v.Text))
 
-	// case ast.ValueTypeInt, ast.ValueTypeInt8, ast.ValueTypeInt16, ast.ValueTypeInt32, ast.ValueTypeInt64,
-	// 	ast.ValueTypeUint, ast.ValueTypeUint8, ast.ValueTypeUint16, ast.ValueTypeUint32, ast.ValueTypeUint64,
-	// 	ast.ValueTypeBigInt,
-	// 	ast.ValueTypeDecimal,
-	// 	ast.ValueTypeBool:
+	// case ir.ValueTypeInt, ir.ValueTypeInt8, ir.ValueTypeInt16, ir.ValueTypeInt32, ir.ValueTypeInt64,
+	// 	ir.ValueTypeUint, ir.ValueTypeUint8, ir.ValueTypeUint16, ir.ValueTypeUint32, ir.ValueTypeUint64,
+	// 	ir.ValueTypeBigInt,
+	// 	ir.ValueTypeDecimal,
+	// 	ir.ValueTypeBool:
 	// 	b.WriteString(v.Text)
 
 	switch t {
@@ -459,8 +459,8 @@ func isNumericLiteral(s string) bool {
 	return false
 }
 
-func genStructFields(b *strings.Builder, n ast.Node, indent int) {
-	obj, ok := n.(*ast.Object)
+func genStructFields(b *strings.Builder, n ir.Node, indent int) {
+	obj, ok := n.(*ir.Object)
 	if !ok {
 		return
 	}
@@ -476,7 +476,7 @@ func genStructFields(b *strings.Builder, n ast.Node, indent int) {
 		b.WriteByte(' ')
 
 		switch v := f.Value.(type) {
-		case *ast.Object:
+		case *ir.Object:
 			b.WriteString("struct {\n")
 			genStructFields(b, v, indent+1)
 			WriteIndent(b, indent)
@@ -494,7 +494,7 @@ func genStructFields(b *strings.Builder, n ast.Node, indent int) {
 	}
 }
 
-func genStructFieldsWithCollector(b *strings.Builder, fields []*ast.Field, indent int, collector *structCollector) {
+func genStructFieldsWithCollector(b *strings.Builder, fields []*ir.Field, indent int, collector *structCollector) {
 	for _, f := range fields {
 		if f == nil {
 			continue
@@ -506,7 +506,7 @@ func genStructFieldsWithCollector(b *strings.Builder, fields []*ast.Field, inden
 		b.WriteByte(' ')
 
 		switch v := f.Value.(type) {
-		case *ast.Object:
+		case *ir.Object:
 			// Nested struct should be independent, not inline
 			// Find or get the struct name
 			structName := collector.nodeMap[v]
@@ -533,9 +533,9 @@ func genStructFieldsWithCollector(b *strings.Builder, fields []*ast.Field, inden
 	}
 }
 
-func genLiteral(b *strings.Builder, topType string, n ast.Node, indent int) {
+func genLiteral(b *strings.Builder, topType string, n ir.Node, indent int) {
 	switch v := n.(type) {
-	case *ast.Object:
+	case *ir.Object:
 		if topType != "" {
 			b.WriteString(topType)
 		}
@@ -551,7 +551,7 @@ func genLiteral(b *strings.Builder, topType string, n ast.Node, indent int) {
 		WriteIndent(b, indent)
 		b.WriteString("}")
 
-	case *ast.Array:
+	case *ir.Array:
 		b.WriteString(getGoType(v))
 		b.WriteString("{\n")
 		for _, item := range v.Items {
@@ -562,7 +562,7 @@ func genLiteral(b *strings.Builder, topType string, n ast.Node, indent int) {
 		WriteIndent(b, indent)
 		b.WriteString("}")
 
-	case *ast.Value:
+	case *ir.Value:
 		b.WriteString(formatValueLiteral(v))
 	}
 }
@@ -602,6 +602,6 @@ func exportName(s string) string {
 	return name
 }
 
-func PrintGoStruct(n ast.Node) {
+func PrintGoStruct(n ir.Node) {
 	fmt.Println(ToGo(n))
 }

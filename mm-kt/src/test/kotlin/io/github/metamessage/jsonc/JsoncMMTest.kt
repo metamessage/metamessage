@@ -1,10 +1,10 @@
 package io.github.metamessage.jsonc
 
-import io.github.metamessage.ast.Object
-import io.github.metamessage.ast.Value
-import io.github.metamessage.ast.ValueType
-import io.github.metamessage.ast.Tag
-import io.github.metamessage.ast.Field
+import io.github.metamessage.ir.Object
+import io.github.metamessage.ir.Value
+import io.github.metamessage.ir.ValueType
+import io.github.metamessage.ir.Tag
+import io.github.metamessage.ir.Field
 
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.Assertions.*

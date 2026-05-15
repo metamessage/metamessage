@@ -1,9 +1,9 @@
 package io.github.metamessage
 
 import io.github.metamessage.jsonc.Jsonc as jc
-import io.github.metamessage.mm.Encoder
-import io.github.metamessage.mm.Decoder
-import io.github.metamessage.mm.Binder
+import io.github.metamessage.core.Encoder
+import io.github.metamessage.core.Decoder
+import io.github.metamessage.core.Binder
 import io.github.metamessage.jsonc.toJsonc
 
 // interface Encoder {

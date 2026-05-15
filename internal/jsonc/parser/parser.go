@@ -10,7 +10,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/metamessage/metamessage/internal/ast"
+	"github.com/metamessage/metamessage/internal/ir"
 	"github.com/metamessage/metamessage/internal/jsonc/token"
 	"github.com/metamessage/metamessage/internal/utils"
 )
@@ -44,7 +44,7 @@ func (p *Parser) next() token.Token {
 	return t
 }
 
-func (p *Parser) consumeCommentsFor(anchorLine int) (*ast.Tag, error) {
+func (p *Parser) consumeCommentsFor(anchorLine int) (*ir.Tag, error) {
 	if len(p.pending) == 0 {
 		return nil, nil
 	}
@@ -57,7 +57,7 @@ func (p *Parser) consumeCommentsFor(anchorLine int) (*ast.Tag, error) {
 		return nil, nil
 	}
 
-	var out *ast.Tag
+	var out *ir.Tag
 	for _, ct := range p.pending {
 		parsed, err := parseCommentsToTag(ct.Literal)
 		if err != nil {
@@ -66,13 +66,13 @@ func (p *Parser) consumeCommentsFor(anchorLine int) (*ast.Tag, error) {
 		if parsed == nil {
 			continue
 		}
-		out = ast.MergeTag(out, parsed)
+		out = ir.MergeTag(out, parsed)
 	}
 
 	return out, nil
 }
 
-func (p *Parser) Parse() (val ast.Node, err error) {
+func (p *Parser) Parse() (val ir.Node, err error) {
 	for {
 		tok := p.peek()
 		if tok.Type == token.EOF {
@@ -93,7 +93,7 @@ func (p *Parser) Parse() (val ast.Node, err error) {
 
 		if tok.Type == token.TrailingComment {
 			if val != nil {
-				var parsed *ast.Tag
+				var parsed *ir.Tag
 				parsed, err = parseCommentsToTag(tok.Literal)
 				if err != nil {
 					return
@@ -111,7 +111,7 @@ func (p *Parser) Parse() (val ast.Node, err error) {
 	}
 }
 
-func (p *Parser) parse(path string) (val ast.Node, err error) {
+func (p *Parser) parse(path string) (val ir.Node, err error) {
 	for {
 		tok := p.next()
 		var data any
@@ -123,7 +123,7 @@ func (p *Parser) parse(path string) (val ast.Node, err error) {
 		case token.LBracket:
 			return p.parseArray(tok.Line, path)
 		case token.String:
-			var tag *ast.Tag
+			var tag *ir.Tag
 			if tag, err = p.consumeCommentsFor(tok.Line); err != nil {
 				return nil, err
 			}
@@ -131,44 +131,44 @@ func (p *Parser) parse(path string) (val ast.Node, err error) {
 			text := tok.Literal
 
 			if tag == nil {
-				tag = ast.NewTag()
+				tag = ir.NewTag()
 			}
 
-			if tag.Type == ast.ValueTypeUnknown {
-				tag.Type = ast.ValueTypeString
+			if tag.Type == ir.ValueTypeUnknown {
+				tag.Type = ir.ValueTypeString
 			}
 
 			switch text {
-			case ast.SimpleCodeStr,
-				ast.SimpleMessageStr,
-				ast.SimpleDataStr,
-				ast.SimpleSuccessStr,
-				ast.SimpleErrorStr,
-				ast.SimpleUnknownStr,
-				ast.SimplePageStr,
-				ast.SimpleLimitStr,
-				ast.SimpleOffsetStr,
-				ast.SimpleTotalStr,
-				ast.SimpleIdStr,
-				ast.SimpleNameStr,
-				ast.SimpleDescriptionStr,
-				ast.SimpleTypeStr,
-				ast.SimpleVersionStr,
-				ast.SimpleStatusStr,
-				ast.SimpleUrlStr,
-				ast.SimpleCreateTimeStr,
-				ast.SimpleUpdateTimeStr,
-				ast.SimpleDeleteTimeStr,
-				ast.SimpleAccountStr,
-				ast.SimpleTokenStr,
-				ast.SimpleExpireTimeStr,
-				ast.SimpleKeyStr,
-				ast.SimpleValStr:
-				tag.Type = ast.ValueTypeString
+			case ir.SimpleCodeStr,
+				ir.SimpleMessageStr,
+				ir.SimpleDataStr,
+				ir.SimpleSuccessStr,
+				ir.SimpleErrorStr,
+				ir.SimpleUnknownStr,
+				ir.SimplePageStr,
+				ir.SimpleLimitStr,
+				ir.SimpleOffsetStr,
+				ir.SimpleTotalStr,
+				ir.SimpleIdStr,
+				ir.SimpleNameStr,
+				ir.SimpleDescriptionStr,
+				ir.SimpleTypeStr,
+				ir.SimpleVersionStr,
+				ir.SimpleStatusStr,
+				ir.SimpleUrlStr,
+				ir.SimpleCreateTimeStr,
+				ir.SimpleUpdateTimeStr,
+				ir.SimpleDeleteTimeStr,
+				ir.SimpleAccountStr,
+				ir.SimpleTokenStr,
+				ir.SimpleExpireTimeStr,
+				ir.SimpleKeyStr,
+				ir.SimpleValStr:
+				tag.Type = ir.ValueTypeString
 
 			default:
 				switch tag.Type {
-				case ast.ValueTypeString:
+				case ir.ValueTypeString:
 					if tag.IsNull {
 						if text != "" {
 							return nil, fmt.Errorf("invalid string: %q, valid: %q", text, "")
@@ -179,7 +179,7 @@ func (p *Parser) parse(path string) (val ast.Node, err error) {
 						data, text, err = tag.ValidateString(text)
 					}
 
-				case ast.ValueTypeBytes:
+				case ir.ValueTypeBytes:
 					if tag.IsNull {
 						if text != "" {
 							return nil, fmt.Errorf("invalid bytes: %q, valid: %q", text, "")
@@ -195,7 +195,7 @@ func (p *Parser) parse(path string) (val ast.Node, err error) {
 						data, text, err = tag.ValidateBytes(d)
 					}
 
-				case ast.ValueTypeDateTime:
+				case ir.ValueTypeDateTime:
 					location := time.UTC
 					if tag.Location != nil {
 						location = tag.Location
@@ -218,7 +218,7 @@ func (p *Parser) parse(path string) (val ast.Node, err error) {
 						data, text, err = tag.ValidateDateTime(d)
 					}
 
-				case ast.ValueTypeDate:
+				case ir.ValueTypeDate:
 					location := time.UTC
 					if tag.Location != nil {
 						location = tag.Location
@@ -241,7 +241,7 @@ func (p *Parser) parse(path string) (val ast.Node, err error) {
 						data, text, err = tag.ValidateDate(d)
 					}
 
-				case ast.ValueTypeTime:
+				case ir.ValueTypeTime:
 					location := time.UTC
 					if tag.Location != nil {
 						location = tag.Location
@@ -264,7 +264,7 @@ func (p *Parser) parse(path string) (val ast.Node, err error) {
 						data, text, err = tag.ValidateTime(d)
 					}
 
-				case ast.ValueTypeUUID:
+				case ir.ValueTypeUUID:
 					if tag.IsNull {
 						if text != "" {
 							return nil, fmt.Errorf("invalid uuid: %q, valid: %q", text, "")
@@ -275,7 +275,7 @@ func (p *Parser) parse(path string) (val ast.Node, err error) {
 						data, text, err = tag.ValidateUUID(text)
 					}
 
-				case ast.ValueTypeDecimal:
+				case ir.ValueTypeDecimal:
 					if tag.IsNull {
 						if text != "" {
 							return nil, fmt.Errorf("invalid decimal: %q, valid: %q", text, "")
@@ -286,7 +286,7 @@ func (p *Parser) parse(path string) (val ast.Node, err error) {
 						data, text, err = tag.ValidateDecimal(text)
 					}
 
-				case ast.ValueTypeIP:
+				case ir.ValueTypeIP:
 					if tag.IsNull {
 						if text != "" {
 							return nil, fmt.Errorf("invalid email: %q, valid: %q", text, "")
@@ -299,7 +299,7 @@ func (p *Parser) parse(path string) (val ast.Node, err error) {
 						data, text, err = tag.ValidateIP(ip)
 					}
 
-				case ast.ValueTypeURL:
+				case ir.ValueTypeURL:
 					if tag.IsNull {
 						if text != "" {
 							return nil, fmt.Errorf("invalid url: %q, valid: %q", text, "")
@@ -316,7 +316,7 @@ func (p *Parser) parse(path string) (val ast.Node, err error) {
 						data, text, err = tag.ValidateURL(*u)
 					}
 
-				case ast.ValueTypeEmail:
+				case ir.ValueTypeEmail:
 					if tag.IsNull {
 						if text != "" {
 							return nil, fmt.Errorf("invalid email: %q, valid: %q", text, "")
@@ -327,7 +327,7 @@ func (p *Parser) parse(path string) (val ast.Node, err error) {
 						data, text, err = tag.ValidateEmail(text)
 					}
 
-				case ast.ValueTypeEnum:
+				case ir.ValueTypeEnum:
 					if tag.Enum == "" {
 						err = fmt.Errorf("enum empty")
 						return
@@ -343,7 +343,7 @@ func (p *Parser) parse(path string) (val ast.Node, err error) {
 						data, text, err = tag.ValidateEnum(text)
 					}
 
-				case ast.ValueTypeImage:
+				case ir.ValueTypeImage:
 					if tag.IsNull {
 						if text != "" {
 							return nil, fmt.Errorf("invalid image: %q, valid: %q", text, "")
@@ -369,7 +369,7 @@ func (p *Parser) parse(path string) (val ast.Node, err error) {
 				return nil, err
 			}
 
-			return &ast.Value{
+			return &ir.Value{
 				Data: data,
 				Text: text,
 				Tag:  tag,
@@ -377,7 +377,7 @@ func (p *Parser) parse(path string) (val ast.Node, err error) {
 			}, nil
 
 		case token.Number:
-			var tag *ast.Tag
+			var tag *ir.Tag
 			if tag, err = p.consumeCommentsFor(tok.Line); err != nil {
 				return nil, err
 			}
@@ -385,16 +385,16 @@ func (p *Parser) parse(path string) (val ast.Node, err error) {
 			text := tok.Literal
 
 			if tag == nil {
-				tag = ast.NewTag()
+				tag = ir.NewTag()
 			}
 
 			if strings.Contains(text, ".") {
-				if tag.Type == ast.ValueTypeUnknown {
-					tag.Type = ast.ValueTypeFloat64
+				if tag.Type == ir.ValueTypeUnknown {
+					tag.Type = ir.ValueTypeFloat64
 				}
 
 				switch tag.Type {
-				case ast.ValueTypeFloat32:
+				case ir.ValueTypeFloat32:
 					if tag.IsNull {
 						if text != "0.0" {
 							return nil, fmt.Errorf("invalid float32: %v, valid: %v", text, "0.0")
@@ -410,7 +410,7 @@ func (p *Parser) parse(path string) (val ast.Node, err error) {
 						data, text, err = tag.ValidateFloat32(float32(f64))
 					}
 
-				case ast.ValueTypeFloat64:
+				case ir.ValueTypeFloat64:
 					if tag.IsNull {
 						if text != "0.0" {
 							return nil, fmt.Errorf("invalid float64: %v, valid: %v", text, "0.0")
@@ -430,12 +430,12 @@ func (p *Parser) parse(path string) (val ast.Node, err error) {
 					return nil, fmt.Errorf("unsupported numeric type %v for float literal", tag.Type)
 				}
 			} else if strings.HasPrefix(text, "-") {
-				if tag.Type == ast.ValueTypeUnknown {
-					tag.Type = ast.ValueTypeInt
+				if tag.Type == ir.ValueTypeUnknown {
+					tag.Type = ir.ValueTypeInt
 				}
 
 				switch tag.Type {
-				case ast.ValueTypeInt:
+				case ir.ValueTypeInt:
 					if tag.IsNull {
 						if text != "0" {
 							return nil, fmt.Errorf("invalid int: %v, valid: %v", text, "0")
@@ -451,7 +451,7 @@ func (p *Parser) parse(path string) (val ast.Node, err error) {
 						data, text, err = tag.ValidateInt(int(uv))
 					}
 
-				case ast.ValueTypeInt8:
+				case ir.ValueTypeInt8:
 					if tag.IsNull {
 						if text != "0" {
 							return nil, fmt.Errorf("invalid int8: %v, valid: %v", text, "0")
@@ -467,7 +467,7 @@ func (p *Parser) parse(path string) (val ast.Node, err error) {
 						data, text, err = tag.ValidateInt8(int8(uv))
 					}
 
-				case ast.ValueTypeInt16:
+				case ir.ValueTypeInt16:
 					if tag.IsNull {
 						if text != "0" {
 							return nil, fmt.Errorf("invalid int16: %v, valid: %v", text, "0")
@@ -483,7 +483,7 @@ func (p *Parser) parse(path string) (val ast.Node, err error) {
 						data, text, err = tag.ValidateInt16(int16(uv))
 					}
 
-				case ast.ValueTypeInt32:
+				case ir.ValueTypeInt32:
 					if tag.IsNull {
 						if text != "0" {
 							return nil, fmt.Errorf("invalid int32: %v, valid: %v", text, "0")
@@ -499,7 +499,7 @@ func (p *Parser) parse(path string) (val ast.Node, err error) {
 						data, text, err = tag.ValidateInt32(int32(uv))
 					}
 
-				case ast.ValueTypeInt64:
+				case ir.ValueTypeInt64:
 					if tag.IsNull {
 						if text != "0" {
 							return nil, fmt.Errorf("invalid int64: %v, valid: %v", text, "0")
@@ -515,7 +515,7 @@ func (p *Parser) parse(path string) (val ast.Node, err error) {
 						data, text, err = tag.ValidateInt64(uv)
 					}
 
-				case ast.ValueTypeBigInt:
+				case ir.ValueTypeBigInt:
 					if tag.IsNull {
 						if text != "0" {
 							return nil, fmt.Errorf("invalid bigint: %v, valid: %v", text, "0")
@@ -532,7 +532,7 @@ func (p *Parser) parse(path string) (val ast.Node, err error) {
 					}
 
 				// // It is recommended that floating - point numbers must include a decimal point, e.g., 1.0.
-				// case ast.ValueTypeFloat32:
+				// case ir.ValueTypeFloat32:
 				// 	if tag.IsNull {
 				// 		data = float32(0.0)
 				// 		text = "0.0"
@@ -546,7 +546,7 @@ func (p *Parser) parse(path string) (val ast.Node, err error) {
 				// 	}
 
 				// // It is recommended that floating - point numbers must include a decimal point, e.g., 1.0.
-				// case ast.ValueTypeFloat64:
+				// case ir.ValueTypeFloat64:
 				// 	if tag.IsNull {
 				// 		data = 0.0
 				// 		text = "0.0"
@@ -563,12 +563,12 @@ func (p *Parser) parse(path string) (val ast.Node, err error) {
 					return nil, fmt.Errorf("unsupported numeric type %v for negative literal", tag.Type)
 				}
 			} else {
-				if tag.Type == ast.ValueTypeUnknown {
-					tag.Type = ast.ValueTypeInt
+				if tag.Type == ir.ValueTypeUnknown {
+					tag.Type = ir.ValueTypeInt
 				}
 
 				switch tag.Type {
-				case ast.ValueTypeInt:
+				case ir.ValueTypeInt:
 					if tag.IsNull {
 						if text != "0" {
 							return nil, fmt.Errorf("invalid int: %v, valid: %v", text, "0")
@@ -584,7 +584,7 @@ func (p *Parser) parse(path string) (val ast.Node, err error) {
 						data, text, err = tag.ValidateInt(int(uv))
 					}
 
-				case ast.ValueTypeInt8:
+				case ir.ValueTypeInt8:
 					if tag.IsNull {
 						if text != "0" {
 							return nil, fmt.Errorf("invalid int8: %v, valid: %v", text, "0")
@@ -600,7 +600,7 @@ func (p *Parser) parse(path string) (val ast.Node, err error) {
 						data, text, err = tag.ValidateInt8(int8(uv))
 					}
 
-				case ast.ValueTypeInt16:
+				case ir.ValueTypeInt16:
 					if tag.IsNull {
 						if text != "0" {
 							return nil, fmt.Errorf("invalid int16: %v, valid: %v", text, "0")
@@ -616,7 +616,7 @@ func (p *Parser) parse(path string) (val ast.Node, err error) {
 						data, text, err = tag.ValidateInt16(int16(uv))
 					}
 
-				case ast.ValueTypeInt32:
+				case ir.ValueTypeInt32:
 					if tag.IsNull {
 						if text != "0" {
 							return nil, fmt.Errorf("invalid int32: %v, valid: %v", text, "0")
@@ -632,7 +632,7 @@ func (p *Parser) parse(path string) (val ast.Node, err error) {
 						data, text, err = tag.ValidateInt32(int32(uv))
 					}
 
-				case ast.ValueTypeInt64:
+				case ir.ValueTypeInt64:
 					if tag.IsNull {
 						if text != "0" {
 							return nil, fmt.Errorf("invalid int64: %v, valid: %v", text, "0")
@@ -648,7 +648,7 @@ func (p *Parser) parse(path string) (val ast.Node, err error) {
 						data, text, err = tag.ValidateInt64(uv)
 					}
 
-				case ast.ValueTypeUint:
+				case ir.ValueTypeUint:
 					if tag.IsNull {
 						if text != "0" {
 							return nil, fmt.Errorf("invalid uint: %v, valid: %v", text, "0")
@@ -664,7 +664,7 @@ func (p *Parser) parse(path string) (val ast.Node, err error) {
 						data, text, err = tag.ValidateUint(uint(uv))
 					}
 
-				case ast.ValueTypeUint8:
+				case ir.ValueTypeUint8:
 					if tag.IsNull {
 						if text != "0" {
 							return nil, fmt.Errorf("invalid uint8: %v, valid: %v", text, "0")
@@ -680,7 +680,7 @@ func (p *Parser) parse(path string) (val ast.Node, err error) {
 						data, text, err = tag.ValidateUint8(uint8(uv))
 					}
 
-				case ast.ValueTypeUint16:
+				case ir.ValueTypeUint16:
 					if tag.IsNull {
 						if text != "0" {
 							return nil, fmt.Errorf("invalid uint16: %v, valid: %v", text, "0")
@@ -696,7 +696,7 @@ func (p *Parser) parse(path string) (val ast.Node, err error) {
 						data, text, err = tag.ValidateUint16(uint16(uv))
 					}
 
-				case ast.ValueTypeUint32:
+				case ir.ValueTypeUint32:
 					if tag.IsNull {
 						if text != "0" {
 							return nil, fmt.Errorf("invalid uint32: %v, valid: %v", text, "0")
@@ -712,7 +712,7 @@ func (p *Parser) parse(path string) (val ast.Node, err error) {
 						data, text, err = tag.ValidateUint32(uint32(uv))
 					}
 
-				case ast.ValueTypeUint64:
+				case ir.ValueTypeUint64:
 					if tag.IsNull {
 						if text != "0" {
 							return nil, fmt.Errorf("invalid uint64: %v, valid: %v", text, "0")
@@ -728,7 +728,7 @@ func (p *Parser) parse(path string) (val ast.Node, err error) {
 						data, text, err = tag.ValidateUint64(uv)
 					}
 
-				case ast.ValueTypeBigInt:
+				case ir.ValueTypeBigInt:
 					if tag.IsNull {
 						if text != "0" {
 							return nil, fmt.Errorf("invalid bigint: %v, valid: %v", text, "0")
@@ -745,7 +745,7 @@ func (p *Parser) parse(path string) (val ast.Node, err error) {
 					}
 
 				// // It is recommended that floating - point numbers must include a decimal point, e.g., 1.0.
-				// case ast.ValueTypeFloat32:
+				// case ir.ValueTypeFloat32:
 				// 	if tag.IsNull {
 				// 		data = float32(0.0)
 				// 		text = "0.0"
@@ -759,7 +759,7 @@ func (p *Parser) parse(path string) (val ast.Node, err error) {
 				// 	}
 
 				// // It is recommended that floating - point numbers must include a decimal point, e.g., 1.0.
-				// case ast.ValueTypeFloat64:
+				// case ir.ValueTypeFloat64:
 				// 	if tag.IsNull {
 				// 		data = 0.0
 				// 		text = "0.0"
@@ -781,7 +781,7 @@ func (p *Parser) parse(path string) (val ast.Node, err error) {
 				return nil, err
 			}
 
-			return &ast.Value{
+			return &ir.Value{
 				Data: data,
 				Text: text,
 				Tag:  tag,
@@ -789,21 +789,21 @@ func (p *Parser) parse(path string) (val ast.Node, err error) {
 			}, nil
 
 		case token.True:
-			var tag *ast.Tag
+			var tag *ir.Tag
 			tag, err = p.consumeCommentsFor(tok.Line)
 			if err != nil {
 				return nil, err
 			}
 
 			if tag == nil {
-				tag = ast.NewTag()
+				tag = ir.NewTag()
 			}
-			if tag.Type == ast.ValueTypeUnknown {
-				tag.Type = ast.ValueTypeBool
+			if tag.Type == ir.ValueTypeUnknown {
+				tag.Type = ir.ValueTypeBool
 			}
 
 			switch tag.Type {
-			case ast.ValueTypeBool:
+			case ir.ValueTypeBool:
 				if tag.IsNull {
 					return nil, fmt.Errorf("bool must false when bool is null")
 				} else {
@@ -816,29 +816,29 @@ func (p *Parser) parse(path string) (val ast.Node, err error) {
 				return nil, fmt.Errorf("unsupported type %v for boolean literal", tag.Type)
 			}
 
-			return &ast.Value{
+			return &ir.Value{
 				Data: true,
-				Text: ast.True,
+				Text: ir.True,
 				Tag:  tag,
 				Path: path,
 			}, nil
 
 		case token.False:
-			var tag *ast.Tag
+			var tag *ir.Tag
 			tag, err = p.consumeCommentsFor(tok.Line)
 			if err != nil {
 				return nil, err
 			}
 
 			if tag == nil {
-				tag = ast.NewTag()
+				tag = ir.NewTag()
 			}
-			if tag.Type == ast.ValueTypeUnknown {
-				tag.Type = ast.ValueTypeBool
+			if tag.Type == ir.ValueTypeUnknown {
+				tag.Type = ir.ValueTypeBool
 			}
 
 			switch tag.Type {
-			case ast.ValueTypeBool:
+			case ir.ValueTypeBool:
 				if tag.IsNull {
 				} else {
 					if _, _, err = tag.ValidateBool(false); err != nil {
@@ -850,33 +850,33 @@ func (p *Parser) parse(path string) (val ast.Node, err error) {
 				return nil, fmt.Errorf("unsupported type %v for boolean literal", tag.Type)
 			}
 
-			return &ast.Value{
+			return &ir.Value{
 				Data: false,
-				Text: ast.False,
+				Text: ir.False,
 				Tag:  tag,
 				Path: path,
 			}, nil
 
 		// case token.Null:
-		// 	var tag *ast.Tag
+		// 	var tag *ir.Tag
 		// 	if tag, err = p.consumeCommentsFor(tok.Line); err != nil {
 		// 		return nil, err
 		// 	}
 		// 	if tag == nil {
-		// 		tag = ast.NewTag()
-		// 		tag.Type = ast.ValueTypeNull
+		// 		tag = ir.NewTag()
+		// 		tag.Type = ir.ValueTypeNull
 		// 	} else {
 		// 		switch tag.Type {
-		// 		case ast.ValueTypeUnknown:
-		// 			tag.Type = ast.ValueTypeNull
-		// 		case ast.ValueTypeNull:
+		// 		case ir.ValueTypeUnknown:
+		// 			tag.Type = ir.ValueTypeNull
+		// 		case ir.ValueTypeNull:
 		// 		default:
 		// 			return nil, fmt.Errorf("unsupported type %v for null literal", tag.Type)
 		// 		}
 		// 	}
-		// 	return &ast.Value{
+		// 	return &ir.Value{
 		// 		Data: nil,
-		// 		Text: ast.Null,
+		// 		Text: ir.Null,
 		// 		Tag:  tag,
 		// 	}, nil
 
@@ -886,7 +886,7 @@ func (p *Parser) parse(path string) (val ast.Node, err error) {
 	}
 }
 
-func (p *Parser) parseObject(openLine int, path string) (*ast.Object, error) {
+func (p *Parser) parseObject(openLine int, path string) (*ir.Object, error) {
 	p.depth++
 	if p.depth > maxDepth {
 		return nil, fmt.Errorf("max depth: %d", maxDepth)
@@ -897,10 +897,10 @@ func (p *Parser) parseObject(openLine int, path string) (*ast.Object, error) {
 		return nil, err
 	}
 	if tag == nil {
-		tag = ast.NewTag()
+		tag = ir.NewTag()
 	}
-	if tag.Type == ast.ValueTypeUnknown {
-		tag.Type = ast.ValueTypeObject
+	if tag.Type == ir.ValueTypeUnknown {
+		tag.Type = ir.ValueTypeObject
 	}
 
 	if tag.Name != "" {
@@ -911,12 +911,12 @@ func (p *Parser) parseObject(openLine int, path string) (*ast.Object, error) {
 		}
 	}
 
-	obj := &ast.Object{
+	obj := &ir.Object{
 		Tag:  tag,
 		Path: path,
 	}
 
-	var val ast.Node
+	var val ir.Node
 	for {
 		tok := p.peek()
 		if tok.Type == token.EOF {
@@ -960,7 +960,7 @@ func (p *Parser) parseObject(openLine int, path string) (*ast.Object, error) {
 
 		p.next()
 		pa := fmt.Sprintf("%s.%s", path, keyStr)
-		if ast.ValueTypeMap == tag.Type {
+		if ir.ValueTypeMap == tag.Type {
 			pa = fmt.Sprintf("%s[%s]", path, keyStr)
 		}
 		if val, err = p.parse(pa); err != nil {
@@ -974,11 +974,11 @@ func (p *Parser) parseObject(openLine int, path string) (*ast.Object, error) {
 
 		// for map
 		childTag := val.GetTag()
-		if childTag != nil && tag != nil && childTag.Type == ast.ValueTypeMap {
+		if childTag != nil && tag != nil && childTag.Type == ir.ValueTypeMap {
 			childTag.Inherit(tag)
 		}
 
-		field := &ast.Field{
+		field := &ir.Field{
 			Key:   keyStr,
 			Value: val,
 		}
@@ -990,14 +990,14 @@ func (p *Parser) parseObject(openLine int, path string) (*ast.Object, error) {
 	}
 
 	switch tag.Type {
-	case ast.ValueTypeMap:
+	case ir.ValueTypeMap:
 		err = tag.ValidateMap()
 		if err != nil {
 			err = fmt.Errorf("validate failed: %w", err)
 			return nil, err
 		}
 
-	case ast.ValueTypeObject:
+	case ir.ValueTypeObject:
 		err = tag.ValidateStruct()
 		if err != nil {
 			err = fmt.Errorf("validate failed: %w", err)
@@ -1008,7 +1008,7 @@ func (p *Parser) parseObject(openLine int, path string) (*ast.Object, error) {
 	return obj, nil
 }
 
-func (p *Parser) parseArray(openLine int, path string) (*ast.Array, error) {
+func (p *Parser) parseArray(openLine int, path string) (*ir.Array, error) {
 	p.depth++
 	if p.depth > maxDepth {
 		return nil, fmt.Errorf("max depth: %d", maxDepth)
@@ -1019,25 +1019,25 @@ func (p *Parser) parseArray(openLine int, path string) (*ast.Array, error) {
 		return nil, err
 	}
 	if tag == nil {
-		tag = ast.NewTag()
+		tag = ir.NewTag()
 	}
-	if tag.Type == ast.ValueTypeUnknown {
+	if tag.Type == ir.ValueTypeUnknown {
 		if tag.Size > 0 {
-			tag.Type = ast.ValueTypeArray
+			tag.Type = ir.ValueTypeArray
 		} else {
-			tag.Type = ast.ValueTypeSlice
+			tag.Type = ir.ValueTypeSlice
 		}
 	}
 
 	if tag.Name != "" {
 		path = fmt.Sprintf("%s.%s", path, tag.Name)
 	}
-	arr := &ast.Array{
+	arr := &ir.Array{
 		Tag:  tag,
 		Path: path,
 	}
 
-	var item ast.Node
+	var item ir.Node
 	var i int
 	for {
 		tok := p.peek()
@@ -1095,14 +1095,14 @@ func (p *Parser) parseArray(openLine int, path string) (*ast.Array, error) {
 	}
 
 	switch tag.Type {
-	case ast.ValueTypeArray:
+	case ir.ValueTypeArray:
 		err = tag.ValidateArray(arr.Items)
 		if err != nil {
 			err = fmt.Errorf("validate failed: %w", err)
 			return nil, err
 		}
 
-	case ast.ValueTypeSlice:
+	case ir.ValueTypeSlice:
 		err = tag.ValidateSlice(arr.Items)
 		if err != nil {
 			err = fmt.Errorf("validate failed: %w", err)
@@ -1113,26 +1113,26 @@ func (p *Parser) parseArray(openLine int, path string) (*ast.Array, error) {
 	return arr, nil
 }
 
-func mergeNodeTag(n ast.Node, parsed *ast.Tag) {
+func mergeNodeTag(n ir.Node, parsed *ir.Tag) {
 	if n == nil || parsed == nil {
 		return
 	}
 	existing := n.GetTag()
-	merged := ast.MergeTag(existing, parsed)
+	merged := ir.MergeTag(existing, parsed)
 	switch t := n.(type) {
-	case *ast.Value:
+	case *ir.Value:
 		t.Tag = merged
-	case *ast.Object:
+	case *ir.Object:
 		t.Tag = merged
-	case *ast.Array:
+	case *ir.Array:
 		t.Tag = merged
 	default:
 	}
 }
 
-func parseCommentsToTag(cs string) (*ast.Tag, error) {
+func parseCommentsToTag(cs string) (*ir.Tag, error) {
 	if after, ok := strings.CutPrefix(cs, "mm:"); ok {
-		parsed, err := ast.ParseMMTag(after)
+		parsed, err := ir.ParseMMTag(after)
 		if err != nil {
 			return nil, err
 		}

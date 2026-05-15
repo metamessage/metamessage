@@ -1,13 +1,13 @@
 package io.github.metamessage.jsonc
 
-import io.github.metamessage.ast.Node 
-import io.github.metamessage.ast.Object as AstObject
-import io.github.metamessage.ast.Array as AstArray
-import io.github.metamessage.ast.Field
-import io.github.metamessage.ast.Value
-import io.github.metamessage.ast.Tag
-import io.github.metamessage.ast.ValueType
-import io.github.metamessage.mm.CamelToSnake
+import io.github.metamessage.ir.Node 
+import io.github.metamessage.ir.Object as AstObject
+import io.github.metamessage.ir.Array as AstArray
+import io.github.metamessage.ir.Field
+import io.github.metamessage.ir.Value
+import io.github.metamessage.ir.Tag
+import io.github.metamessage.ir.ValueType
+import io.github.metamessage.core.CamelToSnake
 import java.math.BigInteger
 import java.time.LocalDateTime
 import java.time.LocalDate
@@ -884,7 +884,7 @@ class JsoncParser(private val tokens: List<JsoncToken>) {
             is Value -> n.tag = merged
             is AstObject -> n.tag = merged
             is AstArray -> n.tag = merged
-            is io.github.metamessage.ast.Doc -> n.tag = merged
+            is io.github.metamessage.ir.Doc -> n.tag = merged
         }
     }
 }

@@ -1,9 +1,9 @@
-import { fromValue, fromJSONC, decode } from './mm';
-import { Tag } from './ast/tag';
-import { Binder, Constructor } from './mm/binder.js';
+import { fromValue, fromJSONC, decode } from './core';
+import { Tag } from './ir/tag';
+import { Binder, Constructor } from './core/binder.js';
 
-export { ValueType } from './ast/value-type';
-export { mm } from './mm/mm';
+export { ValueType } from './ir/value-type';
+export { mm } from './core/mm';
 
 export function encodeFromValue(value: any, tag?: Tag): Uint8Array {
   return fromValue(value, tag);

@@ -4,20 +4,20 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/metamessage/metamessage/internal/ast"
+	"github.com/metamessage/metamessage/internal/ir"
 )
 
 func TestToPHPGeneratesCode(t *testing.T) {
-	obj := &ast.Object{
-		Tag: &ast.Tag{Name: "sample"},
-		Fields: []*ast.Field{
-			{Key: "name", Value: &ast.Value{Text: "alice", Tag: &ast.Tag{Type: ast.ValueTypeString}}},
-			{Key: "data", Value: &ast.Value{Text: "abc", Tag: &ast.Tag{Type: ast.ValueTypeBytes}}},
-			{Key: "ids", Value: &ast.Array{Tag: &ast.Tag{Type: ast.ValueTypeArray, ChildType: ast.ValueTypeInt}, Items: []ast.Node{
-				&ast.Value{Text: "1", Tag: &ast.Tag{Type: ast.ValueTypeInt}},
+	obj := &ir.Object{
+		Tag: &ir.Tag{Name: "sample"},
+		Fields: []*ir.Field{
+			{Key: "name", Value: &ir.Value{Text: "alice", Tag: &ir.Tag{Type: ir.ValueTypeString}}},
+			{Key: "data", Value: &ir.Value{Text: "abc", Tag: &ir.Tag{Type: ir.ValueTypeBytes}}},
+			{Key: "ids", Value: &ir.Array{Tag: &ir.Tag{Type: ir.ValueTypeArray, ChildType: ir.ValueTypeInt}, Items: []ir.Node{
+				&ir.Value{Text: "1", Tag: &ir.Tag{Type: ir.ValueTypeInt}},
 			}}},
-			{Key: "meta", Value: &ast.Object{Tag: &ast.Tag{Name: "meta"}, Fields: []*ast.Field{
-				{Key: "count", Value: &ast.Value{Text: "5", Tag: &ast.Tag{Type: ast.ValueTypeInt}}},
+			{Key: "meta", Value: &ir.Object{Tag: &ir.Tag{Name: "meta"}, Fields: []*ir.Field{
+				{Key: "count", Value: &ir.Value{Text: "5", Tag: &ir.Tag{Type: ir.ValueTypeInt}}},
 			}}},
 		},
 	}
