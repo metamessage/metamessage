@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "metamessage"
-version = "0.1.0"
+version = "0.1.1"
 description = "High-performance binary message encoding library with schema tag support"
 readme = "README.md"
 authors = [{name = "MetaMessage Contributors"}]

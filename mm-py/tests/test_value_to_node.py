@@ -259,7 +259,7 @@ def test_mm_field_decorator():
 def test_mm_field_with_constraints():
     """Test field-level mm with validation constraints."""
     class Product:
-        id: int = mm(desc="Product ID", min=1, max=99999)
+        id: int|None = mm(desc="Product ID", min=1, max=99999)
         name: str = mm(desc="Product name", min=1, max=100)
         price: float = mm(desc="Price", min=0.0, max=999999.99)
 

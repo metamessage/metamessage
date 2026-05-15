@@ -5,6 +5,13 @@ import { META_KEY } from './mm';
 
 const maxDepth = 32;
 
+function isUnionTypeWithNull(type: string | undefined): boolean {
+  if (!type || typeof type !== 'string') {
+    return false;
+  }
+  return type.split('|').some((t) => t.trim().toLowerCase() === 'null');
+}
+
 export function NilToNode(valueType: ValueType): MMValue {
   const tag = new Tag();
   tag.type = valueType;
@@ -21,9 +28,15 @@ export function ValueToNode(v: any, tag?: Tag): Node {
 
 function valueToNode(v: any, tag: Tag, depth: number, path: string): Node {
   const meta = v?.constructor?.[META_KEY] ?? {};
-  // console.log('meta', meta, tag);
   if (meta) {
     Object.assign(tag, meta.__class);
+    const classType = meta.__class?.type;
+    if (
+      meta.__class?.nullable === true ||
+      (typeof classType === 'string' && isUnionTypeWithNull(classType))
+    ) {
+      tag.nullable = true;
+    }
   }
 
   let data: any = null;
@@ -419,7 +432,9 @@ function anyToObject(
     throw new Error(`max depth: ${maxDepth}`);
   }
 
-  tag.type = ValueType.Object;
+  if (tag.type === ValueType.Unknown) {
+    tag.type = ValueType.Object;
+  }
 
   const objNode = new MMObject();
   objNode.setTag(tag);
@@ -430,6 +445,17 @@ function anyToObject(
     fieldTag.name = key;
     if (meta[key]) {
       Object.assign(fieldTag, meta[key]);
+      const fieldType = meta[key]?.type;
+      if (typeof fieldType === 'string' && isUnionTypeWithNull(fieldType)) {
+        fieldTag.nullable = true;
+      }
+    }
+
+    if (tag.type === ValueType.Map) {
+      fieldTag.inherit(tag);
+      if (fieldTag.nullable && !tag.childNullable) {
+        tag.childNullable = true;
+      }
     }
 
     const fieldPath = path ? `${path}.${key}` : key;
@@ -456,7 +482,13 @@ function anyToArray(
     throw new Error(`max depth: ${maxDepth}`);
   }
 
-  tag.type = ValueType.Slice;
+  if (tag.type === ValueType.Unknown) {
+    tag.type = ValueType.Slice;
+  }
+
+  if (tag.size > 0) {
+    tag.type = ValueType.Array;
+  }
 
   const arrNode = new MMArray();
   arrNode.setTag(tag);
@@ -464,8 +496,14 @@ function anyToArray(
 
   for (let i = 0; i < arr.length; i++) {
     const itemTag = new Tag();
+    itemTag.inherit(tag);
     const itemPath = `${path}[${i}]`;
     const itemNode = valueToNode(arr[i], itemTag, depth, itemPath);
+
+    if (itemNode.getTag().nullable && !tag.childNullable) {
+      tag.childNullable = true;
+    }
+
     arrNode.addElement(itemNode);
   }
 

@@ -22,6 +22,7 @@ Usage:
 """
 import inspect
 import re
+import types
 from typing import Any, Dict, List, Optional, Type, Tuple, get_type_hints, Union
 from datetime import datetime, date, time as dt_time
 from enum import Enum
@@ -251,6 +252,45 @@ def _python_type_to_value_type(py_type: type) -> ValueType:
     if isinstance(py_type, type) and issubclass(py_type, Enum):
         return ValueType.Enum
     return ValueType.Unknown
+
+
+def _is_union_type_with_null(type_str: Any) -> bool:
+    """Check if a type string represents a union type containing null/None."""
+    if type_str is None or not isinstance(type_str, str):
+        return False
+    return any(t.strip().lower() == 'null' for t in type_str.split('|'))
+
+
+def _is_union_type_with_none(py_type: Any) -> bool:
+    """Check if a Python type annotation is a union type containing None."""
+    if py_type is None:
+        return False
+    
+    # Check for Python 3.10+ union syntax (e.g., int | None)
+    # In Python 3.10+, int | None creates a types.UnionType which has __args__
+    if isinstance(py_type, types.UnionType):
+        return type(None) in py_type.__args__
+    
+    # Check for typing.Union syntax (e.g., Union[int, None])
+    if hasattr(py_type, '__origin__'):
+        try:
+            from typing import Union
+            if py_type.__origin__ is Union:
+                return type(None) in py_type.__args__
+        except ImportError:
+            pass
+    
+    # Check for typing.Optional (which is Union[X, None])
+    if hasattr(py_type, '__origin__'):
+        try:
+            from typing import Optional
+            # Optional[X] is equivalent to Union[X, None]
+            if py_type.__origin__ is Optional:
+                return True
+        except ImportError:
+            pass
+    
+    return False
 
 
 # ===== ValueToNode =====
@@ -538,6 +578,8 @@ def _any_to_node_object(obj: Any, tag: Tag, depth: int, path: str) -> Obj:
     class_tag = get_mm_tag_for_class(cls)
     if class_tag is not None:
         tag = MergeTag(tag, class_tag)
+        if class_tag.nullable or _is_union_type_with_null(class_tag.type):
+            tag.nullable = True
 
     nodes = []
     for field_name, field_type in _get_type_hints(cls).items():
@@ -551,11 +593,19 @@ def _any_to_node_object(obj: Any, tag: Tag, depth: int, path: str) -> Obj:
         if field_tag is None:
             field_tag = NewTag()
         
+        # Check for union type with null in Python type annotation (e.g., int|None)
+        if _is_union_type_with_none(field_type):
+            field_tag.nullable = True
+        
         # Auto-detect type from Python type annotation
         if field_tag.type == ValueType(0):
             auto_type = _python_type_to_value_type(field_type)
             if auto_type != ValueType(0):
                 field_tag.type = auto_type
+        
+        # Check for union type with null (e.g., "int|null" as type kwarg)
+        if field_tag.nullable or _is_union_type_with_null(field_tag.type):
+            field_tag.nullable = True
         
         p = f"{path}.{field_key}"
         child_node = value_to_node(field_value, field_tag, depth, p)

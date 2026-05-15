@@ -2,4 +2,3 @@ include README.md
 include pyproject.toml
 recursive-include metamessage *.py
 recursive-include tests *.py
-recursive-include examples *
