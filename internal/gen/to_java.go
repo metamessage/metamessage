@@ -5,74 +5,74 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/metamessage/metamessage/internal/ast"
+	"github.com/metamessage/metamessage/internal/ir"
 )
 
-var javaTypeMap = map[ast.ValueType]string{
-	ast.ValueTypeUnknown:  "Object",
-	ast.ValueTypeString:   "String",
-	ast.ValueTypeBytes:    "byte[]",
-	ast.ValueTypeBool:     "boolean",
-	ast.ValueTypeArray:    "List<Object>",
-	ast.ValueTypeSlice:    "List<Object>",
-	ast.ValueTypeMap:      "Map<String, Object>",
-	ast.ValueTypeInt:      "int",
-	ast.ValueTypeInt8:     "byte",
-	ast.ValueTypeInt16:    "short",
-	ast.ValueTypeInt32:    "int",
-	ast.ValueTypeInt64:    "long",
-	ast.ValueTypeUint:     "long",
-	ast.ValueTypeUint8:    "short",
-	ast.ValueTypeUint16:   "int",
-	ast.ValueTypeUint32:   "long",
-	ast.ValueTypeUint64:   "long",
-	ast.ValueTypeFloat32:  "float",
-	ast.ValueTypeFloat64:  "double",
-	ast.ValueTypeBigInt:   "BigInteger",
-	ast.ValueTypeDateTime: "LocalDateTime",
-	ast.ValueTypeDate:     "LocalDate",
-	ast.ValueTypeTime:     "LocalTime",
-	ast.ValueTypeUUID:     "String",
-	ast.ValueTypeDecimal:  "String",
-	ast.ValueTypeEmail:    "String",
-	ast.ValueTypeIP:       "String",
-	ast.ValueTypeURL:      "String",
-	ast.ValueTypeEnum:     "String",
-	ast.ValueTypeImage:    "String",
+var javaTypeMap = map[ir.ValueType]string{
+	ir.ValueTypeUnknown:  "Object",
+	ir.ValueTypeString:   "String",
+	ir.ValueTypeBytes:    "byte[]",
+	ir.ValueTypeBool:     "boolean",
+	ir.ValueTypeArray:    "List<Object>",
+	ir.ValueTypeSlice:    "List<Object>",
+	ir.ValueTypeMap:      "Map<String, Object>",
+	ir.ValueTypeInt:      "int",
+	ir.ValueTypeInt8:     "byte",
+	ir.ValueTypeInt16:    "short",
+	ir.ValueTypeInt32:    "int",
+	ir.ValueTypeInt64:    "long",
+	ir.ValueTypeUint:     "long",
+	ir.ValueTypeUint8:    "short",
+	ir.ValueTypeUint16:   "int",
+	ir.ValueTypeUint32:   "long",
+	ir.ValueTypeUint64:   "long",
+	ir.ValueTypeFloat32:  "float",
+	ir.ValueTypeFloat64:  "double",
+	ir.ValueTypeBigInt:   "BigInteger",
+	ir.ValueTypeDateTime: "LocalDateTime",
+	ir.ValueTypeDate:     "LocalDate",
+	ir.ValueTypeTime:     "LocalTime",
+	ir.ValueTypeUUID:     "String",
+	ir.ValueTypeDecimal:  "String",
+	ir.ValueTypeEmail:    "String",
+	ir.ValueTypeIP:       "String",
+	ir.ValueTypeURL:      "String",
+	ir.ValueTypeEnum:     "String",
+	ir.ValueTypeImage:    "String",
 }
 
-var javaWrapperTypeMap = map[ast.ValueType]string{
-	ast.ValueTypeBool:    "Boolean",
-	ast.ValueTypeInt:     "Integer",
-	ast.ValueTypeInt8:    "Byte",
-	ast.ValueTypeInt16:   "Short",
-	ast.ValueTypeInt32:   "Integer",
-	ast.ValueTypeInt64:   "Long",
-	ast.ValueTypeUint:    "Long",
-	ast.ValueTypeUint8:   "Short",
-	ast.ValueTypeUint16:  "Integer",
-	ast.ValueTypeUint32:  "Long",
-	ast.ValueTypeUint64:  "Long",
-	ast.ValueTypeFloat32: "Float",
-	ast.ValueTypeFloat64: "Double",
-	ast.ValueTypeBigInt:  "BigInteger",
-	ast.ValueTypeString:  "String",
-	ast.ValueTypeUUID:    "String",
-	ast.ValueTypeDecimal: "String",
-	ast.ValueTypeEmail:   "String",
-	ast.ValueTypeIP:      "String",
-	ast.ValueTypeURL:     "String",
-	ast.ValueTypeEnum:    "String",
-	ast.ValueTypeImage:   "String",
+var javaWrapperTypeMap = map[ir.ValueType]string{
+	ir.ValueTypeBool:    "Boolean",
+	ir.ValueTypeInt:     "Integer",
+	ir.ValueTypeInt8:    "Byte",
+	ir.ValueTypeInt16:   "Short",
+	ir.ValueTypeInt32:   "Integer",
+	ir.ValueTypeInt64:   "Long",
+	ir.ValueTypeUint:    "Long",
+	ir.ValueTypeUint8:   "Short",
+	ir.ValueTypeUint16:  "Integer",
+	ir.ValueTypeUint32:  "Long",
+	ir.ValueTypeUint64:  "Long",
+	ir.ValueTypeFloat32: "Float",
+	ir.ValueTypeFloat64: "Double",
+	ir.ValueTypeBigInt:  "BigInteger",
+	ir.ValueTypeString:  "String",
+	ir.ValueTypeUUID:    "String",
+	ir.ValueTypeDecimal: "String",
+	ir.ValueTypeEmail:   "String",
+	ir.ValueTypeIP:      "String",
+	ir.ValueTypeURL:     "String",
+	ir.ValueTypeEnum:    "String",
+	ir.ValueTypeImage:   "String",
 }
 
-func ToJava(n ast.Node) string {
+func ToJava(n ir.Node) string {
 	if n == nil {
 		return ""
 	}
 
 	topName := "Obj"
-	if obj, ok := n.(*ast.Object); ok && obj.Tag != nil && obj.Tag.Name != "" {
+	if obj, ok := n.(*ir.Object); ok && obj.Tag != nil && obj.Tag.Name != "" {
 		topName = exportJavaClassName(obj.Tag.Name)
 	}
 
@@ -125,7 +125,7 @@ func ToJava(n ast.Node) string {
 	sb.WriteString("return obj;\n")
 	WriteIndent(&sb, 1)
 	sb.WriteString("}\n")
-	objectFactories := make(map[string]*ast.Object)
+	objectFactories := make(map[string]*ir.Object)
 	collectJavaObjectFactories(n, "", objectFactories)
 	if len(objectFactories) > 0 {
 		for _, name := range sortedJavaFactoryNames(objectFactories) {
@@ -137,7 +137,7 @@ func ToJava(n ast.Node) string {
 	return sb.String()
 }
 
-func collectJavaImports(n ast.Node) []string {
+func collectJavaImports(n ir.Node) []string {
 	imports := make(map[string]struct{})
 	collectJavaImportsRec(n, imports)
 
@@ -153,25 +153,25 @@ func collectJavaImports(n ast.Node) []string {
 	return packages
 }
 
-func collectJavaImportsRec(n ast.Node, imports map[string]struct{}) {
+func collectJavaImportsRec(n ir.Node, imports map[string]struct{}) {
 	if n == nil {
 		return
 	}
 
 	switch v := n.(type) {
-	case *ast.Value:
+	case *ir.Value:
 		if v.Tag != nil {
 			addJavaImportForType(v.Tag.Type, imports)
 		}
-	case *ast.Array:
+	case *ir.Array:
 		imports["java.util.List"] = struct{}{}
-		if v.Tag != nil && v.Tag.ChildType != ast.ValueTypeUnknown {
+		if v.Tag != nil && v.Tag.ChildType != ir.ValueTypeUnknown {
 			addJavaImportForType(v.Tag.ChildType, imports)
 		}
 		for _, item := range v.Items {
 			collectJavaImportsRec(item, imports)
 		}
-	case *ast.Object:
+	case *ir.Object:
 		for _, f := range v.Fields {
 			if f != nil {
 				collectJavaImportsRec(f.Value, imports)
@@ -180,35 +180,35 @@ func collectJavaImportsRec(n ast.Node, imports map[string]struct{}) {
 	}
 }
 
-func addJavaImportForType(typ ast.ValueType, imports map[string]struct{}) {
+func addJavaImportForType(typ ir.ValueType, imports map[string]struct{}) {
 	switch typ {
-	case ast.ValueTypeBigInt:
+	case ir.ValueTypeBigInt:
 		imports["java.math.BigInteger"] = struct{}{}
-	case ast.ValueTypeDateTime:
+	case ir.ValueTypeDateTime:
 		imports["java.time.LocalDateTime"] = struct{}{}
-	case ast.ValueTypeDate:
+	case ir.ValueTypeDate:
 		imports["java.time.LocalDate"] = struct{}{}
-	case ast.ValueTypeTime:
+	case ir.ValueTypeTime:
 		imports["java.time.LocalTime"] = struct{}{}
-	case ast.ValueTypeMap:
+	case ir.ValueTypeMap:
 		imports["java.util.Map"] = struct{}{}
 	}
 }
 
-func getJavaTypeForField(f *ast.Field) string {
+func getJavaTypeForField(f *ir.Field) string {
 	switch v := f.Value.(type) {
-	case *ast.Value:
+	case *ir.Value:
 		return getJavaType(v)
-	case *ast.Object:
+	case *ir.Object:
 		return getJavaObjectType(f.Key, v)
-	case *ast.Array:
+	case *ir.Array:
 		return getJavaArrayType(f.Key, v)
 	default:
 		return "Object"
 	}
 }
 
-func getJavaType(v *ast.Value) string {
+func getJavaType(v *ir.Value) string {
 	if v != nil && v.Tag != nil {
 		if t, ok := javaTypeMap[v.Tag.Type]; ok {
 			return t
@@ -217,19 +217,19 @@ func getJavaType(v *ast.Value) string {
 	return "Object"
 }
 
-func getJavaObjectType(fieldKey string, obj *ast.Object) string {
+func getJavaObjectType(fieldKey string, obj *ir.Object) string {
 	if obj != nil && obj.Tag != nil && obj.Tag.Name != "" {
 		return exportJavaClassName(obj.Tag.Name)
 	}
 	return exportJavaClassName(fieldKey)
 }
 
-func getJavaArrayType(fieldKey string, a *ast.Array) string {
+func getJavaArrayType(fieldKey string, a *ir.Array) string {
 	if a == nil {
 		return "List<Object>"
 	}
 
-	if a.Tag != nil && a.Tag.ChildType != ast.ValueTypeUnknown {
+	if a.Tag != nil && a.Tag.ChildType != ir.ValueTypeUnknown {
 		if t, ok := javaWrapperTypeMap[a.Tag.ChildType]; ok {
 			return "List<" + t + ">"
 		}
@@ -240,9 +240,9 @@ func getJavaArrayType(fieldKey string, a *ast.Array) string {
 
 	if len(a.Items) > 0 {
 		switch item := a.Items[0].(type) {
-		case *ast.Object:
+		case *ir.Object:
 			return "List<" + getJavaObjectType(fieldKey, item) + ">"
-		case *ast.Value:
+		case *ir.Value:
 			if item.Tag != nil {
 				if t, ok := javaWrapperTypeMap[item.Tag.Type]; ok {
 					return "List<" + t + ">"
@@ -257,8 +257,8 @@ func getJavaArrayType(fieldKey string, a *ast.Array) string {
 	return "List<Object>"
 }
 
-func genJavaFields(b *strings.Builder, n ast.Node, indent int) {
-	obj, ok := n.(*ast.Object)
+func genJavaFields(b *strings.Builder, n ir.Node, indent int) {
+	obj, ok := n.(*ir.Object)
 	if !ok {
 		return
 	}
@@ -276,8 +276,8 @@ func genJavaFields(b *strings.Builder, n ast.Node, indent int) {
 	}
 }
 
-func genJavaNestedClasses(b *strings.Builder, n ast.Node, indent int) {
-	obj, ok := n.(*ast.Object)
+func genJavaNestedClasses(b *strings.Builder, n ir.Node, indent int) {
+	obj, ok := n.(*ir.Object)
 	if !ok {
 		return
 	}
@@ -288,7 +288,7 @@ func genJavaNestedClasses(b *strings.Builder, n ast.Node, indent int) {
 		}
 
 		switch v := f.Value.(type) {
-		case *ast.Object:
+		case *ir.Object:
 			className := getJavaObjectType(f.Key, v)
 			b.WriteString("\n")
 			WriteIndent(b, indent)
@@ -299,7 +299,7 @@ func genJavaNestedClasses(b *strings.Builder, n ast.Node, indent int) {
 			genJavaNestedClasses(b, v, indent+1)
 			WriteIndent(b, indent)
 			b.WriteString("}\n")
-		case *ast.Array:
+		case *ir.Array:
 			if nestedObj := findFirstObjectInArray(v); nestedObj != nil {
 				className := getJavaObjectType(f.Key, nestedObj)
 				b.WriteString("\n")
@@ -316,12 +316,12 @@ func genJavaNestedClasses(b *strings.Builder, n ast.Node, indent int) {
 	}
 }
 
-func findFirstObjectInArray(a *ast.Array) *ast.Object {
+func findFirstObjectInArray(a *ir.Array) *ir.Object {
 	if a == nil {
 		return nil
 	}
 	for _, item := range a.Items {
-		if obj, ok := item.(*ast.Object); ok {
+		if obj, ok := item.(*ir.Object); ok {
 			return obj
 		}
 	}
@@ -361,8 +361,8 @@ func exportJavaDataClassName(name string) string {
 	return exportJavaClassName(name) + "Data"
 }
 
-func genJavaDataAssignments(b *strings.Builder, varName string, n ast.Node, indent int) {
-	obj, ok := n.(*ast.Object)
+func genJavaDataAssignments(b *strings.Builder, varName string, n ir.Node, indent int) {
+	obj, ok := n.(*ir.Object)
 	if !ok {
 		return
 	}
@@ -373,13 +373,13 @@ func genJavaDataAssignments(b *strings.Builder, varName string, n ast.Node, inde
 		}
 		prop := varName + "." + exportJavaFieldName(f.Key)
 		switch v := f.Value.(type) {
-		case *ast.Value:
+		case *ir.Value:
 			WriteIndent(b, indent)
 			b.WriteString(prop)
 			b.WriteString(" = ")
 			b.WriteString(formatJavaValueLiteral(v))
 			b.WriteString(";\n")
-		case *ast.Object:
+		case *ir.Object:
 			className := getJavaObjectType(f.Key, v)
 			WriteIndent(b, indent)
 			b.WriteString(className)
@@ -394,7 +394,7 @@ func genJavaDataAssignments(b *strings.Builder, varName string, n ast.Node, inde
 			b.WriteString(exportJavaFieldName(f.Key))
 			b.WriteString(";\n")
 			genJavaDataAssignments(b, exportJavaFieldName(f.Key), v, indent)
-		case *ast.Array:
+		case *ir.Array:
 			WriteIndent(b, indent)
 			b.WriteString(prop)
 			b.WriteString(" = ")
@@ -408,7 +408,7 @@ func genJavaDataAssignments(b *strings.Builder, varName string, n ast.Node, inde
 	}
 }
 
-func genJavaArrayLiteral(a *ast.Array, fieldKey string) string {
+func genJavaArrayLiteral(a *ir.Array, fieldKey string) string {
 	if a == nil || len(a.Items) == 0 {
 		return "List.of()"
 	}
@@ -420,9 +420,9 @@ func genJavaArrayLiteral(a *ast.Array, fieldKey string) string {
 			sb.WriteString(", ")
 		}
 		switch v := item.(type) {
-		case *ast.Value:
+		case *ir.Value:
 			sb.WriteString(formatJavaValueLiteral(v))
-		case *ast.Object:
+		case *ir.Object:
 			className := getJavaObjectType(fieldKey, v)
 			sb.WriteString("create")
 			sb.WriteString(className)
@@ -435,21 +435,21 @@ func genJavaArrayLiteral(a *ast.Array, fieldKey string) string {
 	return sb.String()
 }
 
-func collectJavaObjectFactories(n ast.Node, fieldKey string, factories map[string]*ast.Object) {
+func collectJavaObjectFactories(n ir.Node, fieldKey string, factories map[string]*ir.Object) {
 	if n == nil {
 		return
 	}
 
 	switch v := n.(type) {
-	case *ast.Object:
+	case *ir.Object:
 		for _, f := range v.Fields {
 			if f != nil {
 				collectJavaObjectFactories(f.Value, f.Key, factories)
 			}
 		}
-	case *ast.Array:
+	case *ir.Array:
 		for _, item := range v.Items {
-			if obj, ok := item.(*ast.Object); ok {
+			if obj, ok := item.(*ir.Object); ok {
 				factories[getJavaObjectType(fieldKey, obj)] = obj
 			}
 			collectJavaObjectFactories(item, fieldKey, factories)
@@ -457,7 +457,7 @@ func collectJavaObjectFactories(n ast.Node, fieldKey string, factories map[strin
 	}
 }
 
-func sortedJavaFactoryNames(factories map[string]*ast.Object) []string {
+func sortedJavaFactoryNames(factories map[string]*ir.Object) []string {
 	names := make([]string, 0, len(factories))
 	for name := range factories {
 		if name != "" {
@@ -468,7 +468,7 @@ func sortedJavaFactoryNames(factories map[string]*ast.Object) []string {
 	return names
 }
 
-func genJavaObjectFactoryMethod(b *strings.Builder, className string, obj *ast.Object, indent int) {
+func genJavaObjectFactoryMethod(b *strings.Builder, className string, obj *ir.Object, indent int) {
 	WriteIndent(b, indent)
 	b.WriteString("private static ")
 	b.WriteString(className)
@@ -487,7 +487,7 @@ func genJavaObjectFactoryMethod(b *strings.Builder, className string, obj *ast.O
 	b.WriteString("}\n")
 }
 
-func formatJavaValueLiteral(v *ast.Value) string {
+func formatJavaValueLiteral(v *ir.Value) string {
 	if v == nil {
 		return "null"
 	}
@@ -524,6 +524,6 @@ func formatJavaValueLiteral(v *ast.Value) string {
 	return "\"" + strings.ReplaceAll(v.Text, "\"", "\\\"") + "\""
 }
 
-func PrintJavaStruct(n ast.Node) {
+func PrintJavaStruct(n ir.Node) {
 	fmt.Println(ToJava(n))
 }

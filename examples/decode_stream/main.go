@@ -6,7 +6,7 @@ import (
 	"io"
 	"log"
 
-	"github.com/metamessage/metamessage/internal/mm"
+	"github.com/metamessage/metamessage/internal/core"
 )
 
 // go run examples/decode_stream/*.go
@@ -21,12 +21,12 @@ func main() {
 		Text: "abc",
 	}
 
-	bs, err := mm.FromValue(message, "")
+	bs, err := core.FromValue(message, "")
 	if err != nil {
 		log.Fatalf("encode error: %v\n", err)
 	}
 
-	dec := mm.NewDecoder(bytes.NewReader(bs))
+	dec := core.NewDecoder(bytes.NewReader(bs))
 	for {
 		var m Message
 		_, err := dec.DecodeStream(&m)

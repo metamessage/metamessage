@@ -5,7 +5,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/metamessage/metamessage/internal/ast"
+	"github.com/metamessage/metamessage/internal/ir"
 )
 
 const indentUnit = "\t"
@@ -14,7 +14,7 @@ func writeIndent(b *strings.Builder, indent int) {
 	b.WriteString(strings.Repeat(indentUnit, indent))
 }
 
-func writeValueJSONC(b *strings.Builder, v *ast.Value) {
+func writeValueJSONC(b *strings.Builder, v *ir.Value) {
 	if v == nil {
 		return
 	}
@@ -24,26 +24,26 @@ func writeValueJSONC(b *strings.Builder, v *ast.Value) {
 	}
 
 	switch v.Tag.Type {
-	case ast.ValueTypeString,
-		ast.ValueTypeBytes,
-		ast.ValueTypeDateTime,
-		ast.ValueTypeDate,
-		ast.ValueTypeTime,
-		ast.ValueTypeUUID,
-		ast.ValueTypeIP,
-		ast.ValueTypeURL,
-		ast.ValueTypeEmail,
-		ast.ValueTypeEnum:
+	case ir.ValueTypeString,
+		ir.ValueTypeBytes,
+		ir.ValueTypeDateTime,
+		ir.ValueTypeDate,
+		ir.ValueTypeTime,
+		ir.ValueTypeUUID,
+		ir.ValueTypeIP,
+		ir.ValueTypeURL,
+		ir.ValueTypeEmail,
+		ir.ValueTypeEnum:
 		b.WriteString(strconv.Quote(v.Text))
 
-	case ast.ValueTypeInt, ast.ValueTypeInt8, ast.ValueTypeInt16, ast.ValueTypeInt32, ast.ValueTypeInt64,
-		ast.ValueTypeUint, ast.ValueTypeUint8, ast.ValueTypeUint16, ast.ValueTypeUint32, ast.ValueTypeUint64,
-		ast.ValueTypeBigInt,
-		ast.ValueTypeDecimal,
-		ast.ValueTypeBool:
+	case ir.ValueTypeInt, ir.ValueTypeInt8, ir.ValueTypeInt16, ir.ValueTypeInt32, ir.ValueTypeInt64,
+		ir.ValueTypeUint, ir.ValueTypeUint8, ir.ValueTypeUint16, ir.ValueTypeUint32, ir.ValueTypeUint64,
+		ir.ValueTypeBigInt,
+		ir.ValueTypeDecimal,
+		ir.ValueTypeBool:
 		b.WriteString(v.Text)
 
-	case ast.ValueTypeFloat32, ast.ValueTypeFloat64:
+	case ir.ValueTypeFloat32, ir.ValueTypeFloat64:
 		b.WriteString(v.Text)
 
 	default:
@@ -51,7 +51,7 @@ func writeValueJSONC(b *strings.Builder, v *ast.Value) {
 	}
 }
 
-func writeArrayJSONC(b *strings.Builder, a *ast.Array, indent int) {
+func writeArrayJSONC(b *strings.Builder, a *ir.Array, indent int) {
 	b.WriteString("[\n")
 
 	for _, item := range a.Items {
@@ -68,7 +68,7 @@ func writeArrayJSONC(b *strings.Builder, a *ast.Array, indent int) {
 	b.WriteString("]")
 }
 
-func writeObjectJSONC(b *strings.Builder, o *ast.Object, indent int) {
+func writeObjectJSONC(b *strings.Builder, o *ir.Object, indent int) {
 	b.WriteString("{\n")
 
 	for _, f := range o.Fields {
@@ -88,7 +88,7 @@ func writeObjectJSONC(b *strings.Builder, o *ast.Object, indent int) {
 	b.WriteString("}")
 }
 
-func writeLeadingComments(b *strings.Builder, tag *ast.Tag, indent int) {
+func writeLeadingComments(b *strings.Builder, tag *ir.Tag, indent int) {
 	tagStr := tag.ToString()
 	if tagStr != "" {
 		b.WriteString("\n")
@@ -97,19 +97,19 @@ func writeLeadingComments(b *strings.Builder, tag *ast.Tag, indent int) {
 	}
 }
 
-func writeNodeJSONC(b *strings.Builder, n ast.Node, indent int) {
+func writeNodeJSONC(b *strings.Builder, n ir.Node, indent int) {
 	switch v := n.(type) {
-	case *ast.Value:
+	case *ir.Value:
 		writeValueJSONC(b, v)
-	case *ast.Object:
+	case *ir.Object:
 		writeObjectJSONC(b, v, indent)
-	case *ast.Array:
+	case *ir.Array:
 		writeArrayJSONC(b, v, indent)
 	default:
 	}
 }
 
-func ToJSONC(n ast.Node) string {
+func ToJSONC(n ir.Node) string {
 	if n == nil {
 		return ""
 	}

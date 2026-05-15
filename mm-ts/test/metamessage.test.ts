@@ -1,7 +1,7 @@
-import { ValueType } from '../src/ast/value-type.js';
+import { ValueType } from '../src/ir/value-type.js';
 import { decodeToValue, encodeFromValue } from '../src/metamessage.js';
-import { mm, toMM } from '../src/mm/mm.js';
-import { ValueToNode } from '../src/mm/value-to-node.js';
+import { mm, toMM } from '../src/core/mm.js';
+import { ValueToNode } from '../src/core/value-to-node.js';
 
 // npm test test/metamessage.test.ts -- -t "encode and decode"
 describe('Build Value', () => {

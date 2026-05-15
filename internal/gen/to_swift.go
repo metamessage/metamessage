@@ -7,49 +7,49 @@ import (
 	"strings"
 	"unicode"
 
-	"github.com/metamessage/metamessage/internal/ast"
+	"github.com/metamessage/metamessage/internal/ir"
 )
 
-var swiftTypeMap = map[ast.ValueType]string{
-	ast.ValueTypeUnknown:  "Any",
-	ast.ValueTypeString:   "String",
-	ast.ValueTypeBytes:    "Data",
-	ast.ValueTypeBool:     "Bool",
-	ast.ValueTypeArray:    "[Any]",
-	ast.ValueTypeSlice:    "[Any]",
-	ast.ValueTypeMap:      "[String: Any]",
-	ast.ValueTypeInt:      "Int",
-	ast.ValueTypeInt8:     "Int8",
-	ast.ValueTypeInt16:    "Int16",
-	ast.ValueTypeInt32:    "Int32",
-	ast.ValueTypeInt64:    "Int64",
-	ast.ValueTypeUint:     "UInt",
-	ast.ValueTypeUint8:    "UInt8",
-	ast.ValueTypeUint16:   "UInt16",
-	ast.ValueTypeUint32:   "UInt32",
-	ast.ValueTypeUint64:   "UInt64",
-	ast.ValueTypeFloat32:  "Float",
-	ast.ValueTypeFloat64:  "Double",
-	ast.ValueTypeBigInt:   "String",
-	ast.ValueTypeDateTime: "Date",
-	ast.ValueTypeDate:     "Date",
-	ast.ValueTypeTime:     "Date",
-	ast.ValueTypeUUID:     "UUID",
-	ast.ValueTypeDecimal:  "Decimal",
-	ast.ValueTypeEmail:    "String",
-	ast.ValueTypeIP:       "String",
-	ast.ValueTypeURL:      "URL",
-	ast.ValueTypeEnum:     "String",
-	ast.ValueTypeImage:    "String",
+var swiftTypeMap = map[ir.ValueType]string{
+	ir.ValueTypeUnknown:  "Any",
+	ir.ValueTypeString:   "String",
+	ir.ValueTypeBytes:    "Data",
+	ir.ValueTypeBool:     "Bool",
+	ir.ValueTypeArray:    "[Any]",
+	ir.ValueTypeSlice:    "[Any]",
+	ir.ValueTypeMap:      "[String: Any]",
+	ir.ValueTypeInt:      "Int",
+	ir.ValueTypeInt8:     "Int8",
+	ir.ValueTypeInt16:    "Int16",
+	ir.ValueTypeInt32:    "Int32",
+	ir.ValueTypeInt64:    "Int64",
+	ir.ValueTypeUint:     "UInt",
+	ir.ValueTypeUint8:    "UInt8",
+	ir.ValueTypeUint16:   "UInt16",
+	ir.ValueTypeUint32:   "UInt32",
+	ir.ValueTypeUint64:   "UInt64",
+	ir.ValueTypeFloat32:  "Float",
+	ir.ValueTypeFloat64:  "Double",
+	ir.ValueTypeBigInt:   "String",
+	ir.ValueTypeDateTime: "Date",
+	ir.ValueTypeDate:     "Date",
+	ir.ValueTypeTime:     "Date",
+	ir.ValueTypeUUID:     "UUID",
+	ir.ValueTypeDecimal:  "Decimal",
+	ir.ValueTypeEmail:    "String",
+	ir.ValueTypeIP:       "String",
+	ir.ValueTypeURL:      "URL",
+	ir.ValueTypeEnum:     "String",
+	ir.ValueTypeImage:    "String",
 }
 
-func ToSwift(n ast.Node) string {
+func ToSwift(n ir.Node) string {
 	if n == nil {
 		return ""
 	}
 
 	topName := "Obj"
-	if obj, ok := n.(*ast.Object); ok && obj.Tag != nil && obj.Tag.Name != "" {
+	if obj, ok := n.(*ir.Object); ok && obj.Tag != nil && obj.Tag.Name != "" {
 		topName = exportSwiftStructName(obj.Tag.Name)
 	}
 
@@ -84,7 +84,7 @@ func ToSwift(n ast.Node) string {
 	return sb.String()
 }
 
-func collectSwiftImports(n ast.Node) []string {
+func collectSwiftImports(n ir.Node) []string {
 	imports := make(map[string]struct{})
 	collectSwiftImportsRec(n, imports)
 
@@ -100,24 +100,24 @@ func collectSwiftImports(n ast.Node) []string {
 	return packages
 }
 
-func collectSwiftImportsRec(n ast.Node, imports map[string]struct{}) {
+func collectSwiftImportsRec(n ir.Node, imports map[string]struct{}) {
 	if n == nil {
 		return
 	}
 
 	switch v := n.(type) {
-	case *ast.Value:
+	case *ir.Value:
 		if v.Tag != nil {
 			addSwiftImportForType(v.Tag.Type, imports)
 		}
-	case *ast.Array:
-		if v.Tag != nil && v.Tag.ChildType != ast.ValueTypeUnknown {
+	case *ir.Array:
+		if v.Tag != nil && v.Tag.ChildType != ir.ValueTypeUnknown {
 			addSwiftImportForType(v.Tag.ChildType, imports)
 		}
 		for _, item := range v.Items {
 			collectSwiftImportsRec(item, imports)
 		}
-	case *ast.Object:
+	case *ir.Object:
 		for _, f := range v.Fields {
 			if f != nil {
 				collectSwiftImportsRec(f.Value, imports)
@@ -126,27 +126,27 @@ func collectSwiftImportsRec(n ast.Node, imports map[string]struct{}) {
 	}
 }
 
-func addSwiftImportForType(typ ast.ValueType, imports map[string]struct{}) {
+func addSwiftImportForType(typ ir.ValueType, imports map[string]struct{}) {
 	switch typ {
-	case ast.ValueTypeBytes, ast.ValueTypeDateTime, ast.ValueTypeDate, ast.ValueTypeTime, ast.ValueTypeUUID, ast.ValueTypeDecimal, ast.ValueTypeURL:
+	case ir.ValueTypeBytes, ir.ValueTypeDateTime, ir.ValueTypeDate, ir.ValueTypeTime, ir.ValueTypeUUID, ir.ValueTypeDecimal, ir.ValueTypeURL:
 		imports["Foundation"] = struct{}{}
 	}
 }
 
-func getSwiftTypeForField(f *ast.Field) string {
+func getSwiftTypeForField(f *ir.Field) string {
 	switch v := f.Value.(type) {
-	case *ast.Value:
+	case *ir.Value:
 		return getSwiftType(v)
-	case *ast.Object:
+	case *ir.Object:
 		return getSwiftObjectType(f.Key, v)
-	case *ast.Array:
+	case *ir.Array:
 		return getSwiftArrayType(f.Key, v)
 	default:
 		return "Any"
 	}
 }
 
-func getSwiftType(v *ast.Value) string {
+func getSwiftType(v *ir.Value) string {
 	if v != nil && v.Tag != nil {
 		if t, ok := swiftTypeMap[v.Tag.Type]; ok {
 			return t
@@ -155,19 +155,19 @@ func getSwiftType(v *ast.Value) string {
 	return "Any"
 }
 
-func getSwiftObjectType(fieldKey string, obj *ast.Object) string {
+func getSwiftObjectType(fieldKey string, obj *ir.Object) string {
 	if obj != nil && obj.Tag != nil && obj.Tag.Name != "" {
 		return exportSwiftStructName(obj.Tag.Name)
 	}
 	return exportSwiftStructName(fieldKey)
 }
 
-func getSwiftArrayType(fieldKey string, a *ast.Array) string {
+func getSwiftArrayType(fieldKey string, a *ir.Array) string {
 	if a == nil {
 		return "[Any]"
 	}
 
-	if a.Tag != nil && a.Tag.ChildType != ast.ValueTypeUnknown {
+	if a.Tag != nil && a.Tag.ChildType != ir.ValueTypeUnknown {
 		if t, ok := swiftTypeMap[a.Tag.ChildType]; ok {
 			return "[" + t + "]"
 		}
@@ -175,9 +175,9 @@ func getSwiftArrayType(fieldKey string, a *ast.Array) string {
 
 	if len(a.Items) > 0 {
 		switch item := a.Items[0].(type) {
-		case *ast.Object:
+		case *ir.Object:
 			return "[" + getSwiftObjectType(fieldKey, item) + "]"
-		case *ast.Value:
+		case *ir.Value:
 			if item.Tag != nil {
 				if t, ok := swiftTypeMap[item.Tag.Type]; ok {
 					return "[" + t + "]"
@@ -189,8 +189,8 @@ func getSwiftArrayType(fieldKey string, a *ast.Array) string {
 	return "[Any]"
 }
 
-func genSwiftFields(b *strings.Builder, n ast.Node, indent int) {
-	obj, ok := n.(*ast.Object)
+func genSwiftFields(b *strings.Builder, n ir.Node, indent int) {
+	obj, ok := n.(*ir.Object)
 	if !ok {
 		return
 	}
@@ -219,8 +219,8 @@ func genSwiftFields(b *strings.Builder, n ast.Node, indent int) {
 	}
 }
 
-func genSwiftNestedStructs(b *strings.Builder, n ast.Node, generated map[string]struct{}) {
-	obj, ok := n.(*ast.Object)
+func genSwiftNestedStructs(b *strings.Builder, n ir.Node, generated map[string]struct{}) {
+	obj, ok := n.(*ir.Object)
 	if !ok {
 		return
 	}
@@ -231,7 +231,7 @@ func genSwiftNestedStructs(b *strings.Builder, n ast.Node, generated map[string]
 		}
 
 		switch v := f.Value.(type) {
-		case *ast.Object:
+		case *ir.Object:
 			structName := getSwiftObjectType(f.Key, v)
 			if _, ok := generated[structName]; ok {
 				continue
@@ -243,7 +243,7 @@ func genSwiftNestedStructs(b *strings.Builder, n ast.Node, generated map[string]
 			genSwiftFields(b, v, 1)
 			b.WriteString("}\n")
 			genSwiftNestedStructs(b, v, generated)
-		case *ast.Array:
+		case *ir.Array:
 			if nestedObj := findFirstObjectInArraySwift(v); nestedObj != nil {
 				structName := getSwiftObjectType(f.Key, nestedObj)
 				if _, ok := generated[structName]; ok {
@@ -261,12 +261,12 @@ func genSwiftNestedStructs(b *strings.Builder, n ast.Node, generated map[string]
 	}
 }
 
-func findFirstObjectInArraySwift(a *ast.Array) *ast.Object {
+func findFirstObjectInArraySwift(a *ir.Array) *ir.Object {
 	if a == nil {
 		return nil
 	}
 	for _, item := range a.Items {
-		if obj, ok := item.(*ast.Object); ok {
+		if obj, ok := item.(*ir.Object); ok {
 			return obj
 		}
 	}
@@ -321,20 +321,20 @@ func exportSwiftInstanceName(name string) string {
 	return strings.ToLower(string(name[0])) + name[1:] + "Data"
 }
 
-func genSwiftValue(b *strings.Builder, n ast.Node, indent int) {
+func genSwiftValue(b *strings.Builder, n ir.Node, indent int) {
 	switch v := n.(type) {
-	case *ast.Value:
+	case *ir.Value:
 		b.WriteString(formatSwiftValueLiteral(v))
-	case *ast.Object:
+	case *ir.Object:
 		genSwiftObjectInitializer(b, v, indent)
-	case *ast.Array:
+	case *ir.Array:
 		genSwiftArrayLiteral(b, v, indent)
 	default:
 		b.WriteString("nil")
 	}
 }
 
-func genSwiftObjectInitializer(b *strings.Builder, obj *ast.Object, indent int) {
+func genSwiftObjectInitializer(b *strings.Builder, obj *ir.Object, indent int) {
 	if obj == nil {
 		b.WriteString("nil")
 		return
@@ -361,7 +361,7 @@ func genSwiftObjectInitializer(b *strings.Builder, obj *ast.Object, indent int) 
 	b.WriteString(")")
 }
 
-func genSwiftArrayLiteral(b *strings.Builder, a *ast.Array, indent int) {
+func genSwiftArrayLiteral(b *strings.Builder, a *ir.Array, indent int) {
 	if a == nil {
 		b.WriteString("[]")
 		return
@@ -380,7 +380,7 @@ func genSwiftArrayLiteral(b *strings.Builder, a *ast.Array, indent int) {
 	b.WriteString("]")
 }
 
-func formatSwiftValueLiteral(v *ast.Value) string {
+func formatSwiftValueLiteral(v *ir.Value) string {
 	if v == nil {
 		return "nil"
 	}
@@ -422,6 +422,6 @@ func formatSwiftValueLiteral(v *ast.Value) string {
 	return strconv.Quote(v.Text)
 }
 
-func PrintSwiftStruct(n ast.Node) {
+func PrintSwiftStruct(n ir.Node) {
 	fmt.Println(ToSwift(n))
 }

@@ -8,14 +8,14 @@ import (
 	"testing"
 	"time"
 
-	"github.com/metamessage/metamessage/internal/ast"
+	"github.com/metamessage/metamessage/internal/core"
 	"github.com/metamessage/metamessage/internal/gen"
-	"github.com/metamessage/metamessage/internal/mm"
+	"github.com/metamessage/metamessage/internal/ir"
 )
 
 //go test -v -run TestEncodeDecode
 //
-//go test -v -run TestEncodeDecode/pointer
+//go test -v -run TestEncodeDecode/datetime
 //
 //go test -bench=BenchmarkEncodeDecode -benchmem
 
@@ -28,7 +28,7 @@ type encodeDecodeTestCase struct {
 
 func TestEncodeDecode(t *testing.T) {
 	type Datetime struct {
-		Datetime  []*time.Time `mm:"type=datetime; location=8"`
+		Datetime  []*time.Time `mm:"child_type=datetime; child_location=8; child_allow_empty"`
 		Datetime2 time.Time
 		// Datetime3       string    `mm:"type=datetime"`
 		// Datetime4       time.Time `mm:"type=str"`
@@ -44,6 +44,7 @@ func TestEncodeDecode(t *testing.T) {
 		// TimePointerArr4 [][]*time.Time `mm:""`
 	}
 	var now = time.Now().UTC()
+	fmt.Println("now", now)
 	testCases := []encodeDecodeTestCase{
 		{
 			name: "datetime",
@@ -98,11 +99,11 @@ func TestEncodeDecode(t *testing.T) {
 			rs, _ := DecodeToJSONC(bs)
 			fmt.Println(rs)
 			// switch rs.GetType() {
-			// case ast.NodeTypeArray:
-			// case ast.NodeTypeObject:
-			// case ast.NodeTypeValue:
-			// 	if !reflect.DeepEqual(rs.(*ast.Value).Data, tc.expectedOut) {
-			// 		t.Errorf("Expected output: %v %T, actual output: %v %T", tc.expectedOut, tc.expectedOut, bs2.(*ast.Value).Data, bs2.(*ast.Value).Data)
+			// case ir.NodeTypeArray:
+			// case ir.NodeTypeObject:
+			// case ir.NodeTypeValue:
+			// 	if !reflect.DeepEqual(rs.(*ir.Value).Data, tc.expectedOut) {
+			// 		t.Errorf("Expected output: %v %T, actual output: %v %T", tc.expectedOut, tc.expectedOut, bs2.(*ir.Value).Data, bs2.(*ir.Value).Data)
 			// 	}
 			// }
 		})
@@ -141,45 +142,45 @@ func TestGenerateGoBasic(t *testing.T) {
 		Int8: 8,
 	}
 
-	astNode, err := mm.ValueToNode(user, "")
+	astNode, err := core.ValueToNode(user, "")
 	if err != nil {
 		fmt.Printf("err: %v\n", err)
 		return
 	}
-	fmt.Println("json", mm.Dump(astNode))
+	fmt.Println("json", core.Dump(astNode))
 	fmt.Println("=== astNode res ===")
 	fmt.Println(gen.ToGo(astNode))
 }
 
 func TestGenerateGoStruct1(t *testing.T) {
-	objectNode1 := &ast.Object{
-		Tag: &ast.Tag{
+	objectNode1 := &ir.Object{
+		Tag: &ir.Tag{
 			Name: "user_info",
-			Type: ast.ValueTypeUnknown,
+			Type: ir.ValueTypeUnknown,
 		},
-		Fields: []*ast.Field{
+		Fields: []*ir.Field{
 			{
 				Key: "user_name",
-				Value: &ast.Array{
-					Tag: &ast.Tag{
+				Value: &ir.Array{
+					Tag: &ir.Tag{
 						Name: "ages",
-						Type: ast.ValueTypeInt8,
+						Type: ir.ValueTypeInt8,
 					},
-					Items: []ast.Node{
-						&ast.Value{Tag: &ast.Tag{Type: ast.ValueTypeInt8}, Text: "18"},
-						&ast.Object{
-							Tag: &ast.Tag{
+					Items: []ir.Node{
+						&ir.Value{Tag: &ir.Tag{Type: ir.ValueTypeInt8}, Text: "18"},
+						&ir.Object{
+							Tag: &ir.Tag{
 								Name: "user_info1",
-								Type: ast.ValueTypeUnknown,
+								Type: ir.ValueTypeUnknown,
 							},
-							Fields: []*ast.Field{
+							Fields: []*ir.Field{
 								{
 									Key:   "user_name",
-									Value: &ast.Value{Tag: &ast.Tag{Type: ast.ValueTypeString}, Text: "zhangsan"},
+									Value: &ir.Value{Tag: &ir.Tag{Type: ir.ValueTypeString}, Text: "zhangsan"},
 								},
 								{
 									Key:   "age",
-									Value: &ast.Value{Tag: &ast.Tag{Type: ast.ValueTypeInt8}, Text: "18"},
+									Value: &ir.Value{Tag: &ir.Tag{Type: ir.ValueTypeInt8}, Text: "18"},
 								},
 							},
 						},
@@ -188,7 +189,7 @@ func TestGenerateGoStruct1(t *testing.T) {
 			},
 			{
 				Key:   "age",
-				Value: &ast.Value{Tag: &ast.Tag{Type: ast.ValueTypeInt8}, Text: "18"},
+				Value: &ir.Value{Tag: &ir.Tag{Type: ir.ValueTypeInt8}, Text: "18"},
 			},
 		},
 	}
@@ -204,12 +205,12 @@ func TestGenerateGoStruct1(t *testing.T) {
 	}
 
 	type User struct {
-		ID       int64    `mm:"name=id,min=1,desc=用户ID"`      // 数值最小值+描述
-		Name     string   `mm:"required,max_len=20,desc=用户名"` // 必填+字符串长度+描述
-		Age      int      `mm:"min=18,max=120,desc=年龄"`       // 数值范围+描述
-		IsActive bool     `mm:"default=true,desc=是否激活"`       // 默认值+描述
-		Tags     []string `mm:"max_items=10,desc=标签列表"`       // 切片元素限制+描述
-		Addr     Address  `mm:"required,desc=地址信息"`           // 必填+描述（嵌套结构体）
+		ID       int64    `mm:"name=id; min=1;desc=用户ID"`      // 数值最小值+描述
+		Name     string   `mm:"required; max_len=20;desc=用户名"` // 必填+字符串长度+描述
+		Age      int      `mm:"min=18;max=120;desc=年龄"`        // 数值范围+描述
+		IsActive bool     `mm:"default=true;desc=是否激活"`        // 默认值+描述
+		Tags     []string `mm:"max_items=10;desc=标签列表"`        // 切片元素限制+描述
+		Addr     Address  `mm:"required;desc=地址信息"`            // 必填+描述（嵌套结构体）
 	}
 
 	// 2. 创建结构体实例
@@ -227,12 +228,12 @@ func TestGenerateGoStruct1(t *testing.T) {
 	}
 
 	// 3. 转换为AST
-	astNode, err := mm.ValueToNode(user, "user")
+	astNode, err := core.ValueToNode(user, "user")
 	if err != nil {
 		fmt.Printf("转换失败: %v\n", err)
 		return
 	}
-	fmt.Println("json", mm.Dump(astNode))
+	fmt.Println("json", core.Dump(astNode))
 	fmt.Println("=== astNode 生成结果 ===")
 	fmt.Println(gen.ToGo(astNode))
 }

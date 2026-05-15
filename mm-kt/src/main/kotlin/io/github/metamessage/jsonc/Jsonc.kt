@@ -1,6 +1,6 @@
 package io.github.metamessage.jsonc
 
-import io.github.metamessage.ast.Node
+import io.github.metamessage.ir.Node
 
 class JsoncException(message: String) : Exception(message)
 

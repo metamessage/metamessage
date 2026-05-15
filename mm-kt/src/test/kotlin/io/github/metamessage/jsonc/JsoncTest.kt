@@ -3,12 +3,12 @@ package io.github.metamessage.jsonc
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.Assertions.*
 
-import io.github.metamessage.ast.Object as AstObject
-import io.github.metamessage.ast.Value
-import io.github.metamessage.ast.ValueType
-import io.github.metamessage.ast.Tag
-import io.github.metamessage.ast.Field
-import io.github.metamessage.ast.Array as AstArray
+import io.github.metamessage.ir.Object as AstObject
+import io.github.metamessage.ir.Value
+import io.github.metamessage.ir.ValueType
+import io.github.metamessage.ir.Tag
+import io.github.metamessage.ir.Field
+import io.github.metamessage.ir.Array as AstArray
 
 class JsoncParserTest {
 

@@ -1,9 +1,9 @@
 import { JSONCScanner, TokenType, Token } from './scanner';
-import { MMValue, MMObject, MMArray, MMDoc } from '../ast/ast';
-import { ValidationResult } from '../ast/tag';
-import { ValueType } from '../ast/value-type';
-import { Tag, parseMMTag } from '../ast/tag';
-import { Node } from '../ast/ast';
+import { MMValue, MMObject, MMArray, MMDoc } from '../ir/ast';
+import { ValidationResult } from '../ir/tag';
+import { ValueType } from '../ir/value-type';
+import { Tag, parseMMTag } from '../ir/tag';
+import { Node } from '../ir/ast';
 import { base64ToUint8 } from './printer';
 
 const maxDepth = 32;

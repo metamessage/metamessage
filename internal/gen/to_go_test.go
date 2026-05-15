@@ -6,54 +6,54 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/metamessage/metamessage/internal/ast"
+	"github.com/metamessage/metamessage/internal/ir"
 )
 
 // gofmt -w . && go test ./internal/jsonc/ast -run TestGenerateGoStruct -v
 // go test ./internal/jsonc -v -run TestGenerateGoStruct
 func TestGenerateGoStruct(t *testing.T) {
-	obj := &ast.Object{
+	obj := &ir.Object{
 		Path: "",
-		Fields: []*ast.Field{
-			{Key: "name", Value: &ast.Value{Path: "name", Tag: &ast.Tag{Name: "name", Type: ast.ValueTypeString, Min: "20", Max: "30"}}},
-			{Key: "data", Value: &ast.Value{
+		Fields: []*ir.Field{
+			{Key: "name", Value: &ir.Value{Path: "name", Tag: &ir.Tag{Name: "name", Type: ir.ValueTypeString, Min: "20", Max: "30"}}},
+			{Key: "data", Value: &ir.Value{
 				Path: "data",
 				Data: "werwerwe",
 				Text: "werwerwe",
-				Tag:  &ast.Tag{Name: "data", Type: ast.ValueTypeBytes}}},
-			{Key: "sss", Value: &ast.Object{
+				Tag:  &ir.Tag{Name: "data", Type: ir.ValueTypeBytes}}},
+			{Key: "sss", Value: &ir.Object{
 				Path: "sss",
-				Fields: []*ast.Field{
-					{Key: "name", Value: &ast.Value{Path: "sss.name", Tag: &ast.Tag{Name: "name", Type: ast.ValueTypeString, Min: "20"}}},
-					{Key: "data", Value: &ast.Value{Path: "sss.data", Tag: &ast.Tag{Name: "data", Type: ast.ValueTypeBytes}}},
-					{Key: "sss", Value: &ast.Value{Path: "sss.sss", Tag: &ast.Tag{Name: "data", Type: ast.ValueTypeBytes}}},
+				Fields: []*ir.Field{
+					{Key: "name", Value: &ir.Value{Path: "sss.name", Tag: &ir.Tag{Name: "name", Type: ir.ValueTypeString, Min: "20"}}},
+					{Key: "data", Value: &ir.Value{Path: "sss.data", Tag: &ir.Tag{Name: "data", Type: ir.ValueTypeBytes}}},
+					{Key: "sss", Value: &ir.Value{Path: "sss.sss", Tag: &ir.Tag{Name: "data", Type: ir.ValueTypeBytes}}},
 				},
-				Tag: &ast.Tag{
+				Tag: &ir.Tag{
 					Name: "obj",
 				},
 			}},
-			{Key: "arr", Value: &ast.Array{
+			{Key: "arr", Value: &ir.Array{
 				Path: "arr",
-				Items: []ast.Node{
-					&ast.Value{
+				Items: []ir.Node{
+					&ir.Value{
 						Path: "arr.0",
 						Data: "121212",
-						Tag:  &ast.Tag{Name: "name", Type: ast.ValueTypeString, Min: "20"}},
-					&ast.Value{
+						Tag:  &ir.Tag{Name: "name", Type: ir.ValueTypeString, Min: "20"}},
+					&ir.Value{
 						Path: "arr.1",
 						Data: "121212",
-						Tag:  &ast.Tag{Name: "name", Type: ast.ValueTypeString, Min: "20"}},
-					&ast.Value{
+						Tag:  &ir.Tag{Name: "name", Type: ir.ValueTypeString, Min: "20"}},
+					&ir.Value{
 						Path: "arr.2",
 						Data: "44334",
-						Tag:  &ast.Tag{Name: "name", Type: ast.ValueTypeString, Min: "20"}},
+						Tag:  &ir.Tag{Name: "name", Type: ir.ValueTypeString, Min: "20"}},
 				},
-				Tag: &ast.Tag{Name: "data", Type: ast.ValueTypeBytes}},
+				Tag: &ir.Tag{Name: "data", Type: ir.ValueTypeBytes}},
 			},
 
-			{Key: "String", Value: &ast.Value{Path: "String", Tag: &ast.Tag{Type: ast.ValueTypeString}}},
+			{Key: "String", Value: &ir.Value{Path: "String", Tag: &ir.Tag{Type: ir.ValueTypeString}}},
 		},
-		Tag: &ast.Tag{
+		Tag: &ir.Tag{
 			Name: "obj",
 		},
 	}
@@ -64,25 +64,25 @@ func TestGenerateGoStruct(t *testing.T) {
 
 func TestPrintGoStruct(t *testing.T) {
 
-	val := &ast.Value{
+	val := &ir.Value{
 		Path: "name",
 		Data: "abc",
 		Text: "abc",
-		Tag:  &ast.Tag{Name: "name", Type: ast.ValueTypeString, Min: "20"},
+		Tag:  &ir.Tag{Name: "name", Type: ir.ValueTypeString, Min: "20"},
 	}
 
 	PrintGoStruct(val)
 
-	arr := &ast.Array{
+	arr := &ir.Array{
 		Path: "arr",
-		Items: []ast.Node{&ast.Value{
+		Items: []ir.Node{&ir.Value{
 			Path: "arr.0",
 			Data: "abc",
 			Text: "abc",
-			Tag:  &ast.Tag{Name: "name", Type: ast.ValueTypeString, Min: "20"},
+			Tag:  &ir.Tag{Name: "name", Type: ir.ValueTypeString, Min: "20"},
 		},
 		},
-		Tag: &ast.Tag{Name: "arr", Type: ast.ValueTypeArray},
+		Tag: &ir.Tag{Name: "arr", Type: ir.ValueTypeArray},
 	}
 
 	// var arr []string = []string{"abc", "def"}
@@ -94,15 +94,15 @@ func TestPrintGoStruct(t *testing.T) {
 }
 
 func TestToGoGeneratesValidGo(t *testing.T) {
-	obj := &ast.Object{
+	obj := &ir.Object{
 		Path: "",
-		Tag:  &ast.Tag{Name: "sample"},
-		Fields: []*ast.Field{
-			{Key: "when", Value: &ast.Value{Path: "when", Text: "2024-01-01T00:00:00Z", Tag: &ast.Tag{Type: ast.ValueTypeDateTime}}},
-			{Key: "ip", Value: &ast.Value{Path: "ip", Text: "127.0.0.1", Tag: &ast.Tag{Type: ast.ValueTypeIP}}},
-			{Key: "site", Value: &ast.Value{Path: "site", Text: "https://example.com", Tag: &ast.Tag{Type: ast.ValueTypeURL}}},
-			{Key: "id", Value: &ast.Value{Path: "id", Text: "123", Tag: &ast.Tag{Type: ast.ValueTypeBigInt}}},
-			{Key: "data", Value: &ast.Value{Path: "data", Text: "abc", Tag: &ast.Tag{Type: ast.ValueTypeBytes}}},
+		Tag:  &ir.Tag{Name: "sample"},
+		Fields: []*ir.Field{
+			{Key: "when", Value: &ir.Value{Path: "when", Text: "2024-01-01T00:00:00Z", Tag: &ir.Tag{Type: ir.ValueTypeDateTime}}},
+			{Key: "ip", Value: &ir.Value{Path: "ip", Text: "127.0.0.1", Tag: &ir.Tag{Type: ir.ValueTypeIP}}},
+			{Key: "site", Value: &ir.Value{Path: "site", Text: "https://example.com", Tag: &ir.Tag{Type: ir.ValueTypeURL}}},
+			{Key: "id", Value: &ir.Value{Path: "id", Text: "123", Tag: &ir.Tag{Type: ir.ValueTypeBigInt}}},
+			{Key: "data", Value: &ir.Value{Path: "data", Text: "abc", Tag: &ir.Tag{Type: ir.ValueTypeBytes}}},
 		},
 	}
 
@@ -126,11 +126,11 @@ func TestToGoGeneratesValidGo(t *testing.T) {
 
 func TestGenerateGoStruct2(t *testing.T) {
 	// 测试 Value 类型
-	valueNode := &ast.Value{
+	valueNode := &ir.Value{
 		Path: "username",
-		Tag: &ast.Tag{
+		Tag: &ir.Tag{
 			Name: "username",
-			Type: ast.ValueTypeString,
+			Type: ir.ValueTypeString,
 		},
 		Text: "zhangsan",
 	}
@@ -138,72 +138,72 @@ func TestGenerateGoStruct2(t *testing.T) {
 	fmt.Println(ToGo(valueNode))
 
 	// 测试 Array 类型
-	arrayNode := &ast.Array{
+	arrayNode := &ir.Array{
 		Path: "ages",
-		Tag: &ast.Tag{
+		Tag: &ir.Tag{
 			Name: "ages",
-			Type: ast.ValueTypeInt8,
+			Type: ir.ValueTypeInt8,
 		},
-		Items: []ast.Node{
-			&ast.Value{Path: "ages.0", Tag: &ast.Tag{Type: ast.ValueTypeInt8}, Text: "18"},
-			&ast.Value{Path: "ages.1", Tag: &ast.Tag{Type: ast.ValueTypeInt8}, Text: "20"},
+		Items: []ir.Node{
+			&ir.Value{Path: "ages.0", Tag: &ir.Tag{Type: ir.ValueTypeInt8}, Text: "18"},
+			&ir.Value{Path: "ages.1", Tag: &ir.Tag{Type: ir.ValueTypeInt8}, Text: "20"},
 		},
 	}
 	fmt.Println("\n=== Array 生成结果 ===")
 	fmt.Println(ToGo(arrayNode))
 
 	// 测试 Object 类型
-	objectNode := &ast.Object{
+	objectNode := &ir.Object{
 		Path: "",
-		Tag: &ast.Tag{
+		Tag: &ir.Tag{
 			Name: "user_info",
-			Type: ast.ValueTypeObject,
+			Type: ir.ValueTypeObject,
 		},
-		Fields: []*ast.Field{
+		Fields: []*ir.Field{
 			{
 				Key:   "user_name",
-				Value: &ast.Value{Path: "user_name", Tag: &ast.Tag{Type: ast.ValueTypeString}, Text: "zhangsan"},
+				Value: &ir.Value{Path: "user_name", Tag: &ir.Tag{Type: ir.ValueTypeString}, Text: "zhangsan"},
 			},
 			{
 				Key:   "age",
-				Value: &ast.Value{Path: "age", Tag: &ast.Tag{Type: ast.ValueTypeInt8}, Text: "18"},
+				Value: &ir.Value{Path: "age", Tag: &ir.Tag{Type: ir.ValueTypeInt8}, Text: "18"},
 			},
 		},
 	}
 	fmt.Println("\n=== Object 生成结果 ===")
 	fmt.Println(ToGo(objectNode))
 
-	objectNode1 := &ast.Object{
+	objectNode1 := &ir.Object{
 		Path: "",
-		Tag: &ast.Tag{
+		Tag: &ir.Tag{
 			Name: "user_info",
-			Type: ast.ValueTypeObject,
+			Type: ir.ValueTypeObject,
 		},
-		Fields: []*ast.Field{
+		Fields: []*ir.Field{
 			{
 				Key: "user_name",
-				Value: &ast.Array{
+				Value: &ir.Array{
 					Path: "user_name",
-					Tag: &ast.Tag{
+					Tag: &ir.Tag{
 						Name: "ages",
-						Type: ast.ValueTypeInt8,
+						Type: ir.ValueTypeInt8,
 					},
-					Items: []ast.Node{
-						&ast.Value{Path: "user_name.0", Tag: &ast.Tag{Type: ast.ValueTypeInt8}, Text: "18"},
-						&ast.Object{
+					Items: []ir.Node{
+						&ir.Value{Path: "user_name.0", Tag: &ir.Tag{Type: ir.ValueTypeInt8}, Text: "18"},
+						&ir.Object{
 							Path: "user_name.1",
-							Tag: &ast.Tag{
+							Tag: &ir.Tag{
 								Name: "user_info",
-								Type: ast.ValueTypeObject,
+								Type: ir.ValueTypeObject,
 							},
-							Fields: []*ast.Field{
+							Fields: []*ir.Field{
 								{
 									Key:   "user_name",
-									Value: &ast.Value{Path: "user_name.1.user_name", Tag: &ast.Tag{Type: ast.ValueTypeString}, Text: "zhangsan"},
+									Value: &ir.Value{Path: "user_name.1.user_name", Tag: &ir.Tag{Type: ir.ValueTypeString}, Text: "zhangsan"},
 								},
 								{
 									Key:   "age",
-									Value: &ast.Value{Path: "user_name.1.age", Tag: &ast.Tag{Type: ast.ValueTypeInt8}, Text: "18"},
+									Value: &ir.Value{Path: "user_name.1.age", Tag: &ir.Tag{Type: ir.ValueTypeInt8}, Text: "18"},
 								},
 							},
 						},
@@ -212,7 +212,7 @@ func TestGenerateGoStruct2(t *testing.T) {
 			},
 			{
 				Key:   "age",
-				Value: &ast.Value{Path: "age", Tag: &ast.Tag{Type: ast.ValueTypeInt8}, Text: "18"},
+				Value: &ir.Value{Path: "age", Tag: &ir.Tag{Type: ir.ValueTypeInt8}, Text: "18"},
 			},
 		},
 	}
@@ -223,27 +223,27 @@ func TestGenerateGoStruct2(t *testing.T) {
 // TestDuplicateStructNamesWithPath demonstrates how Path prevents duplicate struct names
 func TestDuplicateStructNamesWithPath(t *testing.T) {
 	// Two structs with the same name but different paths should generate different struct names
-	obj := &ast.Object{
+	obj := &ir.Object{
 		Path: "",
-		Tag:  &ast.Tag{Name: "root"},
-		Fields: []*ast.Field{
+		Tag:  &ir.Tag{Name: "root"},
+		Fields: []*ir.Field{
 			{
 				Key: "user",
-				Value: &ast.Object{
+				Value: &ir.Object{
 					Path: "user",
-					Tag:  &ast.Tag{Name: "profile"},
-					Fields: []*ast.Field{
-						{Key: "name", Value: &ast.Value{Path: "user.name", Tag: &ast.Tag{Type: ast.ValueTypeString}, Text: "alice"}},
+					Tag:  &ir.Tag{Name: "profile"},
+					Fields: []*ir.Field{
+						{Key: "name", Value: &ir.Value{Path: "user.name", Tag: &ir.Tag{Type: ir.ValueTypeString}, Text: "alice"}},
 					},
 				},
 			},
 			{
 				Key: "admin",
-				Value: &ast.Object{
+				Value: &ir.Object{
 					Path: "admin",
-					Tag:  &ast.Tag{Name: "profile"},
-					Fields: []*ast.Field{
-						{Key: "name", Value: &ast.Value{Path: "admin.name", Tag: &ast.Tag{Type: ast.ValueTypeString}, Text: "bob"}},
+					Tag:  &ir.Tag{Name: "profile"},
+					Fields: []*ir.Field{
+						{Key: "name", Value: &ir.Value{Path: "admin.name", Tag: &ir.Tag{Type: ir.ValueTypeString}, Text: "bob"}},
 					},
 				},
 			},

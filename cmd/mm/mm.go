@@ -11,8 +11,8 @@ import (
 	"strings"
 
 	"github.com/metamessage/metamessage"
+	"github.com/metamessage/metamessage/internal/core"
 	"github.com/metamessage/metamessage/internal/gen"
-	"github.com/metamessage/metamessage/internal/mm"
 )
 
 // go run ./cmd/mm -generate -lang go -in example.jsonc / cat example.jsonc | go run ./cmd/mm -generate -lang go
@@ -197,7 +197,7 @@ func main() {
 
 	case *generate:
 		fmt.Printf("Generation Mode, Input: %s, Output: %s, Target Language: %s\n", *in, *out, *lang)
-		node, err := mm.ParseFromJSONC(string(data))
+		node, err := core.ParseFromJSONC(string(data))
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "parse error: %v\n", err)
 			os.Exit(2)

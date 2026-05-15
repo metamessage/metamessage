@@ -4,24 +4,24 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/metamessage/metamessage/internal/ast"
+	"github.com/metamessage/metamessage/internal/ir"
 )
 
 func TestToCSharpGeneratesCode(t *testing.T) {
-	obj := &ast.Object{
-		Tag: &ast.Tag{Name: "sample"},
-		Fields: []*ast.Field{
-			{Key: "when", Value: &ast.Value{Text: "2024-01-01T00:00:00Z", Tag: &ast.Tag{Type: ast.ValueTypeDateTime}}},
-			{Key: "id", Value: &ast.Value{Text: "123", Tag: &ast.Tag{Type: ast.ValueTypeBigInt}}},
-			{Key: "data", Value: &ast.Array{
-				Tag: &ast.Tag{Name: "data", Type: ast.ValueTypeArray, ChildType: ast.ValueTypeString},
-				Items: []ast.Node{
-					&ast.Value{Text: "abc", Tag: &ast.Tag{Type: ast.ValueTypeString}},
+	obj := &ir.Object{
+		Tag: &ir.Tag{Name: "sample"},
+		Fields: []*ir.Field{
+			{Key: "when", Value: &ir.Value{Text: "2024-01-01T00:00:00Z", Tag: &ir.Tag{Type: ir.ValueTypeDateTime}}},
+			{Key: "id", Value: &ir.Value{Text: "123", Tag: &ir.Tag{Type: ir.ValueTypeBigInt}}},
+			{Key: "data", Value: &ir.Array{
+				Tag: &ir.Tag{Name: "data", Type: ir.ValueTypeArray, ChildType: ir.ValueTypeString},
+				Items: []ir.Node{
+					&ir.Value{Text: "abc", Tag: &ir.Tag{Type: ir.ValueTypeString}},
 				},
 			}},
-			{Key: "nested", Value: &ast.Object{
-				Tag:    &ast.Tag{Name: "nested"},
-				Fields: []*ast.Field{{Key: "count", Value: &ast.Value{Tag: &ast.Tag{Type: ast.ValueTypeInt}, Text: "5"}}},
+			{Key: "nested", Value: &ir.Object{
+				Tag:    &ir.Tag{Name: "nested"},
+				Fields: []*ir.Field{{Key: "count", Value: &ir.Value{Tag: &ir.Tag{Type: ir.ValueTypeInt}, Text: "5"}}},
 			}},
 		},
 	}

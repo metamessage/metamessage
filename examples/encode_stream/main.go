@@ -4,13 +4,13 @@ import (
 	"bytes"
 	"fmt"
 
-	"github.com/metamessage/metamessage/internal/mm"
+	"github.com/metamessage/metamessage/internal/core"
 )
 
 // go run examples/encode_stream/*.go
 func main() {
 	var buf bytes.Buffer
-	enc := mm.NewEncoder(&buf)
+	enc := core.NewEncoder(&buf)
 
 	for range 10 {
 		_, err := enc.EncodeStream(1)

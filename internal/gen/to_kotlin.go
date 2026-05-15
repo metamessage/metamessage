@@ -5,49 +5,49 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/metamessage/metamessage/internal/ast"
+	"github.com/metamessage/metamessage/internal/ir"
 )
 
-var kotlinTypeMap = map[ast.ValueType]string{
-	ast.ValueTypeUnknown:  "Any",
-	ast.ValueTypeString:   "String",
-	ast.ValueTypeBytes:    "ByteArray",
-	ast.ValueTypeBool:     "Boolean",
-	ast.ValueTypeArray:    "List<Any>",
-	ast.ValueTypeSlice:    "List<Any>",
-	ast.ValueTypeMap:      "Map<String, Any>",
-	ast.ValueTypeInt:      "Int",
-	ast.ValueTypeInt8:     "Byte",
-	ast.ValueTypeInt16:    "Short",
-	ast.ValueTypeInt32:    "Int",
-	ast.ValueTypeInt64:    "Long",
-	ast.ValueTypeUint:     "Long",
-	ast.ValueTypeUint8:    "Short",
-	ast.ValueTypeUint16:   "Int",
-	ast.ValueTypeUint32:   "Long",
-	ast.ValueTypeUint64:   "Long",
-	ast.ValueTypeFloat32:  "Float",
-	ast.ValueTypeFloat64:  "Double",
-	ast.ValueTypeBigInt:   "BigInteger",
-	ast.ValueTypeDateTime: "LocalDateTime",
-	ast.ValueTypeDate:     "LocalDate",
-	ast.ValueTypeTime:     "LocalTime",
-	ast.ValueTypeUUID:     "String",
-	ast.ValueTypeDecimal:  "String",
-	ast.ValueTypeEmail:    "String",
-	ast.ValueTypeIP:       "String",
-	ast.ValueTypeURL:      "String",
-	ast.ValueTypeEnum:     "String",
-	ast.ValueTypeImage:    "String",
+var kotlinTypeMap = map[ir.ValueType]string{
+	ir.ValueTypeUnknown:  "Any",
+	ir.ValueTypeString:   "String",
+	ir.ValueTypeBytes:    "ByteArray",
+	ir.ValueTypeBool:     "Boolean",
+	ir.ValueTypeArray:    "List<Any>",
+	ir.ValueTypeSlice:    "List<Any>",
+	ir.ValueTypeMap:      "Map<String, Any>",
+	ir.ValueTypeInt:      "Int",
+	ir.ValueTypeInt8:     "Byte",
+	ir.ValueTypeInt16:    "Short",
+	ir.ValueTypeInt32:    "Int",
+	ir.ValueTypeInt64:    "Long",
+	ir.ValueTypeUint:     "Long",
+	ir.ValueTypeUint8:    "Short",
+	ir.ValueTypeUint16:   "Int",
+	ir.ValueTypeUint32:   "Long",
+	ir.ValueTypeUint64:   "Long",
+	ir.ValueTypeFloat32:  "Float",
+	ir.ValueTypeFloat64:  "Double",
+	ir.ValueTypeBigInt:   "BigInteger",
+	ir.ValueTypeDateTime: "LocalDateTime",
+	ir.ValueTypeDate:     "LocalDate",
+	ir.ValueTypeTime:     "LocalTime",
+	ir.ValueTypeUUID:     "String",
+	ir.ValueTypeDecimal:  "String",
+	ir.ValueTypeEmail:    "String",
+	ir.ValueTypeIP:       "String",
+	ir.ValueTypeURL:      "String",
+	ir.ValueTypeEnum:     "String",
+	ir.ValueTypeImage:    "String",
 }
 
-func ToKotlin(n ast.Node) string {
+func ToKotlin(n ir.Node) string {
 	if n == nil {
 		return ""
 	}
 
 	topName := "Obj"
-	if obj, ok := n.(*ast.Object); ok && obj.Tag != nil && obj.Tag.Name != "" {
+	if obj, ok := n.(*ir.Object); ok && obj.Tag != nil && obj.Tag.Name != "" {
 		topName = exportKotlinClassName(obj.Tag.Name)
 	}
 
@@ -83,7 +83,7 @@ func ToKotlin(n ast.Node) string {
 	return sb.String()
 }
 
-func collectKotlinImports(n ast.Node) []string {
+func collectKotlinImports(n ir.Node) []string {
 	imports := make(map[string]struct{})
 	collectKotlinImportsRec(n, imports)
 
@@ -99,24 +99,24 @@ func collectKotlinImports(n ast.Node) []string {
 	return packages
 }
 
-func collectKotlinImportsRec(n ast.Node, imports map[string]struct{}) {
+func collectKotlinImportsRec(n ir.Node, imports map[string]struct{}) {
 	if n == nil {
 		return
 	}
 
 	switch v := n.(type) {
-	case *ast.Value:
+	case *ir.Value:
 		if v.Tag != nil {
 			addKotlinImportForType(v.Tag.Type, imports)
 		}
-	case *ast.Array:
-		if v.Tag != nil && v.Tag.ChildType != ast.ValueTypeUnknown {
+	case *ir.Array:
+		if v.Tag != nil && v.Tag.ChildType != ir.ValueTypeUnknown {
 			addKotlinImportForType(v.Tag.ChildType, imports)
 		}
 		for _, item := range v.Items {
 			collectKotlinImportsRec(item, imports)
 		}
-	case *ast.Object:
+	case *ir.Object:
 		for _, f := range v.Fields {
 			if f != nil {
 				collectKotlinImportsRec(f.Value, imports)
@@ -125,33 +125,33 @@ func collectKotlinImportsRec(n ast.Node, imports map[string]struct{}) {
 	}
 }
 
-func addKotlinImportForType(typ ast.ValueType, imports map[string]struct{}) {
+func addKotlinImportForType(typ ir.ValueType, imports map[string]struct{}) {
 	switch typ {
-	case ast.ValueTypeBigInt:
+	case ir.ValueTypeBigInt:
 		imports["java.math.BigInteger"] = struct{}{}
-	case ast.ValueTypeDateTime:
+	case ir.ValueTypeDateTime:
 		imports["java.time.LocalDateTime"] = struct{}{}
-	case ast.ValueTypeDate:
+	case ir.ValueTypeDate:
 		imports["java.time.LocalDate"] = struct{}{}
-	case ast.ValueTypeTime:
+	case ir.ValueTypeTime:
 		imports["java.time.LocalTime"] = struct{}{}
 	}
 }
 
-func getKotlinTypeForField(f *ast.Field) string {
+func getKotlinTypeForField(f *ir.Field) string {
 	switch v := f.Value.(type) {
-	case *ast.Value:
+	case *ir.Value:
 		return getKotlinType(v)
-	case *ast.Object:
+	case *ir.Object:
 		return getKotlinObjectType(f.Key, v)
-	case *ast.Array:
+	case *ir.Array:
 		return getKotlinArrayType(f.Key, v)
 	default:
 		return "Any"
 	}
 }
 
-func getKotlinType(v *ast.Value) string {
+func getKotlinType(v *ir.Value) string {
 	if v != nil && v.Tag != nil {
 		if t, ok := kotlinTypeMap[v.Tag.Type]; ok {
 			return t
@@ -160,19 +160,19 @@ func getKotlinType(v *ast.Value) string {
 	return "Any"
 }
 
-func getKotlinObjectType(fieldKey string, obj *ast.Object) string {
+func getKotlinObjectType(fieldKey string, obj *ir.Object) string {
 	if obj != nil && obj.Tag != nil && obj.Tag.Name != "" {
 		return exportKotlinClassName(obj.Tag.Name)
 	}
 	return exportKotlinClassName(fieldKey)
 }
 
-func getKotlinArrayType(fieldKey string, a *ast.Array) string {
+func getKotlinArrayType(fieldKey string, a *ir.Array) string {
 	if a == nil {
 		return "List<Any>"
 	}
 
-	if a.Tag != nil && a.Tag.ChildType != ast.ValueTypeUnknown {
+	if a.Tag != nil && a.Tag.ChildType != ir.ValueTypeUnknown {
 		if t, ok := kotlinTypeMap[a.Tag.ChildType]; ok {
 			return "List<" + t + ">"
 		}
@@ -180,9 +180,9 @@ func getKotlinArrayType(fieldKey string, a *ast.Array) string {
 
 	if len(a.Items) > 0 {
 		switch item := a.Items[0].(type) {
-		case *ast.Object:
+		case *ir.Object:
 			return "List<" + getKotlinObjectType(fieldKey, item) + ">"
-		case *ast.Value:
+		case *ir.Value:
 			if item.Tag != nil {
 				if t, ok := kotlinTypeMap[item.Tag.Type]; ok {
 					return "List<" + t + ">"
@@ -194,40 +194,40 @@ func getKotlinArrayType(fieldKey string, a *ast.Array) string {
 	return "List<Any>"
 }
 
-func getKotlinDefaultValue(node ast.Node) string {
+func getKotlinDefaultValue(node ir.Node) string {
 	switch v := node.(type) {
-	case *ast.Value:
+	case *ir.Value:
 		if v.Tag != nil {
 			switch v.Tag.Type {
-			case ast.ValueTypeBool:
+			case ir.ValueTypeBool:
 				return "false"
-			case ast.ValueTypeString, ast.ValueTypeBytes, ast.ValueTypeDecimal,
-				ast.ValueTypeDateTime, ast.ValueTypeDate, ast.ValueTypeTime,
-				ast.ValueTypeUUID, ast.ValueTypeEmail, ast.ValueTypeIP,
-				ast.ValueTypeURL, ast.ValueTypeEnum, ast.ValueTypeImage:
+			case ir.ValueTypeString, ir.ValueTypeBytes, ir.ValueTypeDecimal,
+				ir.ValueTypeDateTime, ir.ValueTypeDate, ir.ValueTypeTime,
+				ir.ValueTypeUUID, ir.ValueTypeEmail, ir.ValueTypeIP,
+				ir.ValueTypeURL, ir.ValueTypeEnum, ir.ValueTypeImage:
 				return "\"\""
-			case ast.ValueTypeInt, ast.ValueTypeInt8, ast.ValueTypeInt16, ast.ValueTypeInt32, ast.ValueTypeInt64,
-				ast.ValueTypeUint, ast.ValueTypeUint8, ast.ValueTypeUint16, ast.ValueTypeUint32, ast.ValueTypeUint64,
-				ast.ValueTypeFloat32, ast.ValueTypeFloat64:
+			case ir.ValueTypeInt, ir.ValueTypeInt8, ir.ValueTypeInt16, ir.ValueTypeInt32, ir.ValueTypeInt64,
+				ir.ValueTypeUint, ir.ValueTypeUint8, ir.ValueTypeUint16, ir.ValueTypeUint32, ir.ValueTypeUint64,
+				ir.ValueTypeFloat32, ir.ValueTypeFloat64:
 				return "0"
-			case ast.ValueTypeBigInt:
+			case ir.ValueTypeBigInt:
 				return "BigInteger.ZERO"
 			default:
 				return "null"
 			}
 		}
 		return "null"
-	case *ast.Array:
+	case *ir.Array:
 		return "emptyList()"
-	case *ast.Object:
+	case *ir.Object:
 		return "null"
 	default:
 		return "null"
 	}
 }
 
-func genKotlinFields(b *strings.Builder, n ast.Node, indent int) {
-	obj, ok := n.(*ast.Object)
+func genKotlinFields(b *strings.Builder, n ir.Node, indent int) {
+	obj, ok := n.(*ir.Object)
 	if !ok {
 		return
 	}
@@ -258,8 +258,8 @@ func genKotlinFields(b *strings.Builder, n ast.Node, indent int) {
 	}
 }
 
-func genKotlinNestedClasses(b *strings.Builder, n ast.Node, indent int) {
-	obj, ok := n.(*ast.Object)
+func genKotlinNestedClasses(b *strings.Builder, n ir.Node, indent int) {
+	obj, ok := n.(*ir.Object)
 	if !ok {
 		return
 	}
@@ -270,7 +270,7 @@ func genKotlinNestedClasses(b *strings.Builder, n ast.Node, indent int) {
 		}
 
 		switch v := f.Value.(type) {
-		case *ast.Object:
+		case *ir.Object:
 			className := getKotlinObjectType(f.Key, v)
 			b.WriteString("\n")
 			WriteIndent(b, indent)
@@ -281,7 +281,7 @@ func genKotlinNestedClasses(b *strings.Builder, n ast.Node, indent int) {
 			genKotlinNestedClasses(b, v, indent+1)
 			WriteIndent(b, indent)
 			b.WriteString("}\n")
-		case *ast.Array:
+		case *ir.Array:
 			if nestedObj := findFirstObjectInArrayKotlin(v); nestedObj != nil {
 				className := getKotlinObjectType(f.Key, nestedObj)
 				b.WriteString("\n")
@@ -298,12 +298,12 @@ func genKotlinNestedClasses(b *strings.Builder, n ast.Node, indent int) {
 	}
 }
 
-func findFirstObjectInArrayKotlin(a *ast.Array) *ast.Object {
+func findFirstObjectInArrayKotlin(a *ir.Array) *ir.Object {
 	if a == nil {
 		return nil
 	}
 	for _, item := range a.Items {
-		if obj, ok := item.(*ast.Object); ok {
+		if obj, ok := item.(*ir.Object); ok {
 			return obj
 		}
 	}
@@ -339,8 +339,8 @@ func exportKotlinInstanceName(name string) string {
 	return strings.ToLower(string(name[0])) + name[1:] + "Data"
 }
 
-func genKotlinObjectAssignments(b *strings.Builder, varName string, n ast.Node, indent int) {
-	obj, ok := n.(*ast.Object)
+func genKotlinObjectAssignments(b *strings.Builder, varName string, n ir.Node, indent int) {
+	obj, ok := n.(*ir.Object)
 	if !ok {
 		return
 	}
@@ -351,13 +351,13 @@ func genKotlinObjectAssignments(b *strings.Builder, varName string, n ast.Node, 
 		}
 		prop := varName + "." + exportKotlinFieldName(f.Key)
 		switch v := f.Value.(type) {
-		case *ast.Value:
+		case *ir.Value:
 			WriteIndent(b, indent)
 			b.WriteString(prop)
 			b.WriteString(" = ")
 			b.WriteString(formatKotlinValueLiteral(v))
 			b.WriteString("\n")
-		case *ast.Object:
+		case *ir.Object:
 			className := getKotlinObjectType(f.Key, v)
 			WriteIndent(b, indent)
 			b.WriteString(prop)
@@ -365,7 +365,7 @@ func genKotlinObjectAssignments(b *strings.Builder, varName string, n ast.Node, 
 			b.WriteString(className)
 			b.WriteString("()\n")
 			genKotlinObjectAssignments(b, prop, v, indent)
-		case *ast.Array:
+		case *ir.Array:
 			WriteIndent(b, indent)
 			b.WriteString(prop)
 			b.WriteString(" = ")
@@ -379,7 +379,7 @@ func genKotlinObjectAssignments(b *strings.Builder, varName string, n ast.Node, 
 	}
 }
 
-func genKotlinArrayLiteral(a *ast.Array, fieldKey string, indent int) string {
+func genKotlinArrayLiteral(a *ir.Array, fieldKey string, indent int) string {
 	var sb strings.Builder
 	if a == nil || len(a.Items) == 0 {
 		sb.WriteString("listOf()")
@@ -390,9 +390,9 @@ func genKotlinArrayLiteral(a *ast.Array, fieldKey string, indent int) string {
 	for i, item := range a.Items {
 		WriteIndent(&sb, indent)
 		switch v := item.(type) {
-		case *ast.Value:
+		case *ir.Value:
 			sb.WriteString(formatKotlinValueLiteral(v))
-		case *ast.Object:
+		case *ir.Object:
 			sb.WriteString(genKotlinObjectLiteral(v, fieldKey, indent+1))
 		default:
 			sb.WriteString("null")
@@ -407,7 +407,7 @@ func genKotlinArrayLiteral(a *ast.Array, fieldKey string, indent int) string {
 	return sb.String()
 }
 
-func genKotlinObjectLiteral(obj *ast.Object, fieldKey string, indent int) string {
+func genKotlinObjectLiteral(obj *ir.Object, fieldKey string, indent int) string {
 	var sb strings.Builder
 	className := getKotlinObjectType(fieldKey, obj)
 	sb.WriteString(className)
@@ -420,11 +420,11 @@ func genKotlinObjectLiteral(obj *ast.Object, fieldKey string, indent int) string
 		sb.WriteString(exportKotlinFieldName(f.Key))
 		sb.WriteString(" = ")
 		switch v := f.Value.(type) {
-		case *ast.Value:
+		case *ir.Value:
 			sb.WriteString(formatKotlinValueLiteral(v))
-		case *ast.Object:
+		case *ir.Object:
 			sb.WriteString(genKotlinObjectLiteral(v, f.Key, indent+1))
-		case *ast.Array:
+		case *ir.Array:
 			sb.WriteString(genKotlinArrayLiteral(v, f.Key, indent+1))
 		default:
 			sb.WriteString("null")
@@ -436,7 +436,7 @@ func genKotlinObjectLiteral(obj *ast.Object, fieldKey string, indent int) string
 	return sb.String()
 }
 
-func formatKotlinValueLiteral(v *ast.Value) string {
+func formatKotlinValueLiteral(v *ir.Value) string {
 	if v == nil {
 		return "null"
 	}
@@ -465,6 +465,6 @@ func formatKotlinValueLiteral(v *ast.Value) string {
 	return "\"" + strings.ReplaceAll(v.Text, "\"", "\\\"") + "\""
 }
 
-func PrintKotlinStruct(n ast.Node) {
+func PrintKotlinStruct(n ir.Node) {
 	fmt.Println(ToKotlin(n))
 }

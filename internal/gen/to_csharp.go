@@ -5,49 +5,49 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/metamessage/metamessage/internal/ast"
+	"github.com/metamessage/metamessage/internal/ir"
 )
 
-var csharpTypeMap = map[ast.ValueType]string{
-	ast.ValueTypeUnknown:  "object",
-	ast.ValueTypeString:   "string",
-	ast.ValueTypeBytes:    "byte[]",
-	ast.ValueTypeBool:     "bool",
-	ast.ValueTypeArray:    "List<object>",
-	ast.ValueTypeSlice:    "List<object>",
-	ast.ValueTypeMap:      "Dictionary<string, object>",
-	ast.ValueTypeInt:      "int",
-	ast.ValueTypeInt8:     "sbyte",
-	ast.ValueTypeInt16:    "short",
-	ast.ValueTypeInt32:    "int",
-	ast.ValueTypeInt64:    "long",
-	ast.ValueTypeUint:     "uint",
-	ast.ValueTypeUint8:    "byte",
-	ast.ValueTypeUint16:   "ushort",
-	ast.ValueTypeUint32:   "uint",
-	ast.ValueTypeUint64:   "ulong",
-	ast.ValueTypeFloat32:  "float",
-	ast.ValueTypeFloat64:  "double",
-	ast.ValueTypeBigInt:   "BigInteger",
-	ast.ValueTypeDateTime: "DateTime",
-	ast.ValueTypeDate:     "DateTime",
-	ast.ValueTypeTime:     "DateTime",
-	ast.ValueTypeUUID:     "Guid",
-	ast.ValueTypeDecimal:  "decimal",
-	ast.ValueTypeEmail:    "string",
-	ast.ValueTypeIP:       "string",
-	ast.ValueTypeURL:      "string",
-	ast.ValueTypeEnum:     "string",
-	ast.ValueTypeImage:    "string",
+var csharpTypeMap = map[ir.ValueType]string{
+	ir.ValueTypeUnknown:  "object",
+	ir.ValueTypeString:   "string",
+	ir.ValueTypeBytes:    "byte[]",
+	ir.ValueTypeBool:     "bool",
+	ir.ValueTypeArray:    "List<object>",
+	ir.ValueTypeSlice:    "List<object>",
+	ir.ValueTypeMap:      "Dictionary<string, object>",
+	ir.ValueTypeInt:      "int",
+	ir.ValueTypeInt8:     "sbyte",
+	ir.ValueTypeInt16:    "short",
+	ir.ValueTypeInt32:    "int",
+	ir.ValueTypeInt64:    "long",
+	ir.ValueTypeUint:     "uint",
+	ir.ValueTypeUint8:    "byte",
+	ir.ValueTypeUint16:   "ushort",
+	ir.ValueTypeUint32:   "uint",
+	ir.ValueTypeUint64:   "ulong",
+	ir.ValueTypeFloat32:  "float",
+	ir.ValueTypeFloat64:  "double",
+	ir.ValueTypeBigInt:   "BigInteger",
+	ir.ValueTypeDateTime: "DateTime",
+	ir.ValueTypeDate:     "DateTime",
+	ir.ValueTypeTime:     "DateTime",
+	ir.ValueTypeUUID:     "Guid",
+	ir.ValueTypeDecimal:  "decimal",
+	ir.ValueTypeEmail:    "string",
+	ir.ValueTypeIP:       "string",
+	ir.ValueTypeURL:      "string",
+	ir.ValueTypeEnum:     "string",
+	ir.ValueTypeImage:    "string",
 }
 
-func ToCSharp(n ast.Node) string {
+func ToCSharp(n ir.Node) string {
 	if n == nil {
 		return ""
 	}
 
 	topName := "Obj"
-	if obj, ok := n.(*ast.Object); ok && obj.Tag != nil && obj.Tag.Name != "" {
+	if obj, ok := n.(*ir.Object); ok && obj.Tag != nil && obj.Tag.Name != "" {
 		topName = exportCSharpClassName(obj.Tag.Name)
 	}
 
@@ -96,7 +96,7 @@ func ToCSharp(n ast.Node) string {
 	return sb.String()
 }
 
-func collectCSharpImports(n ast.Node) []string {
+func collectCSharpImports(n ir.Node) []string {
 	imports := make(map[string]struct{})
 	collectCSharpImportsRec(n, imports)
 
@@ -112,25 +112,25 @@ func collectCSharpImports(n ast.Node) []string {
 	return packages
 }
 
-func collectCSharpImportsRec(n ast.Node, imports map[string]struct{}) {
+func collectCSharpImportsRec(n ir.Node, imports map[string]struct{}) {
 	if n == nil {
 		return
 	}
 
 	switch v := n.(type) {
-	case *ast.Value:
+	case *ir.Value:
 		if v.Tag != nil {
 			addCSharpImportForType(v.Tag.Type, imports)
 		}
-	case *ast.Array:
+	case *ir.Array:
 		imports["System.Collections.Generic"] = struct{}{}
-		if v.Tag != nil && v.Tag.ChildType != ast.ValueTypeUnknown {
+		if v.Tag != nil && v.Tag.ChildType != ir.ValueTypeUnknown {
 			addCSharpImportForType(v.Tag.ChildType, imports)
 		}
 		for _, item := range v.Items {
 			collectCSharpImportsRec(item, imports)
 		}
-	case *ast.Object:
+	case *ir.Object:
 		for _, f := range v.Fields {
 			if f != nil {
 				collectCSharpImportsRec(f.Value, imports)
@@ -139,25 +139,25 @@ func collectCSharpImportsRec(n ast.Node, imports map[string]struct{}) {
 	}
 }
 
-func addCSharpImportForType(typ ast.ValueType, imports map[string]struct{}) {
+func addCSharpImportForType(typ ir.ValueType, imports map[string]struct{}) {
 	switch typ {
-	case ast.ValueTypeBigInt:
+	case ir.ValueTypeBigInt:
 		imports["System.Numerics"] = struct{}{}
-	case ast.ValueTypeDateTime, ast.ValueTypeDate, ast.ValueTypeTime, ast.ValueTypeUUID:
+	case ir.ValueTypeDateTime, ir.ValueTypeDate, ir.ValueTypeTime, ir.ValueTypeUUID:
 		imports["System"] = struct{}{}
-	case ast.ValueTypeMap:
+	case ir.ValueTypeMap:
 		imports["System.Collections.Generic"] = struct{}{}
 	}
 }
 
-func getCSharpTypeForField(f *ast.Field) string {
+func getCSharpTypeForField(f *ir.Field) string {
 	baseType := ""
 	switch v := f.Value.(type) {
-	case *ast.Value:
+	case *ir.Value:
 		baseType = getCSharpType(v)
-	case *ast.Object:
+	case *ir.Object:
 		baseType = getCSharpObjectType(f.Key, v)
-	case *ast.Array:
+	case *ir.Array:
 		baseType = getCSharpArrayType(f.Key, v)
 	default:
 		baseType = "object"
@@ -176,7 +176,7 @@ func getCSharpTypeForField(f *ast.Field) string {
 	return baseType
 }
 
-func getCSharpType(v *ast.Value) string {
+func getCSharpType(v *ir.Value) string {
 	if v != nil && v.Tag != nil {
 		if t, ok := csharpTypeMap[v.Tag.Type]; ok {
 			return t
@@ -185,19 +185,19 @@ func getCSharpType(v *ast.Value) string {
 	return "object"
 }
 
-func getCSharpObjectType(fieldKey string, obj *ast.Object) string {
+func getCSharpObjectType(fieldKey string, obj *ir.Object) string {
 	if obj != nil && obj.Tag != nil && obj.Tag.Name != "" {
 		return exportCSharpClassName(obj.Tag.Name)
 	}
 	return exportCSharpClassName(fieldKey)
 }
 
-func getCSharpArrayType(fieldKey string, a *ast.Array) string {
+func getCSharpArrayType(fieldKey string, a *ir.Array) string {
 	if a == nil {
 		return "List<object>"
 	}
 
-	if a.Tag != nil && a.Tag.ChildType != ast.ValueTypeUnknown {
+	if a.Tag != nil && a.Tag.ChildType != ir.ValueTypeUnknown {
 		if t, ok := csharpTypeMap[a.Tag.ChildType]; ok {
 			return "List<" + t + ">"
 		}
@@ -205,9 +205,9 @@ func getCSharpArrayType(fieldKey string, a *ast.Array) string {
 
 	if len(a.Items) > 0 {
 		switch item := a.Items[0].(type) {
-		case *ast.Object:
+		case *ir.Object:
 			return "List<" + getCSharpObjectType(fieldKey, item) + ">"
-		case *ast.Value:
+		case *ir.Value:
 			if item.Tag != nil {
 				if t, ok := csharpTypeMap[item.Tag.Type]; ok {
 					return "List<" + t + ">"
@@ -219,8 +219,8 @@ func getCSharpArrayType(fieldKey string, a *ast.Array) string {
 	return "List<object>"
 }
 
-func genCSharpFields(b *strings.Builder, n ast.Node, indent int) {
-	obj, ok := n.(*ast.Object)
+func genCSharpFields(b *strings.Builder, n ir.Node, indent int) {
+	obj, ok := n.(*ir.Object)
 	if !ok {
 		return
 	}
@@ -238,8 +238,8 @@ func genCSharpFields(b *strings.Builder, n ast.Node, indent int) {
 	}
 }
 
-func genCSharpNestedClasses(b *strings.Builder, n ast.Node, indent int) {
-	obj, ok := n.(*ast.Object)
+func genCSharpNestedClasses(b *strings.Builder, n ir.Node, indent int) {
+	obj, ok := n.(*ir.Object)
 	if !ok {
 		return
 	}
@@ -250,7 +250,7 @@ func genCSharpNestedClasses(b *strings.Builder, n ast.Node, indent int) {
 		}
 
 		switch v := f.Value.(type) {
-		case *ast.Object:
+		case *ir.Object:
 			className := getCSharpObjectType(f.Key, v)
 			b.WriteString("\n")
 			WriteIndent(b, indent)
@@ -261,7 +261,7 @@ func genCSharpNestedClasses(b *strings.Builder, n ast.Node, indent int) {
 			genCSharpNestedClasses(b, v, indent+1)
 			WriteIndent(b, indent)
 			b.WriteString("}\n")
-		case *ast.Array:
+		case *ir.Array:
 			if nestedObj := findFirstObjectInArrayCSharp(v); nestedObj != nil {
 				className := getCSharpObjectType(f.Key, nestedObj)
 				b.WriteString("\n")
@@ -278,12 +278,12 @@ func genCSharpNestedClasses(b *strings.Builder, n ast.Node, indent int) {
 	}
 }
 
-func findFirstObjectInArrayCSharp(a *ast.Array) *ast.Object {
+func findFirstObjectInArrayCSharp(a *ir.Array) *ir.Object {
 	if a == nil {
 		return nil
 	}
 	for _, item := range a.Items {
-		if obj, ok := item.(*ast.Object); ok {
+		if obj, ok := item.(*ir.Object); ok {
 			return obj
 		}
 	}
@@ -310,8 +310,8 @@ func exportCSharpDataClassName(name string) string {
 	return exportCSharpClassName(name) + "Data"
 }
 
-func genCSharpObjectInitializer(n ast.Node, fieldKey string, indent int) string {
-	obj, ok := n.(*ast.Object)
+func genCSharpObjectInitializer(n ir.Node, fieldKey string, indent int) string {
+	obj, ok := n.(*ir.Object)
 	if !ok {
 		return "null"
 	}
@@ -329,11 +329,11 @@ func genCSharpObjectInitializer(n ast.Node, fieldKey string, indent int) string 
 		sb.WriteString(exportCSharpFieldName(f.Key))
 		sb.WriteString(" = ")
 		switch v := f.Value.(type) {
-		case *ast.Value:
+		case *ir.Value:
 			sb.WriteString(formatCSharpValueLiteral(v))
-		case *ast.Object:
+		case *ir.Object:
 			sb.WriteString(genCSharpObjectInitializer(v, f.Key, indent+1))
-		case *ast.Array:
+		case *ir.Array:
 			sb.WriteString(genCSharpArrayInitializer(v, f.Key, indent+1))
 		default:
 			sb.WriteString("null")
@@ -350,15 +350,15 @@ func genCSharpObjectInitializer(n ast.Node, fieldKey string, indent int) string 
 	return sb.String()
 }
 
-func genCSharpArrayInitializer(a *ast.Array, fieldKey string, indent int) string {
+func genCSharpArrayInitializer(a *ir.Array, fieldKey string, indent int) string {
 	itemType := "object"
-	if a != nil && a.Tag != nil && a.Tag.ChildType != ast.ValueTypeUnknown {
-		itemType = getCSharpType(&ast.Value{Tag: &ast.Tag{Type: a.Tag.ChildType}})
+	if a != nil && a.Tag != nil && a.Tag.ChildType != ir.ValueTypeUnknown {
+		itemType = getCSharpType(&ir.Value{Tag: &ir.Tag{Type: a.Tag.ChildType}})
 	} else if len(a.Items) > 0 {
 		switch item := a.Items[0].(type) {
-		case *ast.Object:
+		case *ir.Object:
 			itemType = getCSharpObjectType(fieldKey, item)
-		case *ast.Value:
+		case *ir.Value:
 			if item.Tag != nil {
 				itemType = getCSharpType(item)
 			}
@@ -377,9 +377,9 @@ func genCSharpArrayInitializer(a *ast.Array, fieldKey string, indent int) string
 	for i, item := range a.Items {
 		WriteIndent(&sb, indent+1)
 		switch v := item.(type) {
-		case *ast.Value:
+		case *ir.Value:
 			sb.WriteString(formatCSharpValueLiteral(v))
-		case *ast.Object:
+		case *ir.Object:
 			sb.WriteString(genCSharpObjectInitializer(v, fieldKey, indent+1))
 		default:
 			sb.WriteString("null")
@@ -396,7 +396,7 @@ func genCSharpArrayInitializer(a *ast.Array, fieldKey string, indent int) string
 	return sb.String()
 }
 
-func formatCSharpValueLiteral(v *ast.Value) string {
+func formatCSharpValueLiteral(v *ir.Value) string {
 	if v == nil {
 		return "null"
 	}
@@ -439,6 +439,6 @@ func formatCSharpValueLiteral(v *ast.Value) string {
 	return v.Text
 }
 
-func PrintCSharpStruct(n ast.Node) {
+func PrintCSharpStruct(n ir.Node) {
 	fmt.Println(ToCSharp(n))
 }

@@ -4,7 +4,7 @@ import (
 	"strings"
 	"unicode"
 
-	"github.com/metamessage/metamessage/internal/ast"
+	"github.com/metamessage/metamessage/internal/ir"
 	"github.com/metamessage/metamessage/internal/jsonc/token"
 )
 
@@ -192,11 +192,11 @@ func (s *Scanner) scanLiteral() token.Token {
 
 	lit := buf.String()
 	switch lit {
-	case ast.True:
+	case ir.True:
 		return token.Token{Type: token.True, Line: startLine, Column: startCol}
-	case ast.False:
+	case ir.False:
 		return token.Token{Type: token.False, Line: startLine, Column: startCol}
-	case ast.Null:
+	case ir.Null:
 		return token.Token{Type: token.Null, Line: startLine, Column: startCol}
 	default:
 		return token.Token{

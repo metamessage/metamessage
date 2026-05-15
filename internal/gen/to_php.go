@@ -5,49 +5,49 @@ import (
 	"strings"
 	"unicode"
 
-	"github.com/metamessage/metamessage/internal/ast"
+	"github.com/metamessage/metamessage/internal/ir"
 )
 
-var phpTypeMap = map[ast.ValueType]string{
-	ast.ValueTypeUnknown:  "mixed",
-	ast.ValueTypeString:   "string",
-	ast.ValueTypeBytes:    "string",
-	ast.ValueTypeBool:     "bool",
-	ast.ValueTypeArray:    "array",
-	ast.ValueTypeSlice:    "array",
-	ast.ValueTypeMap:      "array",
-	ast.ValueTypeInt:      "int",
-	ast.ValueTypeInt8:     "int",
-	ast.ValueTypeInt16:    "int",
-	ast.ValueTypeInt32:    "int",
-	ast.ValueTypeInt64:    "int",
-	ast.ValueTypeUint:     "int",
-	ast.ValueTypeUint8:    "int",
-	ast.ValueTypeUint16:   "int",
-	ast.ValueTypeUint32:   "int",
-	ast.ValueTypeUint64:   "int",
-	ast.ValueTypeFloat32:  "float",
-	ast.ValueTypeFloat64:  "float",
-	ast.ValueTypeBigInt:   "string",
-	ast.ValueTypeDateTime: "string",
-	ast.ValueTypeDate:     "string",
-	ast.ValueTypeTime:     "string",
-	ast.ValueTypeUUID:     "string",
-	ast.ValueTypeDecimal:  "string",
-	ast.ValueTypeEmail:    "string",
-	ast.ValueTypeIP:       "string",
-	ast.ValueTypeURL:      "string",
-	ast.ValueTypeEnum:     "string",
-	ast.ValueTypeImage:    "string",
+var phpTypeMap = map[ir.ValueType]string{
+	ir.ValueTypeUnknown:  "mixed",
+	ir.ValueTypeString:   "string",
+	ir.ValueTypeBytes:    "string",
+	ir.ValueTypeBool:     "bool",
+	ir.ValueTypeArray:    "array",
+	ir.ValueTypeSlice:    "array",
+	ir.ValueTypeMap:      "array",
+	ir.ValueTypeInt:      "int",
+	ir.ValueTypeInt8:     "int",
+	ir.ValueTypeInt16:    "int",
+	ir.ValueTypeInt32:    "int",
+	ir.ValueTypeInt64:    "int",
+	ir.ValueTypeUint:     "int",
+	ir.ValueTypeUint8:    "int",
+	ir.ValueTypeUint16:   "int",
+	ir.ValueTypeUint32:   "int",
+	ir.ValueTypeUint64:   "int",
+	ir.ValueTypeFloat32:  "float",
+	ir.ValueTypeFloat64:  "float",
+	ir.ValueTypeBigInt:   "string",
+	ir.ValueTypeDateTime: "string",
+	ir.ValueTypeDate:     "string",
+	ir.ValueTypeTime:     "string",
+	ir.ValueTypeUUID:     "string",
+	ir.ValueTypeDecimal:  "string",
+	ir.ValueTypeEmail:    "string",
+	ir.ValueTypeIP:       "string",
+	ir.ValueTypeURL:      "string",
+	ir.ValueTypeEnum:     "string",
+	ir.ValueTypeImage:    "string",
 }
 
-func ToPHP(n ast.Node) string {
+func ToPHP(n ir.Node) string {
 	if n == nil {
 		return ""
 	}
 
 	topName := "Obj"
-	if obj, ok := n.(*ast.Object); ok && obj.Tag != nil && obj.Tag.Name != "" {
+	if obj, ok := n.(*ir.Object); ok && obj.Tag != nil && obj.Tag.Name != "" {
 		topName = exportPhpClassName(obj.Tag.Name)
 	}
 
@@ -65,7 +65,7 @@ func ToPHP(n ast.Node) string {
 	return sb.String()
 }
 
-func genPHPClass(b *strings.Builder, className string, n ast.Node, generated map[string]struct{}) {
+func genPHPClass(b *strings.Builder, className string, n ir.Node, generated map[string]struct{}) {
 	if _, ok := generated[className]; ok {
 		return
 	}
@@ -79,8 +79,8 @@ func genPHPClass(b *strings.Builder, className string, n ast.Node, generated map
 	b.WriteString("}\n\n")
 }
 
-func genPHPFields(b *strings.Builder, n ast.Node, indent int) {
-	obj, ok := n.(*ast.Object)
+func genPHPFields(b *strings.Builder, n ir.Node, indent int) {
+	obj, ok := n.(*ir.Object)
 	if !ok {
 		return
 	}
@@ -113,20 +113,20 @@ func genPHPFields(b *strings.Builder, n ast.Node, indent int) {
 	}
 }
 
-func getPhpTypeForField(f *ast.Field) string {
+func getPhpTypeForField(f *ir.Field) string {
 	switch v := f.Value.(type) {
-	case *ast.Value:
+	case *ir.Value:
 		return getPhpType(v)
-	case *ast.Object:
+	case *ir.Object:
 		return getPhpObjectType(f.Key, v)
-	case *ast.Array:
+	case *ir.Array:
 		return getPhpArrayType(f.Key, v)
 	default:
 		return "mixed"
 	}
 }
 
-func getPhpType(v *ast.Value) string {
+func getPhpType(v *ir.Value) string {
 	if v != nil && v.Tag != nil {
 		if t, ok := phpTypeMap[v.Tag.Type]; ok {
 			return t
@@ -135,27 +135,27 @@ func getPhpType(v *ast.Value) string {
 	return "mixed"
 }
 
-func getPhpObjectType(fieldKey string, obj *ast.Object) string {
+func getPhpObjectType(fieldKey string, obj *ir.Object) string {
 	if obj != nil && obj.Tag != nil && obj.Tag.Name != "" {
 		return exportPhpClassName(obj.Tag.Name)
 	}
 	return exportPhpClassName(fieldKey)
 }
 
-func getPhpArrayType(fieldKey string, a *ast.Array) string {
+func getPhpArrayType(fieldKey string, a *ir.Array) string {
 	if a == nil {
 		return "array"
 	}
-	if a.Tag != nil && a.Tag.ChildType != ast.ValueTypeUnknown {
+	if a.Tag != nil && a.Tag.ChildType != ir.ValueTypeUnknown {
 		if _, ok := phpTypeMap[a.Tag.ChildType]; ok {
 			return "array"
 		}
 	}
 	if len(a.Items) > 0 {
 		switch item := a.Items[0].(type) {
-		case *ast.Object:
+		case *ir.Object:
 			return "array"
-		case *ast.Value:
+		case *ir.Value:
 			if item.Tag != nil {
 				if _, ok := phpTypeMap[item.Tag.Type]; ok {
 					return "array"
@@ -166,8 +166,8 @@ func getPhpArrayType(fieldKey string, a *ast.Array) string {
 	return "array"
 }
 
-func genPHPNestedClasses(b *strings.Builder, n ast.Node, generated map[string]struct{}) {
-	obj, ok := n.(*ast.Object)
+func genPHPNestedClasses(b *strings.Builder, n ir.Node, generated map[string]struct{}) {
+	obj, ok := n.(*ir.Object)
 	if !ok {
 		return
 	}
@@ -178,11 +178,11 @@ func genPHPNestedClasses(b *strings.Builder, n ast.Node, generated map[string]st
 		}
 
 		switch v := f.Value.(type) {
-		case *ast.Object:
+		case *ir.Object:
 			className := getPhpObjectType(f.Key, v)
 			genPHPClass(b, className, v, generated)
 			genPHPNestedClasses(b, v, generated)
-		case *ast.Array:
+		case *ir.Array:
 			if nestedObj := findFirstObjectInArrayPHP(v); nestedObj != nil {
 				className := getPhpObjectType(f.Key, nestedObj)
 				genPHPClass(b, className, nestedObj, generated)
@@ -192,12 +192,12 @@ func genPHPNestedClasses(b *strings.Builder, n ast.Node, generated map[string]st
 	}
 }
 
-func findFirstObjectInArrayPHP(a *ast.Array) *ast.Object {
+func findFirstObjectInArrayPHP(a *ir.Array) *ir.Object {
 	if a == nil {
 		return nil
 	}
 	for _, item := range a.Items {
-		if obj, ok := item.(*ast.Object); ok {
+		if obj, ok := item.(*ir.Object); ok {
 			return obj
 		}
 	}
@@ -249,8 +249,8 @@ func exportPhpInstanceName(name string) string {
 	return strings.ToLower(string(name[0])) + name[1:] + "Data"
 }
 
-func genPHPObjectAssignments(b *strings.Builder, varName string, n ast.Node, indent int) {
-	obj, ok := n.(*ast.Object)
+func genPHPObjectAssignments(b *strings.Builder, varName string, n ir.Node, indent int) {
+	obj, ok := n.(*ir.Object)
 	if !ok {
 		return
 	}
@@ -261,25 +261,25 @@ func genPHPObjectAssignments(b *strings.Builder, varName string, n ast.Node, ind
 		}
 		prop := varName + "->" + exportPhpFieldName(f.Key)
 		switch v := f.Value.(type) {
-		case *ast.Value:
+		case *ir.Value:
 			WriteIndent(b, indent)
 			b.WriteString(prop + " = " + formatPhpValueLiteral(v) + ";\n")
-		case *ast.Object:
+		case *ir.Object:
 			className := getPhpObjectType(f.Key, v)
 			WriteIndent(b, indent)
 			b.WriteString(prop + " = new " + className + "();\n")
 			genPHPObjectAssignments(b, prop, v, indent)
-		case *ast.Array:
+		case *ir.Array:
 			if nestedObj := findFirstObjectInArrayPHP(v); nestedObj != nil {
 				WriteIndent(b, indent)
 				b.WriteString(prop + " = [\n")
 				for i, item := range v.Items {
 					WriteIndent(b, indent+1)
 					switch iv := item.(type) {
-					case *ast.Object:
+					case *ir.Object:
 						b.WriteString(genPHPObjectLiteral(iv, f.Key, indent+1))
 					default:
-						b.WriteString(formatPhpValueLiteral(iv.(*ast.Value)))
+						b.WriteString(formatPhpValueLiteral(iv.(*ir.Value)))
 					}
 					if i < len(v.Items)-1 {
 						b.WriteString(",\n")
@@ -299,7 +299,7 @@ func genPHPObjectAssignments(b *strings.Builder, varName string, n ast.Node, ind
 	}
 }
 
-func genPHPArrayLiteral(a *ast.Array) string {
+func genPHPArrayLiteral(a *ir.Array) string {
 	if a == nil {
 		return "[]"
 	}
@@ -311,9 +311,9 @@ func genPHPArrayLiteral(a *ast.Array) string {
 			sb.WriteString(", ")
 		}
 		switch iv := item.(type) {
-		case *ast.Value:
+		case *ir.Value:
 			sb.WriteString(formatPhpValueLiteral(iv))
-		case *ast.Object:
+		case *ir.Object:
 			sb.WriteString(genPHPObjectLiteral(iv, "", 0))
 		default:
 			sb.WriteString("null")
@@ -323,7 +323,7 @@ func genPHPArrayLiteral(a *ast.Array) string {
 	return sb.String()
 }
 
-func genPHPObjectLiteral(obj *ast.Object, fieldKey string, indent int) string {
+func genPHPObjectLiteral(obj *ir.Object, fieldKey string, indent int) string {
 	var sb strings.Builder
 	className := getPhpObjectType(fieldKey, obj)
 	sb.WriteString("(function() {\n")
@@ -336,11 +336,11 @@ func genPHPObjectLiteral(obj *ast.Object, fieldKey string, indent int) string {
 		WriteIndent(&sb, indent+1)
 		sb.WriteString("$obj->" + exportPhpFieldName(f.Key) + " = ")
 		switch iv := f.Value.(type) {
-		case *ast.Value:
+		case *ir.Value:
 			sb.WriteString(formatPhpValueLiteral(iv))
-		case *ast.Object:
+		case *ir.Object:
 			sb.WriteString(genPHPObjectLiteral(iv, f.Key, indent+1))
-		case *ast.Array:
+		case *ir.Array:
 			sb.WriteString(genPHPArrayLiteral(iv))
 		default:
 			sb.WriteString("null")
@@ -354,21 +354,21 @@ func genPHPObjectLiteral(obj *ast.Object, fieldKey string, indent int) string {
 	return sb.String()
 }
 
-func formatPhpValueLiteral(v *ast.Value) string {
+func formatPhpValueLiteral(v *ir.Value) string {
 	if v == nil {
 		return "null"
 	}
 
 	if v.Tag != nil {
 		switch v.Tag.Type {
-		case ast.ValueTypeString, ast.ValueTypeBytes, ast.ValueTypeDateTime, ast.ValueTypeDate, ast.ValueTypeTime, ast.ValueTypeUUID, ast.ValueTypeDecimal, ast.ValueTypeEmail, ast.ValueTypeIP, ast.ValueTypeURL, ast.ValueTypeEnum, ast.ValueTypeImage:
+		case ir.ValueTypeString, ir.ValueTypeBytes, ir.ValueTypeDateTime, ir.ValueTypeDate, ir.ValueTypeTime, ir.ValueTypeUUID, ir.ValueTypeDecimal, ir.ValueTypeEmail, ir.ValueTypeIP, ir.ValueTypeURL, ir.ValueTypeEnum, ir.ValueTypeImage:
 			return "\"" + strings.ReplaceAll(v.Text, "\"", "\\\"") + "\""
-		case ast.ValueTypeBool:
+		case ir.ValueTypeBool:
 			if strings.EqualFold(v.Text, "true") {
 				return "true"
 			}
 			return "false"
-		case ast.ValueTypeInt, ast.ValueTypeInt8, ast.ValueTypeInt16, ast.ValueTypeInt32, ast.ValueTypeInt64, ast.ValueTypeUint, ast.ValueTypeUint8, ast.ValueTypeUint16, ast.ValueTypeUint32, ast.ValueTypeUint64, ast.ValueTypeFloat32, ast.ValueTypeFloat64:
+		case ir.ValueTypeInt, ir.ValueTypeInt8, ir.ValueTypeInt16, ir.ValueTypeInt32, ir.ValueTypeInt64, ir.ValueTypeUint, ir.ValueTypeUint8, ir.ValueTypeUint16, ir.ValueTypeUint32, ir.ValueTypeUint64, ir.ValueTypeFloat32, ir.ValueTypeFloat64:
 			if v.Text == "" {
 				return "0"
 			}
@@ -378,6 +378,6 @@ func formatPhpValueLiteral(v *ast.Value) string {
 	return "\"" + strings.ReplaceAll(v.Text, "\"", "\\\"") + "\""
 }
 
-func PrintPHPStruct(n ast.Node) {
+func PrintPHPStruct(n ir.Node) {
 	fmt.Println(ToPHP(n))
 }

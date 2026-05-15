@@ -4,18 +4,18 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/metamessage/metamessage/internal/ast"
+	"github.com/metamessage/metamessage/internal/ir"
 )
 
 func TestToKotlinGeneratesCode(t *testing.T) {
-	obj := &ast.Object{
-		Tag: &ast.Tag{Name: "user"},
-		Fields: []*ast.Field{
-			{Key: "id", Value: &ast.Value{Tag: &ast.Tag{Type: ast.ValueTypeInt}, Text: "1"}},
-			{Key: "name", Value: &ast.Value{Tag: &ast.Tag{Type: ast.ValueTypeString}, Text: "Alice"}},
-			{Key: "tags", Value: &ast.Array{Items: []ast.Node{
-				&ast.Value{Tag: &ast.Tag{Type: ast.ValueTypeString}, Text: "go"},
-				&ast.Value{Tag: &ast.Tag{Type: ast.ValueTypeString}, Text: "java"},
+	obj := &ir.Object{
+		Tag: &ir.Tag{Name: "user"},
+		Fields: []*ir.Field{
+			{Key: "id", Value: &ir.Value{Tag: &ir.Tag{Type: ir.ValueTypeInt}, Text: "1"}},
+			{Key: "name", Value: &ir.Value{Tag: &ir.Tag{Type: ir.ValueTypeString}, Text: "Alice"}},
+			{Key: "tags", Value: &ir.Array{Items: []ir.Node{
+				&ir.Value{Tag: &ir.Tag{Type: ir.ValueTypeString}, Text: "go"},
+				&ir.Value{Tag: &ir.Tag{Type: ir.ValueTypeString}, Text: "java"},
 			}}},
 		},
 	}

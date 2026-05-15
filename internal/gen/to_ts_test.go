@@ -4,18 +4,18 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/metamessage/metamessage/internal/ast"
+	"github.com/metamessage/metamessage/internal/ir"
 )
 
 func TestToTSGeneratesCode(t *testing.T) {
-	obj := &ast.Object{
-		Tag: &ast.Tag{Name: "user"},
-		Fields: []*ast.Field{
-			{Key: "id", Value: &ast.Value{Tag: &ast.Tag{Type: ast.ValueTypeInt}, Text: "1"}},
-			{Key: "name", Value: &ast.Value{Tag: &ast.Tag{Type: ast.ValueTypeString}, Text: "Alice"}},
-			{Key: "tags", Value: &ast.Array{Items: []ast.Node{
-				&ast.Value{Tag: &ast.Tag{Type: ast.ValueTypeString}, Text: "go"},
-				&ast.Value{Tag: &ast.Tag{Type: ast.ValueTypeString}, Text: "java"},
+	obj := &ir.Object{
+		Tag: &ir.Tag{Name: "user"},
+		Fields: []*ir.Field{
+			{Key: "id", Value: &ir.Value{Tag: &ir.Tag{Type: ir.ValueTypeInt}, Text: "1"}},
+			{Key: "name", Value: &ir.Value{Tag: &ir.Tag{Type: ir.ValueTypeString}, Text: "Alice"}},
+			{Key: "tags", Value: &ir.Array{Items: []ir.Node{
+				&ir.Value{Tag: &ir.Tag{Type: ir.ValueTypeString}, Text: "go"},
+				&ir.Value{Tag: &ir.Tag{Type: ir.ValueTypeString}, Text: "java"},
 			}}},
 		},
 	}
@@ -50,16 +50,16 @@ func TestToTSGeneratesCode(t *testing.T) {
 
 // TestToTSNullableFields verifies that nullable and non-nullable fields are generated correctly
 func TestToTSNullableFields(t *testing.T) {
-	obj := &ast.Object{
-		Tag: &ast.Tag{Name: "profile"},
-		Fields: []*ast.Field{
+	obj := &ir.Object{
+		Tag: &ir.Tag{Name: "profile"},
+		Fields: []*ir.Field{
 			// Non-nullable (default)
-			{Key: "id", Value: &ast.Value{Tag: &ast.Tag{Type: ast.ValueTypeInt, Nullable: false}, Text: "1"}},
+			{Key: "id", Value: &ir.Value{Tag: &ir.Tag{Type: ir.ValueTypeInt, Nullable: false}, Text: "1"}},
 			// Nullable
-			{Key: "nickname", Value: &ast.Value{Tag: &ast.Tag{Type: ast.ValueTypeString, Nullable: true}, Text: ""}},
+			{Key: "nickname", Value: &ir.Value{Tag: &ir.Tag{Type: ir.ValueTypeString, Nullable: true}, Text: ""}},
 			// Non-nullable array
-			{Key: "tags", Value: &ast.Array{Tag: &ast.Tag{Nullable: false}, Items: []ast.Node{
-				&ast.Value{Tag: &ast.Tag{Type: ast.ValueTypeString}, Text: "dev"},
+			{Key: "tags", Value: &ir.Array{Tag: &ir.Tag{Nullable: false}, Items: []ir.Node{
+				&ir.Value{Tag: &ir.Tag{Type: ir.ValueTypeString}, Text: "dev"},
 			}}},
 		},
 	}

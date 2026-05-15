@@ -5,49 +5,49 @@ import (
 	"strings"
 	"unicode"
 
-	"github.com/metamessage/metamessage/internal/ast"
+	"github.com/metamessage/metamessage/internal/ir"
 )
 
-var jsTypeMap = map[ast.ValueType]string{
-	ast.ValueTypeUnknown:  "any",
-	ast.ValueTypeString:   "string",
-	ast.ValueTypeBytes:    "Uint8Array",
-	ast.ValueTypeBool:     "boolean",
-	ast.ValueTypeArray:    "Array<any>",
-	ast.ValueTypeSlice:    "Array<any>",
-	ast.ValueTypeMap:      "Object",
-	ast.ValueTypeInt:      "number",
-	ast.ValueTypeInt8:     "number",
-	ast.ValueTypeInt16:    "number",
-	ast.ValueTypeInt32:    "number",
-	ast.ValueTypeInt64:    "number",
-	ast.ValueTypeUint:     "number",
-	ast.ValueTypeUint8:    "number",
-	ast.ValueTypeUint16:   "number",
-	ast.ValueTypeUint32:   "number",
-	ast.ValueTypeUint64:   "number",
-	ast.ValueTypeFloat32:  "number",
-	ast.ValueTypeFloat64:  "number",
-	ast.ValueTypeBigInt:   "number",
-	ast.ValueTypeDateTime: "string",
-	ast.ValueTypeDate:     "string",
-	ast.ValueTypeTime:     "string",
-	ast.ValueTypeUUID:     "string",
-	ast.ValueTypeDecimal:  "string",
-	ast.ValueTypeEmail:    "string",
-	ast.ValueTypeIP:       "string",
-	ast.ValueTypeURL:      "string",
-	ast.ValueTypeEnum:     "string",
-	ast.ValueTypeImage:    "string",
+var jsTypeMap = map[ir.ValueType]string{
+	ir.ValueTypeUnknown:  "any",
+	ir.ValueTypeString:   "string",
+	ir.ValueTypeBytes:    "Uint8Array",
+	ir.ValueTypeBool:     "boolean",
+	ir.ValueTypeArray:    "Array<any>",
+	ir.ValueTypeSlice:    "Array<any>",
+	ir.ValueTypeMap:      "Object",
+	ir.ValueTypeInt:      "number",
+	ir.ValueTypeInt8:     "number",
+	ir.ValueTypeInt16:    "number",
+	ir.ValueTypeInt32:    "number",
+	ir.ValueTypeInt64:    "number",
+	ir.ValueTypeUint:     "number",
+	ir.ValueTypeUint8:    "number",
+	ir.ValueTypeUint16:   "number",
+	ir.ValueTypeUint32:   "number",
+	ir.ValueTypeUint64:   "number",
+	ir.ValueTypeFloat32:  "number",
+	ir.ValueTypeFloat64:  "number",
+	ir.ValueTypeBigInt:   "number",
+	ir.ValueTypeDateTime: "string",
+	ir.ValueTypeDate:     "string",
+	ir.ValueTypeTime:     "string",
+	ir.ValueTypeUUID:     "string",
+	ir.ValueTypeDecimal:  "string",
+	ir.ValueTypeEmail:    "string",
+	ir.ValueTypeIP:       "string",
+	ir.ValueTypeURL:      "string",
+	ir.ValueTypeEnum:     "string",
+	ir.ValueTypeImage:    "string",
 }
 
-func ToJS(n ast.Node) string {
+func ToJS(n ir.Node) string {
 	if n == nil {
 		return ""
 	}
 
 	topName := "Obj"
-	if obj, ok := n.(*ast.Object); ok && obj.Tag != nil && obj.Tag.Name != "" {
+	if obj, ok := n.(*ir.Object); ok && obj.Tag != nil && obj.Tag.Name != "" {
 		topName = exportJSClassName(obj.Tag.Name)
 	}
 
@@ -71,20 +71,20 @@ func ToJS(n ast.Node) string {
 	return sb.String()
 }
 
-func getJSTypeForField(f *ast.Field) string {
+func getJSTypeForField(f *ir.Field) string {
 	switch v := f.Value.(type) {
-	case *ast.Value:
+	case *ir.Value:
 		return getJSType(v)
-	case *ast.Object:
+	case *ir.Object:
 		return getJSObjectType(f.Key, v)
-	case *ast.Array:
+	case *ir.Array:
 		return getJSArrayType(f.Key, v)
 	default:
 		return "any"
 	}
 }
 
-func getJSType(v *ast.Value) string {
+func getJSType(v *ir.Value) string {
 	if v != nil && v.Tag != nil {
 		if t, ok := jsTypeMap[v.Tag.Type]; ok {
 			return t
@@ -93,19 +93,19 @@ func getJSType(v *ast.Value) string {
 	return "any"
 }
 
-func getJSObjectType(fieldKey string, obj *ast.Object) string {
+func getJSObjectType(fieldKey string, obj *ir.Object) string {
 	if obj != nil && obj.Tag != nil && obj.Tag.Name != "" {
 		return exportJSClassName(obj.Tag.Name)
 	}
 	return exportJSClassName(fieldKey)
 }
 
-func getJSArrayType(fieldKey string, a *ast.Array) string {
+func getJSArrayType(fieldKey string, a *ir.Array) string {
 	if a == nil {
 		return "Array<any>"
 	}
 
-	if a.Tag != nil && a.Tag.ChildType != ast.ValueTypeUnknown {
+	if a.Tag != nil && a.Tag.ChildType != ir.ValueTypeUnknown {
 		if t, ok := jsTypeMap[a.Tag.ChildType]; ok {
 			return "Array<" + t + ">"
 		}
@@ -113,9 +113,9 @@ func getJSArrayType(fieldKey string, a *ast.Array) string {
 
 	if len(a.Items) > 0 {
 		switch item := a.Items[0].(type) {
-		case *ast.Object:
+		case *ir.Object:
 			return "Array<" + getJSObjectType(fieldKey, item) + ">"
-		case *ast.Value:
+		case *ir.Value:
 			return "Array<" + getJSType(item) + ">"
 		}
 	}
@@ -123,17 +123,17 @@ func getJSArrayType(fieldKey string, a *ast.Array) string {
 	return "Array<any>"
 }
 
-func getJSInitialValueForField(f *ast.Field) string {
+func getJSInitialValueForField(f *ir.Field) string {
 	switch f.Value.(type) {
-	case *ast.Array:
+	case *ir.Array:
 		return "[]"
 	default:
 		return "null"
 	}
 }
 
-func genJSFields(b *strings.Builder, n ast.Node, indent int) {
-	obj, ok := n.(*ast.Object)
+func genJSFields(b *strings.Builder, n ir.Node, indent int) {
+	obj, ok := n.(*ir.Object)
 	if !ok {
 		return
 	}
@@ -155,8 +155,8 @@ func genJSFields(b *strings.Builder, n ast.Node, indent int) {
 	}
 }
 
-func genJSNestedClasses(b *strings.Builder, n ast.Node) {
-	obj, ok := n.(*ast.Object)
+func genJSNestedClasses(b *strings.Builder, n ir.Node) {
+	obj, ok := n.(*ir.Object)
 	if !ok {
 		return
 	}
@@ -167,7 +167,7 @@ func genJSNestedClasses(b *strings.Builder, n ast.Node) {
 		}
 
 		switch v := f.Value.(type) {
-		case *ast.Object:
+		case *ir.Object:
 			className := getJSObjectType(f.Key, v)
 			b.WriteString("\nexport class ")
 			b.WriteString(className)
@@ -175,7 +175,7 @@ func genJSNestedClasses(b *strings.Builder, n ast.Node) {
 			genJSFields(b, v, 2)
 			b.WriteString("\t}\n}\n")
 			genJSNestedClasses(b, v)
-		case *ast.Array:
+		case *ir.Array:
 			if nestedObj := findFirstObjectInArrayJS(v); nestedObj != nil {
 				className := getJSObjectType(f.Key, nestedObj)
 				b.WriteString("\nexport class ")
@@ -189,12 +189,12 @@ func genJSNestedClasses(b *strings.Builder, n ast.Node) {
 	}
 }
 
-func findFirstObjectInArrayJS(a *ast.Array) *ast.Object {
+func findFirstObjectInArrayJS(a *ir.Array) *ir.Object {
 	if a == nil {
 		return nil
 	}
 	for _, item := range a.Items {
-		if obj, ok := item.(*ast.Object); ok {
+		if obj, ok := item.(*ir.Object); ok {
 			return obj
 		}
 	}
@@ -219,8 +219,8 @@ func exportJSDataName(name string) string {
 	return strings.ToLower(string(name[0])) + name[1:] + "Data"
 }
 
-func genJSDataAssignments(b *strings.Builder, varName string, n ast.Node, indent int) {
-	obj, ok := n.(*ast.Object)
+func genJSDataAssignments(b *strings.Builder, varName string, n ir.Node, indent int) {
+	obj, ok := n.(*ir.Object)
 	if !ok {
 		return
 	}
@@ -231,13 +231,13 @@ func genJSDataAssignments(b *strings.Builder, varName string, n ast.Node, indent
 		}
 		prop := varName + "." + exportJSFieldName(f.Key)
 		switch v := f.Value.(type) {
-		case *ast.Value:
+		case *ir.Value:
 			WriteIndent(b, indent)
 			b.WriteString(prop)
 			b.WriteString(" = ")
 			b.WriteString(formatJSValueLiteral(v))
 			b.WriteString(";\n")
-		case *ast.Object:
+		case *ir.Object:
 			className := getJSObjectType(f.Key, v)
 			WriteIndent(b, indent)
 			b.WriteString(prop)
@@ -245,7 +245,7 @@ func genJSDataAssignments(b *strings.Builder, varName string, n ast.Node, indent
 			b.WriteString(className)
 			b.WriteString("();\n")
 			genJSDataAssignments(b, prop, v, indent)
-		case *ast.Array:
+		case *ir.Array:
 			WriteIndent(b, indent)
 			b.WriteString(prop)
 			b.WriteString(" = ")
@@ -259,7 +259,7 @@ func genJSDataAssignments(b *strings.Builder, varName string, n ast.Node, indent
 	}
 }
 
-func genJSArrayLiteral(a *ast.Array, fieldKey string) string {
+func genJSArrayLiteral(a *ir.Array, fieldKey string) string {
 	if a == nil || len(a.Items) == 0 {
 		return "[]"
 	}
@@ -271,9 +271,9 @@ func genJSArrayLiteral(a *ast.Array, fieldKey string) string {
 			sb.WriteString(", ")
 		}
 		switch v := item.(type) {
-		case *ast.Value:
+		case *ir.Value:
 			sb.WriteString(formatJSValueLiteral(v))
-		case *ast.Object:
+		case *ir.Object:
 			sb.WriteString(genJSObjectLiteral(v, fieldKey, 1))
 		default:
 			sb.WriteString("null")
@@ -283,7 +283,7 @@ func genJSArrayLiteral(a *ast.Array, fieldKey string) string {
 	return sb.String()
 }
 
-func genJSObjectLiteral(obj *ast.Object, fieldKey string, indent int) string {
+func genJSObjectLiteral(obj *ir.Object, fieldKey string, indent int) string {
 	var sb strings.Builder
 	className := getJSObjectType(fieldKey, obj)
 	sb.WriteString("Object.assign(new ")
@@ -300,11 +300,11 @@ func genJSObjectLiteral(obj *ast.Object, fieldKey string, indent int) string {
 		sb.WriteString(exportJSFieldName(f.Key))
 		sb.WriteString(": ")
 		switch v := f.Value.(type) {
-		case *ast.Value:
+		case *ir.Value:
 			sb.WriteString(formatJSValueLiteral(v))
-		case *ast.Object:
+		case *ir.Object:
 			sb.WriteString(genJSObjectLiteral(v, f.Key, indent+1))
-		case *ast.Array:
+		case *ir.Array:
 			sb.WriteString(genJSArrayLiteral(v, f.Key))
 		default:
 			sb.WriteString("null")
@@ -314,7 +314,7 @@ func genJSObjectLiteral(obj *ast.Object, fieldKey string, indent int) string {
 	return sb.String()
 }
 
-func formatJSValueLiteral(v *ast.Value) string {
+func formatJSValueLiteral(v *ir.Value) string {
 	if v == nil {
 		return "null"
 	}
@@ -323,14 +323,14 @@ func formatJSValueLiteral(v *ast.Value) string {
 	}
 
 	switch v.Tag.Type {
-	case ast.ValueTypeString, ast.ValueTypeBytes, ast.ValueTypeDateTime, ast.ValueTypeDate, ast.ValueTypeTime, ast.ValueTypeUUID, ast.ValueTypeDecimal, ast.ValueTypeEmail, ast.ValueTypeIP, ast.ValueTypeURL, ast.ValueTypeEnum, ast.ValueTypeImage:
+	case ir.ValueTypeString, ir.ValueTypeBytes, ir.ValueTypeDateTime, ir.ValueTypeDate, ir.ValueTypeTime, ir.ValueTypeUUID, ir.ValueTypeDecimal, ir.ValueTypeEmail, ir.ValueTypeIP, ir.ValueTypeURL, ir.ValueTypeEnum, ir.ValueTypeImage:
 		return "\"" + strings.ReplaceAll(v.Text, "\"", "\\\"") + "\""
-	case ast.ValueTypeBool:
+	case ir.ValueTypeBool:
 		if strings.EqualFold(v.Text, "true") {
 			return "true"
 		}
 		return "false"
-	case ast.ValueTypeInt, ast.ValueTypeInt8, ast.ValueTypeInt16, ast.ValueTypeInt32, ast.ValueTypeInt64, ast.ValueTypeUint, ast.ValueTypeUint8, ast.ValueTypeUint16, ast.ValueTypeUint32, ast.ValueTypeUint64, ast.ValueTypeFloat32, ast.ValueTypeFloat64:
+	case ir.ValueTypeInt, ir.ValueTypeInt8, ir.ValueTypeInt16, ir.ValueTypeInt32, ir.ValueTypeInt64, ir.ValueTypeUint, ir.ValueTypeUint8, ir.ValueTypeUint16, ir.ValueTypeUint32, ir.ValueTypeUint64, ir.ValueTypeFloat32, ir.ValueTypeFloat64:
 		if v.Text == "" {
 			return "0"
 		}
@@ -367,6 +367,6 @@ func exportJSFieldName(s string) string {
 	return name
 }
 
-func PrintJSStruct(n ast.Node) {
+func PrintJSStruct(n ir.Node) {
 	fmt.Println(ToJS(n))
 }
