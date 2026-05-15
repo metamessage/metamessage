@@ -1,4 +1,30 @@
-# TypeScript MetaMessage 库使用说明
+# MetaMessage
+
+MetaMessage (mm) is a structured data exchange protocol. It is self-describing, self-constraining, and self-exemplifying, enabling lossless data exchange. It is designed as a next-generation universal protocol that natively supports AI, humans, and machines.
+
+- Human and AI friendly
+- Export/import to JSONC (currently; YAML/TOML support planned)
+- Suitable for configuration files and data exchange
+- Works for traditional APIs and AI interaction scenarios
+- Supports conversion between language structs/classes and MetaMessage
+- Supports code generation for multiple languages
+- Data carries type, constraint, description, and example without separate documentation
+- All metadata can be updated with the data itself, without extra coordination
+- Structures and values stay consistent across languages
+- No structural loss; parsers adapt automatically and do not crash
+- Can serialize to compact binary for faster decoding and smaller size
+
+**Problems solved**
+
+- Unknown types, such as not knowing whether a field is uint8
+- Incomplete structure, such as null without inner type information
+- No validation rules, so data legality cannot be checked
+- No examples or descriptions, forcing reliance on separate docs
+- Format changes require protocol adjustment and documentation resync
+
+MetaMessage is naturally suited for AI understanding and interaction, solving ambiguity and imprecision in data. It replaces traditional API docs, verbal format agreements, and manual version sync by making data self-explanatory and independently evolvable.
+
+[meta-message](https://github.com/metamessage/metamessage)
 
 ## 1. 安装
 
@@ -20,13 +46,13 @@ npm i metamessage@latest
 ### 2.1 引用
 
 ```typescript
-import { encodeFromValue, decodeToValue } from 'metamessage';
+import { encodeFromValue, decodeToValue, mm, ValueType } from 'metamessage';
 ```
 
 or
 
 ```typescript
-const { encodeFromValue, decodeToValue } = require('metamessage');
+const { encodeFromValue, decodeToValue, mm, ValueType } = require('metamessage');
 ```
 
 ### 2.2 编码示例
@@ -78,7 +104,7 @@ typescript
 typescript
 
 ```typescript
-const decoded = decodeToValue(wire, Person);
+const decoded = decodeToValue(wire, User);
 console.log('Decoded:', decoded);
 ```
 

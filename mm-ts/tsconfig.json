@@ -19,8 +19,8 @@
     "noUncheckedIndexedAccess": true,
     "noImplicitOverride": true,
     "exactOptionalPropertyTypes": true,
-    "noEmit": true,
-    "types": ["jest"]
+    "outDir": "./dist",
+    "rootDir": "./src"
   },
   "include": [
     "src/**/*",

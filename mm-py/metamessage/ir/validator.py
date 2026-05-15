@@ -1,7 +1,10 @@
 import re
 import base64
 from typing import Any, Optional, List
+from typing import Any, Optional
+
 from .tag import Tag, ValueType
+
 
 class ValidationResult:
     def __init__(self, valid: bool, error: Optional[str] = None, data: Any = None, text: Optional[str] = None):
@@ -765,7 +768,7 @@ class MmValidator:
                 return MmValidator.validate_array(value, tag)
             else:
                 return ValidationResult(False, f"expected array, got {type(value).__name__}")
-        elif tag.type == ValueType.Struct:
+        elif tag.type == ValueType.Object:
             return MmValidator.validate_struct(tag)
         elif tag.type == ValueType.String:
             if isinstance(value, str):

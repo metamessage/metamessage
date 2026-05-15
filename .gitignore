@@ -35,6 +35,8 @@ mm-kt/**/target/
 mm-py/__pycache__/
 mm-py/*.pyc
 mm-py/.idea/
+mm-py/*.egg-info/
+
 
 # JavaScript
 mm-js/node_modules/

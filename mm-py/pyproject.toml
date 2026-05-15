@@ -1,0 +1,38 @@
+[build-system]
+requires = ["setuptools>=64", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "metamessage"
+version = "0.1.0"
+description = "High-performance binary message encoding library with schema tag support"
+readme = "README.md"
+authors = [{name = "MetaMessage Contributors"}]
+license = {text = "MIT"}
+requires-python = ">=3.7"
+keywords = ["serialization", "binary", "encoding", "metamessage", "schema"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.7",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Software Development :: Libraries",
+    "Topic :: System :: Archiving :: Packaging",
+]
+
+[project.urls]
+Homepage = "https://github.com/metamessage/metamessage"
+Repository = "https://github.com/metamessage/metamessage"
+
+[tool.setuptools.packages.find]
+include = ["metamessage*"]
+
+[tool.setuptools.package-data]
+"metamessage" = ["py.typed"]

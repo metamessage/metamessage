@@ -323,7 +323,7 @@ fun main() {
 #### TypeScript
 
 ```typescript
-import { encodeFromValue, decodeToValue } from 'metamessage';
+import { encodeFromValue, decodeToValue, mm, ValueType } from 'metamessage';
 
 @mm({ desc: '' })
 class Person {

@@ -7,10 +7,8 @@ export type Constructor<T> = new () => T;
 
 export class Binder {
   bind<T>(node: Node, type: Constructor<T> | T): T {
-    // const result = new Type();
     const result =
       typeof type === 'function' ? new (type as Constructor<T>)() : type;
-    // console.log('result', result);
     const { error } = this.bindNode(node, result);
     if (error) {
       throw new Error(error);
@@ -20,7 +18,7 @@ export class Binder {
 
   bindNode(node: Node, target: any): { value: any; error: string | null } {
     if (node instanceof MMValue) {
-      return this.convertValue(node, target);
+      return { value: node.getValue(), error: null };
     }
 
     if (node instanceof MMObject) {
@@ -69,7 +67,6 @@ export class Binder {
         return { value: target, error: `struct has no field '${camelKey}'` };
       }
 
-      // 🔥 拿到子节点的值，直接赋值！
       const { value, error } = this.bindNode(valueNode, target[camelKey]);
       if (error) {
         return {
@@ -78,7 +75,6 @@ export class Binder {
         };
       }
 
-      // ✅ 赋值生效！解决指针问题！
       target[camelKey] = value;
     }
 
@@ -168,107 +164,52 @@ export class Binder {
 
     switch (tag.type) {
       case ValueType.Int:
+      case ValueType.Uint:
+      case ValueType.Int64:
+      case ValueType.Uint64:
+      case ValueType.BigInt:
+        return 0n;
+
       case ValueType.Int8:
       case ValueType.Int16:
       case ValueType.Int32:
-      case ValueType.Int64:
-        return 0;
-      case ValueType.Uint:
       case ValueType.Uint8:
       case ValueType.Uint16:
       case ValueType.Uint32:
-      case ValueType.Uint64:
         return 0;
+
       case ValueType.Float32:
       case ValueType.Float64:
         return 0.0;
+
       case ValueType.String:
       case ValueType.Email:
       case ValueType.URL:
       case ValueType.IP:
       case ValueType.UUID:
       case ValueType.Decimal:
+      case ValueType.Enum:
         return '';
+
+      case ValueType.Decimal:
+        return '0.0';
+
       case ValueType.Bool:
         return false;
+
       case ValueType.Bytes:
+      case ValueType.Image:
+      case ValueType.Video:
         return new Uint8Array();
-      case ValueType.BigInt:
-        return BigInt(0);
+
       case ValueType.DateTime:
       case ValueType.Date:
       case ValueType.Time:
         return new Date(0);
-      case ValueType.Enum:
-        return '';
+
       default:
         return null;
     }
-  }
-
-  private convertValue(
-    val: MMValue,
-    target: any,
-  ): { value: any; error: string | null } {
-    const tag = val.getTag();
-    if (!tag) return { value: target, error: 'tag is null' };
-
-    const data = val.getValue();
-
-    // 直接返回新值，不赋值！
-    switch (tag.type) {
-      case ValueType.Int:
-      case ValueType.Int8:
-      case ValueType.Int16:
-      case ValueType.Int32:
-      case ValueType.Int64:
-      case ValueType.Uint:
-      case ValueType.Uint8:
-      case ValueType.Uint16:
-      case ValueType.Uint32:
-      case ValueType.Uint64:
-        return typeof data === 'bigint'
-          ? { value: Number(data), error: null }
-          : { value: data, error: null };
-
-      case ValueType.Float32:
-      case ValueType.Float64:
-        return { value: Number(data), error: null };
-
-      case ValueType.String:
-      case ValueType.Email:
-      case ValueType.URL:
-      case ValueType.IP:
-      case ValueType.Decimal:
-      case ValueType.Enum:
-        return { value: String(data), error: null };
-
-      case ValueType.Bool:
-        return { value: Boolean(data), error: null };
-
-      case ValueType.Bytes:
-        return { value: new Uint8Array(data), error: null };
-
-      case ValueType.BigInt:
-        return { value: BigInt(data), error: null };
-
-      case ValueType.DateTime:
-      case ValueType.Date:
-      case ValueType.Time:
-        return { value: new Date(data), error: null };
-
-      case ValueType.UUID:
-        if (data instanceof Uint8Array) {
-          const s = Array.from(data)
-            .map((b) => b.toString(16).padStart(2, '0'))
-            .join('');
-          const uuid = `${s.slice(0, 8)}-${s.slice(8, 12)}-${s.slice(12, 16)}-${s.slice(16, 20)}-${s.slice(20)}`;
-          return { value: uuid, error: null };
-        }
-        return { value: String(data), error: null };
-    }
-
-    return { value: target, error: `unsupported value type: ${tag.type}` };
   }
 }
 
