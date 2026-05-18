@@ -277,6 +277,7 @@ func (e *encoder) encodeNodeValue(val *ir.Value) (n uint32, err error) {
 
 	case ir.ValueTypeFloat64:
 		if tag.IsNull {
+			// type not in tag, use SimpleNullFloat to encode
 			n, err = e.encodeSimple(SimpleNullFloat)
 		} else {
 			n, err = e.encodeFloat(val.Text)
@@ -489,7 +490,6 @@ func printBytes(buf []byte) {
 func (e *encoder) encodeBigInt(s string) (n uint32, err error) {
 	e.writeByte(byte(len(s)))
 	n = utils.EncodeBigInt(e, s)
-	// fmt.Println("n", n)
 	return e.encodeBytes(e.buf[e.offset-n-1 : e.offset])
 }
 

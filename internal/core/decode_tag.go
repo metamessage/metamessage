@@ -282,6 +282,9 @@ func (d *decoder) decodeTagBytes(tag *ir.Tag) (length int, err error) {
 				tag.Version = tag.Version<<8 | int(b)
 			}
 			length = 2 + l
+		} else {
+			err = fmt.Errorf("version is too large")
+			return
 		}
 
 	case ir.KMime:

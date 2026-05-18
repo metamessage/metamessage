@@ -1,13 +1,16 @@
 package utils
 
-import "strconv"
+import (
+	"strconv"
+	"strings"
+)
 
 func FormatFloat32(val float32) string {
 	f := float64(val)
 
 	s := strconv.FormatFloat(f, 'f', -1, 32)
 
-	if _, err := strconv.Atoi(s); err == nil {
+	if !strings.Contains(s, ".") {
 		return s + ".0"
 	}
 
@@ -17,7 +20,7 @@ func FormatFloat32(val float32) string {
 func FormatFloat64(val float64) string {
 	s := strconv.FormatFloat(val, 'f', -1, 64)
 
-	if _, err := strconv.Atoi(s); err == nil {
+	if !strings.Contains(s, ".") {
 		return s + ".0"
 	}
 

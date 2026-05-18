@@ -17,6 +17,7 @@ const (
 	TIsNull  = "is_null"
 	TExample = "example"
 
+	TName       = "name"
 	TDesc       = "desc"
 	TType       = "type"
 	TRaw        = "raw"
@@ -967,8 +968,17 @@ func ParseMMTag(tag string) (*Tag, error) {
 			v = ""
 		}
 
+		if len(v) >= 2 && v[0] == '"' && v[len(v)-1] == '"' {
+			if s, err := strconv.Unquote(v); err == nil {
+				v = s
+			}
+		}
+
 		lower := strings.ToLower(k)
 		switch lower {
+		case TName:
+			r.Name = v
+
 		case TIsNull:
 			r.IsNull = true
 			r.Nullable = true

@@ -103,6 +103,8 @@ func writeNodeJSONC(b *strings.Builder, n ir.Node, indent int) {
 		writeValueJSONC(b, v)
 	case *ir.Object:
 		writeObjectJSONC(b, v, indent)
+	case *ir.Doc:
+		writeObjectJSONC(b, &ir.Object{Fields: v.Fields, Tag: v.Tag, Path: v.Path}, indent)
 	case *ir.Array:
 		writeArrayJSONC(b, v, indent)
 	default:

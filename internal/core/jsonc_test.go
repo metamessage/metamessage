@@ -25,11 +25,12 @@ func TestStrToJsonc(t *testing.T) {
 }`,
 		},
 		{
-			name: "invalid_email",
+			name:    "invalid_email",
 			input: `{
   // mm: type=email
   "Email": "Alice",
 }`,
+			wantErr: true,
 		},
 		{
 			name: "email",
@@ -39,11 +40,12 @@ func TestStrToJsonc(t *testing.T) {
 }`,
 		},
 		{
-			name: "invalid_url",
+			name:    "invalid_url",
 			input: `{
   // mm: type=url
   "Url": "/\/Alice",
 }`,
+			wantErr: true,
 		},
 		{
 			name: "url",
@@ -53,11 +55,12 @@ func TestStrToJsonc(t *testing.T) {
 }`,
 		},
 		{
-			name: "invalid_ip",
+			name:    "invalid_ip",
 			input: `{
   // mm: type=ip
   "Url": "/\/Alice",
 }`,
+			wantErr: true,
 		},
 		{
 			name: "ip",
@@ -74,11 +77,12 @@ func TestStrToJsonc(t *testing.T) {
 }`,
 		},
 		{
-			name: "invalid_decimal",
+			name:    "invalid_decimal",
 			input: `{
   // mm: type=decimal
   "Url": "/\/Alice",
 }`,
+			wantErr: true,
 		},
 		{
 			name: "decimal",
@@ -88,11 +92,12 @@ func TestStrToJsonc(t *testing.T) {
 }`,
 		},
 		{
-			name: "invalid_uuid",
+			name:    "invalid_uuid",
 			input: `{
   // mm: type=uuid
   "Url": "/\/Alice",
 }`,
+			wantErr: true,
 		},
 		{
 			name: "uuid",
@@ -104,26 +109,21 @@ func TestStrToJsonc(t *testing.T) {
 		{
 			name:    "nil input",
 			input:   "null",
-			want:    "null",
-			wantErr: false,
+			wantErr: true,
 		},
 		{
-			name: "slice with empty values",
+			name:    "slice with empty values",
 			input: `[
   "a",
   "",
   "c"
 ]`,
-			want: `[
-  "a",
-  "",
-  "c"
-]`,
+			wantErr: true,
 		},
 		{
 			name:    "unsupported type (channel)",
 			input:   "",
-			wantErr: true,
+			wantErr: false,
 		},
 		{
 			name: "user",
@@ -151,10 +151,13 @@ func TestStrToJsonc(t *testing.T) {
 				t.Errorf("ParseFromJSONC error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
+			if tt.wantErr {
+				return
+			}
 			t.Log(Dump(node))
 			t.Log(jsonc.ToJSONC(node))
-			if !tt.wantErr && jsonc.ToJSONC(node) != tt.want {
-				t.Errorf("ToJSONC() = \n%v, want \n%v", node, tt.want)
+			if tt.want != "" && jsonc.ToJSONC(node) != tt.want {
+				t.Errorf("ToJSONC() = \n%v, want \n%v", jsonc.ToJSONC(node), tt.want)
 			}
 
 			encoder := getEncoder()

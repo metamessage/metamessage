@@ -2,7 +2,6 @@ package core
 
 import (
 	"bytes"
-	"fmt"
 	"math/big"
 	"reflect"
 	"testing"
@@ -39,62 +38,62 @@ func TestEncodeInt(t *testing.T) {
 		{
 			name:       "i_nil_pointer",
 			input:      i,
-			wantErr:    true,
-			wantDecode: nil,
+			wantErr:    false,
+			wantDecode: int(0),
 		},
 		{
 			name:       "i8_nil_pointer",
 			input:      i8,
-			wantErr:    true,
-			wantDecode: nil,
+			wantErr:    false,
+			wantDecode: int8(0),
 		},
 		{
 			name:       "i16_nil_pointer",
 			input:      i16,
-			wantErr:    true,
-			wantDecode: nil,
+			wantErr:    false,
+			wantDecode: int16(0),
 		},
 		{
 			name:       "i32_nil_pointer",
 			input:      i32,
-			wantErr:    true,
-			wantDecode: nil,
+			wantErr:    false,
+			wantDecode: int32(0),
 		},
 		{
 			name:       "i64_nil_pointer",
 			input:      i64,
-			wantErr:    true,
-			wantDecode: nil,
+			wantErr:    false,
+			wantDecode: int64(0),
 		},
 		{
 			name:       "u_nil_pointer",
 			input:      u,
-			wantErr:    true,
-			wantDecode: nil,
+			wantErr:    false,
+			wantDecode: uint(0),
 		},
 		{
 			name:       "u8_nil_pointer",
 			input:      u8,
-			wantErr:    true,
-			wantDecode: nil,
+			wantErr:    false,
+			wantDecode: uint8(0),
 		},
 		{
 			name:       "u16_nil_pointer",
 			input:      u16,
-			wantErr:    true,
-			wantDecode: nil,
+			wantErr:    false,
+			wantDecode: uint16(0),
 		},
 		{
 			name:       "u32_nil_pointer",
 			input:      u32,
-			wantErr:    true,
-			wantDecode: nil,
+			wantErr:    false,
+			wantDecode: uint32(0),
 		},
 		{
 			name:       "u64_nil_pointer",
 			input:      u64,
-			wantErr:    true,
-			wantDecode: nil,
+			wantErr:    false,
+			wantDecode: uint64(0),
 		},
 		{
 			name:       "int one pointer",
@@ -251,7 +250,6 @@ func TestEncodeInt(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			bs, err := FromValue(tc.input, "")
-			fmt.Println("bs", bs)
 
 			if (err != nil) != tc.wantErr {
 				t.Fatalf("error mismatch: expected err=%t, got err=%v", tc.wantErr, err)
@@ -263,9 +261,20 @@ func TestEncodeInt(t *testing.T) {
 					t.Fatalf("decode failed: %v", decodeErr)
 				}
 
-				if !reflect.DeepEqual(gotVal.(*ir.Value).Data, tc.wantDecode) {
+				gotData := gotVal.(*ir.Value).Data
+				if gotBig, ok := gotData.(big.Int); ok {
+					wantBig := tc.wantDecode.(big.Int)
+					if gotBig.Cmp(&wantBig) != 0 {
+						t.Errorf("value mismatch: expected %v, got %v", tc.wantDecode, gotBig)
+					}
+				} else if gotBigPtr, ok := gotData.(*big.Int); ok {
+					wantBig := tc.wantDecode.(big.Int)
+					if gotBigPtr.Cmp(&wantBig) != 0 {
+						t.Errorf("value mismatch: expected %v, got %v", tc.wantDecode, gotBigPtr)
+					}
+				} else if !reflect.DeepEqual(gotData, tc.wantDecode) {
 					t.Errorf("value mismatch: expected %v (%T), got %v (%T)",
-						tc.wantDecode, tc.wantDecode, gotVal, gotVal)
+						tc.wantDecode, tc.wantDecode, gotData, gotData)
 				}
 			}
 		})
@@ -392,8 +401,8 @@ func TestEncodeIntArray(t *testing.T) {
 			input:   []int{1, 2, 3, 100, -50},
 			wantErr: false,
 			wantCheck: func(val any) bool {
-				arr := val.(*ir.Value).Data.([]any)
-				return len(arr) == 5 && arr[0] == int(1)
+				arr := val.(*ir.Array).Items
+				return len(arr) == 5 && arr[0].(*ir.Value).Data.(int) == int(1)
 			},
 		},
 		{
@@ -401,7 +410,7 @@ func TestEncodeIntArray(t *testing.T) {
 			input:   []int8{10, 20, 127, -128, 1},
 			wantErr: false,
 			wantCheck: func(val any) bool {
-				arr := val.(*ir.Value).Data.([]any)
+				arr := val.(*ir.Array).Items
 				return len(arr) == 5
 			},
 		},
@@ -410,7 +419,7 @@ func TestEncodeIntArray(t *testing.T) {
 			input:   []uint64{1000, 2000, 3000, 9223372036854775807},
 			wantErr: false,
 			wantCheck: func(val any) bool {
-				arr := val.(*ir.Value).Data.([]any)
+				arr := val.(*ir.Array).Items
 				return len(arr) == 4
 			},
 		},
@@ -419,7 +428,7 @@ func TestEncodeIntArray(t *testing.T) {
 			input:   []int32{100, -200, 32767, -32768, 1},
 			wantErr: false,
 			wantCheck: func(val any) bool {
-				arr := val.(*ir.Value).Data.([]any)
+				arr := val.(*ir.Array).Items
 				return len(arr) == 5
 			},
 		},
@@ -428,7 +437,7 @@ func TestEncodeIntArray(t *testing.T) {
 			input:   []uint{1, 100, 1000, 10000},
 			wantErr: false,
 			wantCheck: func(val any) bool {
-				arr := val.(*ir.Value).Data.([]any)
+				arr := val.(*ir.Array).Items
 				return len(arr) == 4
 			},
 		},

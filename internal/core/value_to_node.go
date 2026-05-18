@@ -1072,7 +1072,6 @@ func anyToJSONC(obj any, tag *ir.Tag, depth int, path string) (ir.Node, error) {
 						return nil, fmt.Errorf("parse mm tag for struct %s: %w", tag.Name, err)
 					} else {
 						tag = ir.MergeTag(tag, tagNode)
-						fmt.Println("mmTag", tag)
 					}
 				}
 			}

@@ -131,15 +131,15 @@ func convertMap(obj *ir.Object, outVal reflect.Value) error {
 func convertArray(arr *ir.Array, outVal reflect.Value) error {
 	if arr.Tag.Nullable {
 		if outVal.Kind() != reflect.Pointer {
-			return fmt.Errorf("convertArray requires pointer type, got %s", outVal.Kind())
+			return fmt.Errorf("convert array requires pointer type, got %s", outVal.Kind())
 		}
 		if outVal.IsNil() {
-			return fmt.Errorf("convertArray: nullable pointer must point to array, got nil")
+			return fmt.Errorf("convert array: nullable pointer must point to array, got nil")
 		}
 		outVal = outVal.Elem()
 	}
 	if outVal.Kind() != reflect.Array {
-		return fmt.Errorf("it can only be converted to array, got %s", outVal.Kind())
+		return fmt.Errorf("convert array requires array type, got %s", outVal.Kind())
 	}
 
 	arrayLen := outVal.Len()
@@ -161,15 +161,15 @@ func convertArray(arr *ir.Array, outVal reflect.Value) error {
 func convertSlice(arr *ir.Array, outVal reflect.Value) error {
 	if arr.Tag.Nullable {
 		if outVal.Kind() != reflect.Pointer {
-			return fmt.Errorf("convertArray requires pointer type, got %s", outVal.Kind())
+			return fmt.Errorf("convert slice requires pointer type, got %s", outVal.Kind())
 		}
 		if outVal.IsNil() {
-			return fmt.Errorf("convertArray: nullable pointer must point to slice, got nil")
+			return fmt.Errorf("convert slice: nullable pointer must point to slice, got nil")
 		}
 		outVal = outVal.Elem()
 	}
 	if outVal.Kind() != reflect.Slice {
-		return fmt.Errorf("it can only be converted to slice, got %s", outVal.Kind())
+		return fmt.Errorf("convert slice requires slice type, got %s", outVal.Kind())
 	}
 
 	size := len(arr.Items)
@@ -178,7 +178,7 @@ func convertSlice(arr *ir.Array, outVal reflect.Value) error {
 	for i, item := range arr.Items {
 		elem := slice.Index(i)
 		if err := Bind(item, elem.Addr().Interface()); err != nil {
-			return fmt.Errorf("failed to convert array item %d: %w", i, err)
+			return fmt.Errorf("failed to convert slice item %d: %w", i, err)
 		}
 	}
 
@@ -226,9 +226,6 @@ func convertValue(val *ir.Value, outVal reflect.Value) error {
 		if outVal.Type() != targetType {
 			return fmt.Errorf("target type must be big.Int, got %s", outVal.Type())
 		}
-		if outVal.IsNil() {
-			return fmt.Errorf("target *big.Int pointer is nil")
-		}
 
 		switch d := data.(type) {
 		case big.Int:
@@ -241,9 +238,6 @@ func convertValue(val *ir.Value, outVal reflect.Value) error {
 		targetType := reflect.TypeFor[string]()
 		if outVal.Type() != targetType {
 			return fmt.Errorf("target type must be string, got %s", outVal.Type())
-		}
-		if outVal.IsNil() {
-			return fmt.Errorf("target *string pointer is nil")
 		}
 
 		switch d := data.(type) {
@@ -258,9 +252,6 @@ func convertValue(val *ir.Value, outVal reflect.Value) error {
 		if outVal.Type() != targetType {
 			return fmt.Errorf("target type must be string, got %s", outVal.Type())
 		}
-		if outVal.IsNil() {
-			return fmt.Errorf("target *string pointer is nil")
-		}
 
 		switch d := data.(type) {
 		case string:
@@ -273,9 +264,6 @@ func convertValue(val *ir.Value, outVal reflect.Value) error {
 		targetType := reflect.TypeFor[string]()
 		if outVal.Type() != targetType {
 			return fmt.Errorf("target type must be string, got %s", outVal.Type())
-		}
-		if outVal.IsNil() {
-			return fmt.Errorf("target *string pointer is nil")
 		}
 
 		switch d := data.(type) {
@@ -290,9 +278,6 @@ func convertValue(val *ir.Value, outVal reflect.Value) error {
 		if outVal.Type() != targetType {
 			return fmt.Errorf("target type must be net.IP, got %s", outVal.Type())
 		}
-		if outVal.IsNil() {
-			return fmt.Errorf("target *net.IP pointer is nil")
-		}
 
 		switch d := data.(type) {
 		case net.IP:
@@ -305,9 +290,6 @@ func convertValue(val *ir.Value, outVal reflect.Value) error {
 		targetType := reflect.TypeFor[url.URL]()
 		if outVal.Type() != targetType {
 			return fmt.Errorf("target type must be url.URL, got %s", outVal.Type())
-		}
-		if outVal.IsNil() {
-			return fmt.Errorf("target *url.URL pointer is nil")
 		}
 
 		switch d := data.(type) {

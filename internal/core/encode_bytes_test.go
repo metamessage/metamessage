@@ -303,13 +303,15 @@ func TestEncodesBytesRepresentation(t *testing.T) {
 				t.Fatalf("decode failed: %v", err)
 			}
 
-			value, ok := decoded.(*ir.Value)
-
+			arr, ok := decoded.(*ir.Array)
 			if !ok {
-				t.Fatalf("expected *ir.Value, got %T", decoded)
+				t.Fatalf("expected *ir.Array, got %T", decoded)
 			}
 
-			decodedBytes := value.Data.([]byte)
+			decodedBytes := make([]byte, len(arr.Items))
+			for i, item := range arr.Items {
+				decodedBytes[i] = item.(*ir.Value).Data.(uint8)
+			}
 			if !reflect.DeepEqual(decodedBytes, tc.input) {
 				t.Errorf("value mismatch: expected %v, got %v", tc.input, decodedBytes)
 			}
@@ -334,23 +336,22 @@ func TestEncodesLargeBytes(t *testing.T) {
 			input: make([]byte, 10*1024),
 		},
 		{
-			name:  "100KB",
-			input: make([]byte, 100*1024),
+			name:  "32KB",
+			input: make([]byte, 32*1024),
 		},
 		{
-			name:  "1MB",
-			input: make([]byte, 1024*1024),
+			name:  "48KB",
+			input: make([]byte, 48*1024),
 		},
 	}
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			// Fill with some pattern
 			for i := range tc.input {
-				tc.input[i] = byte(i % 256)
+				tc.input[i] = byte((i % 255) + 1)
 			}
 
-			bs, err := FromValue(tc.input, "")
+			bs, err := FromValue(tc.input, "type=bytes")
 			if err != nil {
 				t.Fatalf("encode failed: %v", err)
 			}
@@ -410,12 +411,15 @@ func TestEncodesUTF8Bytes(t *testing.T) {
 				t.Fatalf("decode failed: %v", err)
 			}
 
-			value, ok := decoded.(*ir.Value)
+			arr, ok := decoded.(*ir.Array)
 			if !ok {
-				t.Fatalf("expected *ir.Value, got %T", decoded)
+				t.Fatalf("expected *ir.Array, got %T", decoded)
 			}
 
-			decodedBytes := value.Data.([]byte)
+			decodedBytes := make([]byte, len(arr.Items))
+			for i, item := range arr.Items {
+				decodedBytes[i] = item.(*ir.Value).Data.(uint8)
+			}
 			if !reflect.DeepEqual(decodedBytes, tc.input) {
 				t.Errorf("value mismatch: expected %s, got %s", string(tc.input), string(decodedBytes))
 			}

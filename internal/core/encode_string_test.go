@@ -47,20 +47,20 @@ func TestEncodeString(t *testing.T) {
 			input:       "",
 			tag:         "location=-10",
 			expectedOut: nil,
-			expectedErr: "",
+			expectedErr: "not allow empty value",
 		},
 		{
 			name:        "location__10",
-			input:       time.Now(),
+			input:       time.Date(2024, 1, 1, 12, 0, 0, 0, time.UTC),
 			tag:         "location=-10",
-			expectedOut: nil,
+			expectedOut: time.Date(2024, 1, 1, 12, 0, 0, 0, time.UTC),
 			expectedErr: "",
 		},
 		{
 			name:        "location__12",
-			input:       time.Now(),
+			input:       time.Date(2024, 1, 1, 12, 0, 0, 0, time.UTC),
 			tag:         "location=-12",
-			expectedOut: nil,
+			expectedOut: time.Date(2024, 1, 1, 12, 0, 0, 0, time.UTC),
 			expectedErr: "",
 		},
 		{
@@ -72,9 +72,9 @@ func TestEncodeString(t *testing.T) {
 		},
 		{
 			name:        "location_14",
-			input:       time.Now(),
+			input:       time.Date(2024, 1, 1, 12, 0, 0, 0, time.UTC),
 			tag:         "location=14",
-			expectedOut: nil,
+			expectedOut: time.Date(2024, 1, 1, 12, 0, 0, 0, time.UTC),
 			expectedErr: "",
 		},
 		{
@@ -130,8 +130,8 @@ func TestEncodeString(t *testing.T) {
 		{
 			name:        "url_zero",
 			input:       url.URL{},
-			expectedOut: url.URL{},
-			expectedErr: "",
+			expectedOut: nil,
+			expectedErr: "not allow empty value",
 		},
 		{
 			name:        "nil_pointer",
@@ -155,20 +155,20 @@ func TestEncodeString(t *testing.T) {
 			name:        "enum",
 			input:       "SECOND",
 			tag:         "enum=FIRST|SECOND|THIRD",
-			expectedOut: "SECOND",
+			expectedOut: 1,
 			expectedErr: "",
 		},
 		{
 			name:        "pointer",
 			input:       &x,
-			expectedOut: []byte{1},
+			expectedOut: "hello world",
 			expectedErr: "",
 		},
 		{
 			name:        "pointer2",
 			input:       &y,
-			expectedOut: []byte{},
-			expectedErr: "",
+			expectedOut: nil,
+			expectedErr: "not allow empty value",
 		},
 		{
 			name:        "Ordinary byte slice",
@@ -179,14 +179,14 @@ func TestEncodeString(t *testing.T) {
 		{
 			name:        "Empty slice ([]byte{})",
 			input:       []byte{},
-			expectedOut: []byte{},
-			expectedErr: "",
+			expectedOut: nil,
+			expectedErr: "not allow empty value",
 		},
 		{
 			name:        "slice",
 			input:       []byte{0, 0, 0, 0},
-			expectedOut: []byte{0, 0, 0, 0},
-			expectedErr: "",
+			expectedOut: nil,
+			expectedErr: "not allow empty value",
 		},
 	}
 
@@ -222,6 +222,14 @@ func TestEncodeString(t *testing.T) {
 			fmt.Println("jsonc:", jsonc.ToJSONC(bs2))
 			v, ok := bs2.(*ir.Value)
 			if ok {
+				if dataTime, isTime := v.Data.(time.Time); isTime {
+					if expectedTime, ok := tc.expectedOut.(time.Time); ok {
+						if !dataTime.Equal(expectedTime) {
+							t.Errorf("Expected output: %v, actual output: %v", tc.expectedOut, v.Data)
+						}
+						return
+					}
+				}
 				if !reflect.DeepEqual(v.Data, tc.expectedOut) {
 					t.Errorf("Expected output: %v %T, actual output: %v %T", tc.expectedOut, tc.expectedOut, bs2.(*ir.Value).Data, bs2.(*ir.Value).Data)
 				}

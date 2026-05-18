@@ -165,6 +165,10 @@ func (p *Parser) parse(path string) (val ir.Node, err error) {
 				ir.SimpleKeyStr,
 				ir.SimpleValStr:
 				tag.Type = ir.ValueTypeString
+				data, text, err = tag.ValidateString(text)
+				if err != nil {
+					return nil, err
+				}
 
 			default:
 				switch tag.Type {
@@ -212,7 +216,7 @@ func (p *Parser) parse(path string) (val ir.Node, err error) {
 						var d time.Time
 						d, err = time.ParseInLocation(time.DateTime, text, location)
 						if err != nil {
-							return nil, fmt.Errorf("invalid datatime %q: %w", text, err)
+							return nil, fmt.Errorf("invalid datetime %q: %w", text, err)
 						}
 
 						data, text, err = tag.ValidateDateTime(d)
@@ -235,7 +239,7 @@ func (p *Parser) parse(path string) (val ir.Node, err error) {
 						var d time.Time
 						d, err = time.ParseInLocation(time.DateOnly, text, location)
 						if err != nil {
-							return nil, fmt.Errorf("invalid data %q: %w", text, err)
+							return nil, fmt.Errorf("invalid date %q: %w", text, err)
 						}
 
 						data, text, err = tag.ValidateDate(d)
@@ -289,7 +293,7 @@ func (p *Parser) parse(path string) (val ir.Node, err error) {
 				case ir.ValueTypeIP:
 					if tag.IsNull {
 						if text != "" {
-							return nil, fmt.Errorf("invalid email: %q, valid: %q", text, "")
+							return nil, fmt.Errorf("invalid ip: %q, valid: %q", text, "")
 						}
 
 						data = net.IP{}
@@ -968,7 +972,7 @@ func (p *Parser) parseObject(openLine int, path string) (*ir.Object, error) {
 			return nil, err
 		}
 		if val == nil {
-			p.next()
+			// p.next()
 			continue
 		}
 

@@ -111,6 +111,7 @@ func TestValueToNode(t *testing.T) {
 				"v": 123,
 				"s": "abc",
 			},
+			expectedErr: true,
 		},
 		{
 			name: "nested slice",
@@ -128,27 +129,27 @@ func TestValueToNode(t *testing.T) {
 		{
 			name:        "empty slice int",
 			in:          []int{},
-			expectedErr: false,
+			expectedErr: true,
 		},
 		{
 			name:        "empty slice int8",
 			in:          []int8{},
-			expectedErr: false,
+			expectedErr: true,
 		},
 		{
 			name:        "empty slice pointer int8",
 			in:          []*int8{},
-			expectedErr: false,
+			expectedErr: true,
 		},
 		{
 			name:        "empty slice string",
 			in:          []string{},
-			expectedErr: false,
+			expectedErr: true,
 		},
 		{
 			name:        "empty slice pointer string",
 			in:          []*string{},
-			expectedErr: false,
+			expectedErr: true,
 		},
 		{
 			name:        "empty slice pointer bool",
@@ -158,52 +159,52 @@ func TestValueToNode(t *testing.T) {
 		{
 			name:        "empty slice slice string",
 			in:          [][]string{},
-			expectedErr: false,
+			expectedErr: true,
 		},
 		{
 			name:        "empty slice slice slice string",
 			in:          [][][]string{},
-			expectedErr: false,
+			expectedErr: true,
 		},
 		{
 			name:        "empty slice slice uint8",
 			in:          [][][]uint8{},
-			expectedErr: false,
+			expectedErr: true,
 		},
 		{
 			name:        "empty slice slice pointer uint8",
 			in:          [][][]*uint8{},
-			expectedErr: false,
+			expectedErr: true,
 		},
 		{
 			name:        "empty slice pointer slice uint8",
 			in:          [][]*[]uint8{},
-			expectedErr: false,
+			expectedErr: true,
 		},
 		{
 			name:        "empty_array_slice_pointer_slice_uint8",
 			in:          [2][]*[]uint8{},
-			expectedErr: false,
+			expectedErr: true,
 		},
 		{
 			name:        "empty_slice_array_pointer_slice_uint8",
 			in:          [][2]*[]uint8{},
-			expectedErr: false,
+			expectedErr: true,
 		},
 		{
 			name:        "empty_slice_slice_pointer_array_uint8",
 			in:          [][]*[2]uint8{},
-			expectedErr: false,
+			expectedErr: true,
 		},
 		{
 			name:        "empty_slice_slice_pointer_array_map",
 			in:          [][]*[2]map[string]string{},
-			expectedErr: false,
+			expectedErr: true,
 		},
 		{
 			name:        "datetime",
 			in:          Datetime{},
-			expectedErr: false,
+			expectedErr: true,
 		},
 		{
 			name: "datetime_now",
@@ -216,7 +217,7 @@ func TestValueToNode(t *testing.T) {
 				// DataPointer:     &now,
 				// TimePointer:     &now,
 			},
-			expectedErr: false,
+			expectedErr: true,
 		},
 	}
 

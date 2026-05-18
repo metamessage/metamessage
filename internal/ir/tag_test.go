@@ -1,7 +1,6 @@
 package ir
 
 import (
-	"fmt"
 	"math/big"
 	"net"
 	"net/url"
@@ -11,7 +10,6 @@ import (
 func TestParseMMTag_Basic(t *testing.T) {
 	tag := "name=id; min=1; desc=用户ID; enums=active|pending|deleted"
 	r, err := ParseMMTag(tag)
-	fmt.Println("rrrr", r)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -28,7 +26,7 @@ func TestParseMMTag_Basic(t *testing.T) {
 }
 
 func TestParseMMTag_Flags(t *testing.T) {
-	tag := "nullable,default=abc,max=10,min=5"
+	tag := "nullable;default=abc;max=10;min=5"
 	r, err := ParseMMTag(tag)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
@@ -42,7 +40,7 @@ func TestParseMMTag_Flags(t *testing.T) {
 }
 
 func TestParseMMTag_QuotedAndSemicolon(t *testing.T) {
-	tag := `name="id"; desc="用户ID"; enum="active|pending"; pattern="^a,b$"; type=string; min=1; max=5; nullable; default="x"`
+	tag := `name="id"; desc="用户ID"; enum="active|pending"; pattern="^a,b$"; type=str; min=1; max=5; nullable; default="x"`
 	r, err := ParseMMTag(tag)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
@@ -119,27 +117,26 @@ func TestTagValidate_PatternAndEnum(t *testing.T) {
 	}
 
 	etag := &Tag{Enum: "a|b|c"}
-	_, _, err = etag.ValidateString("b")
+	_, _, err = etag.ValidateEnum("b")
 	if err != nil {
 		t.Fatalf("expected enum match for b")
 	}
-	_, _, err = etag.ValidateString("z")
+	_, _, err = etag.ValidateEnum("z")
 	if err == nil {
 		t.Fatalf("expected enum mismatch for z")
 	}
 }
 
 func TestTagValidate_NilPointerNullable(t *testing.T) {
-	tag := &Tag{Nullable: true}
-	var p *int = nil
-	_, _, err := tag.ValidateInt(*p)
+	tag := &Tag{AllowEmpty: true}
+	_, _, err := tag.ValidateInt(0)
 	if err != nil {
-		t.Fatalf("expected nil pointer accepted when nullable")
+		t.Fatalf("expected 0 accepted when allow_empty: %v", err)
 	}
-	tag.Nullable = false
-	_, _, err = tag.ValidateInt(*p)
+	tag.AllowEmpty = false
+	_, _, err = tag.ValidateInt(0)
 	if err == nil {
-		t.Fatalf("expected nil pointer rejected when not nullable")
+		t.Fatalf("expected 0 rejected when not allow_empty")
 	}
 }
 

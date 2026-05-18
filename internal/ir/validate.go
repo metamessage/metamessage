@@ -130,7 +130,7 @@ func (t *Tag) ValidateString(val string) (data any, text string, err error) {
 	if t.Min != "" {
 		var mini int
 		mini, err = strconv.Atoi(t.Min)
-		if err == nil {
+		if err != nil {
 			err = fmt.Errorf("failed to parse t.Min as int: %w", err)
 			return
 		}
@@ -143,7 +143,7 @@ func (t *Tag) ValidateString(val string) (data any, text string, err error) {
 	if t.Max != "" {
 		var maxi int
 		maxi, err = strconv.Atoi(t.Max)
-		if err == nil {
+		if err != nil {
 			err = fmt.Errorf("failed to parse t.Max as int: %w", err)
 			return
 		}
@@ -922,7 +922,7 @@ func (t *Tag) ValidateFloat64(val float64) (data any, text string, err error) {
 			text = "0.0"
 			return
 		}
-		err = fmt.Errorf("type float64not allow empty value 0.0")
+		err = fmt.Errorf("type float64 not allow empty value 0.0")
 		return
 	}
 
@@ -995,7 +995,7 @@ func (t *Tag) ValidateBigInt(val big.Int) (data any, text string, err error) {
 	if t.Max != "" {
 		maxi, ok := new(big.Int).SetString(t.Max, 10)
 		if !ok {
-			err = fmt.Errorf("invalid max %q for big.Int", t.Min)
+			err = fmt.Errorf("invalid max %q for big.Int", t.Max)
 			return
 		}
 		if val.Cmp(maxi) == 1 {
