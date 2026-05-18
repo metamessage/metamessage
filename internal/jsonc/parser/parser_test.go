@@ -155,3 +155,14 @@ func TestParseValNil_DoesNotCrash(t *testing.T) {
 		})
 	}
 }
+
+func TestParseNullLiteral_Unsupported(t *testing.T) {
+	p := scan(`null`)
+	_, err := p.Parse()
+	if err == nil {
+		t.Fatal("expected error for null literal")
+	}
+	if err.Error() != "null literal is not supported" {
+		t.Fatalf("unexpected error message: %v", err)
+	}
+}

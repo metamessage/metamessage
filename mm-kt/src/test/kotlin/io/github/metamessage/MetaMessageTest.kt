@@ -1,26 +1,29 @@
 package io.github.metamessage
 
-import org.junit.jupiter.api.Test
-import org.junit.jupiter.api.Assertions.*
-import java.time.LocalDateTime
-import java.time.LocalDate
-import java.time.LocalTime
-import java.math.BigInteger
-import java.util.UUID
-
-import io.github.metamessage.MM
 import io.github.metamessage.ir.ValueType
+import java.math.BigInteger
+import java.time.LocalDate
+import java.time.LocalDateTime
+import java.time.LocalTime
+import java.util.UUID
+import org.junit.jupiter.api.Assertions.*
+import org.junit.jupiter.api.Test
 
 class MetaMessageTest {
 
-    @MM
-    class Person(var name: String = "Ada", var age: Int = 40)
+    @MM class Person(var name: String = "Ada", var age: Int = 40)
 
     @MM
-    class Team(var teamName: String = "core", @MM(childType = ValueType.STRING) var members: List<String> = listOf("a", "b"))
+    class Team(
+            var teamName: String = "core",
+            @MM(childType = ValueType.STRING) var members: List<String> = listOf("a", "b")
+    )
 
     @MM
-    class Clock(@MM(type = ValueType.DATETIME) var `when`: LocalDateTime = LocalDateTime.of(2024, 6, 1, 12, 0, 0))
+    class Clock(
+            @MM(type = ValueType.DATETIME)
+            var `when`: LocalDateTime = LocalDateTime.of(2024, 6, 1, 12, 0, 0)
+    )
 
     @Test
     fun roundtripSimpleStruct() {
@@ -50,12 +53,12 @@ class MetaMessageTest {
 
     @MM
     class BasicTypes(
-        var bool: Boolean = true,
-        var int: Int = 42,
-        var long: Long = 1234567890L,
-        var float: Float = 3.14f,
-        var double: Double = 3.141592653589793,
-        var string: String = "Hello, World!"
+            var bool: Boolean = true,
+            var int: Int = 42,
+            var long: Long = 1234567890L,
+            var float: Float = 3.14f,
+            var double: Double = 3.141592653589793,
+            var string: String = "Hello, World!"
     )
 
     @Test
@@ -72,9 +75,7 @@ class MetaMessageTest {
     }
 
     @MM(desc = "A map of strings to integers")
-    class MapTypes(
-        var map: Map<String, Int> = mapOf("a" to 1, "b" to 2, "c" to 3)
-    )
+    class MapTypes(var map: Map<String, Int> = mapOf("a" to 1, "b" to 2, "c" to 3))
 
     @Test
     fun roundtripMapTypes() {
@@ -101,14 +102,14 @@ class MetaMessageTest {
 
     @MM
     class AllIntegerTypes(
-        @MM(type = ValueType.INT8) var int8: Byte = 10,
-        @MM(type = ValueType.INT16) var int16: Short = 100,
-        @MM(type = ValueType.INT32) var int32: Int = 1000,
-        @MM(type = ValueType.INT64) var int64: Long = 10000L,
-        @MM(type = ValueType.UINT8) var uint8: Byte = 10,
-        @MM(type = ValueType.UINT16) var uint16: Short = 100,
-        @MM(type = ValueType.UINT32) var uint32: Int = 1000,
-        @MM(type = ValueType.UINT64) var uint64: Long = 10000L
+            @MM(type = ValueType.INT8) var int8: Byte = 10,
+            @MM(type = ValueType.INT16) var int16: Short = 100,
+            @MM(type = ValueType.INT32) var int32: Int = 1000,
+            @MM(type = ValueType.INT64) var int64: Long = 10000L,
+            @MM(type = ValueType.UINT8) var uint8: Byte = 10,
+            @MM(type = ValueType.UINT16) var uint16: Short = 100,
+            @MM(type = ValueType.UINT32) var uint32: Int = 1000,
+            @MM(type = ValueType.UINT64) var uint64: Long = 10000L
     )
 
     @Test
@@ -128,8 +129,8 @@ class MetaMessageTest {
 
     @MM
     class FloatTypes(
-        @MM(type = ValueType.FLOAT32) var float32: Float = 3.14f,
-        @MM(type = ValueType.FLOAT64) var float64: Double = 3.141592653589793
+            @MM(type = ValueType.FLOAT32) var float32: Float = 3.14f,
+            @MM(type = ValueType.FLOAT64) var float64: Double = 3.141592653589793
     )
 
     @Test
@@ -143,11 +144,11 @@ class MetaMessageTest {
 
     @MM
     class StringTypes(
-        @MM(type = ValueType.STRING) var str: String = "test",
-        @MM(type = ValueType.URL) var url: String = "https://example.com",
-        @MM(type = ValueType.EMAIL) var email: String = "test@example.com",
-        @MM(type = ValueType.IP) var ip: String = "192.168.1.1",
-        @MM(type = ValueType.UUID) var uuid: String = "550e8400-e29b-41d4-a716-446655440000"
+            @MM(type = ValueType.STRING) var str: String = "test",
+            @MM(type = ValueType.URL) var url: String = "https://example.com",
+            @MM(type = ValueType.EMAIL) var email: String = "test@example.com",
+            @MM(type = ValueType.IP) var ip: String = "192.168.1.1",
+            @MM(type = ValueType.UUID) var uuid: String = "550e8400-e29b-41d4-a716-446655440000"
     )
 
     @Test
@@ -164,9 +165,10 @@ class MetaMessageTest {
 
     @MM
     class DateTypes(
-        @MM(type = ValueType.DATETIME) var datetime: LocalDateTime = LocalDateTime.of(2024, 12, 31, 23, 59, 59),
-        @MM(type = ValueType.DATE) var date: LocalDate = LocalDate.of(2024, 12, 31),
-        @MM(type = ValueType.TIME) var time: LocalTime = LocalTime.of(23, 59, 59)
+            @MM(type = ValueType.DATETIME)
+            var datetime: LocalDateTime = LocalDateTime.of(2024, 12, 31, 23, 59, 59),
+            @MM(type = ValueType.DATE) var date: LocalDate = LocalDate.of(2024, 12, 31),
+            @MM(type = ValueType.TIME) var time: LocalTime = LocalTime.of(23, 59, 59)
     )
 
     @Test
@@ -179,10 +181,7 @@ class MetaMessageTest {
         assertEquals(obj.time, out.time)
     }
 
-    @MM
-    class BytesType(
-        @MM(type = ValueType.BYTES) var bytes: ByteArray = "Hello".toByteArray()
-    )
+    @MM class BytesType(@MM(type = ValueType.BYTES) var bytes: ByteArray = "Hello".toByteArray())
 
     @Test
     fun roundtripBytes() {
@@ -194,7 +193,8 @@ class MetaMessageTest {
 
     @MM
     class BigIntType(
-        @MM(type = ValueType.BIGINT) var bigint: BigInteger = BigInteger("123456789012345678901234567890")
+            @MM(type = ValueType.BIGINT)
+            var bigint: BigInteger = BigInteger("123456789012345678901234567890")
     )
 
     @Test
@@ -205,11 +205,7 @@ class MetaMessageTest {
         assertEquals(obj.bigint, out.bigint)
     }
 
-    @MM
-    class BoolEdgeCases(
-        var boolTrue: Boolean = true,
-        var boolFalse: Boolean = false
-    )
+    @MM class BoolEdgeCases(var boolTrue: Boolean = true, var boolFalse: Boolean = false)
 
     @Test
     fun roundtripBoolEdgeCases() {
@@ -222,8 +218,10 @@ class MetaMessageTest {
 
     @MM
     class SliceTypes(
-        @MM(type = ValueType.SLICE, childType = ValueType.INT) var intSlice: List<Int> = listOf(1, 2, 3),
-        @MM(type = ValueType.SLICE, childType = ValueType.STRING) var strSlice: List<String> = listOf("a", "b", "c")
+            @MM(type = ValueType.SLICE, childType = ValueType.INT)
+            var intSlice: List<Int> = listOf(1, 2, 3),
+            @MM(type = ValueType.SLICE, childType = ValueType.STRING)
+            var strSlice: List<String> = listOf("a", "b", "c")
     )
 
     @Test
@@ -235,16 +233,9 @@ class MetaMessageTest {
         assertEquals(obj.strSlice, out.strSlice)
     }
 
-    @MM
-    class NestedStruct(
-        var name: String = "parent",
-        var child: ChildStruct = ChildStruct()
-    )
+    @MM class NestedStruct(var name: String = "parent", var child: ChildStruct = ChildStruct())
 
-    @MM
-    class ChildStruct(
-        var value: Int = 42
-    )
+    @MM class ChildStruct(var value: Int = 42)
 
     @Test
     fun roundtripNestedStruct() {
@@ -257,9 +248,9 @@ class MetaMessageTest {
 
     @MM
     class NullableTypes(
-        var nullableString: String? = "test",
-        var nullableInt: Int? = 42,
-        var nullableBool: Boolean? = true
+            var nullableString: String? = "test",
+            var nullableInt: Int? = 42,
+            var nullableBool: Boolean? = true
     )
 
     @Test

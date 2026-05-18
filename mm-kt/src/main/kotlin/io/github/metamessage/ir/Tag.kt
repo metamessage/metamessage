@@ -151,6 +151,11 @@ class Tag(
         }
     }
 
+    fun getPattern(): Pattern? {
+        if (pattern.isEmpty()) return null
+        return Pattern.compile(pattern)
+    }
+
     override fun toString(): String {
         val parts = mutableListOf<String>()
 
@@ -165,79 +170,79 @@ class Tag(
                 if (!((type == ValueType.ARRAY && size > 0) ||
                                 (type == ValueType.ENUM && enum.isNotEmpty()))
                 ) {
-                    parts.add("type=${type.toString()}")
+                    parts.add("${T_TYPE}=${type.toString()}")
                 }
             }
         }
 
         if (example) {
-            parts.add("example")
+            parts.add(T_EXAMPLE)
         }
 
         if (isNull) {
-            parts.add("is_null")
+            parts.add(T_IS_NULL)
         }
 
         if (nullable && !isInherit) {
             if (!isNull) {
-                parts.add("nullable")
+                parts.add(T_NULLABLE)
             }
         }
 
         if (desc.isNotEmpty() && !isInherit) {
-            parts.add("desc=${desc}")
+            parts.add("${T_DESC}=${quote(desc)}")
         }
 
         if (raw && !isInherit) {
-            parts.add("raw")
+            parts.add(T_RAW)
         }
 
         if (allowEmpty && !isInherit) {
-            parts.add("allow_empty")
+            parts.add(T_ALLOW_EMPTY)
         }
 
         if (unique && !isInherit) {
-            parts.add("unique")
+            parts.add(T_UNIQUE)
         }
 
         if (default.isNotEmpty() && !isInherit) {
-            parts.add("default=${default}")
+            parts.add("${T_DEFAULT}=${default}")
         }
 
         if (min.isNotEmpty() && !isInherit) {
-            parts.add("min=${min}")
+            parts.add("${T_MIN}=${min}")
         }
 
         if (max.isNotEmpty() && !isInherit) {
-            parts.add("max=${max}")
+            parts.add("${T_MAX}=${max}")
         }
 
         if (size != 0 && !isInherit) {
-            parts.add("size=${size}")
+            parts.add("${T_SIZE}=${size}")
         }
 
         if (enum.isNotEmpty() && !isInherit) {
-            parts.add("enum=${enum}")
+            parts.add("${T_ENUM}=${enum}")
         }
 
         if (pattern.isNotEmpty() && !isInherit) {
-            parts.add("pattern=${pattern}")
+            parts.add("${T_PATTERN}=${pattern}")
         }
 
         if (location != 0 && !isInherit) {
-            parts.add("location=${location}")
+            parts.add("${T_LOCATION}=${location}")
         }
 
-        if (version != 0 && !isInherit) {
-            parts.add("version=${version}")
+        if (version != DEFAULT_VERSION && !isInherit) {
+            parts.add("${T_VERSION}=${version}")
         }
 
         if (mime.isNotEmpty() && !isInherit) {
-            parts.add("mime=${mime}")
+            parts.add("${T_MIME}=${mime}")
         }
 
         if (childDesc.isNotEmpty()) {
-            parts.add("child_desc=${childDesc}")
+            parts.add("${T_CHILD_DESC}=${quote(childDesc)}")
         }
 
         if (childType != ValueType.UNKNOWN) {
@@ -251,61 +256,61 @@ class Tag(
                 if (!((childType == ValueType.ARRAY && childSize > 0) ||
                                 (childType == ValueType.ENUM && childEnum.isNotEmpty()))
                 ) {
-                    parts.add("child_type=${childType.toString()}")
+                    parts.add("${T_CHILD_TYPE}=${childType.toString()}")
                 }
             }
         }
 
         if (childRaw) {
-            parts.add("child_raw")
+            parts.add(T_CHILD_RAW)
         }
 
         if (childNullable) {
-            parts.add("child_nullable")
+            parts.add(T_CHILD_NULLABLE)
         }
 
         if (childAllowEmpty) {
-            parts.add("child_allow_empty")
+            parts.add(T_CHILD_ALLOW_EMPTY)
         }
 
         if (childUnique) {
-            parts.add("child_unique")
+            parts.add(T_CHILD_UNIQUE)
         }
 
         if (childDefault.isNotEmpty()) {
-            parts.add("child_default=${childDefault}")
+            parts.add("${T_CHILD_DEFAULT}=${childDefault}")
         }
 
         if (childMin.isNotEmpty()) {
-            parts.add("child_min=${childMin}")
+            parts.add("${T_CHILD_MIN}=${childMin}")
         }
 
         if (childMax.isNotEmpty()) {
-            parts.add("child_max=${childMax}")
+            parts.add("${T_CHILD_MAX}=${childMax}")
         }
 
         if (childSize != 0) {
-            parts.add("child_size=${childSize}")
+            parts.add("${T_CHILD_SIZE}=${childSize}")
         }
 
         if (childEnum.isNotEmpty()) {
-            parts.add("child_enum=${childEnum}")
+            parts.add("${T_CHILD_ENUM}=${childEnum}")
         }
 
         if (childPattern.isNotEmpty()) {
-            parts.add("child_pattern=${childPattern}")
+            parts.add("${T_CHILD_PATTERN}=${childPattern}")
         }
 
         if (childLocation != 0) {
-            parts.add("child_location=${childLocation}")
+            parts.add("${T_CHILD_LOCATION}=${childLocation}")
         }
 
-        if (childVersion != 0) {
-            parts.add("child_version=${childVersion}")
+        if (childVersion != DEFAULT_VERSION) {
+            parts.add("${T_CHILD_VERSION}=${childVersion}")
         }
 
         if (childMime.isNotEmpty()) {
-            parts.add("child_mime=${childMime}")
+            parts.add("${T_CHILD_MIME}=${childMime}")
         }
 
         return parts.joinToString("; ")
@@ -381,12 +386,14 @@ class Tag(
         if (childVersion != DEFAULT_VERSION)
                 encodeUint64(w, TagKey.K_CHILD_VERSION, childVersion.toLong())
         if (childMime.isNotEmpty()) {
-            val m = Mime.parse(childMime)
-            if (m < 7) {
-                w.writeByte((TagKey.K_CHILD_MIME or m).toByte())
+            val l = childMime.length
+            if (l < 7) {
+                w.writeByte((TagKey.K_CHILD_MIME or l).toByte())
+                w.writeBytes(childMime.toByteArray(charset("UTF-8")))
             } else {
                 w.writeByte((TagKey.K_CHILD_MIME or 7).toByte())
-                w.writeByte(m.toByte())
+                w.writeByte(l.toByte())
+                w.writeBytes(childMime.toByteArray(charset("UTF-8")))
             }
         }
         return w.toByteArray()
@@ -630,6 +637,50 @@ class Tag(
     companion object {
         const val DEFAULT_VERSION = 0
 
+        const val T_IS_NULL = "is_null"
+        const val T_EXAMPLE = "example"
+
+        const val T_NAME = "name"
+        const val T_DESC = "desc"
+        const val T_TYPE = "type"
+        const val T_RAW = "raw"
+        const val T_NULLABLE = "nullable"
+        const val T_ALLOW_EMPTY = "allow_empty"
+        const val T_UNIQUE = "unique"
+        const val T_DEFAULT = "default"
+        const val T_MIN = "min"
+        const val T_MAX = "max"
+        const val T_SIZE = "size"
+        const val T_ENUM = "enum"
+        const val T_PATTERN = "pattern"
+        const val T_LOCATION = "location"
+        const val T_VERSION = "version"
+        const val T_MIME = "mime"
+
+        const val T_CHILD_DESC = "child_desc"
+        const val T_CHILD_TYPE = "child_type"
+        const val T_CHILD_RAW = "child_raw"
+        const val T_CHILD_NULLABLE = "child_nullable"
+        const val T_CHILD_ALLOW_EMPTY = "child_allow_empty"
+        const val T_CHILD_UNIQUE = "child_unique"
+        const val T_CHILD_DEFAULT = "child_default"
+        const val T_CHILD_MIN = "child_min"
+        const val T_CHILD_MAX = "child_max"
+        const val T_CHILD_SIZE = "child_size"
+        const val T_CHILD_ENUM = "child_enum"
+        const val T_CHILD_PATTERN = "child_pattern"
+        const val T_CHILD_LOCATION = "child_location"
+        const val T_CHILD_VERSION = "child_version"
+        const val T_CHILD_MIME = "child_mime"
+
+        private val emailRegex =
+                Pattern.compile("^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$")
+        private val decimalRegex = Pattern.compile("^-?\\d+\\.\\d+$")
+        private val uuidRegex =
+                Pattern.compile(
+                        "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$"
+                )
+
         fun empty(): Tag = Tag()
 
         fun fromAnnotation(ann: MM?): Tag {
@@ -677,19 +728,227 @@ class Tag(
             return t
         }
 
-        private val emailRegex =
-                Pattern.compile("^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$")
-        private val decimalRegex = Pattern.compile("^-?\\d+\\.\\d+$")
-        private val uuidRegex =
-                Pattern.compile(
-                        "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$"
-                )
-        private val ipv4Regex =
-                Pattern.compile(
-                        "^(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$"
-                )
-        private val ipv6Regex = Pattern.compile("^([0-9a-fA-F]{1,4}:){7}[0-9a-fA-F]{1,4}$")
-        private val urlRegex = Pattern.compile("^https?://[\\w.-]+(?:/[\\w./?%&=-]*)?$")
+        fun mergeTag(dst: Tag, src: Tag?): Tag {
+            if (src == null) return dst
+
+            if (src.isNull) dst.isNull = src.isNull
+            if (src.example) dst.example = src.example
+            if (src.desc.isNotEmpty()) dst.desc = src.desc
+            if (src.type != ValueType.UNKNOWN) dst.type = src.type
+            if (src.raw) dst.raw = true
+            if (src.nullable) dst.nullable = true
+            if (src.allowEmpty) dst.allowEmpty = true
+            if (src.unique) dst.unique = true
+            if (src.default.isNotEmpty()) dst.default = src.default
+            if (src.min.isNotEmpty()) dst.min = src.min
+            if (src.max.isNotEmpty()) dst.max = src.max
+            if (src.size != 0) dst.size = src.size
+            if (src.enum.isNotEmpty()) dst.enum = src.enum
+            if (src.pattern.isNotEmpty()) dst.pattern = src.pattern
+            if (src.location != 0) dst.location = src.location
+            if (src.version != DEFAULT_VERSION) dst.version = src.version
+            if (src.mime.isNotEmpty()) dst.mime = src.mime
+
+            if (src.childDesc.isNotEmpty()) dst.childDesc = src.childDesc
+            if (src.childType != ValueType.UNKNOWN) dst.childType = src.childType
+            if (src.childRaw) dst.childRaw = true
+            if (src.childNullable) dst.childNullable = true
+            if (src.childAllowEmpty) dst.childAllowEmpty = true
+            if (src.childUnique) dst.childUnique = true
+            if (src.childDefault.isNotEmpty()) dst.childDefault = src.childDefault
+            if (src.childMin.isNotEmpty()) dst.childMin = src.childMin
+            if (src.childMax.isNotEmpty()) dst.childMax = src.childMax
+            if (src.childSize != 0) dst.childSize = src.childSize
+            if (src.childEnum.isNotEmpty()) dst.childEnum = src.childEnum
+            if (src.childPattern.isNotEmpty()) dst.childPattern = src.childPattern
+            if (src.childLocation != 0) dst.childLocation = src.childLocation
+            if (src.childVersion != DEFAULT_VERSION) dst.childVersion = src.childVersion
+            if (src.childMime.isNotEmpty()) dst.childMime = src.childMime
+
+            return dst
+        }
+
+        fun parseMMTag(tag: String): Tag {
+            val r = Tag()
+            var t = tag.trim()
+            t = t.removePrefix("//").trim()
+            t = t.removePrefix("mm:").trim()
+            if (t.isEmpty()) return r
+
+            val parts = splitTag(t)
+            for (p in parts) {
+                if (p.isEmpty()) continue
+
+                val k: String
+                val v: String
+                if (p.contains("=")) {
+                    val kv = p.split("=", limit = 2)
+                    k = kv[0].trim()
+                    v = kv[1].trim()
+                } else {
+                    k = p.trim()
+                    v = ""
+                }
+
+                var value = v
+                if (value.length >= 2 && value.startsWith("\"") && value.endsWith("\"")) {
+                    value = unquote(value)
+                }
+
+                val lower = k.lowercase()
+                when (lower) {
+                    T_NAME -> r.name = value
+                    T_IS_NULL -> {
+                        r.isNull = true
+                        r.nullable = true
+                    }
+                    T_EXAMPLE -> r.example = true
+                    T_DESC -> r.desc = value
+                    T_TYPE -> r.type = ValueType.parseWireName(value)
+                    T_RAW -> r.raw = true
+                    T_NULLABLE -> r.nullable = true
+                    T_ALLOW_EMPTY -> r.allowEmpty = true
+                    T_UNIQUE -> r.unique = true
+                    T_DEFAULT -> r.default = value
+                    T_MIN -> r.min = value
+                    T_MAX -> r.max = value
+                    T_SIZE -> {
+                        val u = value.toLongOrNull()
+                        if (u != null && u <= Int.MAX_VALUE.toLong()) {
+                            r.size = u.toInt()
+                        }
+                    }
+                    T_ENUM -> {
+                        r.type = ValueType.ENUM
+                        r.enum = value
+                    }
+                    T_PATTERN -> r.pattern = value
+                    T_LOCATION -> {
+                        val d = value.toIntOrNull()
+                        if (d != null && d >= -12 && d <= 14) {
+                            r.location = d
+                        }
+                    }
+                    T_VERSION -> {
+                        val d = value.toIntOrNull()
+                        if (d != null && d in 1..10) {
+                            r.version = d
+                        }
+                    }
+                    T_MIME -> r.mime = value
+                    T_CHILD_DESC -> r.childDesc = value
+                    T_CHILD_TYPE -> r.childType = ValueType.parseWireName(value)
+                    T_CHILD_RAW -> r.childRaw = true
+                    T_CHILD_NULLABLE -> r.childNullable = true
+                    T_CHILD_ALLOW_EMPTY -> r.childAllowEmpty = true
+                    T_CHILD_UNIQUE -> r.childUnique = true
+                    T_CHILD_DEFAULT -> r.childDefault = value
+                    T_CHILD_MIN -> r.childMin = value
+                    T_CHILD_MAX -> r.childMax = value
+                    T_CHILD_SIZE -> {
+                        val u = value.toLongOrNull()
+                        if (u != null && u <= Int.MAX_VALUE.toLong()) {
+                            r.childSize = u.toInt()
+                        }
+                    }
+                    T_CHILD_ENUM -> {
+                        r.childType = ValueType.ENUM
+                        r.childEnum = value
+                    }
+                    T_CHILD_PATTERN -> r.childPattern = value
+                    T_CHILD_LOCATION -> {
+                        val d = value.toIntOrNull()
+                        if (d != null && d >= -12 && d <= 14) {
+                            r.childLocation = d
+                        }
+                    }
+                    T_CHILD_VERSION -> {
+                        val d = value.toIntOrNull()
+                        if (d != null && d in 1..10) {
+                            r.childVersion = d
+                        }
+                    }
+                    T_CHILD_MIME -> r.childMime = value
+                }
+            }
+            return r
+        }
+
+        private fun splitTag(tag: String): List<String> {
+            if (tag.isEmpty()) return emptyList()
+            return tag.split(";").map { it.trim() }
+        }
+
+        internal fun quote(s: String): String {
+            val sb = StringBuilder()
+            sb.append('"')
+            for (c in s) {
+                when (c) {
+                    '\\' -> sb.append("\\\\")
+                    '"' -> sb.append("\\\"")
+                    '\n' -> sb.append("\\n")
+                    '\r' -> sb.append("\\r")
+                    '\t' -> sb.append("\\t")
+                    '\b' -> sb.append("\\b")
+                    in '\u0000'..'\u0007', '\u000B', '\u000C', in '\u000E'..'\u001F' -> {
+                        sb.append(String.format("\\u%04x", c.code))
+                    }
+                    else -> sb.append(c)
+                }
+            }
+            sb.append('"')
+            return sb.toString()
+        }
+
+        private fun unquote(s: String): String {
+            val sb = StringBuilder()
+            var i = 1
+            while (i < s.length - 1) {
+                val c = s[i]
+                if (c == '\\' && i + 1 < s.length - 1) {
+                    when (s[i + 1]) {
+                        '\\' -> {
+                            sb.append('\\')
+                            i++
+                        }
+                        '"' -> {
+                            sb.append('"')
+                            i++
+                        }
+                        'n' -> {
+                            sb.append('\n')
+                            i++
+                        }
+                        'r' -> {
+                            sb.append('\r')
+                            i++
+                        }
+                        't' -> {
+                            sb.append('\t')
+                            i++
+                        }
+                        'u' -> {
+                            if (i + 5 < s.length) {
+                                val hex = s.substring(i + 2, i + 6)
+                                try {
+                                    sb.append(hex.toInt(16).toChar())
+                                    i += 5
+                                } catch (_: NumberFormatException) {
+                                    sb.append(c)
+                                }
+                            } else {
+                                sb.append(c)
+                            }
+                        }
+                        else -> sb.append(c)
+                    }
+                } else {
+                    sb.append(c)
+                }
+                i++
+            }
+            return sb.toString()
+        }
     }
 
     data class ValidationResult(
@@ -722,14 +981,13 @@ class Tag(
         }
 
         if (childUnique) {
-            val seen = mutableSetOf<Any>()
+            val seen = mutableSetOf<Any?>()
             for (i in value.indices) {
                 val data = value[i]
-                val key = data ?: "null"
-                if (seen.contains(key)) {
+                if (seen.contains(data)) {
                     return ValidationResult(false, "array duplicate value found: $data, index: $i")
                 }
-                seen.add(key)
+                seen.add(data)
             }
         }
 
@@ -748,12 +1006,24 @@ class Tag(
         return ValidationResult(true)
     }
 
+    fun validateMap(): ValidationResult {
+        if (desc.length > 65535) {
+            return ValidationResult(false, "desc length exceeds 65535 bytes")
+        }
+
+        if (location != 0) {
+            return ValidationResult(false, "type map not support location UTC$location")
+        }
+
+        return ValidationResult(true)
+    }
+
     fun validateString(value: String): ValidationResult {
         if (value.isEmpty()) {
-            if (!allowEmpty) {
-                return ValidationResult(false, "type string not allow empty value \"$value\"")
+            if (allowEmpty) {
+                return ValidationResult(true, data = value, text = value)
             }
-            return ValidationResult(true, data = value, text = value)
+            return ValidationResult(false, "type string not allow empty value \"$value\"")
         }
 
         if (pattern.isNotEmpty()) {
@@ -770,12 +1040,12 @@ class Tag(
             }
         }
 
-        val length = value.length
+        val length = value.codePointCount(0, value.length)
 
         if (min.isNotEmpty()) {
             val mini = min.toIntOrNull()
             if (mini == null) {
-                return ValidationResult(false, "failed to parse tag.min as int: $min")
+                return ValidationResult(false, "failed to parse t.Min as int: $min")
             }
             if (length < mini) {
                 return ValidationResult(
@@ -788,7 +1058,7 @@ class Tag(
         if (max.isNotEmpty()) {
             val maxi = max.toIntOrNull()
             if (maxi == null) {
-                return ValidationResult(false, "failed to parse tag.max as int: $max")
+                return ValidationResult(false, "failed to parse t.Max as int: $max")
             }
             if (length > maxi) {
                 return ValidationResult(
@@ -798,7 +1068,7 @@ class Tag(
             }
         }
 
-        if (size > 0 && length != size) {
+        if (size != 0 && length != size) {
             return ValidationResult(false, "string length $length != size $size")
         }
 
@@ -813,65 +1083,20 @@ class Tag(
         return ValidationResult(true, data = value, text = value)
     }
 
-    fun validateSlice(value: List<*>): ValidationResult {
-        if (desc.length > 65535) {
-            return ValidationResult(false, "desc length exceeds 65535 bytes")
-        }
-
-        if (location != 0) {
-            return ValidationResult(false, "type slice not support location UTC$location")
-        }
-
-        val length = value.size
-
-        if (length == 0) {
-            if (!allowEmpty) {
-                return ValidationResult(false, "type slice not allow empty")
-            }
-            return ValidationResult(true)
-        }
-
-        if (childUnique) {
-            val seen = mutableSetOf<Any>()
-            for (i in value.indices) {
-                val data = value[i]
-                val key = data ?: "null"
-                if (seen.contains(key)) {
-                    return ValidationResult(false, "slice duplicate value found: $data, index: $i")
-                }
-                seen.add(key)
-            }
-        }
-
-        return ValidationResult(true)
-    }
-
-    fun validateMap(): ValidationResult {
-        if (desc.length > 65535) {
-            return ValidationResult(false, "desc length exceeds 65535 bytes")
-        }
-
-        if (location != 0) {
-            return ValidationResult(false, "type map not support location UTC$location")
-        }
-
-        return ValidationResult(true)
-    }
-
     fun validateBytes(value: ByteArray): ValidationResult {
         val length = value.size
 
         if (length == 0) {
-            if (!allowEmpty) {
-                return ValidationResult(false, "type []byte not allow empty value []byte{}")
+            if (allowEmpty) {
+                return ValidationResult(true, data = value, text = "")
             }
-            return ValidationResult(true, data = value, text = "")
+            return ValidationResult(false, "type []byte not allow empty value []byte{}")
         }
 
         if (min.isNotEmpty()) {
             val mini = min.toIntOrNull()
             if (mini == null) {
-                return ValidationResult(false, "failed to parse tag.min as int: $min")
+                return ValidationResult(false, "failed to parse t.Min as int: $min")
             }
             if (length < mini) {
                 return ValidationResult(
@@ -884,7 +1109,7 @@ class Tag(
         if (max.isNotEmpty()) {
             val maxi = max.toIntOrNull()
             if (maxi == null) {
-                return ValidationResult(false, "failed to parse tag.max as int: $max")
+                return ValidationResult(false, "failed to parse t.Max as int: $max")
             }
             if (length > maxi) {
                 return ValidationResult(
@@ -894,7 +1119,7 @@ class Tag(
             }
         }
 
-        if (size > 0 && length != size) {
+        if (size != 0 && length != size) {
             return ValidationResult(false, "[]byte length $length != size $size")
         }
 
@@ -927,40 +1152,118 @@ class Tag(
         return ValidationResult(true, data = value, text = value.toString())
     }
 
-    fun validateInt8(value: Byte): ValidationResult {
-        if (value == 0.toByte()) {
-            if (!allowEmpty) {
-                return ValidationResult(false, "type int8 not allow empty value $value")
-            }
-            return ValidationResult(true, data = value, text = value.toString())
+    fun validateSlice(value: List<*>): ValidationResult {
+        if (desc.length > 65535) {
+            return ValidationResult(false, "desc length exceeds 65535 bytes")
         }
 
-        val minVal = -128L
-        val maxVal = 127L
+        if (location != 0) {
+            return ValidationResult(false, "type slice not support location UTC$location")
+        }
+
+        val length = value.size
+
+        if (length == 0) {
+            if (!allowEmpty) {
+                return ValidationResult(false, "type slice not allow empty")
+            }
+            return ValidationResult(true)
+        }
+
+        if (childUnique) {
+            val seen = mutableSetOf<Any?>()
+            for (i in value.indices) {
+                val data = value[i]
+                if (seen.contains(data)) {
+                    return ValidationResult(false, "slice duplicate value found: $data, index: $i")
+                }
+                seen.add(data)
+            }
+        }
+
+        return ValidationResult(true)
+    }
+
+    fun validateInt(value: Int): ValidationResult {
+        if (value == 0) {
+            if (allowEmpty) {
+                return ValidationResult(true, data = value, text = "0")
+            }
+            return ValidationResult(false, "type int not allow empty value $value")
+        }
+
+        val val64 = value.toLong()
 
         if (min.isNotEmpty()) {
             val mini = min.toLongOrNull()
             if (mini == null) {
-                return ValidationResult(false, "failed to parse tag.min as int8: $min")
+                return ValidationResult(false, "failed to parse t.Min as int: $min")
             }
-            if (mini < minVal || mini > maxVal) {
-                return ValidationResult(false, "tag.min $mini is out of int8 range [-128, 127]")
-            }
-            if (value < mini) {
-                return ValidationResult(false, "value $value is less than the minimum limit $mini")
+            if (val64 < mini) {
+                return ValidationResult(false, "value $val64 is less than the minimum limit $mini")
             }
         }
 
         if (max.isNotEmpty()) {
             val maxi = max.toLongOrNull()
             if (maxi == null) {
-                return ValidationResult(false, "failed to parse tag.max as int8: $max")
+                return ValidationResult(false, "failed to parse t.Max as int: $max")
             }
-            if (maxi < minVal || maxi > maxVal) {
-                return ValidationResult(false, "tag.max $maxi is out of int8 range [-128, 127]")
+            if (val64 > maxi) {
+                return ValidationResult(false, "value $val64 exceeds the maximum limit $maxi")
             }
-            if (value > maxi) {
-                return ValidationResult(false, "value $value exceeds the maximum limit $maxi")
+        }
+
+        if (desc.length > 65535) {
+            return ValidationResult(false, "desc length exceeds 65535 bytes")
+        }
+
+        if (location != 0) {
+            return ValidationResult(false, "type int not support location UTC$location")
+        }
+
+        return ValidationResult(true, data = value, text = value.toString())
+    }
+
+    fun validateInt8(value: Byte): ValidationResult {
+        if (value == 0.toByte()) {
+            if (allowEmpty) {
+                return ValidationResult(true, data = value, text = "0")
+            }
+            return ValidationResult(false, "type int8 not allow empty value $value")
+        }
+
+        val val64 = value.toLong()
+
+        if (min.isNotEmpty()) {
+            val mini = min.toLongOrNull()
+            if (mini == null) {
+                return ValidationResult(false, "failed to parse t.Min as int8: $min")
+            }
+            if (mini < Byte.MIN_VALUE.toLong() || mini > Byte.MAX_VALUE.toLong()) {
+                return ValidationResult(
+                        false,
+                        "failed to parse t.Min as int8: value $mini out of int8 range"
+                )
+            }
+            if (val64 < mini) {
+                return ValidationResult(false, "value $val64 is less than the minimum limit $mini")
+            }
+        }
+
+        if (max.isNotEmpty()) {
+            val maxi = max.toLongOrNull()
+            if (maxi == null) {
+                return ValidationResult(false, "failed to parse t.Max as int8: $max")
+            }
+            if (maxi < Byte.MIN_VALUE.toLong() || maxi > Byte.MAX_VALUE.toLong()) {
+                return ValidationResult(
+                        false,
+                        "failed to parse t.Max as int8: value $maxi out of int8 range"
+                )
+            }
+            if (val64 > maxi) {
+                return ValidationResult(false, "value $val64 exceeds the maximum limit $maxi")
             }
         }
 
@@ -977,44 +1280,31 @@ class Tag(
 
     fun validateInt16(value: Short): ValidationResult {
         if (value == 0.toShort()) {
-            if (!allowEmpty) {
-                return ValidationResult(false, "type int16 not allow empty value $value")
+            if (allowEmpty) {
+                return ValidationResult(true, data = value, text = "0")
             }
-            return ValidationResult(true, data = value, text = value.toString())
+            return ValidationResult(false, "type int16 not allow empty value $value")
         }
 
-        val minVal = -32768L
-        val maxVal = 32767L
+        val val64 = value.toLong()
 
         if (min.isNotEmpty()) {
             val mini = min.toLongOrNull()
             if (mini == null) {
-                return ValidationResult(false, "failed to parse tag.min as int16: $min")
+                return ValidationResult(false, "failed to parse t.Min as int16: $min")
             }
-            if (mini < minVal || mini > maxVal) {
-                return ValidationResult(
-                        false,
-                        "tag.min $mini is out of int16 range [-32768, 32767]"
-                )
-            }
-            if (value < mini) {
-                return ValidationResult(false, "value $value is less than the minimum limit $mini")
+            if (val64 < mini) {
+                return ValidationResult(false, "value $val64 is less than the minimum limit $mini")
             }
         }
 
         if (max.isNotEmpty()) {
             val maxi = max.toLongOrNull()
             if (maxi == null) {
-                return ValidationResult(false, "failed to parse tag.max as int16: $max")
+                return ValidationResult(false, "failed to parse t.Max as int16: $max")
             }
-            if (maxi < minVal || maxi > maxVal) {
-                return ValidationResult(
-                        false,
-                        "tag.max $maxi is out of int16 range [-32768, 32767]"
-                )
-            }
-            if (value > maxi) {
-                return ValidationResult(false, "value $value exceeds the maximum limit $maxi")
+            if (val64 > maxi) {
+                return ValidationResult(false, "value $val64 exceeds the maximum limit $maxi")
             }
         }
 
@@ -1031,44 +1321,31 @@ class Tag(
 
     fun validateInt32(value: Int): ValidationResult {
         if (value == 0) {
-            if (!allowEmpty) {
-                return ValidationResult(false, "type int32 not allow empty value $value")
+            if (allowEmpty) {
+                return ValidationResult(true, data = value, text = "0")
             }
-            return ValidationResult(true, data = value, text = value.toString())
+            return ValidationResult(false, "type int32 not allow empty value $value")
         }
 
-        val minVal = -2147483648L
-        val maxVal = 2147483647L
+        val val64 = value.toLong()
 
         if (min.isNotEmpty()) {
             val mini = min.toLongOrNull()
             if (mini == null) {
-                return ValidationResult(false, "failed to parse tag.min as int32: $min")
+                return ValidationResult(false, "failed to parse t.Min as int32: $min")
             }
-            if (mini < minVal || mini > maxVal) {
-                return ValidationResult(
-                        false,
-                        "tag.min $mini is out of int32 range [-2147483648, 2147483647]"
-                )
-            }
-            if (value < mini) {
-                return ValidationResult(false, "value $value is less than the minimum limit $mini")
+            if (val64 < mini) {
+                return ValidationResult(false, "value $val64 is less than the minimum limit $mini")
             }
         }
 
         if (max.isNotEmpty()) {
             val maxi = max.toLongOrNull()
             if (maxi == null) {
-                return ValidationResult(false, "failed to parse tag.max as int32: $max")
+                return ValidationResult(false, "failed to parse t.Max as int32: $max")
             }
-            if (maxi < minVal || maxi > maxVal) {
-                return ValidationResult(
-                        false,
-                        "tag.max $maxi is out of int32 range [-2147483648, 2147483647]"
-                )
-            }
-            if (value > maxi) {
-                return ValidationResult(false, "value $value exceeds the maximum limit $maxi")
+            if (val64 > maxi) {
+                return ValidationResult(false, "value $val64 exceeds the maximum limit $maxi")
             }
         }
 
@@ -1083,31 +1360,18 @@ class Tag(
         return ValidationResult(true, data = value, text = value.toString())
     }
 
-    fun validateInt(value: Int): ValidationResult {
-        return validateInt32(value)
-    }
-
     fun validateInt64(value: Long): ValidationResult {
         if (value == 0L) {
-            if (!allowEmpty) {
-                return ValidationResult(false, "type int64 not allow empty value $value")
+            if (allowEmpty) {
+                return ValidationResult(true, data = value, text = "0")
             }
-            return ValidationResult(true, data = value, text = value.toString())
+            return ValidationResult(false, "type int64 not allow empty value $value")
         }
-
-        val minVal = Long.MIN_VALUE
-        val maxVal = Long.MAX_VALUE
 
         if (min.isNotEmpty()) {
             val mini = min.toLongOrNull()
             if (mini == null) {
-                return ValidationResult(false, "failed to parse tag.min as int64: $min")
-            }
-            if (mini < minVal || mini > maxVal) {
-                return ValidationResult(
-                        false,
-                        "tag.min $mini is out of int64 range [$minVal, $maxVal]"
-                )
+                return ValidationResult(false, "failed to parse t.Min as int64: $min")
             }
             if (value < mini) {
                 return ValidationResult(false, "value $value is less than the minimum limit $mini")
@@ -1117,13 +1381,7 @@ class Tag(
         if (max.isNotEmpty()) {
             val maxi = max.toLongOrNull()
             if (maxi == null) {
-                return ValidationResult(false, "failed to parse tag.max as int64: $max")
-            }
-            if (maxi < minVal || maxi > maxVal) {
-                return ValidationResult(
-                        false,
-                        "tag.max $maxi is out of int64 range [$minVal, $maxVal]"
-                )
+                return ValidationResult(false, "failed to parse t.Max as int64: $max")
             }
             if (value > maxi) {
                 return ValidationResult(false, "value $value exceeds the maximum limit $maxi")
@@ -1143,42 +1401,37 @@ class Tag(
 
     fun validateUint(value: Long): ValidationResult {
         if (value == 0L) {
-            if (!allowEmpty) {
-                return ValidationResult(false, "type uint not allow empty value $value")
+            if (allowEmpty) {
+                return ValidationResult(true, data = value, text = "0")
             }
-            return ValidationResult(true, data = value, text = value.toString())
+            return ValidationResult(false, "type uint not allow empty value $value")
         }
 
-        val minVal = 0L
-        val maxVal = 4294967295L
-
-        if (value < minVal || value > maxVal) {
-            return ValidationResult(false, "value $value is out of uint range [0, 4294967295]")
-        }
+        val val64 = value
 
         if (min.isNotEmpty()) {
             val mini = min.toLongOrNull()
             if (mini == null) {
-                return ValidationResult(false, "failed to parse tag.min as uint: $min")
+                return ValidationResult(false, "failed to parse t.Min as uint: $min")
             }
-            if (mini < minVal || mini > maxVal) {
-                return ValidationResult(false, "tag.min $mini is out of uint range [0, 4294967295]")
+            if (mini < 0) {
+                return ValidationResult(false, "failed to parse t.Min as uint: $min")
             }
-            if (value < mini) {
-                return ValidationResult(false, "value $value is less than the minimum limit $mini")
+            if (val64 < mini) {
+                return ValidationResult(false, "value $val64 is less than the minimum limit $mini")
             }
         }
 
         if (max.isNotEmpty()) {
             val maxi = max.toLongOrNull()
             if (maxi == null) {
-                return ValidationResult(false, "failed to parse tag.max as uint: $max")
+                return ValidationResult(false, "failed to parse t.Max as uint: $max")
             }
-            if (maxi < minVal || maxi > maxVal) {
-                return ValidationResult(false, "tag.max $maxi is out of uint range [0, 4294967295]")
+            if (maxi < 0) {
+                return ValidationResult(false, "failed to parse t.Max as uint: $max")
             }
-            if (value > maxi) {
-                return ValidationResult(false, "value $value exceeds the maximum limit $maxi")
+            if (val64 > maxi) {
+                return ValidationResult(false, "value $val64 exceeds the maximum limit $maxi")
             }
         }
 
@@ -1195,42 +1448,37 @@ class Tag(
 
     fun validateUint8(value: Short): ValidationResult {
         if (value == 0.toShort()) {
-            if (!allowEmpty) {
-                return ValidationResult(false, "type uint8 not allow empty value $value")
+            if (allowEmpty) {
+                return ValidationResult(true, data = value, text = "0")
             }
-            return ValidationResult(true, data = value, text = value.toString())
+            return ValidationResult(false, "type uint8 not allow empty value $value")
         }
 
-        val minVal = 0L
-        val maxVal = 255L
-
-        if (value < minVal || value > maxVal) {
-            return ValidationResult(false, "value $value is out of uint8 range [0, 255]")
-        }
+        val val64 = value.toLong()
 
         if (min.isNotEmpty()) {
             val mini = min.toLongOrNull()
             if (mini == null) {
-                return ValidationResult(false, "failed to parse tag.min as uint8: $min")
+                return ValidationResult(false, "failed to parse t.Min as uint8: $min")
             }
-            if (mini < minVal || mini > maxVal) {
-                return ValidationResult(false, "tag.min $mini is out of uint8 range [0, 255]")
+            if (mini < 0) {
+                return ValidationResult(false, "failed to parse t.Min as uint8: $min")
             }
-            if (value < mini) {
-                return ValidationResult(false, "value $value is less than the minimum limit $mini")
+            if (val64 < mini) {
+                return ValidationResult(false, "value $val64 is less than the minimum limit $mini")
             }
         }
 
         if (max.isNotEmpty()) {
             val maxi = max.toLongOrNull()
             if (maxi == null) {
-                return ValidationResult(false, "failed to parse tag.max as uint8: $max")
+                return ValidationResult(false, "failed to parse t.Max as uint8: $max")
             }
-            if (maxi < minVal || maxi > maxVal) {
-                return ValidationResult(false, "tag.max $maxi is out of uint8 range [0, 255]")
+            if (maxi < 0) {
+                return ValidationResult(false, "failed to parse t.Max as uint8: $max")
             }
-            if (value > maxi) {
-                return ValidationResult(false, "value $value exceeds the maximum limit $maxi")
+            if (val64 > maxi) {
+                return ValidationResult(false, "value $val64 exceeds the maximum limit $maxi")
             }
         }
 
@@ -1247,42 +1495,37 @@ class Tag(
 
     fun validateUint16(value: Int): ValidationResult {
         if (value == 0) {
-            if (!allowEmpty) {
-                return ValidationResult(false, "type uint16 not allow empty value $value")
+            if (allowEmpty) {
+                return ValidationResult(true, data = value, text = "0")
             }
-            return ValidationResult(true, data = value, text = value.toString())
+            return ValidationResult(false, "type uint16 not allow empty value $value")
         }
 
-        val minVal = 0L
-        val maxVal = 65535L
-
-        if (value < minVal || value > maxVal) {
-            return ValidationResult(false, "value $value is out of uint16 range [0, 65535]")
-        }
+        val val64 = value.toLong()
 
         if (min.isNotEmpty()) {
             val mini = min.toLongOrNull()
             if (mini == null) {
-                return ValidationResult(false, "failed to parse tag.min as uint16: $min")
+                return ValidationResult(false, "failed to parse t.Min as uint16: $min")
             }
-            if (mini < minVal || mini > maxVal) {
-                return ValidationResult(false, "tag.min $mini is out of uint16 range [0, 65535]")
+            if (mini < 0) {
+                return ValidationResult(false, "failed to parse t.Min as uint16: $min")
             }
-            if (value < mini) {
-                return ValidationResult(false, "value $value is less than the minimum limit $mini")
+            if (val64 < mini) {
+                return ValidationResult(false, "value $val64 is less than the minimum limit $mini")
             }
         }
 
         if (max.isNotEmpty()) {
             val maxi = max.toLongOrNull()
             if (maxi == null) {
-                return ValidationResult(false, "failed to parse tag.max as uint16: $max")
+                return ValidationResult(false, "failed to parse t.Max as uint16: $max")
             }
-            if (maxi < minVal || maxi > maxVal) {
-                return ValidationResult(false, "tag.max $maxi is out of uint16 range [0, 65535]")
+            if (maxi < 0) {
+                return ValidationResult(false, "failed to parse t.Max as uint16: $max")
             }
-            if (value > maxi) {
-                return ValidationResult(false, "value $value exceeds the maximum limit $maxi")
+            if (val64 > maxi) {
+                return ValidationResult(false, "value $val64 exceeds the maximum limit $maxi")
             }
         }
 
@@ -1299,48 +1542,37 @@ class Tag(
 
     fun validateUint32(value: Long): ValidationResult {
         if (value == 0L) {
-            if (!allowEmpty) {
-                return ValidationResult(false, "type uint32 not allow empty value $value")
+            if (allowEmpty) {
+                return ValidationResult(true, data = value, text = "0")
             }
-            return ValidationResult(true, data = value, text = value.toString())
+            return ValidationResult(false, "type uint32 not allow empty value $value")
         }
 
-        val minVal = 0L
-        val maxVal = 4294967295L
-
-        if (value < minVal || value > maxVal) {
-            return ValidationResult(false, "value $value is out of uint32 range [0, 4294967295]")
-        }
+        val val64 = value
 
         if (min.isNotEmpty()) {
             val mini = min.toLongOrNull()
             if (mini == null) {
-                return ValidationResult(false, "failed to parse tag.min as uint32: $min")
+                return ValidationResult(false, "failed to parse t.Min as uint32: $min")
             }
-            if (mini < minVal || mini > maxVal) {
-                return ValidationResult(
-                        false,
-                        "tag.min $mini is out of uint32 range [0, 4294967295]"
-                )
+            if (mini < 0) {
+                return ValidationResult(false, "failed to parse t.Min as uint32: $min")
             }
-            if (value < mini) {
-                return ValidationResult(false, "value $value is less than the minimum limit $mini")
+            if (val64 < mini) {
+                return ValidationResult(false, "value $val64 is less than the minimum limit $mini")
             }
         }
 
         if (max.isNotEmpty()) {
             val maxi = max.toLongOrNull()
             if (maxi == null) {
-                return ValidationResult(false, "failed to parse tag.max as uint32: $max")
+                return ValidationResult(false, "failed to parse t.Max as uint32: $max")
             }
-            if (maxi < minVal || maxi > maxVal) {
-                return ValidationResult(
-                        false,
-                        "tag.max $maxi is out of uint32 range [0, 4294967295]"
-                )
+            if (maxi < 0) {
+                return ValidationResult(false, "failed to parse t.Max as uint32: $max")
             }
-            if (value > maxi) {
-                return ValidationResult(false, "value $value exceeds the maximum limit $maxi")
+            if (val64 > maxi) {
+                return ValidationResult(false, "value $val64 exceeds the maximum limit $maxi")
             }
         }
 
@@ -1359,20 +1591,10 @@ class Tag(
         val zero = BigInteger.ZERO
 
         if (value == zero) {
-            if (!allowEmpty) {
-                return ValidationResult(false, "type uint64 not allow empty value $value")
+            if (allowEmpty) {
+                return ValidationResult(true, data = value, text = "0")
             }
-            return ValidationResult(true, data = value, text = value.toString())
-        }
-
-        val minVal = BigInteger.ZERO
-        val maxVal = BigInteger("18446744073709551615")
-
-        if (value < minVal || value > maxVal) {
-            return ValidationResult(
-                    false,
-                    "value $value is out of uint64 range [0, 18446744073709551615]"
-            )
+            return ValidationResult(false, "type uint64 not allow empty value $value")
         }
 
         if (min.isNotEmpty()) {
@@ -1380,13 +1602,7 @@ class Tag(
             try {
                 mini = BigInteger(min)
             } catch (e: NumberFormatException) {
-                return ValidationResult(false, "failed to parse tag.min as uint64: $min")
-            }
-            if (mini < minVal || mini > maxVal) {
-                return ValidationResult(
-                        false,
-                        "tag.min $mini is out of uint64 range [0, 18446744073709551615]"
-                )
+                return ValidationResult(false, "failed to parse t.Min as uint64: $min")
             }
             if (value < mini) {
                 return ValidationResult(false, "value $value is less than the minimum limit $mini")
@@ -1398,13 +1614,7 @@ class Tag(
             try {
                 maxi = BigInteger(max)
             } catch (e: NumberFormatException) {
-                return ValidationResult(false, "failed to parse tag.max as uint64: $max")
-            }
-            if (maxi < minVal || maxi > maxVal) {
-                return ValidationResult(
-                        false,
-                        "tag.max $maxi is out of uint64 range [0, 18446744073709551615]"
-                )
+                return ValidationResult(false, "failed to parse t.Max as uint64: $max")
             }
             if (value > maxi) {
                 return ValidationResult(false, "value $value exceeds the maximum limit $maxi")
@@ -1424,29 +1634,31 @@ class Tag(
 
     fun validateFloat32(value: Float): ValidationResult {
         if (value == 0.0f) {
-            if (!allowEmpty) {
-                return ValidationResult(false, "type float32 not allow empty value 0.0")
+            if (allowEmpty) {
+                return ValidationResult(true, data = value, text = "0.0")
             }
-            return ValidationResult(true, data = value, text = value.toString())
+            return ValidationResult(false, "type float32 not allow empty value 0.0")
         }
 
+        val val64 = value.toDouble()
+
         if (min.isNotEmpty()) {
-            val mini = min.toFloatOrNull()
+            val mini = min.toDoubleOrNull()
             if (mini == null) {
-                return ValidationResult(false, "failed to parse tag.min as float32: $min")
+                return ValidationResult(false, "failed to parse t.Min as float32: $min")
             }
-            if (value < mini) {
-                return ValidationResult(false, "value $value is less than the minimum limit $mini")
+            if (val64 < mini) {
+                return ValidationResult(false, "$val64 < min $mini")
             }
         }
 
         if (max.isNotEmpty()) {
-            val maxi = max.toFloatOrNull()
+            val maxi = max.toDoubleOrNull()
             if (maxi == null) {
-                return ValidationResult(false, "failed to parse tag.max as float32: $max")
+                return ValidationResult(false, "failed to parse t.Max as float32: $max")
             }
-            if (value > maxi) {
-                return ValidationResult(false, "value $value exceeds the maximum limit $maxi")
+            if (val64 > maxi) {
+                return ValidationResult(false, "$val64 > max $maxi")
             }
         }
 
@@ -1463,29 +1675,29 @@ class Tag(
 
     fun validateFloat64(value: Double): ValidationResult {
         if (value == 0.0) {
-            if (!allowEmpty) {
-                return ValidationResult(false, "type float64 not allow empty value 0.0")
+            if (allowEmpty) {
+                return ValidationResult(true, data = value, text = "0.0")
             }
-            return ValidationResult(true, data = value, text = value.toString())
+            return ValidationResult(false, "type float64 not allow empty value 0.0")
         }
 
         if (min.isNotEmpty()) {
             val mini = min.toDoubleOrNull()
             if (mini == null) {
-                return ValidationResult(false, "failed to parse tag.min as float64: $min")
+                return ValidationResult(false, "failed to parse t.Min as float64: $min")
             }
             if (value < mini) {
-                return ValidationResult(false, "value $value is less than the minimum limit $mini")
+                return ValidationResult(false, "$value < min $mini")
             }
         }
 
         if (max.isNotEmpty()) {
             val maxi = max.toDoubleOrNull()
             if (maxi == null) {
-                return ValidationResult(false, "failed to parse tag.max as float64: $max")
+                return ValidationResult(false, "failed to parse t.Max as float64: $max")
             }
             if (value > maxi) {
-                return ValidationResult(false, "value $value exceeds the maximum limit $maxi")
+                return ValidationResult(false, "$value > max $maxi")
             }
         }
 
@@ -1504,10 +1716,10 @@ class Tag(
         val zero = BigInteger.ZERO
 
         if (value == zero) {
-            if (!allowEmpty) {
-                return ValidationResult(false, "type bigint not allow empty value $value")
+            if (allowEmpty) {
+                return ValidationResult(true, data = value, text = "0")
             }
-            return ValidationResult(true, data = value, text = value.toString())
+            return ValidationResult(false, "type big.Int not allow empty value 0")
         }
 
         if (min.isNotEmpty()) {
@@ -1515,10 +1727,10 @@ class Tag(
             try {
                 mini = BigInteger(min)
             } catch (e: NumberFormatException) {
-                return ValidationResult(false, "failed to parse tag.min as bigint: $min")
+                return ValidationResult(false, "invalid min \"$min\" for big.Int")
             }
             if (value < mini) {
-                return ValidationResult(false, "value $value is less than the minimum limit $mini")
+                return ValidationResult(false, "big.Int length ${value} < min ${mini}")
             }
         }
 
@@ -1527,10 +1739,10 @@ class Tag(
             try {
                 maxi = BigInteger(max)
             } catch (e: NumberFormatException) {
-                return ValidationResult(false, "failed to parse tag.max as bigint: $max")
+                return ValidationResult(false, "invalid max \"$max\" for big.Int")
             }
             if (value > maxi) {
-                return ValidationResult(false, "value $value exceeds the maximum limit $maxi")
+                return ValidationResult(false, "big.Int length ${value} > max ${maxi}")
             }
         }
 
@@ -1539,66 +1751,81 @@ class Tag(
         }
 
         if (location != 0) {
-            return ValidationResult(false, "type bigint not support location UTC$location")
+            return ValidationResult(false, "type big.Int not support location UTC$location")
         }
 
         return ValidationResult(true, data = value, text = value.toString())
     }
 
     fun validateDateTime(value: LocalDateTime): ValidationResult {
-        if (value == LocalDateTime.MIN) {
-            if (!allowEmpty) {
-                return ValidationResult(false, "type datetime not allow empty ${value.toString()}")
+        val epoch = LocalDateTime.of(1970, 1, 1, 0, 0, 0)
+
+        val format = value.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))
+        if (value == epoch) {
+            if (allowEmpty) {
+                return ValidationResult(true, data = value, text = format)
             }
+            return ValidationResult(
+                    false,
+                    "datetime type does not allow empty \"$format\". you can set allow_empty or child_allow_empty to allow it."
+            )
         }
 
         if (desc.length > 65535) {
             return ValidationResult(false, "desc length exceeds 65535 bytes")
         }
 
-        val text = value.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))
-
-        return ValidationResult(true, data = value, text = text)
+        return ValidationResult(true, data = value, text = format)
     }
 
     fun validateDate(value: LocalDate): ValidationResult {
-        if (value == LocalDate.MIN) {
-            if (!allowEmpty) {
-                return ValidationResult(false, "type date not allow empty ${value.toString()}")
+        val epoch = LocalDate.of(1970, 1, 1)
+
+        val format = value.toString()
+        if (value == epoch) {
+            if (allowEmpty) {
+                return ValidationResult(true, data = value, text = format)
             }
+            return ValidationResult(
+                    false,
+                    "date type does not allow empty \"$format\". you can set allow_empty or child_allow_empty to allow it."
+            )
         }
 
         if (desc.length > 65535) {
             return ValidationResult(false, "desc length exceeds 65535 bytes")
         }
 
-        val text = value.toString()
-
-        return ValidationResult(true, data = value, text = text)
+        return ValidationResult(true, data = value, text = format)
     }
 
     fun validateTime(value: LocalTime): ValidationResult {
-        if (value == LocalTime.MIN) {
-            if (!allowEmpty) {
-                return ValidationResult(false, "type time not allow empty ${value.toString()}")
+        val zero = LocalTime.of(0, 0, 0)
+
+        val format = value.toString()
+        if (value == zero) {
+            if (allowEmpty) {
+                return ValidationResult(true, data = value, text = format)
             }
+            return ValidationResult(
+                    false,
+                    "time type does not allow empty \"$format\". you can set allow_empty or child_allow_empty to allow it."
+            )
         }
 
         if (desc.length > 65535) {
             return ValidationResult(false, "desc length exceeds 65535 bytes")
         }
 
-        val text = value.toString()
-
-        return ValidationResult(true, data = value, text = text)
+        return ValidationResult(true, data = value, text = format)
     }
 
     fun validateUUID(value: String): ValidationResult {
         if (value.isEmpty()) {
-            if (!allowEmpty) {
-                return ValidationResult(false, "type uuid not allow empty value \"\"")
+            if (allowEmpty) {
+                return ValidationResult(true, data = ByteArray(16), text = value)
             }
-            return ValidationResult(true, data = ByteArray(16), text = value)
+            return ValidationResult(false, "type uuid not allow empty value \"\"")
         }
 
         if (!uuidRegex.matcher(value).matches()) {
@@ -1617,7 +1844,7 @@ class Tag(
         }
 
         if (version != DEFAULT_VERSION) {
-            val uuidVersion = cleanValue.substring(12, 13).toInt(16)
+            val uuidVersion = ((uuidBytes[6].toInt() shr 4) and 0x0F)
             if (version != uuidVersion) {
                 return ValidationResult(false, "invalid uuid version")
             }
@@ -1634,12 +1861,100 @@ class Tag(
         return ValidationResult(true, data = uuidBytes, text = value)
     }
 
+    fun validateDecimal(value: String): ValidationResult {
+        if (value.isEmpty()) {
+            if (allowEmpty) {
+                return ValidationResult(true, data = value, text = value)
+            }
+            return ValidationResult(false, "type decimal not allow empty value \"\"")
+        }
+
+        if (!decimalRegex.matcher(value).matches()) {
+            return ValidationResult(false, "invalid decimal \"$value\", must be like \"0.0\"")
+        }
+
+        if (desc.length > 65535) {
+            return ValidationResult(false, "desc length exceeds 65535 bytes")
+        }
+
+        if (location != 0) {
+            return ValidationResult(false, "type decimal not support location UTC$location")
+        }
+
+        return ValidationResult(true, data = value, text = value)
+    }
+
+    fun validateIP(value: String): ValidationResult {
+        if (value.isEmpty()) {
+            if (allowEmpty) {
+                return ValidationResult(true, data = ByteArray(0), text = "")
+            }
+            return ValidationResult(false, "type ip not allow empty value \"\"")
+        }
+
+        try {
+            val addr = java.net.InetAddress.getByName(value)
+            val ipBytes = addr.address
+
+            if (version == 4 && ipBytes.size != 4) {
+                return ValidationResult(false, "invalid ipv4: $value")
+            }
+
+            if (version == 6 && ipBytes.size != 16) {
+                return ValidationResult(false, "invalid ipv6: $value")
+            }
+        } catch (e: Exception) {
+            return ValidationResult(false, "value '$value' does not match IP pattern")
+        }
+
+        if (desc.length > 65535) {
+            return ValidationResult(false, "desc length exceeds 65535 bytes")
+        }
+
+        if (location != 0) {
+            return ValidationResult(false, "type ip not support location UTC$location")
+        }
+
+        return ValidationResult(true, data = value, text = value)
+    }
+
+    fun validateURL(value: String): ValidationResult {
+        if (value.isEmpty()) {
+            if (allowEmpty) {
+                return ValidationResult(true, data = value, text = "")
+            }
+            return ValidationResult(false, "type url not allow empty value \"\"")
+        }
+
+        try {
+            val url = java.net.URI(value).toURL()
+            if (url.protocol != "http" && url.protocol != "https") {
+                return ValidationResult(false, "invalid url: $value")
+            }
+            if (url.host.isEmpty()) {
+                return ValidationResult(false, "invalid url: $value")
+            }
+        } catch (e: Exception) {
+            return ValidationResult(false, "invalid url: $value")
+        }
+
+        if (desc.length > 65535) {
+            return ValidationResult(false, "desc length exceeds 65535 bytes")
+        }
+
+        if (location != 0) {
+            return ValidationResult(false, "type url not support location UTC$location")
+        }
+
+        return ValidationResult(true, data = value, text = value)
+    }
+
     fun validateEmail(value: String): ValidationResult {
         if (value.isEmpty()) {
-            if (!allowEmpty) {
-                return ValidationResult(false, "type email not allow empty value \"\"")
+            if (allowEmpty) {
+                return ValidationResult(true, data = value, text = value)
             }
-            return ValidationResult(true, data = value, text = value)
+            return ValidationResult(false, "type email not allow empty value \"\"")
         }
 
         if (!emailRegex.matcher(value).matches()) {
@@ -1659,21 +1974,16 @@ class Tag(
 
     fun validateEnum(value: String): ValidationResult {
         if (value.isEmpty()) {
-            if (!allowEmpty) {
-                return ValidationResult(false, "type enum not allow empty value \"\"")
+            if (allowEmpty) {
+                return ValidationResult(true, data = -1, text = value)
             }
-            return ValidationResult(true, data = -1, text = value)
-        }
-
-        if (enum.isEmpty()) {
-            return ValidationResult(false, "enum not defined")
+            return ValidationResult(false, "type enum not allow empty value \"\"")
         }
 
         val enums = enum.split("|")
         var idx = -1
         for (i in enums.indices) {
-            val enumValue = enums[i]
-            if (enumValue.trim() == value) {
+            if (enums[i].trim() == value) {
                 idx = i
                 break
             }
@@ -1698,16 +2008,16 @@ class Tag(
         val length = value.size
 
         if (length == 0) {
-            if (!allowEmpty) {
-                return ValidationResult(false, "type image not allow empty value []byte{}")
+            if (allowEmpty) {
+                return ValidationResult(true, data = value, text = "")
             }
-            return ValidationResult(true, data = value, text = "")
+            return ValidationResult(false, "type image not allow empty value []byte{}")
         }
 
         if (min.isNotEmpty()) {
             val mini = min.toIntOrNull()
             if (mini == null) {
-                return ValidationResult(false, "failed to parse tag.min as int: $min")
+                return ValidationResult(false, "failed to parse t.Min as int: $min")
             }
             if (length < mini) {
                 return ValidationResult(false, "[]byte length $length < min $mini")
@@ -1717,14 +2027,14 @@ class Tag(
         if (max.isNotEmpty()) {
             val maxi = max.toIntOrNull()
             if (maxi == null) {
-                return ValidationResult(false, "failed to parse tag.max as int: $max")
+                return ValidationResult(false, "failed to parse t.Max as int: $max")
             }
             if (length > maxi) {
                 return ValidationResult(false, "[]byte length $length > max $maxi")
             }
         }
 
-        if (size > 0 && length != size) {
+        if (size != 0 && length != size) {
             return ValidationResult(false, "[]byte length $length != size $size")
         }
 
@@ -1739,78 +2049,6 @@ class Tag(
         val text = Base64.getEncoder().encodeToString(value)
 
         return ValidationResult(true, data = value, text = text)
-    }
-
-    fun validateDecimal(value: String): ValidationResult {
-        if (value.isEmpty()) {
-            if (!allowEmpty) {
-                return ValidationResult(false, "type decimal not allow empty value \"\"")
-            }
-            return ValidationResult(true, data = value, text = value)
-        }
-
-        if (!decimalRegex.matcher(value).matches()) {
-            return ValidationResult(false, "value '$value' does not match decimal pattern")
-        }
-
-        if (desc.length > 65535) {
-            return ValidationResult(false, "desc length exceeds 65535 bytes")
-        }
-
-        if (location != 0) {
-            return ValidationResult(false, "type decimal not support location UTC$location")
-        }
-
-        return ValidationResult(true, data = value, text = value)
-    }
-
-    fun validateIP(value: String): ValidationResult {
-        if (value.isEmpty()) {
-            if (!allowEmpty) {
-                return ValidationResult(false, "type ip not allow empty value \"\"")
-            }
-            return ValidationResult(true, data = ByteArray(0), text = value)
-        }
-
-        val isIpv4 = ipv4Regex.matcher(value).matches()
-        val isIpv6 = ipv6Regex.matcher(value).matches()
-
-        if (!isIpv4 && !isIpv6) {
-            return ValidationResult(false, "value '$value' does not match IP pattern")
-        }
-
-        if (desc.length > 65535) {
-            return ValidationResult(false, "desc length exceeds 65535 bytes")
-        }
-
-        if (location != 0) {
-            return ValidationResult(false, "type ip not support location UTC$location")
-        }
-
-        return ValidationResult(true, data = value, text = value)
-    }
-
-    fun validateURL(value: String): ValidationResult {
-        if (value.isEmpty()) {
-            if (!allowEmpty) {
-                return ValidationResult(false, "type url not allow empty value \"\"")
-            }
-            return ValidationResult(true, data = value, text = value)
-        }
-
-        if (!urlRegex.matcher(value).matches()) {
-            return ValidationResult(false, "value '$value' does not match URL pattern")
-        }
-
-        if (desc.length > 65535) {
-            return ValidationResult(false, "desc length exceeds 65535 bytes")
-        }
-
-        if (location != 0) {
-            return ValidationResult(false, "type url not support location UTC$location")
-        }
-
-        return ValidationResult(true, data = value, text = value)
     }
 
     object TagKey {

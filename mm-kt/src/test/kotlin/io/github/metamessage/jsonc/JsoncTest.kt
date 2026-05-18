@@ -64,11 +64,9 @@ class JsoncParserTest {
     @Test
     fun parseNull() {
         val source = "null"
-        val result = parseJsonc(source)
-        assertTrue(result is Value)
-        val value = result as Value
-        assertNull(value.data)
-        assertTrue(value.tag?.isNull == true)
+        assertThrows(JsoncException::class.java) {
+            parseJsonc(source)
+        }
     }
 
     @Test

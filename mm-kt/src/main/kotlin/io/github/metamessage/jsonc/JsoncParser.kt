@@ -81,7 +81,7 @@ class JsoncParser(private val tokens: List<JsoncToken>) {
                 continue
             }
 
-            result = parse("") ?: break
+            result = parse("")
         }
         return result
     }
@@ -136,11 +136,6 @@ class JsoncParser(private val tokens: List<JsoncToken>) {
                     }
                     return Value(data = data, text = result.second ?: "", tag = tag, path = path)
                 }
-                JsoncTokenType.Null -> {
-                    val tag = consumeCommentsFor(tok.line) ?: Tag()
-                    tag.isNull = true
-                    return Value(data = null, text = "null", tag = tag, path = path)
-                }
                 JsoncTokenType.True -> {
                     val tag = consumeCommentsFor(tok.line) ?: Tag()
                     if (tag.type == ValueType.UNKNOWN) {
@@ -151,11 +146,13 @@ class JsoncParser(private val tokens: List<JsoncToken>) {
                         throw JsoncException("unsupported type ${tag.type} for boolean literal")
                     }
 
-                    if (!tag.isNull) {
-                        val result = tag.validateBool(true)
-                        if (!result.valid) {
-                            throw JsoncException(result.error ?: "Boolean validation failed")
-                        }
+                    if (tag.isNull) {
+                        throw JsoncException("bool must false when bool is null")
+                    }
+
+                    val result = tag.validateBool(true)
+                    if (!result.valid) {
+                        throw JsoncException(result.error ?: "Boolean validation failed")
                     }
 
                     return Value(data = true, text = "true", tag = tag, path = path)
@@ -683,7 +680,7 @@ class JsoncParser(private val tokens: List<JsoncToken>) {
             valNode = parse(fieldPath) ?: continue
 
             val childTag = valNode.tag
-            if (childTag != null) {
+            if (childTag != null && childTag.type == ValueType.MAP) {
                 childTag.inheritFromArrayParent(tag)
             }
 
@@ -695,7 +692,12 @@ class JsoncParser(private val tokens: List<JsoncToken>) {
         }
 
         when (tag.type) {
-            ValueType.MAP -> {}
+            ValueType.MAP -> {
+                val result = tag.validateMap()
+                if (!result.valid) {
+                    throw JsoncException(result.error ?: "Map validation failed")
+                }
+            }
             ValueType.STRUCT -> {
                 val result = tag.validateStruct()
                 if (!result.valid) {
@@ -773,6 +775,22 @@ class JsoncParser(private val tokens: List<JsoncToken>) {
             if (peek().type == JsoncTokenType.Comma) {
                 next()
             }
+        }
+
+        when (tag.type) {
+            ValueType.ARRAY -> {
+                val result = tag.validateArray(arr.items)
+                if (!result.valid) {
+                    throw JsoncException(result.error ?: "Array validation failed")
+                }
+            }
+            ValueType.SLICE -> {
+                val result = tag.validateSlice(arr.items)
+                if (!result.valid) {
+                    throw JsoncException(result.error ?: "Slice validation failed")
+                }
+            }
+            else -> {}
         }
 
         depth--

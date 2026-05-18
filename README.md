@@ -36,7 +36,7 @@ MetaMessage（mm）是一個結構化數據交換協議。自描述、自約束�
 
 - 可以序列化為緊湊的二進制，解析更快，體積更小
 
-**解決了以下問題**  
+**解決了以下問題**
 
 - 類型不明確，如無法確定類型為uint8，無法進行數據結構重建
 
@@ -70,12 +70,12 @@ MetaMessage 天生適合 AI 的理解和交互場景，解決了理解歧義、�
 
 - mm tag 需與普通註釋之間留一個空行以增強可讀性
 
-**例**  
+**例**
 
 ```jsonc
 {
-    // mm: type=datetime; desc=創建時間
-    "create_time": "2026-01-01 00:00:00"
+  // mm: type=datetime; desc=創建時間
+  "create_time": "2026-01-01 00:00:00",
 }
 ```
 
@@ -174,71 +174,71 @@ make
 
 1. **編碼 JSONC 到 MetaMessage**
 
-    ```bash
-    ./mm -encode -in input.jsonc -out output.mm
-    ```
+   ```bash
+   ./mm -encode -in input.jsonc -out output.mm
+   ```
 
-    或從 stdin 讀取：
+   或從 stdin 讀取：
 
-    ```bash
-    cat input.jsonc | ./mm -encode > output.mm
-    ```
+   ```bash
+   cat input.jsonc | ./mm -encode > output.mm
+   ```
 
 2. **解碼 MetaMessage 到 JSONC**
 
-    ```bash
-    ./mm -decode -in input.mm -out output.jsonc
-    ```
+   ```bash
+   ./mm -decode -in input.mm -out output.jsonc
+   ```
 
-    或從 stdin 讀取：
+   或從 stdin 讀取：
 
-    ```bash
-    cat input.mm | ./mm -decode > output.jsonc
-    ```
+   ```bash
+   cat input.mm | ./mm -decode > output.jsonc
+   ```
 
 3. **從 JSONC 生成結構體及數據代碼**
 
-    支持 go, java, ts, kt, py, js, cs, rs, swift, php
+   支持 go, java, ts, kt, py, js, cs, rs, swift, php
 
-    ```bash
-    ./mm -generate -lang go -in input.jsonc -out output.go
-    ```
+   ```bash
+   ./mm -generate -lang go -in input.jsonc -out output.go
+   ```
 
-    ```bash
-    ./mm -generate -lang java -in input.jsonc -out output.java
-    ```
+   ```bash
+   ./mm -generate -lang java -in input.jsonc -out output.java
+   ```
 
-    ```bash
-    ./mm -generate -lang ts -in input.jsonc -out output.ts
-    ```
+   ```bash
+   ./mm -generate -lang ts -in input.jsonc -out output.ts
+   ```
 
-    ```bash
-    ./mm -generate -lang kt -in input.jsonc -out output.kt
-    ```
+   ```bash
+   ./mm -generate -lang kt -in input.jsonc -out output.kt
+   ```
 
-    ```bash
-    ./mm -generate -lang py -in input.jsonc -out output.py
-    ```
+   ```bash
+   ./mm -generate -lang py -in input.jsonc -out output.py
+   ```
 
-    ```bash
-    ./mm -generate -lang js -in input.jsonc -out output.js
-    ```
+   ```bash
+   ./mm -generate -lang js -in input.jsonc -out output.js
+   ```
 
-    ```bash
-    ./mm -generate -lang cs -in input.jsonc -out output.cs
-    ```
+   ```bash
+   ./mm -generate -lang cs -in input.jsonc -out output.cs
+   ```
 
-    ```bash
-    ./mm -generate -lang rs -in input.jsonc -out output.rs
-    ```
+   ```bash
+   ./mm -generate -lang rs -in input.jsonc -out output.rs
+   ```
 
-    ```bash
-    ./mm -generate -lang swift -in input.jsonc -out output.swift
-    ```
+   ```bash
+   ./mm -generate -lang swift -in input.jsonc -out output.swift
+   ```
 
-    ```bash
-    ./mm -generate -lang php -in input.jsonc -out output.php
-    ```
+   ```bash
+   ./mm -generate -lang php -in input.jsonc -out output.php
+   ```
 
 #### 選項說明
 
@@ -279,17 +279,17 @@ import (
 func main() {
     // 從結構體編碼
     type Person struct {
-        Name  string 
-        Age   int   
+        Name  string
+        Age   int
     }
-    
+
     p := Person{Name: "Alice", Age: 30}
     data, err := mm.EncodeFromValue(p)
     if err != nil {
         panic(err)
     }
     fmt.Printf("Encoded: %x\n", data)
-    
+
     // 解碼到結構體
     var decoded Person
     err = mm.DecodeToValue(data, &decoded)
@@ -297,14 +297,14 @@ func main() {
         panic(err)
     }
     fmt.Printf("Decoded: %+v\n", decoded)
-    
+
     // 從 JSONC 編碼
     jsoncStr := `{"name": "Bob", "age": 25}`
     data2, err := mm.EncodeFromJSONC(jsoncStr)
     if err != nil {
         panic(err)
     }
-    
+
     // 解碼到 JSONC
     jsoncOut, err := mm.DecodeToJSONC(data2)
     if err != nil {
@@ -332,6 +332,8 @@ func main() {
 
 #### Java
 
+[jitpack.io](https://jitpack.io/#metamessage/metamessage/)
+
 ```java
 import io.github.metamessage.MetaMessage;
 import io.github.metamessage.MM;
@@ -353,31 +355,43 @@ public class Example {
 
 #### Kotlin
 
+[jitpack.io](https://jitpack.io/#metamessage/metamessage/)
+
 ```kotlin
 import io.github.metamessage.MetaMessage
 import io.github.metamessage.MM
 
-@MM
-class Person(var name: String = "Ed", var age: Int = 30)
+@MM(desc="person")
+class Person(var name: String = "Ed", var age: Uint8 = 30.toUint8())
 
 fun main() {
     val person = Person()
+
     val wire = MetaMessage.encodeFromValue(person)
-    val decoded = MetaMessage.decodeToValue(wire, Person::class.java)
+
+    val person = MetaMessage.decodeToValue(wire, Person::class.java)
+
+    val jsonc = MetaMessage.valueToJsonc(person)
+
+    val person = MetaMessage.jsoncToValue(jsoncOutput, Person::class.java)
+
+    val wire = MetaMessage.encodeFromJsonc(jsonc)
+
+    val jsonc = MetaMessage.decodeToJsonc(wire)
 }
 ```
 
 #### TypeScript
 
 ```typescript
-import { encodeFromValue, decodeToValue, mm, ValueType } from 'metamessage';
+import { encodeFromValue, decodeToValue, mm, ValueType } from "metamessage";
 
-@mm({ desc: '' })
+@mm({ desc: "" })
 class Person {
-    @mm({ desc: '' })
-    name: string = ''
-    @mm({ desc: '' })
-    age: number = 0
+  @mm({ desc: "" })
+  name: string = "";
+  @mm({ desc: "" })
+  age: number = 0;
 }
 const person = { name: "Ed", age: 30 };
 const wire = encodeFromValue(person);
@@ -397,7 +411,7 @@ decoded = decode(wire)
 #### JavaScript
 
 ```javascript
-const { encode, decode } = require('metamessage');
+const { encode, decode } = require("metamessage");
 
 const person = { name: "Ed", age: 30 };
 const wire = encode(person);

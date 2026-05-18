@@ -861,28 +861,8 @@ func (p *Parser) parse(path string) (val ir.Node, err error) {
 				Path: path,
 			}, nil
 
-		// case token.Null:
-		// 	var tag *ir.Tag
-		// 	if tag, err = p.consumeCommentsFor(tok.Line); err != nil {
-		// 		return nil, err
-		// 	}
-		// 	if tag == nil {
-		// 		tag = ir.NewTag()
-		// 		tag.Type = ir.ValueTypeNull
-		// 	} else {
-		// 		switch tag.Type {
-		// 		case ir.ValueTypeUnknown:
-		// 			tag.Type = ir.ValueTypeNull
-		// 		case ir.ValueTypeNull:
-		// 		default:
-		// 			return nil, fmt.Errorf("unsupported type %v for null literal", tag.Type)
-		// 		}
-		// 	}
-		// 	return &ir.Value{
-		// 		Data: nil,
-		// 		Text: ir.Null,
-		// 		Tag:  tag,
-		// 	}, nil
+		case token.Null:
+			return nil, fmt.Errorf("null literal is not supported")
 
 		default:
 			return nil, fmt.Errorf("unexpected token %s", tok.Type)
@@ -1124,6 +1104,8 @@ func mergeNodeTag(n ir.Node, parsed *ir.Tag) {
 	existing := n.GetTag()
 	merged := ir.MergeTag(existing, parsed)
 	switch t := n.(type) {
+	case *ir.Doc:
+		t.Tag = merged
 	case *ir.Value:
 		t.Tag = merged
 	case *ir.Object:

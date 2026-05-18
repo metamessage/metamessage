@@ -4,7 +4,7 @@ import java.math.BigInteger
 import java.time.LocalDateTime
 import java.util.UUID
 import io.github.metamessage.ir.Tag
-
+import io.github.metamessage.ir.ValueType
 import io.github.metamessage.ir.Node
 import io.github.metamessage.ir.Object
 import io.github.metamessage.ir.Array
@@ -13,164 +13,214 @@ import io.github.metamessage.MM
 
 object Binder {
     fun <T> bind(node: Node, clazz: Class<T>): T {
-        require(node is Object) { "root must be object" }
-        val inst = clazz.getDeclaredConstructor().newInstance()
-        val byKey = fieldsByJsonKey(clazz)
-        for (e in node.fields) {
-            val f = byKey[e.key] ?: continue
-            f.isAccessible = true
-            f.set(inst, materialize(f, e.value))
+        when (node) {
+            is Object -> {
+                val tag = node.tag
+                if (tag != null && tag.type == ValueType.STRUCT) {
+                    val inst = clazz.getDeclaredConstructor().newInstance()
+                    convertStruct(node, inst as Any)
+                    return inst
+                } else {
+                    @Suppress("UNCHECKED_CAST")
+                    val inst = mutableMapOf<String, Any?>()
+                    convertMap(node, inst)
+                    return inst as T
+                }
+            }
+            is Array -> {
+                val tag = node.tag
+                if (tag != null && tag.size > 0 && tag.type == ValueType.ARRAY) {
+                    @Suppress("UNCHECKED_CAST")
+                    return convertArray(node, clazz) as T
+                } else {
+                    return convertSlice(node, clazz)
+                }
+            }
+            is Value -> {
+                return convertValue(node, clazz)
+            }
+            else -> throw IllegalArgumentException("unsupported node type: ${node::class.java.name}")
         }
-        return inst
     }
 
-    private fun fieldsByJsonKey(c: Class<*>): Map<String, java.lang.reflect.Field> {
-        val m = LinkedHashMap<String, java.lang.reflect.Field>()
-        for (f in c.declaredFields) {
+    private fun convertStruct(obj: Object, out: Any) {
+        val outClazz = out.javaClass
+        val nameToField = mutableMapOf<String, java.lang.reflect.Field>()
+        for (f in outClazz.declaredFields) {
             if (java.lang.reflect.Modifier.isStatic(f.modifiers)) continue
-            val t = TypeInference.forField(f)
-            val mm = f.getAnnotation(MM::class.java)
-            if (mm != null && mm.name == "-") continue
-            val key = fieldKey(f, t, mm)
-            m[key] = f
+            nameToField[f.name] = f
         }
-        return m
+
+        for (field in obj.fields) {
+            val fieldKey = field.key
+            val runes = fieldKey.toCharArray()
+            if (runes.isNotEmpty()) {
+                runes[0] = runes[0].uppercaseChar()
+            }
+            val name = String(runes)
+            val structField = nameToField[name] ?: continue
+            structField.isAccessible = true
+            try {
+                val fieldVal = materialize(structField, field.value)
+                structField.set(out, fieldVal)
+            } catch (e: Exception) {
+                throw RuntimeException("failed to bind field ${field.key}: ${e.message}", e)
+            }
+        }
     }
 
-    private fun fieldKey(f: java.lang.reflect.Field, ft: Tag, mm: MM?): String {
-        if (mm != null && mm.name.isNotEmpty() && mm.name != "-") return mm.name
-        if (ft.name.isNotEmpty()) return ft.name
-        return CamelToSnake.convert(f.name)
+    private fun convertMap(obj: Object, out: MutableMap<String, Any?>) {
+        for (field in obj.fields) {
+            val key = field.key
+            val value = when (val v = field.value) {
+                is Value -> convertValueToAny(v)
+                is Object -> {
+                    val map = mutableMapOf<String, Any?>()
+                    convertMap(v, map)
+                    map
+                }
+                is Array -> {
+                    convertSlice(v, List::class.java).toList()
+                }
+                else -> null
+            }
+            out[key] = value
+        }
+    }
+
+    private fun convertArray(arr: Array, clazz: Class<*>): Any {
+        val size = arr.tag?.size ?: arr.items.size
+        val list = mutableListOf<Any?>()
+        for (item in arr.items) {
+            when (item) {
+                is Value -> list.add(convertValueToAny(item))
+                is Object -> {
+                    val inst = clazz.getDeclaredConstructor().newInstance()
+                    convertStruct(item, inst as Any)
+                    list.add(inst)
+                }
+                else -> list.add(null)
+            }
+        }
+        return list
+    }
+
+    @Suppress("UNCHECKED_CAST")
+    private fun <T> convertSlice(arr: Array, clazz: Class<T>): T {
+        val list = mutableListOf<Any?>()
+        var elemClass: Class<*> = Any::class.java
+        val gt = clazz.typeParameters.firstOrNull()
+        if (gt != null && gt is Class<*>) {
+            elemClass = gt
+        }
+        for (item in arr.items) {
+            when (item) {
+                is Value -> list.add(convertValueToAny(item))
+                is Object -> {
+                    val inst = clazz.getDeclaredConstructor().newInstance()
+                    convertStruct(item, inst as Any)
+                    list.add(inst)
+                }
+                else -> list.add(null)
+            }
+        }
+        return list as T
+    }
+
+    @Suppress("UNCHECKED_CAST")
+    private fun <T> convertValue(value: Value, clazz: Class<T>): T {
+        val tag = value.tag ?: Tag.empty()
+        val data = value.data
+        val text = value.text
+
+        return when (tag.type) {
+            ValueType.DATETIME, ValueType.DATE, ValueType.TIME -> {
+                (data as? LocalDateTime ?: LocalDateTime.of(1970, 1, 1, 0, 0, 0)) as T
+            }
+            ValueType.BIGINT -> {
+                (data as? BigInteger ?: BigInteger.ZERO) as T
+            }
+            ValueType.UUID -> {
+                (data as? UUID ?: UUID(0, 0)).toString() as T
+            }
+            ValueType.DECIMAL, ValueType.EMAIL -> {
+                (data as? String ?: text) as T
+            }
+            ValueType.IP -> {
+                (data as? java.net.InetAddress) as T
+            }
+            ValueType.URL -> {
+                (data as? java.net.URI) as T
+            }
+            ValueType.ENUM -> {
+                text as T
+            }
+            ValueType.INT -> {
+                ((data as? Number)?.toInt() ?: text.toInt()) as T
+            }
+            ValueType.INT8 -> {
+                ((data as? Number)?.toByte() ?: text.toByte()) as T
+            }
+            ValueType.INT16 -> {
+                ((data as? Number)?.toShort() ?: text.toShort()) as T
+            }
+            ValueType.INT32 -> {
+                ((data as? Number)?.toInt() ?: text.toInt()) as T
+            }
+            ValueType.INT64 -> {
+                ((data as? Number)?.toLong() ?: text.toLong()) as T
+            }
+            ValueType.UINT -> {
+                ((data as? Number)?.toInt() ?: text.toInt()) as T
+            }
+            ValueType.UINT8 -> {
+                ((data as? Number)?.toShort() ?: text.toShort()) as T
+            }
+            ValueType.UINT16 -> {
+                ((data as? Number)?.toInt() ?: text.toInt()) as T
+            }
+            ValueType.UINT32 -> {
+                ((data as? Number)?.toInt() ?: text.toInt()) as T
+            }
+            ValueType.UINT64 -> {
+                ((data as? Number)?.toLong() ?: text.toLong()) as T
+            }
+            ValueType.FLOAT32 -> {
+                ((data as? Number)?.toFloat() ?: text.toFloat()) as T
+            }
+            ValueType.FLOAT64 -> {
+                ((data as? Number)?.toDouble() ?: text.toDouble()) as T
+            }
+            ValueType.STRING -> {
+                (data as? String ?: text) as T
+            }
+            ValueType.BOOL -> {
+                (data as? Boolean ?: text.toBoolean()) as T
+            }
+            ValueType.BYTES -> {
+                (data as? ByteArray) as T
+            }
+            else -> throw IllegalArgumentException("unsupported type: ${tag.type}")
+        }
+    }
+
+    private fun convertValueToAny(value: Value): Any? {
+        return convertValue(value, Any::class.java) as? Any?
     }
 
     private fun materialize(f: java.lang.reflect.Field, node: Node): Any? {
-        val ft = f.type
-        if (Map::class.java.isAssignableFrom(ft)) {
-            if (node is Object) {
-                return mapFrom(node, f)
-            }
-        }
         return when (node) {
-            is Value -> scalarToField(ft, node)
-            is Array -> listFrom(node, f)
-            is Object -> bind(node, ft)
-            is io.github.metamessage.ir.Doc -> bind(node, ft)
-        }
-    }
-
-    @Suppress("UNCHECKED_CAST")
-    private fun listFrom(arr: Array, f: java.lang.reflect.Field): List<*> {
-        val gt = f.genericType
-        var elemClass: Class<Any> = String::class.java as Class<Any>
-        if (gt is java.lang.reflect.ParameterizedType) {
-            val typeArgs = gt.actualTypeArguments
-            if (typeArgs.isNotEmpty()) {
-                val a0 = typeArgs[0]
-                if (a0 is Class<*>) {
-                    elemClass = a0 as Class<Any>
-                }
+            is Value -> convertValue(node, f.type)
+            is Object -> {
+                val inst = f.type.getDeclaredConstructor().newInstance()
+                convertStruct(node, inst)
+                inst
             }
-        }
-        val out = mutableListOf<Any?>()
-        for (ch in arr.items) {
-            when (ch) {
-                is Value -> out.add(scalarToField(elemClass, ch))
-                is Object -> {
-                    val sub = elemClass.getDeclaredConstructor().newInstance()
-                    val byKey = fieldsByJsonKey(elemClass)
-                    for (e in ch.fields) {
-                        val sf = byKey[e.key]
-                        if (sf != null) {
-                            sf.isAccessible = true
-                            sf.set(sub, materialize(sf, e.value))
-                        }
-                    }
-                    out.add(sub)
-                }
-                else -> out.add(null)
+            is Array -> {
+                val list = convertSlice(node, f.type)
+                list
             }
-        }
-        return out
-    }
-
-    @Suppress("UNCHECKED_CAST")
-    private fun mapFrom(obj: Object, f: java.lang.reflect.Field): Map<*, *> {
-        val gt = f.genericType
-        var keyClass: Class<Any> = String::class.java as Class<Any>
-        var valueClass: Class<Any> = Any::class.java
-        
-        if (gt is java.lang.reflect.ParameterizedType) {
-            val typeArgs = gt.actualTypeArguments
-            if (typeArgs.size >= 2) {
-                val a0 = typeArgs[0]
-                if (a0 is Class<*>) {
-                    keyClass = a0 as Class<Any>
-                }
-                val a1 = typeArgs[1]
-                if (a1 is Class<*>) {
-                    valueClass = a1 as Class<Any>
-                }
-            }
-        }
-        
-        val out = mutableMapOf<Any?, Any?>()
-        for ((key, value) in obj.fields) {
-            // Convert key to the appropriate type
-            val convertedKey = when (keyClass) {
-                String::class.java -> key
-                Int::class.java, Int::class.javaPrimitiveType -> key.toInt()
-                Long::class.java, Long::class.javaPrimitiveType -> key.toLong()
-                else -> key
-            }
-            
-            // Convert value to the appropriate type
-            val convertedValue = when (value) {
-                is Value -> {
-                    val scalarValue = scalarToField(valueClass, value)
-                    // Ensure the value is of the correct type
-                    when {
-                        valueClass == Int::class.java || valueClass == Int::class.javaPrimitiveType -> scalarValue as? Int ?: scalarValue.toString().toInt()
-                        valueClass == Long::class.java || valueClass == Long::class.javaPrimitiveType -> scalarValue as? Long ?: scalarValue.toString().toLong()
-                        valueClass == Double::class.java || valueClass == Double::class.javaPrimitiveType -> scalarValue as? Double ?: scalarValue.toString().toDouble()
-                        valueClass == Float::class.java || valueClass == Float::class.javaPrimitiveType -> scalarValue as? Float ?: scalarValue.toString().toFloat()
-                        else -> scalarValue
-                    }
-                }
-                is Object -> bind(value, valueClass)
-                is Array -> listFrom(value, f)
-                is io.github.metamessage.ir.Doc -> bind(value, valueClass)
-            }
-            
-            out[convertedKey] = convertedValue
-        }
-        return out
-    }
-
-    private fun scalarToField(ft: Class<*>, sc: Value): Any? {
-        val d = sc.data
-        return when {
-            ft == Int::class.javaPrimitiveType || ft == Int::class.java -> if (d is Number) d.toInt() else sc.text.toInt()
-            ft == Long::class.javaPrimitiveType || ft == Long::class.java -> if (d is Number) d.toLong() else sc.text.toLong()
-            ft == Boolean::class.javaPrimitiveType || ft == Boolean::class.java -> d == true
-            ft == String::class.java -> sc.text
-            ft == Double::class.javaPrimitiveType || ft == Double::class.java -> if (d is Number) d.toDouble() else sc.text.toDouble()
-            ft == Float::class.javaPrimitiveType || ft == Float::class.java -> if (d is Number) d.toFloat() else sc.text.toFloat()
-            ft == LocalDateTime::class.java -> when (d) {
-                is LocalDateTime -> d
-                else -> LocalDateTime.parse(sc.text.replace(' ', 'T'))
-            }
-            ft == UUID::class.java && d is UUID -> d
-            ft == BigInteger::class.java && d is BigInteger -> d
-            else -> {
-                // For other types, try to convert from text if possible
-                when (ft) {
-                    Int::class.java -> sc.text.toInt()
-                    Long::class.java -> sc.text.toLong()
-                    Double::class.java -> sc.text.toDouble()
-                    Float::class.java -> sc.text.toFloat()
-                    else -> d
-                }
-            }
+            else -> null
         }
     }
 }

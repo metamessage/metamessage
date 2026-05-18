@@ -1,48 +1,14 @@
 package io.github.metamessage
 
-import io.github.metamessage.jsonc.Jsonc as jc
-import io.github.metamessage.core.Encoder
-import io.github.metamessage.core.Decoder
 import io.github.metamessage.core.Binder
+import io.github.metamessage.core.Decoder
+import io.github.metamessage.core.Encoder
+import io.github.metamessage.core.Encoder.rootTagForClass
+import io.github.metamessage.core.valueToNode
+import io.github.metamessage.ir.Node
+import io.github.metamessage.jsonc.parseFromJsonc
+import io.github.metamessage.jsonc.printJsonc
 import io.github.metamessage.jsonc.toJsonc
-
-// interface Encoder {
-//     fun reset(w: Writer)
-//     fun encodeStream(value: Any): Int
-// }
-
-// interface Decoder {
-//     fun reset(r: Reader)
-//     fun decodeStream(value: Any): Int
-// }
-
-// fun newEncoder(w: Writer): Encoder = mm.newEncoder(w)
-// fun newDecoder(r: Reader): Decoder = mm.newDecoder(r)
-
-
- // companion object {
-    //     private val encoderPool = LinkedBlockingQueue<WireEncoder>()
-
-    //     private fun getEncoder(): WireEncoder {
-    //         return encoderPool.poll() ?: WireEncoder()
-    //     }
-
-    //     private fun putEncoder(encoder: WireEncoder) {
-    //         encoder.reset()
-    //         encoderPool.offer(encoder)
-    //     }
-
-    //     @JvmStatic
-    //     fun fromValue(v: Any, tag: String): ByteArray {
-    //         val node = valueToNode(v, tag)
-    //         val encoder = getEncoder()
-    //         return try {
-    //             encoder.encode(node)
-    //         } finally {
-    //             putEncoder(encoder)
-    //         }
-    //     }
-    // }
 
 object MetaMessage {
 
@@ -53,7 +19,7 @@ object MetaMessage {
 
     @JvmStatic
     fun encodeFromJsonc(jsonc: String): ByteArray {
-        val node = jc.parseFromString(jsonc) ?: throw RuntimeException("Failed to parse JSONC")
+        val node = parseFromJsonc(jsonc)
         return Encoder.encodeNode(node)
     }
 
@@ -67,5 +33,27 @@ object MetaMessage {
     fun decodeToJsonc(wire: ByteArray): String {
         val node = Decoder().decode(wire)
         return toJsonc(node)
+    }
+
+    @JvmStatic
+    fun <T> jsoncToValue(jsonc: String, clazz: Class<T>): T {
+        val node = parseFromJsonc(jsonc)
+        return Binder.bind(node, clazz)
+    }
+
+    @JvmStatic
+    fun valueToJsonc(value: Any): String {
+        val node = valueToNode(value, rootTagForClass(value.javaClass), "")
+        return toJsonc(node)
+    }
+
+    @JvmStatic
+    fun dump(node: Node): String {
+        return io.github.metamessage.ir.dump(node)
+    }
+
+    @JvmStatic
+    fun printJsonc(node: Node) {
+        println(io.github.metamessage.jsonc.printJsonc(node))
     }
 }

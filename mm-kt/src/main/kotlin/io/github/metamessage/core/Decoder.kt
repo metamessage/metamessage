@@ -1,5 +1,12 @@
 package io.github.metamessage.core
 
+import io.github.metamessage.ir.Array
+import io.github.metamessage.ir.Field
+import io.github.metamessage.ir.Node
+import io.github.metamessage.ir.Object
+import io.github.metamessage.ir.Tag
+import io.github.metamessage.ir.Value
+import io.github.metamessage.ir.ValueType
 import java.math.BigInteger
 import java.nio.ByteBuffer
 import java.nio.charset.StandardCharsets
@@ -11,20 +18,10 @@ import java.time.ZoneId
 import java.time.ZoneOffset
 import java.time.format.DateTimeFormatter
 import java.util.UUID
-import io.github.metamessage.ir.Tag
-import io.github.metamessage.ir.ValueType
-import io.github.metamessage.ir.Field
-import io.github.metamessage.ir.Node
-import io.github.metamessage.ir.Value
-import io.github.metamessage.ir.Array
-import io.github.metamessage.ir.Object
-
-import io.github.metamessage.jsonc.toJsonc
 
 class Decoder() {
     private var offset = 0
     private lateinit var data: ByteArray
-
 
     fun decode(data: ByteArray): Node {
         this.data = data
@@ -34,7 +31,6 @@ class Decoder() {
         if (offset != data.size) {
             throw MmDecodeException("trailing bytes at $offset len ${data.size}")
         }
-        // println("22222222${toJsonc(d.node)}")
         return d.node
     }
 
@@ -47,17 +43,18 @@ class Decoder() {
         }
         val b = data[offset++].toInt() and 0xFF
         val prefix = b and Prefix.PREFIX_MASK
-        val d = when (prefix) {
-            Prefix.TAG -> decodeTagged(b, start)
-            Prefix.SIMPLE -> Decoded(decodeSimple(b, inherited), offset - start)
-            Prefix.POSITIVE_INT -> decodePositiveInt(b, inherited, start)
-            Prefix.NEGATIVE_INT -> decodeNegativeInt(b, inherited, start)
-            Prefix.FLOAT -> decodeFloat(b, inherited, start)
-            Prefix.STRING -> decodeString(b, inherited, start)
-            Prefix.BYTES -> decodeBytes(b, inherited, start)
-            Prefix.CONTAINER -> decodeContainer(b, inherited, start)
-            else -> throw MmDecodeException("invalid prefix")
-        }
+        val d =
+                when (prefix) {
+                    Prefix.TAG -> decodeTagged(b, start)
+                    Prefix.SIMPLE -> Decoded(decodeSimple(b, inherited), offset - start)
+                    Prefix.POSITIVE_INT -> decodePositiveInt(b, inherited, start)
+                    Prefix.NEGATIVE_INT -> decodeNegativeInt(b, inherited, start)
+                    Prefix.FLOAT -> decodeFloat(b, inherited, start)
+                    Prefix.STRING -> decodeString(b, inherited, start)
+                    Prefix.BYTES -> decodeBytes(b, inherited, start)
+                    Prefix.CONTAINER -> decodeContainer(b, inherited, start)
+                    else -> throw MmDecodeException("invalid prefix")
+                }
         return d
     }
 
@@ -123,14 +120,15 @@ class Decoder() {
             ValueType.INT16 -> Value(0.toShort(), "0", tag)
             ValueType.INT32 -> Value(0, "0", tag)
             ValueType.INT64 -> Value(0L, "0", tag)
-            ValueType.UINT, ValueType.UINT8, ValueType.UINT16, ValueType.UINT32 -> Value(0, "0", tag)
+            ValueType.UINT, ValueType.UINT8, ValueType.UINT16, ValueType.UINT32 ->
+                    Value(0, "0", tag)
             ValueType.UINT64 -> Value(0L, "0", tag)
             ValueType.FLOAT32 -> Value(0f, "0.0", tag)
             ValueType.FLOAT64 -> Value(0.0, "0.0", tag)
             ValueType.EMAIL, ValueType.UUID, ValueType.DECIMAL -> Value("", "", tag)
             ValueType.BIGINT -> Value(BigInteger.ZERO, "0", tag)
             ValueType.URL -> Value("", "", tag)
-            ValueType.IP -> Value(null, ipNullText(tag.version), tag)
+            ValueType.IP -> Value(ByteArray(0), ipNullText(tag.version), tag)
             else -> null
         }
     }
@@ -183,6 +181,8 @@ class Decoder() {
             SimpleValue.NULL_FLOAT -> nullFloat(tag)
             SimpleValue.NULL_STRING -> nullString(tag)
             SimpleValue.NULL_BYTES -> nullBytes(tag)
+            in SimpleValue.CODE..SimpleValue.VAL ->
+                    Value(SimpleValue.toString(sv), SimpleValue.toString(sv), tag)
             else -> throw MmDecodeException("unsupported simple: $sv")
         }
     }
@@ -240,15 +240,16 @@ class Decoder() {
     private fun readUintBody(first: Int): Long {
         val l1 = intLenExtraBytes(first)
         val low = first and WireConstants.INT_LEN_MASK
-        val v = if (l1 == 0) {
-            low.toLong()
-        } else {
-            var v = 0L
-            for (i in 0 until l1) {
-                v = (v shl 8) or (data[offset++].toInt() and 0xFF).toLong()
-            }
-            v
-        }
+        val v =
+                if (l1 == 0) {
+                    low.toLong()
+                } else {
+                    var v = 0L
+                    for (i in 0 until l1) {
+                        v = (v shl 8) or (data[offset++].toInt() and 0xFF).toLong()
+                    }
+                    v
+                }
         return v
     }
 
@@ -323,32 +324,35 @@ class Decoder() {
         val tag = inherited?.copy() ?: Tag.empty()
         if (tag.type == ValueType.UNKNOWN) tag.type = ValueType.FLOAT64
         val l = first and WireConstants.FLOAT_LEN_MASK
-        val `val`: Double = if (l < WireConstants.FLOAT_LEN_1) {
-            var `val` = (first and 0xF).toDouble() / 10.0
-            if ((first and WireConstants.FLOAT_NEG_MASK) != 0) `val` = -`val`
-            `val`
-        } else {
-            val exp = data[offset++].toByte()
-            val l1 = floatLenExtraBytes(first)
-            val mantissa = if (l1 == 0) {
-                0
-            } else {
-                var m = 0L
-                for (i in 0 until l1) {
-                    m = (m shl 8) or (data[offset++].toInt() and 0xFF).toLong()
+        val `val`: Double =
+                if (l < WireConstants.FLOAT_LEN_1) {
+                    var `val` = (first and 0xF).toDouble() / 10.0
+                    if ((first and WireConstants.FLOAT_NEG_MASK) != 0) `val` = -`val`
+                    `val`
+                } else {
+                    val exp = data[offset++].toByte()
+                    val l1 = floatLenExtraBytes(first)
+                    val mantissa =
+                            if (l1 == 0) {
+                                0
+                            } else {
+                                var m = 0L
+                                for (i in 0 until l1) {
+                                    m = (m shl 8) or (data[offset++].toInt() and 0xFF).toLong()
+                                }
+                                m
+                            }
+                    val dec = FloatCodec.mantissaToDecimal(mantissa, exp)
+                    var `val` = dec.toDouble()
+                    if ((first and WireConstants.FLOAT_NEG_MASK) != 0) `val` = -`val`
+                    `val`
                 }
-                m
-            }
-            val dec = FloatCodec.mantissaToDecimal(mantissa, exp)
-            var `val` = dec.toDouble()
-            if ((first and WireConstants.FLOAT_NEG_MASK) != 0) `val` = -`val`
-            `val`
-        }
-        val node = when (tag.type) {
-            ValueType.FLOAT32 -> Value(`val`.toFloat(), `val`.toString(), tag)
-            ValueType.FLOAT64, ValueType.DECIMAL -> Value(`val`, `val`.toString(), tag)
-            else -> throw MmDecodeException("bad float tag ${tag.type}")
-        }
+        val node =
+                when (tag.type) {
+                    ValueType.FLOAT32 -> Value(`val`.toFloat(), `val`.toString(), tag)
+                    ValueType.FLOAT64, ValueType.DECIMAL -> Value(`val`, `val`.toString(), tag)
+                    else -> throw MmDecodeException("bad float tag ${tag.type}")
+                }
         return Decoded(node, offset - start)
     }
 
@@ -373,12 +377,13 @@ class Decoder() {
         val text = String(bs, StandardCharsets.UTF_8)
         val tag = inherited?.copy() ?: Tag.empty()
         if (tag.type == ValueType.UNKNOWN) tag.type = ValueType.STRING
-        val node = when (tag.type) {
-            ValueType.STRING, ValueType.EMAIL -> Value(text, text, tag)
-            ValueType.URL -> Value(text, text, tag)
-            ValueType.IP -> Value(text, text, tag)
-            else -> throw MmDecodeException("unsupported string type: ${tag.type}")
-        }
+        val node =
+                when (tag.type) {
+                    ValueType.STRING, ValueType.EMAIL -> Value(text, text, tag)
+                    ValueType.URL -> Value(text, text, tag)
+                    ValueType.IP -> Value(text, text, tag)
+                    else -> throw MmDecodeException("unsupported string type: ${tag.type}")
+                }
         return Decoded(node, offset - start)
     }
 
@@ -402,17 +407,18 @@ class Decoder() {
         val bs = if (l2 > 0) readBytes(l2) else ByteArray(0)
         val tag = inherited?.copy() ?: Tag.empty()
         if (tag.type == ValueType.UNKNOWN) tag.type = ValueType.BYTES
-        val node = when (tag.type) {
-            ValueType.BYTES -> Value(bs, "", tag)
-            ValueType.BIGINT -> bigintFromBytes(bs, tag)
-            ValueType.UUID -> {
-                if (bs.size != 16) throw MmDecodeException("uuid length")
-                val u = uuidFromBytes(bs)
-                Value(u, u.toString(), tag)
-            }
-            ValueType.IP -> Value(bs, "", tag)
-            else -> throw MmDecodeException("unsupported bytes type: ${tag.type}")
-        }
+        val node =
+                when (tag.type) {
+                    ValueType.BYTES -> Value(bs, "", tag)
+                    ValueType.BIGINT -> bigintFromBytes(bs, tag)
+                    ValueType.UUID -> {
+                        if (bs.size != 16) throw MmDecodeException("uuid length")
+                        val u = uuidFromBytes(bs)
+                        Value(u, u.toString(), tag)
+                    }
+                    ValueType.IP -> Value(bs, "", tag)
+                    else -> throw MmDecodeException("unsupported bytes type: ${tag.type}")
+                }
         return Decoded(node, offset - start)
     }
 
@@ -438,7 +444,7 @@ class Decoder() {
         val body = bs.copyOfRange(1, bs.size)
         val bits = bigintBits(body)
         val neg = bits.isNotEmpty() && bits[0] == 1
-        val digits = BigIntWireCodec.decodePositive(body, n)
+        val digits = BigIntWireCodec.decodePositive(body, n, skipFirstBit = true)
         val bi = BigInteger(if (neg) "-$digits" else digits)
         return Value(bi, bi.toString(), tag)
     }

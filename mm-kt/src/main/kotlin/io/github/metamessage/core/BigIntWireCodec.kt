@@ -31,12 +31,12 @@ object BigIntWireCodec {
         return bitsToBytes(bits)
     }
 
-    fun decodePositive(data: ByteArray, digitGroups: Int): String {
+    fun decodePositive(data: ByteArray, digitGroups: Int, skipFirstBit: Boolean = false): String {
         val bits = bytesToBits(data)
         if (bits.isEmpty()) return ""
         val numStr = StringBuilder()
         var n = digitGroups
-        var idx = 0
+        var idx = if (skipFirstBit) 1 else 0
         while (n > 0) {
             when {
                 n >= 3 && idx + 10 <= bits.size -> {

@@ -3,20 +3,18 @@ package io.github.metamessage.jsonc
 import io.github.metamessage.ir.Node
 import io.github.metamessage.ir.Array
 import io.github.metamessage.ir.Value
-import io.github.metamessage.ir.Object
+import io.github.metamessage.ir.Object as AstObject
 import io.github.metamessage.ir.ValueType
 import io.github.metamessage.ir.Tag
 import io.github.metamessage.ir.Doc
 
-
-
 class JsoncPrinter {
     companion object {
-        private const val INDENT = "    "
+        private const val INDENT = "\t"
 
         fun toString(node: Node, indentLevel: Int = 0): String {
             return when (node) {
-                is Object -> objectToString(node, indentLevel)
+                is AstObject -> objectToString(node, indentLevel)
                 is Array -> arrayToString(node, indentLevel)
                 is Value -> valueToString(node)
                 is Doc -> docToString(node, indentLevel)
@@ -28,42 +26,33 @@ class JsoncPrinter {
             sb.append("{\n")
 
             for (field in doc.fields) {
-                for (i in 0 until indentLevel + 1) sb.append(INDENT)
+                writeLeadingComments(sb, field.value.tag, indentLevel + 1)
 
-                val fieldValue = field.value
-                if (fieldValue is Value && fieldValue.tag != null && fieldValue.tag!!.toString().isNotEmpty()) {
-                    sb.append("// mm: ${fieldValue.tag!!.toString()}\n")
-                    for (i in 0 until indentLevel + 1) sb.append(INDENT)
-                }
-
+                writeIndent(sb, indentLevel + 1)
                 sb.append("\"${field.key}\": ")
-                sb.append(toString(fieldValue, indentLevel + 1))
+                sb.append(toString(field.value, indentLevel + 1))
                 sb.append(",\n")
             }
 
-            for (i in 0 until indentLevel) sb.append(INDENT)
+            writeIndent(sb, indentLevel)
             sb.append("}")
             return sb.toString()
         }
 
-        private fun objectToString(obj: Object, indentLevel: Int): String {
+        private fun objectToString(obj: AstObject, indentLevel: Int): String {
             val sb = StringBuilder()
             sb.append("{\n")
 
             for (field in obj.fields) {
-                for (i in 0 until indentLevel + 1) sb.append(INDENT)
+                writeLeadingComments(sb, field.value.tag, indentLevel + 1)
 
-                val fieldValue = field.value
-                if (fieldValue.tag != null && fieldValue.tag!!.toString().isNotEmpty()) {
-                    sb.append("// mm: ${fieldValue.tag!!.toString()}\n")
-                    for (i in 0 until indentLevel + 1) sb.append(INDENT)
-                }
+                writeIndent(sb, indentLevel + 1)
                 sb.append("\"${field.key}\": ")
-                sb.append(toString(fieldValue, indentLevel + 1))
+                sb.append(toString(field.value, indentLevel + 1))
                 sb.append(",\n")
             }
 
-            for (i in 0 until indentLevel) sb.append(INDENT)
+            writeIndent(sb, indentLevel)
             sb.append("}")
             return sb.toString()
         }
@@ -73,20 +62,20 @@ class JsoncPrinter {
             sb.append("[\n")
 
             for (item in arr.items) {
-                for (i in 0 until indentLevel + 1) sb.append(INDENT)
+                writeLeadingComments(sb, item.tag, indentLevel + 1)
+
+                writeIndent(sb, indentLevel + 1)
                 sb.append(toString(item, indentLevel + 1))
                 sb.append(",\n")
             }
 
-            for (i in 0 until indentLevel) sb.append(INDENT)
+            writeIndent(sb, indentLevel)
             sb.append("]")
             return sb.toString()
         }
 
         private fun valueToString(value: Value): String {
-            val sb = StringBuilder()
-            sb.append(valueToStringOnly(value))
-            return sb.toString()
+            return valueToStringOnly(value)
         }
 
         private fun valueToStringOnly(value: Value): String {
@@ -114,9 +103,24 @@ class JsoncPrinter {
             }
         }
 
+        private fun writeIndent(sb: StringBuilder, indentLevel: Int) {
+            for (i in 0 until indentLevel) {
+                sb.append(INDENT)
+            }
+        }
+
+        private fun writeLeadingComments(sb: StringBuilder, tag: Tag?, indentLevel: Int) {
+            val tagStr = tag?.toString() ?: ""
+            if (tagStr.isNotEmpty()) {
+                sb.append("\n")
+                writeIndent(sb, indentLevel)
+                sb.append("// mm: $tagStr\n")
+            }
+        }
+
         fun toCompactString(node: Node): String {
             return when (node) {
-                is Object -> compactObject(node)
+                is AstObject -> compactObject(node)
                 is Array -> compactArray(node)
                 is Value -> compactValue(node)
                 is Doc -> compactDoc(node)
@@ -128,7 +132,7 @@ class JsoncPrinter {
             return "{${fields.joinToString(",")}}"
         }
 
-        private fun compactObject(obj: Object): String {
+        private fun compactObject(obj: AstObject): String {
             val fields = obj.fields.map { "\"${it.key}\": ${toCompactString(it.value)}" }
             return "{${fields.joinToString(",")}}"
         }
@@ -143,4 +147,3 @@ class JsoncPrinter {
         }
     }
 }
-

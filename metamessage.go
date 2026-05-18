@@ -53,3 +53,23 @@ func DecodeToJSONC(wire []byte) (jsonc string, err error) {
 
 	return jc.ToJSONC(node), nil
 }
+
+func ValueToJSONC(value any, tag string) (jsonc string, err error) {
+	var node ir.Node
+	node, err = core.ValueToNode(value, tag)
+	if err != nil {
+		return
+	}
+
+	return jc.ToJSONC(node), nil
+}
+
+func JSONCToValue(jsonc string, value any) (err error) {
+	var node ir.Node
+	node, err = core.ParseFromJSONC(jsonc)
+	if err != nil {
+		return
+	}
+
+	return core.Bind(node, value)
+}

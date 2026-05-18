@@ -308,7 +308,7 @@ describe('value to node', () => {
 });
 
 describe('encode and decode', () => {
-  describe('', () => {
+  describe('ts', () => {
     test('', () => {
       @mm({ desc: '用户' })
       class User {

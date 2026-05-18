@@ -1,30 +1,20 @@
 package io.github.metamessage.core
 
-import java.time.Instant
-import java.time.LocalDate
-import java.time.LocalDateTime
-import java.time.LocalTime
-import java.time.ZoneOffset
-import java.util.UUID
-
-import io.github.metamessage.ir.Tag
-import io.github.metamessage.ir.ValueType
-import io.github.metamessage.ir.Field
-import io.github.metamessage.ir.Node
-import io.github.metamessage.ir.Value as AstValue
-import io.github.metamessage.ir.Array as AstArray
-import io.github.metamessage.ir.Object as AstObject
-
-import io.github.metamessage.jsonc.toJsonc
-import io.github.metamessage.ir.dump
 import io.github.metamessage.MM
+import io.github.metamessage.ir.Array as AstArray
+import io.github.metamessage.ir.Node
+import io.github.metamessage.ir.Object as AstObject
+import io.github.metamessage.ir.Tag
+import io.github.metamessage.ir.Value as AstValue
+import io.github.metamessage.ir.ValueType
+import java.time.LocalDate
+import java.time.LocalTime
+import java.util.UUID
 
 object Encoder {
 
-    fun encode(root: Any): ByteArray {
-        val node = valueToNode(root, rootTagForClass(root.javaClass), "")
-        // println("00000000${dump(node)}")
-        // println("11111111${toJsonc(node)}")
+    fun encode(value: Any): ByteArray {
+        val node = valueToNode(value, rootTagForClass(value.javaClass), "")
         return encodeNode(node)
     }
 
@@ -107,82 +97,138 @@ object Encoder {
         val tmp = WireEncoder()
         when (tag.type) {
             ValueType.DATETIME -> {
-                if (tag.isNull) {
-                    tmp.encodeSimple(SimpleValue.NULL_INT)
-                } else {
+                if (!tag.isNull) {
                     val timeValue = value.data ?: throw IllegalArgumentException("null datetime")
                     tmp.encodeInt64(TimeUtil.epochSeconds(timeValue))
                 }
             }
             ValueType.DATE -> {
-                if (tag.isNull) {
-                    tmp.encodeSimple(SimpleValue.NULL_INT)
-                } else {
-                    val dateValue = value.data as? LocalDate ?: throw IllegalArgumentException("invalid date")
+                if (!tag.isNull) {
+                    val dateValue =
+                            value.data as? LocalDate
+                                    ?: throw IllegalArgumentException("invalid date")
                     tmp.encodeInt64(TimeUtil.daysSinceEpochUtc(dateValue))
                 }
             }
             ValueType.TIME -> {
-                if (tag.isNull) {
-                    tmp.encodeSimple(SimpleValue.NULL_INT)
-                } else {
-                    val timeValue = value.data as? LocalTime ?: throw IllegalArgumentException("invalid time")
+                if (!tag.isNull) {
+                    val timeValue =
+                            value.data as? LocalTime
+                                    ?: throw IllegalArgumentException("invalid time")
                     tmp.encodeInt64(TimeUtil.secondsOfDay(timeValue).toLong())
                 }
             }
-            ValueType.INT,
-            ValueType.INT8,
-            ValueType.INT16,
-            ValueType.INT32,
-            ValueType.INT64,
-            ValueType.ENUM -> {
+            ValueType.INT -> {
                 if (tag.isNull) {
                     tmp.encodeSimple(SimpleValue.NULL_INT)
                 } else {
-                    val data = value.data
-                    val number = if (data is Number) {
-                        data.toLong()
-                    } else if (data is Boolean) {
-                        if (data) 1L else 0L
-                    } else {
-                        throw IllegalArgumentException("invalid integer data: $data")
-                    }
-                    tmp.encodeInt64(number)
+                    tmp.encodeInt64((value.data as Number).toLong())
                 }
             }
-            ValueType.UINT,
-            ValueType.UINT8,
-            ValueType.UINT16,
-            ValueType.UINT32,
+            ValueType.INT8 -> {
+                if (!tag.isNull) {
+                    tmp.encodeInt64((value.data as Number).toLong())
+                }
+            }
+            ValueType.INT16 -> {
+                if (!tag.isNull) {
+                    tmp.encodeInt64((value.data as Number).toLong())
+                }
+            }
+            ValueType.INT32 -> {
+                if (!tag.isNull) {
+                    tmp.encodeInt64((value.data as Number).toLong())
+                }
+            }
+            ValueType.INT64 -> {
+                if (!tag.isNull) {
+                    tmp.encodeInt64((value.data as Number).toLong())
+                }
+            }
+            ValueType.UINT -> {
+                if (!tag.isNull) {
+                    tmp.encodeUint64((value.data as Number).toLong())
+                }
+            }
+            ValueType.UINT8 -> {
+                if (!tag.isNull) {
+                    tmp.encodeUint64((value.data as Number).toLong())
+                }
+            }
+            ValueType.UINT16 -> {
+                if (!tag.isNull) {
+                    tmp.encodeUint64((value.data as Number).toLong())
+                }
+            }
+            ValueType.UINT32 -> {
+                if (!tag.isNull) {
+                    tmp.encodeUint64((value.data as Number).toLong())
+                }
+            }
             ValueType.UINT64 -> {
-                if (tag.isNull) {
-                    tmp.encodeSimple(SimpleValue.NULL_INT)
-                } else {
-                    val data = value.data
-                    val number = if (data is Number) {
-                        data.toLong()
-                    } else {
-                        throw IllegalArgumentException("invalid unsigned data: $data")
-                    }
-                    tmp.encodeUint64(number)
+                if (!tag.isNull) {
+                    tmp.encodeUint64(value.data as Long)
                 }
             }
-            ValueType.FLOAT32,
-            ValueType.FLOAT64,
-            ValueType.DECIMAL -> {
+            ValueType.FLOAT32 -> {
+                if (!tag.isNull) {
+                    tmp.encodeFloatString(value.text)
+                }
+            }
+            ValueType.FLOAT64 -> {
                 if (tag.isNull) {
                     tmp.encodeSimple(SimpleValue.NULL_FLOAT)
                 } else {
                     tmp.encodeFloatString(value.text)
                 }
             }
-            ValueType.STRING,
-            ValueType.EMAIL,
-            ValueType.URL -> {
+            ValueType.STRING -> {
                 if (tag.isNull) {
                     tmp.encodeSimple(SimpleValue.NULL_STRING)
                 } else {
                     tmp.encodeString(value.text)
+                }
+            }
+            ValueType.EMAIL -> {
+                if (!tag.isNull) {
+                    tmp.encodeString(value.text)
+                }
+            }
+            ValueType.UUID -> {
+                if (!tag.isNull) {
+                    val uuid = value.data as? UUID ?: throw IllegalArgumentException("invalid uuid")
+                    tmp.encodeBytes(uuidBytes(uuid))
+                }
+            }
+            ValueType.DECIMAL -> {
+                if (!tag.isNull) {
+                    tmp.encodeFloatString(value.text)
+                }
+            }
+            ValueType.URL -> {
+                if (!tag.isNull) {
+                    tmp.encodeString(value.text)
+                }
+            }
+            ValueType.IP -> {
+                if (!tag.isNull) {
+                    val ip =
+                            value.data as? java.net.InetAddress
+                                    ?: throw IllegalArgumentException("invalid ip")
+                    when (tag.version) {
+                        0 -> tmp.encodeString(value.text)
+                        4 -> tmp.encodeBytes(ip.address)
+                        6 ->
+                                if (value.text.length < 16) {
+                                    tmp.encodeString(value.text)
+                                } else {
+                                    tmp.encodeBytes(ip.address)
+                                }
+                        else ->
+                                throw IllegalArgumentException(
+                                        "unsupported IP version: ${tag.version}"
+                                )
+                    }
                 }
             }
             ValueType.BYTES -> {
@@ -193,18 +239,8 @@ object Encoder {
                     tmp.encodeBytes(bytes)
                 }
             }
-            ValueType.UUID -> {
-                if (tag.isNull) {
-                    tmp.encodeSimple(SimpleValue.NULL_BYTES)
-                } else {
-                    val uuid = value.data as? UUID ?: throw IllegalArgumentException("invalid uuid")
-                    tmp.encodeBytes(uuidBytes(uuid))
-                }
-            }
             ValueType.BIGINT -> {
-                if (tag.isNull) {
-                    tmp.encodeSimple(SimpleValue.NULL_BYTES)
-                } else {
+                if (!tag.isNull) {
                     tmp.encodeBigIntDecimal(value.text)
                 }
             }
@@ -214,6 +250,11 @@ object Encoder {
                 } else {
                     val boolValue = value.data as? Boolean ?: false
                     tmp.encodeBool(boolValue)
+                }
+            }
+            ValueType.ENUM -> {
+                if (!tag.isNull) {
+                    tmp.encodeInt64((value.data as Number).toLong())
                 }
             }
             else -> {
@@ -227,7 +268,7 @@ object Encoder {
         enc.encodeTaggedPayload(tmp.toByteArray(), tag.toBytes())
     }
 
-    private fun rootTagForClass(c: Class<*>): Tag {
+    fun rootTagForClass(c: Class<*>): Tag {
         val ann = c.getAnnotation(MM::class.java)
         val t = if (ann != null) Tag.fromAnnotation(ann) else Tag.empty()
         if (t.type == ValueType.UNKNOWN) t.type = ValueType.STRUCT

@@ -1,5 +1,13 @@
 package io.github.metamessage.core
 
+import io.github.metamessage.MM
+import io.github.metamessage.ir.Array as AstArray
+import io.github.metamessage.ir.Field
+import io.github.metamessage.ir.Node
+import io.github.metamessage.ir.Object as AstObject
+import io.github.metamessage.ir.Tag
+import io.github.metamessage.ir.Value as AstValue
+import io.github.metamessage.ir.ValueType
 import java.math.BigInteger
 import java.net.InetAddress
 import java.net.URI
@@ -8,25 +16,23 @@ import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
 import java.time.ZoneOffset
-import java.time.format.DateTimeFormatter
 import java.util.UUID
-import kotlin.reflect.KClass
 import kotlin.reflect.KMutableProperty
-import kotlin.reflect.KProperty
 import kotlin.reflect.KVisibility
 import kotlin.reflect.full.declaredMemberProperties
 import kotlin.reflect.full.findAnnotation
 
-import io.github.metamessage.ir.Tag
-import io.github.metamessage.ir.ValueType
-import io.github.metamessage.ir.Field
-import io.github.metamessage.ir.Node
-import io.github.metamessage.ir.Value as AstValue
-import io.github.metamessage.ir.Array as AstArray
-import io.github.metamessage.ir.Object as AstObject
-import io.github.metamessage.MM
-
 private const val maxDepth = 32
+
+private const val Null = "null"
+private const val True = "true"
+private const val False = "false"
+
+fun nilToNode(valueType: ValueType): Node {
+    val tag = Tag.empty()
+    tag.type = valueType
+    return AstValue(null, Null, tag, "")
+}
 
 fun valueToNode(v: Any?, tag: Tag, path: String): Node {
     return valueToNode(v, tag, 0, path)
@@ -34,18 +40,19 @@ fun valueToNode(v: Any?, tag: Tag, path: String): Node {
 
 private fun valueToNode(v: Any?, tag: Tag?, depth: Int, path: String): Node {
     var workTag = tag ?: Tag.empty()
-    
+
     var data: Any? = null
-    var text: String = ""
+    var text: String = Null
 
     when (v) {
         null -> {
             if (workTag.type == ValueType.UNKNOWN) {
-                throw IllegalArgumentException("invalid input: v is untyped nil (no concrete type/value)")
+                throw IllegalArgumentException(
+                        "invalid input: v is untyped nil (no concrete type/value)"
+                )
             }
             workTag.isNull = true
         }
-
         is ByteArray -> {
             if (workTag.type == ValueType.UNKNOWN) {
                 workTag.type = ValueType.SLICE
@@ -54,20 +61,22 @@ private fun valueToNode(v: Any?, tag: Tag?, depth: Int, path: String): Node {
                 ValueType.BYTES -> {
                     val result = workTag.validateBytes(v)
                     data = result.data
-                    text = result.text ?: ""
+                    text = result.text ?: Null
                 }
                 ValueType.IMAGE -> {
                     val result = workTag.validateImage(v)
                     data = result.data
-                    text = result.text ?: ""
+                    text = result.text ?: Null
                 }
                 ValueType.SLICE -> {
                     return anyToJSONC(v, workTag, depth, path)
                 }
-                else -> throw IllegalArgumentException("${workTag.type} unsupported type: ${v.javaClass.name}")
+                else ->
+                        throw IllegalArgumentException(
+                                "${workTag.type} unsupported type: ${v.javaClass.name}"
+                        )
             }
         }
-
         is Boolean -> {
             if (workTag.type == ValueType.UNKNOWN) {
                 workTag.type = ValueType.BOOL
@@ -76,12 +85,14 @@ private fun valueToNode(v: Any?, tag: Tag?, depth: Int, path: String): Node {
                 ValueType.BOOL -> {
                     val result = workTag.validateBool(v)
                     data = result.data
-                    text = result.text ?: ""
+                    text = result.text ?: Null
                 }
-                else -> throw IllegalArgumentException("${workTag.type} unsupported type: ${v.javaClass.name}")
+                else ->
+                        throw IllegalArgumentException(
+                                "${workTag.type} unsupported type: ${v.javaClass.name}"
+                        )
             }
         }
-
         is Byte -> {
             if (workTag.type == ValueType.UNKNOWN) {
                 workTag.type = ValueType.INT8
@@ -90,12 +101,14 @@ private fun valueToNode(v: Any?, tag: Tag?, depth: Int, path: String): Node {
                 ValueType.INT8 -> {
                     val result = workTag.validateInt8(v)
                     data = result.data
-                    text = result.text ?: ""
+                    text = result.text ?: Null
                 }
-                else -> throw IllegalArgumentException("${workTag.type} unsupported type: ${v.javaClass.name}")
+                else ->
+                        throw IllegalArgumentException(
+                                "${workTag.type} unsupported type: ${v.javaClass.name}"
+                        )
             }
         }
-
         is Short -> {
             if (workTag.type == ValueType.UNKNOWN) {
                 workTag.type = ValueType.INT16
@@ -104,26 +117,30 @@ private fun valueToNode(v: Any?, tag: Tag?, depth: Int, path: String): Node {
                 ValueType.INT16 -> {
                     val result = workTag.validateInt16(v)
                     data = result.data
-                    text = result.text ?: ""
+                    text = result.text ?: Null
                 }
-                else -> throw IllegalArgumentException("${workTag.type} unsupported type: ${v.javaClass.name}")
+                else ->
+                        throw IllegalArgumentException(
+                                "${workTag.type} unsupported type: ${v.javaClass.name}"
+                        )
             }
         }
-
         is Int -> {
             if (workTag.type == ValueType.UNKNOWN) {
-                workTag.type = ValueType.INT
+                workTag.type = ValueType.INT32
             }
             when (workTag.type) {
-                ValueType.INT -> {
-                    val result = workTag.validateInt(v)
+                ValueType.INT, ValueType.INT32 -> {
+                    val result = workTag.validateInt32(v)
                     data = result.data
-                    text = result.text ?: ""
+                    text = result.text ?: Null
                 }
-                else -> throw IllegalArgumentException("${workTag.type} unsupported type: ${v.javaClass.name}")
+                else ->
+                        throw IllegalArgumentException(
+                                "${workTag.type} unsupported type: ${v.javaClass.name}"
+                        )
             }
         }
-
         is Long -> {
             if (workTag.type == ValueType.UNKNOWN) {
                 workTag.type = ValueType.INT64
@@ -132,17 +149,19 @@ private fun valueToNode(v: Any?, tag: Tag?, depth: Int, path: String): Node {
                 ValueType.INT64 -> {
                     val result = workTag.validateInt64(v)
                     data = result.data
-                    text = result.text ?: ""
+                    text = result.text ?: Null
                 }
                 ValueType.UINT64 -> {
                     val result = workTag.validateUint64(BigInteger.valueOf(v))
                     data = result.data
-                    text = result.text ?: ""
+                    text = result.text ?: Null
                 }
-                else -> throw IllegalArgumentException("${workTag.type} unsupported type: ${v.javaClass.name}")
+                else ->
+                        throw IllegalArgumentException(
+                                "${workTag.type} unsupported type: ${v.javaClass.name}"
+                        )
             }
         }
-
         is Float -> {
             if (workTag.type == ValueType.UNKNOWN) {
                 workTag.type = ValueType.FLOAT32
@@ -150,16 +169,24 @@ private fun valueToNode(v: Any?, tag: Tag?, depth: Int, path: String): Node {
             when (workTag.type) {
                 ValueType.FLOAT32 -> {
                     if (v.isInfinite() || v.isNaN()) {
-                        throw IllegalArgumentException("${workTag.type} unsupported value: ${if (v.isInfinite()) "Inf" else "NaN"}")
+                        val desc =
+                                when {
+                                    v.isInfinite() && v > 0 -> "+Inf"
+                                    v.isInfinite() && v < 0 -> "-Inf"
+                                    else -> "NaN"
+                                }
+                        throw IllegalArgumentException("${workTag.type} unsupported value: $desc")
                     }
                     val result = workTag.validateFloat32(v)
                     data = result.data
-                    text = result.text ?: ""
+                    text = result.text ?: Null
                 }
-                else -> throw IllegalArgumentException("${workTag.type} unsupported type: ${v.javaClass.name}")
+                else ->
+                        throw IllegalArgumentException(
+                                "${workTag.type} unsupported type: ${v.javaClass.name}"
+                        )
             }
         }
-
         is Double -> {
             if (workTag.type == ValueType.UNKNOWN) {
                 workTag.type = ValueType.FLOAT64
@@ -167,21 +194,29 @@ private fun valueToNode(v: Any?, tag: Tag?, depth: Int, path: String): Node {
             when (workTag.type) {
                 ValueType.FLOAT64 -> {
                     if (v.isInfinite() || v.isNaN()) {
-                        throw IllegalArgumentException("${workTag.type} unsupported value: ${if (v.isInfinite()) "Inf" else "NaN"}")
+                        val desc =
+                                when {
+                                    v.isInfinite() && v > 0 -> "+Inf"
+                                    v.isInfinite() && v < 0 -> "-Inf"
+                                    else -> "NaN"
+                                }
+                        throw IllegalArgumentException("${workTag.type} unsupported value: $desc")
                     }
                     val result = workTag.validateFloat64(v)
                     data = result.data
-                    text = result.text ?: ""
+                    text = result.text ?: Null
                 }
                 ValueType.DECIMAL -> {
                     val result = workTag.validateDecimal(v.toString())
                     data = result.data
-                    text = result.text ?: ""
+                    text = result.text ?: Null
                 }
-                else -> throw IllegalArgumentException("${workTag.type} unsupported type: ${v.javaClass.name}")
+                else ->
+                        throw IllegalArgumentException(
+                                "${workTag.type} unsupported type: ${v.javaClass.name}"
+                        )
             }
         }
-
         is String -> {
             if (workTag.type == ValueType.UNKNOWN) {
                 workTag.type = ValueType.STRING
@@ -190,42 +225,44 @@ private fun valueToNode(v: Any?, tag: Tag?, depth: Int, path: String): Node {
                 ValueType.STRING -> {
                     val result = workTag.validateString(v)
                     data = result.data
-                    text = result.text ?: ""
+                    text = result.text ?: Null
                 }
                 ValueType.DECIMAL -> {
                     val result = workTag.validateDecimal(v)
                     data = result.data
-                    text = result.text ?: ""
+                    text = result.text ?: Null
                 }
                 ValueType.EMAIL -> {
                     val result = workTag.validateEmail(v)
                     data = result.data
-                    text = result.text ?: ""
-                }
-                ValueType.UUID -> {
-                    val result = workTag.validateUUID(v)
-                    data = result.data
-                    text = result.text ?: ""
-                }
-                ValueType.URL -> {
-                    val result = workTag.validateURL(v)
-                    data = result.data
-                    text = result.text ?: ""    
-                }
-                ValueType.IP -> {
-                    val result = workTag.validateIP(v)
-                    data = result.data
-                    text = result.text ?: ""
+                    text = result.text ?: Null
                 }
                 ValueType.ENUM -> {
                     val result = workTag.validateEnum(v)
                     data = result.data
-                    text = result.text ?: ""
+                    text = result.text ?: Null
                 }
-                else -> throw IllegalArgumentException("${workTag.type} unsupported type: ${v.javaClass.name}")
+                ValueType.UUID -> {
+                    val result = workTag.validateUUID(v)
+                    data = result.data
+                    text = result.text ?: Null
+                }
+                ValueType.URL -> {
+                    val result = workTag.validateURL(v)
+                    data = result.data
+                    text = result.text ?: Null
+                }
+                ValueType.IP -> {
+                    val result = workTag.validateIP(v)
+                    data = result.data
+                    text = result.text ?: Null
+                }
+                else ->
+                        throw IllegalArgumentException(
+                                "${workTag.type} unsupported type: ${v.javaClass.name}"
+                        )
             }
         }
-
         is BigInteger -> {
             if (workTag.type == ValueType.UNKNOWN) {
                 workTag.type = ValueType.BIGINT
@@ -234,12 +271,14 @@ private fun valueToNode(v: Any?, tag: Tag?, depth: Int, path: String): Node {
                 ValueType.BIGINT -> {
                     val result = workTag.validateBigInt(v)
                     data = result.data
-                    text = result.text ?: ""
+                    text = result.text ?: Null
                 }
-                else -> throw IllegalArgumentException("${workTag.type} unsupported type: ${v.javaClass.name}")
+                else ->
+                        throw IllegalArgumentException(
+                                "${workTag.type} unsupported type: ${v.javaClass.name}"
+                        )
             }
         }
-
         is UUID -> {
             if (workTag.type == ValueType.UNKNOWN) {
                 workTag.type = ValueType.UUID
@@ -248,12 +287,14 @@ private fun valueToNode(v: Any?, tag: Tag?, depth: Int, path: String): Node {
                 ValueType.UUID -> {
                     val result = workTag.validateUUID(v.toString())
                     data = result.data
-                    text = result.text ?: ""
+                    text = result.text ?: Null
                 }
-                else -> throw IllegalArgumentException("${workTag.type} unsupported type: ${v.javaClass.name}")
+                else ->
+                        throw IllegalArgumentException(
+                                "${workTag.type} unsupported type: ${v.javaClass.name}"
+                        )
             }
         }
-
         is InetAddress -> {
             if (workTag.type == ValueType.UNKNOWN) {
                 workTag.type = ValueType.IP
@@ -262,12 +303,14 @@ private fun valueToNode(v: Any?, tag: Tag?, depth: Int, path: String): Node {
                 ValueType.IP -> {
                     val result = workTag.validateIP(v.hostAddress ?: "")
                     data = result.data
-                    text = result.text ?: ""
+                    text = result.text ?: Null
                 }
-                else -> throw IllegalArgumentException("${workTag.type} unsupported type: ${v.javaClass.name}")
+                else ->
+                        throw IllegalArgumentException(
+                                "${workTag.type} unsupported type: ${v.javaClass.name}"
+                        )
             }
         }
-
         is URI -> {
             if (workTag.type == ValueType.UNKNOWN) {
                 workTag.type = ValueType.URL
@@ -276,12 +319,14 @@ private fun valueToNode(v: Any?, tag: Tag?, depth: Int, path: String): Node {
                 ValueType.URL -> {
                     val result = workTag.validateURL(v.toString())
                     data = result.data
-                    text = result.text ?: ""
+                    text = result.text ?: Null
                 }
-                else -> throw IllegalArgumentException("${workTag.type} unsupported type: ${v.javaClass.name}")
+                else ->
+                        throw IllegalArgumentException(
+                                "${workTag.type} unsupported type: ${v.javaClass.name}"
+                        )
             }
         }
-
         is LocalDateTime -> {
             if (workTag.type == ValueType.UNKNOWN) {
                 workTag.type = ValueType.DATETIME
@@ -290,22 +335,24 @@ private fun valueToNode(v: Any?, tag: Tag?, depth: Int, path: String): Node {
                 ValueType.DATETIME -> {
                     val result = workTag.validateDateTime(v)
                     data = result.data
-                    text = result.text ?: ""
+                    text = result.text ?: Null
                 }
                 ValueType.DATE -> {
                     val result = workTag.validateDate(v.toLocalDate())
                     data = result.data
-                    text = result.text ?: ""
+                    text = result.text ?: Null
                 }
                 ValueType.TIME -> {
                     val result = workTag.validateTime(v.toLocalTime())
                     data = result.data
-                    text = result.text ?: ""
+                    text = result.text ?: Null
                 }
-                else -> throw IllegalArgumentException("${workTag.type} unsupported type: ${v.javaClass.name}")
+                else ->
+                        throw IllegalArgumentException(
+                                "${workTag.type} unsupported type: ${v.javaClass.name}"
+                        )
             }
         }
-
         is LocalDate -> {
             if (workTag.type == ValueType.UNKNOWN) {
                 workTag.type = ValueType.DATE
@@ -314,12 +361,14 @@ private fun valueToNode(v: Any?, tag: Tag?, depth: Int, path: String): Node {
                 ValueType.DATE -> {
                     val result = workTag.validateDate(v)
                     data = result.data
-                    text = result.text ?: ""
+                    text = result.text ?: Null
                 }
-                else -> throw IllegalArgumentException("${workTag.type} unsupported type: ${v.javaClass.name}")
+                else ->
+                        throw IllegalArgumentException(
+                                "${workTag.type} unsupported type: ${v.javaClass.name}"
+                        )
             }
         }
-
         is LocalTime -> {
             if (workTag.type == ValueType.UNKNOWN) {
                 workTag.type = ValueType.TIME
@@ -328,12 +377,14 @@ private fun valueToNode(v: Any?, tag: Tag?, depth: Int, path: String): Node {
                 ValueType.TIME -> {
                     val result = workTag.validateTime(v)
                     data = result.data
-                    text = result.text ?: ""
+                    text = result.text ?: Null
                 }
-                else -> throw IllegalArgumentException("${workTag.type} unsupported type: ${v.javaClass.name}")
+                else ->
+                        throw IllegalArgumentException(
+                                "${workTag.type} unsupported type: ${v.javaClass.name}"
+                        )
             }
         }
-
         is Instant -> {
             if (workTag.type == ValueType.UNKNOWN) {
                 workTag.type = ValueType.DATETIME
@@ -343,22 +394,24 @@ private fun valueToNode(v: Any?, tag: Tag?, depth: Int, path: String): Node {
                 ValueType.DATETIME -> {
                     val result = workTag.validateDateTime(localDateTime)
                     data = result.data
-                    text = result.text ?: ""
+                    text = result.text ?: Null
                 }
                 ValueType.DATE -> {
                     val result = workTag.validateDate(localDateTime.toLocalDate())
                     data = result.data
-                    text = result.text ?: ""
+                    text = result.text ?: Null
                 }
                 ValueType.TIME -> {
                     val result = workTag.validateTime(localDateTime.toLocalTime())
                     data = result.data
-                    text = result.text ?: ""
+                    text = result.text ?: Null
                 }
-                else -> throw IllegalArgumentException("${workTag.type} unsupported type: ${v.javaClass.name}")
+                else ->
+                        throw IllegalArgumentException(
+                                "${workTag.type} unsupported type: ${v.javaClass.name}"
+                        )
             }
         }
-
         else -> {
             return anyToJSONC(v, workTag, depth, path)
         }
@@ -376,193 +429,416 @@ private fun anyToJSONC(obj: Any, tag: Tag, depth: Int, path: String): Node {
     val kClass = obj::class
     val workTag = tag.copy()
 
+    if (workTag.toString().isEmpty()) {
+        val mmAnnotation = kClass.java.getAnnotation(MM::class.java)
+        if (mmAnnotation != null) {
+            val mmTag = Tag.fromAnnotation(mmAnnotation)
+            mergeTag(workTag, mmTag)
+        }
+    }
+
+    workTag.type = ValueType.STRUCT
+
+    var typeName = CamelToSnake.convert(kClass.simpleName ?: "")
+    if (workTag.name.isNotEmpty()) {
+        typeName = workTag.name
+    }
+    workTag.name = typeName
+
+    val objPath =
+            if (typeName.isNotEmpty()) {
+                if (path.isEmpty()) typeName else "$path.$typeName"
+            } else {
+                path
+            }
+
     when {
         obj is List<*> -> {
             workTag.type = ValueType.SLICE
-            return listToNode(obj, workTag, newDepth, path)
+            return convertSlice(obj, workTag, newDepth, objPath)
         }
         obj is Map<*, *> -> {
             workTag.type = ValueType.MAP
-            return mapToNode(obj, workTag, newDepth, path)
+            return convertMap(obj, workTag, newDepth, objPath)
         }
-        kClass.isData || kClass.java.isAnnotationPresent(MM::class.java) -> {
-            workTag.type = ValueType.STRUCT
-            return structToNode(obj, workTag, newDepth, path)
+        obj is Array<*> -> {
+            workTag.type = ValueType.SLICE
+            return convertSlice(obj.toList(), workTag, newDepth, objPath)
         }
         else -> {
             workTag.type = ValueType.STRUCT
-            return structToNode(obj, workTag, newDepth, path)
+            return convertStruct(obj, workTag, newDepth, objPath)
         }
     }
 }
 
-private fun structToNode(o: Any, objTag: Tag, depth: Int, path: String): Node {
+private fun convertStruct(obj: Any, objTag: Tag, depth: Int, path: String): Node {
+    val kClass = obj::class
     val objNode = AstObject(mutableListOf(), objTag, path)
-    val kClass = o::class
 
     for (prop in kClass.declaredMemberProperties) {
         if (prop.visibility == KVisibility.PRIVATE) continue
 
-        val fieldKey = getFieldKey(prop, objTag)
-        if (fieldKey == "-") continue
+        val fieldKey = CamelToSnake.convert(prop.name)
 
-        val mm = prop.findAnnotation<MM>()
-        var ft = Tag.empty()
-
-        if (mm != null) {
-            val ann = Tag.fromAnnotation(mm)
-            ft = ann.copy()
-            if (ft.type == ValueType.UNKNOWN) {
-                ft.type = TypeInference.forProperty(prop)
+        val mmAnnotation = prop.findAnnotation<MM>()
+        var fieldTag: Tag? = null
+        if (mmAnnotation != null) {
+            fieldTag = Tag.fromAnnotation(mmAnnotation)
+            if (fieldTag.name.isNotEmpty()) {
+                if (fieldTag.name == "-") continue
             }
-        } else {
-            ft.type = TypeInference.forProperty(prop)
         }
 
-        val fieldPath = if (path.isEmpty()) fieldKey else "$path.$fieldKey"
-        
-        val fieldValue = try {
-            (prop as? KMutableProperty<*>)?.getter?.call(o) ?: prop.getter.call(o)
-        } catch (e: Exception) {
-            null
+        if (fieldTag == null) {
+            fieldTag = Tag.empty()
         }
 
-        val fieldNode = valueToNode(fieldValue, ft, depth, fieldPath)
-        objNode.fields.add(Field(fieldKey, fieldNode))
+        val effectiveFieldKey =
+                when {
+                    fieldTag.name.isNotEmpty() -> fieldTag.name
+                    else -> fieldKey
+                }
+
+        if (fieldTag.name.isEmpty()) {
+            fieldTag.name = effectiveFieldKey
+        }
+
+        if (fieldTag.type == ValueType.UNKNOWN) {
+            fieldTag.type = TypeInference.forProperty(prop)
+        }
+
+        val fieldPath = "$path.$effectiveFieldKey"
+
+        val fieldValue =
+                try {
+                    (prop as? KMutableProperty<*>)?.getter?.call(obj) ?: prop.getter.call(obj)
+                } catch (e: Exception) {
+                    null
+                }
+
+        val fieldNode = valueToNode(fieldValue, fieldTag, depth, fieldPath)
+        objNode.fields.add(Field(effectiveFieldKey, fieldNode))
+    }
+
+    val result = objTag.validateStruct()
+    if (!result.valid) {
+        throw IllegalArgumentException("validate failed: ${result.error}")
     }
 
     return objNode
 }
 
-private fun listToNode(list: List<*>, tag: Tag, depth: Int, path: String): Node {
-    val arrNode = AstArray(mutableListOf(), tag, path)
+private fun convertSlice(list: List<*>, tag: Tag, depth: Int, path: String): Node {
+    val node = AstArray(mutableListOf(), tag, path)
     var setTag = false
 
     for ((i, item) in list.withIndex()) {
-        val et = Tag.empty()
-        et.inheritFromArrayParent(tag)
-
-        if (et.type == ValueType.UNKNOWN && item != null) {
-            et.type = TypeInference.valueTypeForComponent(item.javaClass)
-            if (et.type == ValueType.UNKNOWN) {
-                et.type = ValueType.STRUCT
-            }
-        }
+        val itemTag = Tag.empty()
+        itemTag.inheritFromArrayParent(tag)
 
         val itemPath = "$path[$i]"
-        val itemNode = valueToNode(item, et, depth, itemPath)
+        val itemNode = valueToNode(item, itemTag, depth, itemPath)
 
-        updateChildTag(arrNode, et, !setTag)
-        setTag = true
+        val resultTag = itemNode.tag
+        if (!setTag && resultTag != null) {
+            node.tag?.apply {
+                childDesc = resultTag.desc
+                childType = resultTag.type
+                childRaw = resultTag.raw
+                childNullable = resultTag.nullable
+                childAllowEmpty = resultTag.allowEmpty
+                childUnique = resultTag.unique
+                childDefault = resultTag.default
+                childMin = resultTag.min
+                childMax = resultTag.max
+                childSize = resultTag.size
+                childEnum = resultTag.enum
+                childPattern = resultTag.pattern
+                childLocation = resultTag.location
+                childVersion = resultTag.version
+                childMime = resultTag.mime
+            }
+            setTag = true
+        }
 
-        arrNode.items.add(itemNode)
+        node.items.add(itemNode)
     }
 
     if (list.isEmpty()) {
-        val exampleVal = createExampleValue(tag.childType)
-        val et = Tag.empty()
-        et.inheritFromArrayParent(tag)
-        et.example = true
+        val itemTag = Tag.empty()
+        itemTag.inheritFromArrayParent(tag)
+        itemTag.example = true
 
         val itemPath = "$path[0]"
-        val itemNode = valueToNode(exampleVal, et, depth, itemPath)
+        val exampleVal = createExampleValue(tag.childType)
+        val itemNode = valueToNode(exampleVal, itemTag, depth, itemPath)
 
-        updateChildTag(arrNode, et, !setTag)
-        arrNode.items.add(itemNode)
+        val resultTag = itemNode.tag
+        if (!setTag && resultTag != null) {
+            node.tag?.apply {
+                childDesc = resultTag.desc
+                childType = resultTag.type
+                childRaw = resultTag.raw
+                childNullable = resultTag.nullable
+                childAllowEmpty = resultTag.allowEmpty
+                childUnique = resultTag.unique
+                childDefault = resultTag.default
+                childMin = resultTag.min
+                childMax = resultTag.max
+                childSize = resultTag.size
+                childEnum = resultTag.enum
+                childPattern = resultTag.pattern
+                childLocation = resultTag.location
+                childVersion = resultTag.version
+                childMime = resultTag.mime
+            }
+        }
+
+        node.items.add(itemNode)
     }
 
-    return arrNode
+    val result = tag.validateSlice(node.items)
+    if (!result.valid) {
+        throw IllegalArgumentException("validate failed: ${result.error}")
+    }
+
+    return node
 }
 
-private fun mapToNode(map: Map<*, *>, tag: Tag, depth: Int, path: String): Node {
-    val objNode = AstObject(mutableListOf(), tag, path)
+private fun convertMap(map: Map<*, *>, tag: Tag, depth: Int, path: String): Node {
+    val node = AstObject(mutableListOf(), tag, path)
     var setTag = false
 
     for ((key, value) in map) {
-        val keyStr = key?.toString()?.let { CamelToSnake.convert(it) } ?: ""
+        val keyStr = CamelToSnake.convert(key?.toString() ?: "")
+
         val valueTag = Tag.empty()
-        
-        if (tag.childType != ValueType.UNKNOWN) {
-            valueTag.type = tag.childType
-        } else if (value != null) {
-            valueTag.type = TypeInference.valueTypeForComponent(value.javaClass)
-        }
+        valueTag.inheritFromArrayParent(tag)
+        valueTag.name = keyStr
 
         val fieldPath = "$path[$keyStr]"
         val valueNode = valueToNode(value, valueTag, depth, fieldPath)
 
-        updateChildTag(objNode, valueTag, !setTag)
-        setTag = true
+        val resultTag = valueNode.tag
+        if (!setTag && resultTag != null) {
+            node.tag?.apply {
+                childDesc = resultTag.desc
+                childType = resultTag.type
+                childRaw = resultTag.raw
+                childNullable = resultTag.nullable
+                childAllowEmpty = resultTag.allowEmpty
+                childUnique = resultTag.unique
+                childDefault = resultTag.default
+                childMin = resultTag.min
+                childMax = resultTag.max
+                childSize = resultTag.size
+                childEnum = resultTag.enum
+                childPattern = resultTag.pattern
+                childLocation = resultTag.location
+                childVersion = resultTag.version
+                childMime = resultTag.mime
+            }
+            setTag = true
+        }
 
-        objNode.fields.add(Field(keyStr, valueNode))
+        node.fields.add(Field(keyStr, valueNode))
     }
 
     if (map.isEmpty()) {
-        val exampleVal = createExampleValue(tag.childType)
         val valueTag = Tag.empty()
-        valueTag.type = tag.childType
+        valueTag.inheritFromArrayParent(tag)
+        valueTag.name = ""
         valueTag.example = true
 
         val fieldPath = "$path[]"
+        val exampleVal = createExampleValue(tag.childType)
         val valueNode = valueToNode(exampleVal, valueTag, depth, fieldPath)
 
-        updateChildTag(objNode, valueTag, !setTag)
-        objNode.fields.add(Field("", valueNode))
+        val resultTag = valueNode.tag
+        if (!setTag && resultTag != null) {
+            node.tag?.apply {
+                childDesc = resultTag.desc
+                childType = resultTag.type
+                childRaw = resultTag.raw
+                childNullable = resultTag.nullable
+                childAllowEmpty = resultTag.allowEmpty
+                childUnique = resultTag.unique
+                childDefault = resultTag.default
+                childMin = resultTag.min
+                childMax = resultTag.max
+                childSize = resultTag.size
+                childEnum = resultTag.enum
+                childPattern = resultTag.pattern
+                childLocation = resultTag.location
+                childVersion = resultTag.version
+                childMime = resultTag.mime
+            }
+        }
+
+        node.fields.add(Field("", valueNode))
     }
 
-    return objNode
+    val result = tag.validateMap()
+    if (!result.valid) {
+        throw IllegalArgumentException("validate failed: ${result.error}")
+    }
+
+    return node
 }
 
-private fun updateChildTag(parent: Node, childTag: Tag, update: Boolean) {
-    if (!update) return
-
-    val parentTag = parent.tag ?: return
-    parentTag.childType = childTag.type
-    parentTag.childDesc = childTag.desc
-    parentTag.childNullable = childTag.nullable
-    parentTag.childAllowEmpty = childTag.allowEmpty
-    parentTag.childUnique = childTag.unique
-    parentTag.childDefault = childTag.default
-    parentTag.childMin = childTag.min
-    parentTag.childMax = childTag.max
-    parentTag.childSize = childTag.size
-    parentTag.childEnum = childTag.enum
-    parentTag.childPattern = childTag.pattern
-    parentTag.childLocation = childTag.location
-    parentTag.childVersion = childTag.version
-    parentTag.childMime = childTag.mime
-}
-
-private fun getFieldKey(prop: KProperty<*>, tag: Tag): String {
-    val mm = prop.findAnnotation<MM>()
-    if (mm != null && mm.name.isNotEmpty()) {
-        return mm.name
+private fun mergeTag(dst: Tag, src: Tag) {
+    if (src.isNull) {
+        dst.isNull = src.isNull
     }
-    if (tag.name.isNotEmpty()) {
-        return tag.name
+
+    if (src.example) {
+        dst.example = src.example
     }
-    return CamelToSnake.convert(prop.name)
+
+    if (src.desc.isNotEmpty()) {
+        dst.desc = src.desc
+    }
+
+    if (src.type != ValueType.UNKNOWN) {
+        dst.type = src.type
+    }
+
+    if (src.raw) {
+        dst.raw = true
+    }
+
+    if (src.nullable) {
+        dst.nullable = true
+    }
+
+    if (src.allowEmpty) {
+        dst.allowEmpty = true
+    }
+
+    if (src.unique) {
+        dst.unique = true
+    }
+
+    if (src.default.isNotEmpty()) {
+        dst.default = src.default
+    }
+
+    if (src.min.isNotEmpty()) {
+        dst.min = src.min
+    }
+
+    if (src.max.isNotEmpty()) {
+        dst.max = src.max
+    }
+
+    if (src.size != 0) {
+        dst.size = src.size
+    }
+
+    if (src.enum.isNotEmpty()) {
+        dst.enum = src.enum
+    }
+
+    if (src.pattern.isNotEmpty()) {
+        dst.pattern = src.pattern
+    }
+
+    if (src.location != 0) {
+        dst.location = src.location
+    }
+
+    if (src.version != Tag.DEFAULT_VERSION) {
+        dst.version = src.version
+    }
+
+    if (src.mime.isNotEmpty()) {
+        dst.mime = src.mime
+    }
+
+    if (src.childDesc.isNotEmpty()) {
+        dst.childDesc = src.childDesc
+    }
+
+    if (src.childType != ValueType.UNKNOWN) {
+        dst.childType = src.childType
+    }
+
+    if (src.childRaw) {
+        dst.childRaw = true
+    }
+
+    if (src.childNullable) {
+        dst.childNullable = true
+    }
+
+    if (src.childAllowEmpty) {
+        dst.childAllowEmpty = true
+    }
+
+    if (src.childUnique) {
+        dst.childUnique = true
+    }
+
+    if (src.childDefault.isNotEmpty()) {
+        dst.childDefault = src.childDefault
+    }
+
+    if (src.childMin.isNotEmpty()) {
+        dst.childMin = src.childMin
+    }
+
+    if (src.childMax.isNotEmpty()) {
+        dst.childMax = src.childMax
+    }
+
+    if (src.childSize != 0) {
+        dst.childSize = src.childSize
+    }
+
+    if (src.childEnum.isNotEmpty()) {
+        dst.childEnum = src.childEnum
+    }
+
+    if (src.childPattern.isNotEmpty()) {
+        dst.childPattern = src.childPattern
+    }
+
+    if (src.childLocation != 0) {
+        dst.childLocation = src.childLocation
+    }
+
+    if (src.childVersion != Tag.DEFAULT_VERSION) {
+        dst.childVersion = src.childVersion
+    }
+
+    if (src.childMime.isNotEmpty()) {
+        dst.childMime = src.childMime
+    }
 }
 
 private fun createExampleValue(type: ValueType): Any? {
     return when (type) {
         ValueType.INT8 -> 0.toByte()
         ValueType.INT16 -> 0.toShort()
-        ValueType.INT32 -> 0
+        ValueType.INT, ValueType.INT32 -> 0
         ValueType.INT64 -> 0L
         ValueType.UINT, ValueType.UINT8, ValueType.UINT16, ValueType.UINT32 -> 0
-        ValueType.UINT64 -> 0L
+        ValueType.UINT64 -> BigInteger.ZERO
         ValueType.FLOAT32 -> 0.0f
         ValueType.FLOAT64 -> 0.0
-        ValueType.STRING, ValueType.EMAIL, ValueType.URL, ValueType.IP -> ""
+        ValueType.STRING, ValueType.DECIMAL, ValueType.EMAIL, ValueType.URL, ValueType.IP -> ""
         ValueType.BOOL -> false
-        ValueType.BYTES -> ByteArray(0)
+        ValueType.BYTES, ValueType.IMAGE -> ByteArray(0)
         ValueType.BIGINT -> BigInteger.ZERO
-        ValueType.UUID -> UUID.randomUUID()
-        ValueType.DATETIME -> LocalDateTime.now()
-        ValueType.DATE -> LocalDate.now()
-        ValueType.TIME -> LocalTime.now()
+        ValueType.UUID -> UUID(0, 0)
+        ValueType.DATETIME -> LocalDateTime.of(1970, 1, 1, 0, 0, 0)
+        ValueType.DATE -> LocalDate.of(1970, 1, 1)
+        ValueType.TIME -> LocalTime.of(0, 0, 0)
         ValueType.ENUM -> 0
+        ValueType.SLICE -> emptyList<Any>()
+        ValueType.MAP -> emptyMap<String, Any>()
+        ValueType.STRUCT -> emptyMap<String, Any>()
         else -> null
     }
 }

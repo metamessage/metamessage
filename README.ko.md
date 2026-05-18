@@ -297,6 +297,8 @@ func main() {
 
 #### Java
 
+[jitpack.io](https://jitpack.io/#metamessage/metamessage/)
+
 ```java
 import io.github.metamessage.MetaMessage;
 import io.github.metamessage.MM;
@@ -318,17 +320,29 @@ public class Example {
 
 #### Kotlin
 
+[jitpack.io](https://jitpack.io/#metamessage/metamessage/)
+
 ```kotlin
 import io.github.metamessage.MetaMessage
 import io.github.metamessage.MM
 
-@MM
-class Person(var name: String = "Ed", var age: Int = 30)
+@MM(desc="person")
+class Person(var name: String = "Ed", var age: Uint8 = 30.toUint8())
 
 fun main() {
     val person = Person()
+
     val wire = MetaMessage.encodeFromValue(person)
-    val decoded = MetaMessage.decodeToValue(wire, Person::class.java)
+
+    val person = MetaMessage.decodeToValue(wire, Person::class.java)
+
+    val jsonc = MetaMessage.valueToJsonc(person)
+
+    val person = MetaMessage.jsoncToValue(jsoncOutput, Person::class.java)
+
+    val wire = MetaMessage.encodeFromJsonc(jsonc)
+
+    val jsonc = MetaMessage.decodeToJsonc(wire)
 }
 ```
 
