@@ -1,7 +1,7 @@
-pub mod mm;
+pub mod core;
 pub mod jsonc;
 
-use mm::{Encoder, Decoder};
+use core::{Encoder, Decoder};
 use jsonc::{Parser, Node};
 
 pub fn encode(node: &Node) -> Vec<u8> {

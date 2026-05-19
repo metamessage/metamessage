@@ -32,6 +32,8 @@ TOKEN_TRUE = "TRUE"
 TOKEN_FALSE = "FALSE"
 TOKEN_NULL = "NULL"
 TOKEN_COMMENT = "COMMENT"
+TOKEN_LEADING_COMMENT = "LEADING_COMMENT"
+TOKEN_TRAILING_COMMENT = "TRAILING_COMMENT"
 TOKEN_EOF = "EOF"
 
 
@@ -40,6 +42,8 @@ class Lexer:
         self.source = source
         self.pos = 0
         self.line = 1
+        self.col = 1
+        self.new_line = True
         self.tokens: List[Token] = []
 
     def is_at_end(self):
@@ -51,7 +55,11 @@ class Lexer:
         c = self.source[self.pos]
         self.pos += 1
         if c == '\n':
+            self.new_line = True
             self.line += 1
+            self.col = 1
+        else:
+            self.col += 1
         return c
 
     def peek(self):
@@ -70,6 +78,7 @@ class Lexer:
     def scan_tokens(self):
         while not self.is_at_end():
             c = self.advance()
+            start_line = self.line
             
             if c == '{':
                 self.add_token(TOKEN_LBRACE, "{")
@@ -81,15 +90,17 @@ class Lexer:
                 self.add_token(TOKEN_RBRACKET, "]")
             elif c == ',':
                 self.add_token(TOKEN_COMMA, ",")
+                self.new_line = False
             elif c == ':':
                 self.add_token(TOKEN_COLON, ":")
+                self.new_line = False
             elif c in ' \t\n\r':
                 pass
             elif c == '"':
                 self._string()
             elif c == '/':
                 if self.peek() == '/':
-                    self._comment()
+                    self._line_comment()
                 elif self.peek() == '*':
                     self._block_comment()
             elif c in '0123456789' or c == '-':
@@ -169,24 +180,27 @@ class Lexer:
         else:
             self.add_token(TOKEN_STRING, value)
 
-    def _comment(self):
-        start = self.pos - 2
+    def _line_comment(self):
+        comment_type = TOKEN_LEADING_COMMENT if self.new_line else TOKEN_TRAILING_COMMENT
+        self.advance()  # skip second /
+        start = self.pos
         while self.peek() and self.peek() != '\n':
             self.advance()
-        value = self.source[start:self.pos]
-        self.add_token(TOKEN_COMMENT, value)
+        value = self.source[start:self.pos].strip()
+        self.add_token(comment_type, value)
 
     def _block_comment(self):
         self.advance()  # skip *
-        start = self.pos - 4
+        comment_type = TOKEN_LEADING_COMMENT if self.new_line else TOKEN_TRAILING_COMMENT
+        start = self.pos
         while not self.is_at_end():
             if self.peek() == '*' and self.peek_next() == '/':
                 self.advance()
                 self.advance()
                 break
             self.advance()
-        value = self.source[start:self.pos]
-        self.add_token(TOKEN_COMMENT, value)
+        value = self.source[start:self.pos - 2].strip()
+        self.add_token(comment_type, value)
 
 
 # ===== Parser =====
@@ -195,7 +209,8 @@ class Parser:
     def __init__(self, tokens: List[Token]):
         self.tokens = tokens
         self.pos = 0
-        self.pending_comments: List[str] = []
+        self.pending: List[Token] = []
+        self.depth = 0
 
     def peek(self):
         if self.pos >= len(self.tokens):
@@ -207,27 +222,22 @@ class Parser:
         self.pos += 1
         return t
 
-    def _collect_comment(self, comment: str):
-        self.pending_comments.append(comment)
-
-    def _consume_tag(self) -> Optional[Tag]:
-        if not self.pending_comments:
+    def _consume_comments_for(self, anchor_line: int) -> Optional[Tag]:
+        if not self.pending:
             return None
 
-        tags = []
-        for c in self.pending_comments:
-            t = self._parse_mm_tag(c)
-            if t is not None:
-                tags.append(t)
-
-        self.pending_comments = []
-
-        if not tags:
+        last = self.pending[-1]
+        if anchor_line - last.line > 1:
+            self.pending = []
             return None
 
-        merged = tags[0]
-        for t in tags[1:]:
-            merged = MergeTag(merged, t)
+        merged = None
+        for ct in self.pending:
+            parsed = self._parse_mm_tag(ct.literal)
+            if parsed is not None:
+                merged = MergeTag(merged, parsed)
+
+        self.pending = []
         return merged
 
     @staticmethod
@@ -250,56 +260,77 @@ class Parser:
         return mm_tag(tag_str)
 
     def parse(self, path: str = "") -> Node:
-        # Collect any leading comments before value
-        while self.peek().type == TOKEN_COMMENT:
-            self._collect_comment(self.peek().literal)
-            self.next()
+        while True:
+            tok = self.peek()
+            if tok.type == TOKEN_EOF:
+                return None
 
+            if tok.type in (TOKEN_LEADING_COMMENT, TOKEN_COMMENT):
+                if self.pending:
+                    last = self.pending[-1]
+                    if tok.line - last.line > 1:
+                        self.pending = []
+                self.pending.append(tok)
+                self.next()
+                continue
+
+            if tok.type == TOKEN_TRAILING_COMMENT:
+                self.next()
+                continue
+
+            return self._parse_value_or_container(path)
+
+    def _parse_value_or_container(self, path: str) -> Node:
         tok = self.peek()
 
         if tok.type == TOKEN_LBRACE:
-            return self._parse_object(path)
+            return self._parse_object(tok.line, path)
         elif tok.type == TOKEN_LBRACKET:
-            return self._parse_array(path)
+            return self._parse_array(tok.line, path)
         else:
-            return self._parse_value(path)
+            return self._parse_value(path, tok.line)
 
-    def _parse_object(self, path: str) -> Obj:
+    def _parse_object(self, anchor_line: int, path: str) -> Obj:
         self.next()  # consume {
+        self.depth += 1
 
-        tag = self._consume_tag()
+        tag = self._consume_comments_for(anchor_line)
 
         fields = []
         while self.peek().type != TOKEN_RBRACE and self.peek().type != TOKEN_EOF:
-            if self.peek().type == TOKEN_COMMENT:
-                self._collect_comment(self.peek().literal)
+            tok = self.peek()
+
+            if tok.type in (TOKEN_LEADING_COMMENT, TOKEN_COMMENT):
+                self.pending.append(tok)
                 self.next()
                 continue
-            
+
+            if tok.type == TOKEN_TRAILING_COMMENT:
+                self.next()
+                continue
+
             key_token = self.next()
             if key_token.type != TOKEN_STRING:
                 break
-            
+
             if self.peek().type == TOKEN_COLON:
                 self.next()
 
             value_path = f"{path}.{key_token.literal}" if path else key_token.literal
-            value = self.parse(value_path)
-            
-            # After parsing value, check for inline comment and merge into value tag
-            if self.peek().type == TOKEN_COMMENT:
+            value = self._parse_value_or_container(value_path)
+
+            if self.peek().type == TOKEN_TRAILING_COMMENT:
                 inline_tag = self._parse_mm_tag(self.peek().literal)
                 if inline_tag is not None and hasattr(value, 'tag'):
                     value.tag = MergeTag(value.tag, inline_tag)
-                # Don't collect inline comments into pending - they're applied to the value
                 self.next()
-            
+
             fields.append(Field(key=key_token.literal, value=value))
 
             if self.peek().type == TOKEN_COMMA:
                 self.next()
 
-        tag2 = self._consume_tag()
+        tag2 = self._consume_comments_for(anchor_line)
         if tag is None:
             tag = tag2
         elif tag2 is not None:
@@ -308,38 +339,45 @@ class Parser:
         if self.peek().type == TOKEN_RBRACE:
             self.next()
 
+        self.depth -= 1
         return Obj(fields=fields, tag=tag or NewTag(), path=path)
 
-    def _parse_array(self, path: str) -> Arr:
+    def _parse_array(self, anchor_line: int, path: str) -> Arr:
         self.next()  # consume [
+        self.depth += 1
 
-        tag = self._consume_tag()
+        tag = self._consume_comments_for(anchor_line)
 
         items = []
         index = 0
         while self.peek().type != TOKEN_RBRACKET and self.peek().type != TOKEN_EOF:
-            if self.peek().type == TOKEN_COMMENT:
-                self._collect_comment(self.peek().literal)
+            tok = self.peek()
+
+            if tok.type in (TOKEN_LEADING_COMMENT, TOKEN_COMMENT):
+                self.pending.append(tok)
+                self.next()
+                continue
+
+            if tok.type == TOKEN_TRAILING_COMMENT:
                 self.next()
                 continue
 
             item_path = f"{path}[{index}]" if path else str(index)
-            item = self.parse(item_path)
-            
-            # After parsing item, check for inline comment and merge into item tag
-            if self.peek().type == TOKEN_COMMENT:
+            item = self._parse_value_or_container(item_path)
+
+            if self.peek().type == TOKEN_TRAILING_COMMENT:
                 inline_tag = self._parse_mm_tag(self.peek().literal)
                 if inline_tag is not None and hasattr(item, 'tag'):
                     item.tag = MergeTag(item.tag, inline_tag)
                 self.next()
-            
+
             items.append(item)
             index += 1
 
             if self.peek().type == TOKEN_COMMA:
                 self.next()
 
-        tag2 = self._consume_tag()
+        tag2 = self._consume_comments_for(anchor_line)
         if tag is None:
             tag = tag2
         elif tag2 is not None:
@@ -348,12 +386,13 @@ class Parser:
         if self.peek().type == TOKEN_RBRACKET:
             self.next()
 
+        self.depth -= 1
         return Arr(items=items, tag=tag or NewTag(), path=path)
 
-    def _parse_value(self, path: str) -> Val:
-        tag = self._consume_tag()
+    def _parse_value(self, path: str, anchor_line: int) -> Val:
+        tag = self._consume_comments_for(anchor_line)
         tok = self.next()
-        
+
         if tag is None:
             tag = NewTag()
 
@@ -374,7 +413,6 @@ class Parser:
                 tag.type = ValueType.Bool
             return Val(data=False, text="false", tag=tag, path=path)
         elif tok.type == TOKEN_NULL:
-            # In MM, null is represented via is_null tag, not bare null value
             tag.is_null = True
             tag.nullable = True
             if tag.type == ValueType.Unknown:
@@ -415,7 +453,7 @@ def _get_tag_str(tag) -> str:
     parts = []
     
     if tag.type != ValueType.Unknown and tag.type not in _INFERRED_TYPES:
-        parts.append(f"type={tag.type.to_str()}")
+        parts.append(f"type={str(tag.type)}")
     
     if tag.example:
         parts.append("example")
@@ -451,7 +489,7 @@ def _get_tag_str(tag) -> str:
     if tag.child_desc:
         parts.append(f'child_desc="{tag.child_desc}"')
     if tag.child_type != ValueType.Unknown and tag.child_type not in _INFERRED_TYPES:
-        parts.append(f"child_type={tag.child_type.to_str()}")
+        parts.append(f"child_type={str(tag.child_type)}")
     if tag.child_raw:
         parts.append("child_raw")
     if tag.child_nullable:
@@ -480,125 +518,99 @@ def _get_tag_str(tag) -> str:
     return "; ".join(parts)
 
 
-def _to_jsonc(node: Node, indent: int = 0) -> str:
-    INDENT = "    "
-
-    if isinstance(node, Obj):
-        tag_str = _get_tag_str(node.get_tag())
-
-        lines = ["{"]
-        if tag_str:
-            lines[-1] += f" // mm: {tag_str}"
-        lines[-1] += "\n"
-
-        for i, f in enumerate(node.fields):
-            val_tag_str = ""
-            if f.value is not None:
-                t = f.value.get_tag()
-                if t is not None:
-                    val_tag_str = _get_tag_str(t)
-
-            if val_tag_str:
-                lines.append(f'{INDENT * (indent + 1)}// mm: {val_tag_str}')
-                if not isinstance(f.value, (Obj, Arr)):
-                    lines[-1] += "\n"
-                    lines.append(f'{INDENT * (indent + 1)}{json.dumps(f.key)}: ')
-                else:
-                    lines.append("\n")
-                    lines.append(f'{INDENT * (indent + 1)}{json.dumps(f.key)}: ')
-            else:
-                lines.append(f'{INDENT * (indent + 1)}{json.dumps(f.key)}: ')
-            lines.append(_to_jsonc(f.value, indent + 1))
-            if i < len(node.fields) - 1:
-                lines[-1] += ","
-            lines[-1] += "\n"
-
-        lines.append(f"{INDENT * indent}}}")
-        return "".join(lines)
-    
-    elif isinstance(node, Arr):
-        if not node.items:
-            return "[]"
-
-        tag_str = _get_tag_str(node.get_tag())
-
-        lines = ["["]
-        if tag_str:
-            lines[-1] += f" // mm: {tag_str}"
-        lines[-1] += "\n"
-
-        for i, item in enumerate(node.items):
-            item_tag_str = _get_tag_str(item.get_tag())
-            if item_tag_str:
-                lines.append(f"{INDENT * (indent + 1)}// mm: {item_tag_str}\n")
-            lines.append(f"{INDENT * (indent + 1)}")
-            lines.append(_to_jsonc(item, indent + 1))
-            if i < len(node.items) - 1:
-                lines[-1] += ","
-            lines[-1] += "\n"
-
-        lines.append(f"{INDENT * indent}]")
-        return "".join(lines)
-    
-    elif isinstance(node, Val):
-        if node.tag is None:
-            return json.dumps(node.text) if node.text else "null"
-
-        val_type = node.tag.type
-
-        # For null values (is_null=True), use default value for type
-        if node.tag.is_null:
-            return _default_value_str(val_type)
-
-        return _value_to_json_str(val_type, node.text)
-
-    return "null"
+INDENT = "\t"
 
 
-def _default_value_str(val_type: ValueType) -> str:
-    """Return the default JSON representation for a type (used for null values)."""
+def write_indent(b: list, indent: int):
+    b.append(INDENT * indent)
+
+
+def write_value_jsonc(b: list, v) -> None:
+    if v is None:
+        return
+    if v.tag is None:
+        return
+
+    val_type = v.tag.type
+
+    if v.tag.is_null:
+        if val_type in (ValueType.String, ValueType.Bytes, ValueType.DateTime,
+                        ValueType.Date, ValueType.Time, ValueType.UUID,
+                        ValueType.IP, ValueType.URL, ValueType.Email,
+                        ValueType.Enum, ValueType.Decimal):
+            b.append('""')
+        elif val_type in (ValueType.Int, ValueType.Int8, ValueType.Int16, ValueType.Int32, ValueType.Int64,
+                          ValueType.Uint, ValueType.Uint8, ValueType.Uint16, ValueType.Uint32, ValueType.Uint64,
+                          ValueType.BigInt):
+            b.append("0")
+        elif val_type == ValueType.Bool:
+            b.append("false")
+        elif val_type in (ValueType.Float32, ValueType.Float64):
+            b.append("0.0")
+        else:
+            b.append("null")
+        return
+
     if val_type in (ValueType.String, ValueType.Bytes, ValueType.DateTime,
-                     ValueType.Date, ValueType.Time, ValueType.UUID,
-                     ValueType.IP, ValueType.URL, ValueType.Email,
-                     ValueType.Enum, ValueType.Decimal):
-        return json.dumps("")
-    elif val_type == ValueType.BigInt:
-        return "0"
-    elif val_type == ValueType.Bool:
-        return "false"
-    elif val_type in (ValueType.Int, ValueType.Uint, ValueType.Int8, ValueType.Int16,
-                     ValueType.Int32, ValueType.Int64, ValueType.Uint8, ValueType.Uint16,
-                     ValueType.Uint32, ValueType.Uint64):
-        return "0"
+                    ValueType.Date, ValueType.Time, ValueType.UUID,
+                    ValueType.IP, ValueType.URL, ValueType.Email,
+                    ValueType.Enum):
+        b.append(json.dumps(v.text))
+    elif val_type in (ValueType.Int, ValueType.Int8, ValueType.Int16, ValueType.Int32, ValueType.Int64,
+                      ValueType.Uint, ValueType.Uint8, ValueType.Uint16, ValueType.Uint32, ValueType.Uint64,
+                      ValueType.BigInt, ValueType.Decimal, ValueType.Bool):
+        b.append(v.text)
     elif val_type in (ValueType.Float32, ValueType.Float64):
-        return "0.0"
-    elif val_type == ValueType.Unknown:
-        return "null"
-    return "null"
+        b.append(v.text)
+    else:
+        b.append(v.text)
 
 
-def _value_to_json_str(val_type: ValueType, text: str) -> str:
-    """Convert a value to its JSON string representation based on type."""
-    if val_type in (ValueType.String, ValueType.Bytes, ValueType.DateTime,
-                     ValueType.Date, ValueType.Time, ValueType.UUID,
-                     ValueType.IP, ValueType.URL, ValueType.Email,
-                     ValueType.Enum, ValueType.Decimal):
-        return json.dumps(text)
-    elif val_type == ValueType.BigInt:
-        return text if text else "0"
-    elif val_type == ValueType.Bool:
-        return text if text else "false"
-    elif val_type in (ValueType.Int, ValueType.Uint, ValueType.Int8, ValueType.Int16,
-                     ValueType.Int32, ValueType.Int64, ValueType.Uint8, ValueType.Uint16,
-                     ValueType.Uint32, ValueType.Uint64):
-        return text if text else "0"
-    elif val_type in (ValueType.Float32, ValueType.Float64):
-        return text if text else "0.0"
-    elif val_type == ValueType.Unknown:
-        return json.dumps(text) if text else "null"
-    return json.dumps(text) if text else "null"
+def write_leading_comments(b: list, tag, indent: int):
+    tag_str = _get_tag_str(tag)
+    if tag_str:
+        b.append("\n")
+        write_indent(b, indent)
+        b.append(f"// mm: {tag_str}\n")
+
+
+def write_node_jsonc(b: list, n: Node, indent: int):
+    if isinstance(n, Val):
+        write_value_jsonc(b, n)
+    elif isinstance(n, Obj):
+        write_object_jsonc(b, n, indent)
+    elif isinstance(n, Arr):
+        write_array_jsonc(b, n, indent)
+
+
+def write_object_jsonc(b: list, o: Obj, indent: int):
+    b.append("{\n")
+    for f in o.fields:
+        write_leading_comments(b, f.value.get_tag(), indent + 1)
+        write_indent(b, indent + 1)
+        b.append(json.dumps(f.key))
+        b.append(": ")
+        write_node_jsonc(b, f.value, indent + 1)
+        b.append(",\n")
+    write_indent(b, indent)
+    b.append("}")
+
+
+def write_array_jsonc(b: list, a: Arr, indent: int):
+    b.append("[\n")
+    for item in a.items:
+        write_leading_comments(b, item.get_tag(), indent + 1)
+        write_indent(b, indent + 1)
+        write_node_jsonc(b, item, indent + 1)
+        b.append(",\n")
+    write_indent(b, indent)
+    b.append("]")
 
 
 def to_jsonc(node: Node) -> str:
-    """Convert a Node tree to JSONC string."""
-    return _to_jsonc(node, 0)
+    if node is None:
+        return ""
+    b: List[str] = []
+    write_leading_comments(b, node.get_tag(), 0)
+    write_node_jsonc(b, node, 0)
+    return "".join(b)

@@ -33,7 +33,12 @@ import { encodeFromValue, decodeToValue, mm, ValueType } from 'metamessage';
 如果你使用 CommonJS：
 
 ```js
-const { encodeFromValue, decodeToValue, mm, ValueType } = require('metamessage');
+const {
+  encodeFromValue,
+  decodeToValue,
+  mm,
+  ValueType,
+} = require('metamessage');
 ```
 
 ### 2.2 对象编码
@@ -43,7 +48,7 @@ const person = {
   name: mm('Ed', { desc: '姓名' }),
   email: mm('Ed@gmail.com', { desc: '邮箱', type: 'email' }),
   score: mm(90, { desc: '成绩', type: 'uint8' }),
-  age: mm(30, { desc: '年龄' })
+  age: mm(30, { desc: '年龄' }),
 };
 
 const wire = encodeFromValue(person);
@@ -86,7 +91,7 @@ console.log('decoded', decoded);
 ### 2.5 JSONC 示例
 
 ```ts
-import { encodeFromJSONC, decodeToJSONC } from 'metamessage';
+import { encodeFromJsonc, decodeToJsonc } from 'metamessage';
 
 const jsonc = `
 // mm: desc="用户"
@@ -102,8 +107,8 @@ const jsonc = `
 }
 `;
 
-const wire = encodeFromJSONC(jsonc);
-const jsoncString = decodeToJSONC(wire);
+const wire = encodeFromJsonc(jsonc);
+const jsoncString = decodeToJsonc(wire);
 console.log('JSONC result:\n', jsoncString);
 ```
 

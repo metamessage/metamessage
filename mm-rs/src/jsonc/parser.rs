@@ -1,7 +1,7 @@
 use crate::jsonc::scanner::{Scanner, Token, TokenType};
 use crate::jsonc::ast::{Node, Object, Array, Value, Field, ValueData};
 use crate::jsonc::tag::Tag;
-use crate::mm::validator::validate;
+use crate::core::validator::validate;
 
 pub struct Parser {
     scanner: Scanner,

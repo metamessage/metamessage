@@ -147,27 +147,27 @@ object Encoder {
             }
             ValueType.UINT -> {
                 if (!tag.isNull) {
-                    tmp.encodeUint64((value.data as Number).toLong())
+                    tmp.encodeU64((value.data as Number).toLong())
                 }
             }
             ValueType.UINT8 -> {
                 if (!tag.isNull) {
-                    tmp.encodeUint64((value.data as Number).toLong())
+                    tmp.encodeU64((value.data as Number).toLong())
                 }
             }
             ValueType.UINT16 -> {
                 if (!tag.isNull) {
-                    tmp.encodeUint64((value.data as Number).toLong())
+                    tmp.encodeU64((value.data as Number).toLong())
                 }
             }
             ValueType.UINT32 -> {
                 if (!tag.isNull) {
-                    tmp.encodeUint64((value.data as Number).toLong())
+                    tmp.encodeU64((value.data as Number).toLong())
                 }
             }
             ValueType.UINT64 -> {
                 if (!tag.isNull) {
-                    tmp.encodeUint64(value.data as Long)
+                    tmp.encodeU64(value.data as Long)
                 }
             }
             ValueType.FLOAT32 -> {

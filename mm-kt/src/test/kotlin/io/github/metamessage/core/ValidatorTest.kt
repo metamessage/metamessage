@@ -13,193 +13,193 @@ class ValidatorTest {
     // ==================== Integer Tests ====================
 
     @Test
-    fun validateInt8_ValidValue() {
+    fun validateI8_ValidValue() {
         val tag = Tag().apply { type = ValueType.INT8 }
-        val result = tag.validateInt8(42.toByte())
+        val result = tag.validateI8(42.toByte())
         assertTrue(result.valid)
         assertEquals("42", result.text)
     }
 
     @Test
-    fun validateInt8_MinValue() {
+    fun validateI8_MinValue() {
         val tag = Tag().apply { type = ValueType.INT8 }
-        val result = tag.validateInt8((-128).toByte())
+        val result = tag.validateI8((-128).toByte())
         assertTrue(result.valid)
     }
 
     @Test
-    fun validateInt8_MaxValue() {
+    fun validateI8_MaxValue() {
         val tag = Tag().apply { type = ValueType.INT8 }
-        val result = tag.validateInt8(127.toByte())
+        val result = tag.validateI8(127.toByte())
         assertTrue(result.valid)
     }
 
     @Test
-    fun validateInt8_WithMinConstraint() {
+    fun validateI8_WithMinConstraint() {
         val tag = Tag().apply {
             type = ValueType.INT8
             min = "10"
         }
-        val result = tag.validateInt8(15.toByte())
+        val result = tag.validateI8(15.toByte())
         assertTrue(result.valid)
     }
 
     @Test
-    fun validateInt8_BelowMinConstraint() {
+    fun validateI8_BelowMinConstraint() {
         val tag = Tag().apply {
             type = ValueType.INT8
             min = "10"
         }
-        val result = tag.validateInt8(5.toByte())
+        val result = tag.validateI8(5.toByte())
         assertFalse(result.valid)
         assertTrue(result.error?.contains("less than the minimum") ?: false)
     }
 
     @Test
-    fun validateInt8_WithMaxConstraint() {
+    fun validateI8_WithMaxConstraint() {
         val tag = Tag().apply {
             type = ValueType.INT8
             max = "50"
         }
-        val result = tag.validateInt8(42.toByte())
+        val result = tag.validateI8(42.toByte())
         assertTrue(result.valid)
     }
 
     @Test
-    fun validateInt8_ExceedsMaxConstraint() {
+    fun validateI8_ExceedsMaxConstraint() {
         val tag = Tag().apply {
             type = ValueType.INT8
             max = "50"
         }
-        val result = tag.validateInt8(60.toByte())
+        val result = tag.validateI8(60.toByte())
         assertFalse(result.valid)
         assertTrue(result.error?.contains("exceeds the maximum") ?: false)
     }
 
     @Test
-    fun validateInt16_ValidValue() {
+    fun validateI16_ValidValue() {
         val tag = Tag().apply { type = ValueType.INT16 }
-        val result = tag.validateInt16(1234.toShort())
+        val result = tag.validateI16(1234.toShort())
         assertTrue(result.valid)
         assertEquals("1234", result.text)
     }
 
     @Test
-    fun validateInt32_ValidValue() {
+    fun validateI32_ValidValue() {
         val tag = Tag().apply { type = ValueType.INT32 }
-        val result = tag.validateInt32(123456789)
+        val result = tag.validateI32(123456789)
         assertTrue(result.valid)
         assertEquals("123456789", result.text)
     }
 
     @Test
-    fun validateInt64_ValidValue() {
+    fun validateI64_ValidValue() {
         val tag = Tag().apply { type = ValueType.INT64 }
-        val result = tag.validateInt64(1234567890123456789L)
+        val result = tag.validateI64(1234567890123456789L)
         assertTrue(result.valid)
         assertEquals("1234567890123456789", result.text)
     }
 
     @Test
-    fun validateUint_ValidValue() {
+    fun validateU_ValidValue() {
         val tag = Tag().apply { type = ValueType.UINT }
-        val result = tag.validateUint(4294967295L)
+        val result = tag.validateU(4294967295L)
         assertTrue(result.valid)
     }
 
     @Test
-    fun validateUint8_ValidValue() {
+    fun validateU8_ValidValue() {
         val tag = Tag().apply { type = ValueType.UINT8 }
-        val result = tag.validateUint8(255.toShort())
+        val result = tag.validateU8(255.toShort())
         assertTrue(result.valid)
     }
 
     @Test
-    fun validateUint16_ValidValue() {
+    fun validateU16_ValidValue() {
         val tag = Tag().apply { type = ValueType.UINT16 }
-        val result = tag.validateUint16(65535)
+        val result = tag.validateU16(65535)
         assertTrue(result.valid)
     }
 
     @Test
-    fun validateUint32_ValidValue() {
+    fun validateU32_ValidValue() {
         val tag = Tag().apply { type = ValueType.UINT32 }
-        val result = tag.validateUint32(4294967295L)
+        val result = tag.validateU32(4294967295L)
         assertTrue(result.valid)
     }
 
     @Test
-    fun validateUint64_ValidValue() {
+    fun validateU64_ValidValue() {
         val tag = Tag().apply { type = ValueType.UINT64 }
-        val result = tag.validateUint64(BigInteger("18446744073709551615"))
+        val result = tag.validateU64(BigInteger("18446744073709551615"))
         assertTrue(result.valid)
     }
 
     // ==================== Float Tests ====================
 
     @Test
-    fun validateFloat32_ValidValue() {
+    fun validateF32_ValidValue() {
         val tag = Tag().apply { type = ValueType.FLOAT32 }
-        val result = tag.validateFloat32(3.14f)
+        val result = tag.validateF32(3.14f)
         assertTrue(result.valid)
     }
 
     @Test
-    fun validateFloat32_WithMinMax() {
+    fun validateF32_WithMinMax() {
         val tag = Tag().apply {
             type = ValueType.FLOAT32
             min = "1.0"
             max = "10.0"
         }
-        val result = tag.validateFloat32(3.14f)
+        val result = tag.validateF32(3.14f)
         assertTrue(result.valid)
     }
 
     @Test
-    fun validateFloat64_ValidValue() {
+    fun validateF64_ValidValue() {
         val tag = Tag().apply { type = ValueType.FLOAT64 }
-        val result = tag.validateFloat64(3.141592653589793)
+        val result = tag.validateF64(3.141592653589793)
         assertTrue(result.valid)
     }
 
     // ==================== String Tests ====================
 
     @Test
-    fun validateString_ValidValue() {
+    fun validateStr_ValidValue() {
         val tag = Tag().apply { type = ValueType.STRING }
-        val result = tag.validateString("hello")
+        val result = tag.validateStr("hello")
         assertTrue(result.valid)
         assertEquals("hello", result.text)
     }
 
     @Test
-    fun validateString_WithPattern() {
+    fun validateStr_WithPattern() {
         val tag = Tag().apply {
             type = ValueType.STRING
             pattern = "^[a-z]+$"
         }
-        val result = tag.validateString("hello")
+        val result = tag.validateStr("hello")
         assertTrue(result.valid)
     }
 
     @Test
-    fun validateString_PatternMismatch() {
+    fun validateStr_PatternMismatch() {
         val tag = Tag().apply {
             type = ValueType.STRING
             pattern = "^[a-z]+$"
         }
-        val result = tag.validateString("Hello123")
+        val result = tag.validateStr("Hello123")
         assertFalse(result.valid)
     }
 
     @Test
-    fun validateString_WithMinMaxLength() {
+    fun validateStr_WithMinMaxLength() {
         val tag = Tag().apply {
             type = ValueType.STRING
             min = "3"
             max = "10"
         }
-        val result = tag.validateString("hello")
+        val result = tag.validateStr("hello")
         assertTrue(result.valid)
     }
 
@@ -323,29 +323,29 @@ class ValidatorTest {
     // ==================== Array Tests ====================
 
     @Test
-    fun validateArray_ValidValue() {
+    fun validateArr_ValidValue() {
         val tag = Tag().apply { type = ValueType.ARRAY }
-        val result = tag.validateArray(listOf(1, 2, 3))
+        val result = tag.validateArr(listOf(1, 2, 3))
         assertTrue(result.valid)
     }
 
     @Test
-    fun validateArray_ChildUnique() {
+    fun validateArr_ChildUnique() {
         val tag = Tag().apply {
             type = ValueType.ARRAY
             childUnique = true
         }
-        val result = tag.validateArray(listOf(1, 2, 3))
+        val result = tag.validateArr(listOf(1, 2, 3))
         assertTrue(result.valid)
     }
 
     @Test
-    fun validateArray_DuplicateValues() {
+    fun validateArr_DuplicateValues() {
         val tag = Tag().apply {
             type = ValueType.ARRAY
             childUnique = true
         }
-        val result = tag.validateArray(listOf(1, 2, 2, 3))
+        val result = tag.validateArr(listOf(1, 2, 2, 3))
         assertFalse(result.valid)
         assertTrue(result.error?.contains("duplicate") ?: false)
     }
@@ -353,94 +353,94 @@ class ValidatorTest {
     // ==================== Struct Tests ====================
 
     @Test
-    fun validateStruct_Valid() {
+    fun validateObj_Valid() {
         val tag = Tag().apply { type = ValueType.STRUCT }
-        val result = tag.validateStruct()
+        val result = tag.validateObj()
         assertTrue(result.valid)
     }
 
     // ==================== BigInt Tests ====================
 
     @Test
-    fun validateBigInt_ValidValue() {
+    fun validateBigint_ValidValue() {
         val tag = Tag().apply { type = ValueType.BIGINT }
-        val result = tag.validateBigInt(BigInteger("123456789012345678901234567890"))
+        val result = tag.validateBigint(BigInteger("123456789012345678901234567890"))
         assertTrue(result.valid)
     }
 
     // ==================== Boundary Tests ====================
 
     @Test
-    fun validateInt8_ZeroWithAllowEmpty() {
+    fun validateI8_ZeroWithAllowEmpty() {
         val tag = Tag().apply {
             type = ValueType.INT8
             allowEmpty = true
         }
-        val result = tag.validateInt8(0.toByte())
+        val result = tag.validateI8(0.toByte())
         assertTrue(result.valid)
     }
 
     @Test
-    fun validateInt8_ZeroWithoutAllowEmpty() {
+    fun validateI8_ZeroWithoutAllowEmpty() {
         val tag = Tag().apply {
             type = ValueType.INT8
             allowEmpty = false
         }
-        val result = tag.validateInt8(0.toByte())
+        val result = tag.validateI8(0.toByte())
         assertFalse(result.valid)
     }
 
     @Test
-    fun validateString_EmptyWithAllowEmpty() {
+    fun validateStr_EmptyWithAllowEmpty() {
         val tag = Tag().apply {
             type = ValueType.STRING
             allowEmpty = true
         }
-        val result = tag.validateString("")
+        val result = tag.validateStr("")
         assertTrue(result.valid)
     }
 
     @Test
-    fun validateString_EmptyWithoutAllowEmpty() {
+    fun validateStr_EmptyWithoutAllowEmpty() {
         val tag = Tag().apply {
             type = ValueType.STRING
             allowEmpty = false
         }
-        val result = tag.validateString("")
+        val result = tag.validateStr("")
         assertFalse(result.valid)
     }
 
     // ==================== Error Handling Tests ====================
 
     @Test
-    fun validateInt8_InvalidMinValue() {
+    fun validateI8_InvalidMinValue() {
         val tag = Tag().apply {
             type = ValueType.INT8
             min = "invalid"
         }
-        val result = tag.validateInt8(42.toByte())
+        val result = tag.validateI8(42.toByte())
         assertFalse(result.valid)
         assertTrue(result.error?.contains("failed to parse") ?: false)
     }
 
     @Test
-    fun validateInt8_MinOutOfRange() {
+    fun validateI8_MinOutOfRange() {
         val tag = Tag().apply {
             type = ValueType.INT8
             min = "200"
         }
-        val result = tag.validateInt8(42.toByte())
+        val result = tag.validateI8(42.toByte())
         assertFalse(result.valid)
         assertTrue(result.error?.contains("out of int8 range") ?: false)
     }
 
     @Test
-    fun validateUint64_InvalidMinValue() {
+    fun validateU64_InvalidMinValue() {
         val tag = Tag().apply {
             type = ValueType.UINT64
             min = "invalid"
         }
-        val result = tag.validateUint64(BigInteger("100"))
+        val result = tag.validateU64(BigInteger("100"))
         assertFalse(result.valid)
     }
 }

@@ -155,7 +155,7 @@ func valueToNode(v any, tag *ir.Tag, depth int, path string) (node ir.Node, err 
 
 		switch tag.Type {
 		case ir.ValueTypeInt:
-			data, text, err = tag.ValidateInt(val)
+			data, text, err = tag.ValidateI(val)
 		default:
 			return nil, fmt.Errorf("%s unsupported type: %T", tag.Type.String(), val)
 		}
@@ -177,7 +177,7 @@ func valueToNode(v any, tag *ir.Tag, depth int, path string) (node ir.Node, err 
 				data = 0
 				text = "0"
 			} else {
-				data, text, err = tag.ValidateInt(*val)
+				data, text, err = tag.ValidateI(*val)
 			}
 		default:
 			return nil, fmt.Errorf("%s unsupported type: %T", tag.Type.String(), val)
@@ -190,7 +190,7 @@ func valueToNode(v any, tag *ir.Tag, depth int, path string) (node ir.Node, err 
 
 		switch tag.Type {
 		case ir.ValueTypeInt8:
-			data, text, err = tag.ValidateInt8(val)
+			data, text, err = tag.ValidateI8(val)
 		default:
 			return nil, fmt.Errorf("%s unsupported type: %T", tag.Type.String(), val)
 		}
@@ -212,7 +212,7 @@ func valueToNode(v any, tag *ir.Tag, depth int, path string) (node ir.Node, err 
 				data = int8(0)
 				text = "0"
 			} else {
-				data, text, err = tag.ValidateInt8(*val)
+				data, text, err = tag.ValidateI8(*val)
 			}
 		default:
 			return nil, fmt.Errorf("%s unsupported type: %T", tag.Type.String(), val)
@@ -225,7 +225,7 @@ func valueToNode(v any, tag *ir.Tag, depth int, path string) (node ir.Node, err 
 
 		switch tag.Type {
 		case ir.ValueTypeInt16:
-			data, text, err = tag.ValidateInt16(val)
+			data, text, err = tag.ValidateI16(val)
 		default:
 			return nil, fmt.Errorf("%s unsupported type: %T", tag.Type.String(), val)
 		}
@@ -247,7 +247,7 @@ func valueToNode(v any, tag *ir.Tag, depth int, path string) (node ir.Node, err 
 				data = int16(0)
 				text = "0"
 			} else {
-				data, text, err = tag.ValidateInt16(*val)
+				data, text, err = tag.ValidateI16(*val)
 			}
 
 		default:
@@ -261,7 +261,7 @@ func valueToNode(v any, tag *ir.Tag, depth int, path string) (node ir.Node, err 
 
 		switch tag.Type {
 		case ir.ValueTypeInt32:
-			data, text, err = tag.ValidateInt32(val)
+			data, text, err = tag.ValidateI32(val)
 		default:
 			return nil, fmt.Errorf("%s unsupported type: %T", tag.Type.String(), val)
 		}
@@ -283,7 +283,7 @@ func valueToNode(v any, tag *ir.Tag, depth int, path string) (node ir.Node, err 
 				data = int32(0)
 				text = "0"
 			} else {
-				data, text, err = tag.ValidateInt32(*val)
+				data, text, err = tag.ValidateI32(*val)
 			}
 		default:
 			return nil, fmt.Errorf("%s unsupported type: %T", tag.Type.String(), val)
@@ -296,7 +296,7 @@ func valueToNode(v any, tag *ir.Tag, depth int, path string) (node ir.Node, err 
 
 		switch tag.Type {
 		case ir.ValueTypeInt64:
-			data, text, err = tag.ValidateInt64(val)
+			data, text, err = tag.ValidateI64(val)
 		default:
 			return nil, fmt.Errorf("%s unsupported type: %T", tag.Type.String(), val)
 		}
@@ -318,7 +318,7 @@ func valueToNode(v any, tag *ir.Tag, depth int, path string) (node ir.Node, err 
 				data = int64(0)
 				text = "0"
 			} else {
-				data, text, err = tag.ValidateInt64(*val)
+				data, text, err = tag.ValidateI64(*val)
 			}
 
 		default:
@@ -332,7 +332,7 @@ func valueToNode(v any, tag *ir.Tag, depth int, path string) (node ir.Node, err 
 
 		switch tag.Type {
 		case ir.ValueTypeUint:
-			data, text, err = tag.ValidateUint(val)
+			data, text, err = tag.ValidateU(val)
 		default:
 			return nil, fmt.Errorf("%s unsupported type: %T", tag.Type.String(), val)
 		}
@@ -354,7 +354,7 @@ func valueToNode(v any, tag *ir.Tag, depth int, path string) (node ir.Node, err 
 				data = uint(0)
 				text = "0"
 			} else {
-				data, text, err = tag.ValidateUint(*val)
+				data, text, err = tag.ValidateU(*val)
 			}
 		default:
 			return nil, fmt.Errorf("%s unsupported type: %T", tag.Type.String(), val)
@@ -367,7 +367,7 @@ func valueToNode(v any, tag *ir.Tag, depth int, path string) (node ir.Node, err 
 
 		switch tag.Type {
 		case ir.ValueTypeUint8:
-			data, text, err = tag.ValidateUint8(val)
+			data, text, err = tag.ValidateU8(val)
 		default:
 			return nil, fmt.Errorf("%s unsupported type: %T", tag.Type.String(), val)
 		}
@@ -389,7 +389,7 @@ func valueToNode(v any, tag *ir.Tag, depth int, path string) (node ir.Node, err 
 				data = uint8(0)
 				text = "0"
 			} else {
-				data, text, err = tag.ValidateUint8(*val)
+				data, text, err = tag.ValidateU8(*val)
 			}
 
 		default:
@@ -403,7 +403,7 @@ func valueToNode(v any, tag *ir.Tag, depth int, path string) (node ir.Node, err 
 
 		switch tag.Type {
 		case ir.ValueTypeUint16:
-			data, text, err = tag.ValidateUint16(val)
+			data, text, err = tag.ValidateU16(val)
 		default:
 			return nil, fmt.Errorf("%s unsupported type: %T", tag.Type.String(), val)
 		}
@@ -425,7 +425,7 @@ func valueToNode(v any, tag *ir.Tag, depth int, path string) (node ir.Node, err 
 				data = uint16(0)
 				text = "0"
 			} else {
-				data, text, err = tag.ValidateUint16(*val)
+				data, text, err = tag.ValidateU16(*val)
 			}
 
 		default:
@@ -438,7 +438,7 @@ func valueToNode(v any, tag *ir.Tag, depth int, path string) (node ir.Node, err 
 		}
 		switch tag.Type {
 		case ir.ValueTypeUint32:
-			data, text, err = tag.ValidateUint32(val)
+			data, text, err = tag.ValidateU32(val)
 		default:
 			return nil, fmt.Errorf("%s unsupported type: %T", tag.Type.String(), val)
 		}
@@ -460,7 +460,7 @@ func valueToNode(v any, tag *ir.Tag, depth int, path string) (node ir.Node, err 
 				data = uint32(0)
 				text = "0"
 			} else {
-				data, text, err = tag.ValidateUint32(*val)
+				data, text, err = tag.ValidateU32(*val)
 			}
 
 		default:
@@ -474,7 +474,7 @@ func valueToNode(v any, tag *ir.Tag, depth int, path string) (node ir.Node, err 
 
 		switch tag.Type {
 		case ir.ValueTypeUint64:
-			data, text, err = tag.ValidateUint64(val)
+			data, text, err = tag.ValidateU64(val)
 		default:
 			return nil, fmt.Errorf("%s unsupported type: %T", tag.Type.String(), val)
 		}
@@ -496,7 +496,7 @@ func valueToNode(v any, tag *ir.Tag, depth int, path string) (node ir.Node, err 
 				data = uint64(0)
 				text = "0"
 			} else {
-				data, text, err = tag.ValidateUint64(*val)
+				data, text, err = tag.ValidateU64(*val)
 			}
 
 		default:
@@ -517,7 +517,7 @@ func valueToNode(v any, tag *ir.Tag, depth int, path string) (node ir.Node, err 
 			} else if math.IsNaN(float64(val)) {
 				return nil, fmt.Errorf("%s unsupported value: NaN", tag.Type.String())
 			} else {
-				data, text, err = tag.ValidateFloat32(val)
+				data, text, err = tag.ValidateF32(val)
 			}
 		default:
 			return nil, fmt.Errorf("%s unsupported type: %T", tag.Type.String(), val)
@@ -546,7 +546,7 @@ func valueToNode(v any, tag *ir.Tag, depth int, path string) (node ir.Node, err 
 			} else if math.IsNaN(float64(*val)) {
 				return nil, fmt.Errorf("%s unsupported value: NaN", tag.Type.String())
 			} else {
-				data, text, err = tag.ValidateFloat32(*val)
+				data, text, err = tag.ValidateF32(*val)
 			}
 		default:
 			return nil, fmt.Errorf("%s unsupported type: %T", tag.Type.String(), val)
@@ -566,7 +566,7 @@ func valueToNode(v any, tag *ir.Tag, depth int, path string) (node ir.Node, err 
 			} else if math.IsNaN(val) {
 				return nil, fmt.Errorf("%s unsupported value: NaN", tag.Type.String())
 			} else {
-				data, text, err = tag.ValidateFloat64(val)
+				data, text, err = tag.ValidateF64(val)
 			}
 		default:
 			return nil, fmt.Errorf("%s unsupported type: %T", tag.Type.String(), val)
@@ -595,7 +595,7 @@ func valueToNode(v any, tag *ir.Tag, depth int, path string) (node ir.Node, err 
 			} else if math.IsNaN(*val) {
 				return nil, fmt.Errorf("%s unsupported value: NaN", tag.Type.String())
 			} else {
-				data, text, err = tag.ValidateFloat64(*val)
+				data, text, err = tag.ValidateF64(*val)
 			}
 
 		default:
@@ -609,7 +609,7 @@ func valueToNode(v any, tag *ir.Tag, depth int, path string) (node ir.Node, err 
 
 		switch tag.Type {
 		case ir.ValueTypeString:
-			data, text, err = tag.ValidateString(val)
+			data, text, err = tag.ValidateStr(val)
 
 		case ir.ValueTypeDecimal:
 			data, text, err = tag.ValidateDecimal(val)
@@ -644,7 +644,7 @@ func valueToNode(v any, tag *ir.Tag, depth int, path string) (node ir.Node, err 
 				data = ""
 				text = ""
 			} else {
-				data, text, err = tag.ValidateString(*val)
+				data, text, err = tag.ValidateStr(*val)
 			}
 
 		case ir.ValueTypeDecimal:
@@ -715,7 +715,7 @@ func valueToNode(v any, tag *ir.Tag, depth int, path string) (node ir.Node, err 
 
 		switch tag.Type {
 		case ir.ValueTypeBigInt:
-			data, text, err = tag.ValidateBigInt(val)
+			data, text, err = tag.ValidateBigint(val)
 
 		default:
 			return nil, fmt.Errorf("%s unsupported type: %T", tag.Type.String(), val)
@@ -738,7 +738,7 @@ func valueToNode(v any, tag *ir.Tag, depth int, path string) (node ir.Node, err 
 				data = big.Int{}
 				text = "0"
 			} else {
-				data, text, err = tag.ValidateBigInt(*val)
+				data, text, err = tag.ValidateBigint(*val)
 			}
 
 		default:
@@ -826,7 +826,7 @@ func valueToNode(v any, tag *ir.Tag, depth int, path string) (node ir.Node, err 
 
 		switch tag.Type {
 		case ir.ValueTypeDateTime:
-			data, text, err = tag.ValidateDateTime(val)
+			data, text, err = tag.ValidateDatetime(val)
 
 		case ir.ValueTypeDate:
 			data, text, err = tag.ValidateDate(val)
@@ -1145,7 +1145,7 @@ func anyToJSONC(obj any, tag *ir.Tag, depth int, path string) (ir.Node, error) {
 				})
 			}
 
-			err = tag.ValidateStruct()
+			err = tag.ValidateObj()
 			if err != nil {
 				err = fmt.Errorf("validate failed: %w", err)
 				return nil, err
@@ -1362,7 +1362,7 @@ func anyToJSONC(obj any, tag *ir.Tag, depth int, path string) (ir.Node, error) {
 			node.Items = append(node.Items, itemNode)
 		}
 
-		err = tag.ValidateSlice(node.Items)
+		err = tag.ValidateVec(node.Items)
 		if err != nil {
 			err = fmt.Errorf("validate failed: %w", err)
 			return nil, err
@@ -1456,7 +1456,7 @@ func anyToJSONC(obj any, tag *ir.Tag, depth int, path string) (ir.Node, error) {
 			node.Items = append(node.Items, itemNode)
 		}
 
-		err = tag.ValidateArray(node.Items)
+		err = tag.ValidateArr(node.Items)
 		if err != nil {
 			err = fmt.Errorf("validate failed: %w", err)
 			return nil, err

@@ -36,7 +36,7 @@ size_t Encoder::encodeBool(bool value) {
 
 size_t Encoder::encodeInt64(int64_t value) {
     if (value >= 0) {
-        return encodeUint64(static_cast<uint64_t>(value));
+        return encodeU64(static_cast<uint64_t>(value));
     } else {
         buffer.push_back(PrefixNegativeInt);
         uint64_t uv = static_cast<uint64_t>(-(value + 1)) + 1;
@@ -64,7 +64,7 @@ size_t Encoder::encodeInt64(int64_t value) {
     }
 }
 
-size_t Encoder::encodeUint64(uint64_t value) {
+size_t Encoder::encodeU64(uint64_t value) {
     buffer.push_back(PrefixPositiveInt);
     if (value < 0x100) {
         buffer.push_back(static_cast<uint8_t>(value));

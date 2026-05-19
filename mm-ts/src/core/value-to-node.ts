@@ -96,7 +96,7 @@ function valueToNode(v: any, tag: Tag, depth: number, path: string): Node {
       }
       switch (tag.type) {
         case ValueType.Int: {
-          const result = tag.validateInt8(v);
+          const result = tag.validateI8(v);
           if (!result.valid) {
             throw new Error(`validate failed: ${result.error}`);
           }
@@ -106,7 +106,7 @@ function valueToNode(v: any, tag: Tag, depth: number, path: string): Node {
         }
 
         case ValueType.Int8: {
-          const result = tag.validateInt8(v);
+          const result = tag.validateI8(v);
           if (!result.valid) {
             throw new Error(`validate failed: ${result.error}`);
           }
@@ -115,7 +115,7 @@ function valueToNode(v: any, tag: Tag, depth: number, path: string): Node {
           break;
         }
         case ValueType.Int16: {
-          const result = tag.validateInt16(v);
+          const result = tag.validateI16(v);
           if (!result.valid) {
             throw new Error(`validate failed: ${result.error}`);
           }
@@ -124,7 +124,7 @@ function valueToNode(v: any, tag: Tag, depth: number, path: string): Node {
           break;
         }
         case ValueType.Int32: {
-          const result = tag.validateInt32(v);
+          const result = tag.validateI32(v);
           if (!result.valid) {
             throw new Error(`validate failed: ${result.error}`);
           }
@@ -133,7 +133,7 @@ function valueToNode(v: any, tag: Tag, depth: number, path: string): Node {
           break;
         }
         case ValueType.Int64: {
-          const result = tag.validateInt64(v);
+          const result = tag.validateI64(v);
           if (!result.valid) {
             throw new Error(`validate failed: ${result.error}`);
           }
@@ -142,7 +142,7 @@ function valueToNode(v: any, tag: Tag, depth: number, path: string): Node {
           break;
         }
         case ValueType.Uint: {
-          const result = tag.validateUint(v);
+          const result = tag.validateU(v);
           if (!result.valid) {
             throw new Error(`validate failed: ${result.error}`);
           }
@@ -151,7 +151,7 @@ function valueToNode(v: any, tag: Tag, depth: number, path: string): Node {
           break;
         }
         case ValueType.Uint8: {
-          const result = tag.validateUint8(v);
+          const result = tag.validateU8(v);
           if (!result.valid) {
             throw new Error(`validate failed: ${result.error}`);
           }
@@ -160,7 +160,7 @@ function valueToNode(v: any, tag: Tag, depth: number, path: string): Node {
           break;
         }
         case ValueType.Uint16: {
-          const result = tag.validateUint16(v);
+          const result = tag.validateU16(v);
           if (!result.valid) {
             throw new Error(`validate failed: ${result.error}`);
           }
@@ -169,7 +169,7 @@ function valueToNode(v: any, tag: Tag, depth: number, path: string): Node {
           break;
         }
         case ValueType.Uint32: {
-          const result = tag.validateUint32(v);
+          const result = tag.validateU32(v);
           if (!result.valid) {
             throw new Error(`validate failed: ${result.error}`);
           }
@@ -178,7 +178,7 @@ function valueToNode(v: any, tag: Tag, depth: number, path: string): Node {
           break;
         }
         case ValueType.Uint64: {
-          const result = tag.validateUint64(v);
+          const result = tag.validateU64(v);
           if (!result.valid) {
             throw new Error(`validate failed: ${result.error}`);
           }
@@ -195,7 +195,7 @@ function valueToNode(v: any, tag: Tag, depth: number, path: string): Node {
               `${tag.type} unsupported value: ${v > 0 ? '+Inf' : '-Inf'}`,
             );
           }
-          const result = tag.validateFloat32(v);
+          const result = tag.validateF32(v);
           if (!result.valid) {
             throw new Error(`validate failed: ${result.error}`);
           }
@@ -212,7 +212,7 @@ function valueToNode(v: any, tag: Tag, depth: number, path: string): Node {
               `${tag.type} unsupported value: ${v > 0 ? '+Inf' : '-Inf'}`,
             );
           }
-          const result = tag.validateFloat64(v);
+          const result = tag.validateF64(v);
           if (!result.valid) {
             throw new Error(`validate failed: ${result.error}`);
           }
@@ -234,7 +234,7 @@ function valueToNode(v: any, tag: Tag, depth: number, path: string): Node {
       switch (tag.type) {
         case ValueType.BigInt:
         case ValueType.Int: {
-          const result = tag.validateInt(v);
+          const result = tag.validateI(v);
           if (!result.valid) {
             throw new Error(`validate failed: ${result.error}`);
           }
@@ -244,7 +244,7 @@ function valueToNode(v: any, tag: Tag, depth: number, path: string): Node {
         }
         case ValueType.Int64:
         case ValueType.Uint64: {
-          const result = tag.validateBigInt(v);
+          const result = tag.validateBigint(v);
           if (!result.valid) {
             throw new Error(`validate failed: ${result.error}`);
           }
@@ -265,7 +265,7 @@ function valueToNode(v: any, tag: Tag, depth: number, path: string): Node {
       }
       switch (tag.type) {
         case ValueType.String: {
-          const result = tag.validateString(v);
+          const result = tag.validateStr(v);
           if (!result.valid) {
             throw new Error(`validate failed: ${result.error}`);
           }
@@ -463,7 +463,7 @@ function anyToObject(
     objNode.setProperty(key, fieldNode);
   }
 
-  const result = tag.validateStruct();
+  const result = tag.validateObj();
   if (!result.valid) {
     throw new Error(`validate failed: ${result.error}`);
   }
@@ -507,7 +507,7 @@ function anyToArray(
     arrNode.addElement(itemNode);
   }
 
-  const result = tag.validateSlice(arr);
+  const result = tag.validateVec(arr);
   if (!result.valid) {
     throw new Error(`validate failed: ${result.error}`);
   }

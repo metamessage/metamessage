@@ -60,19 +60,19 @@ func TestEncodeDecode(t *testing.T) {
 		// 	expectedErr: "",
 		// },
 		// {
-		// 	name:        "Ordinary byte slice",
+		// 	name:        "Ordinary byte vec",
 		// 	input:       []byte("hello world"),
 		// 	expectedOut: []byte("hello world"),
 		// 	expectedErr: "",
 		// },
 		// {
-		// 	name:        "Empty slice ([]byte{})",
+		// 	name:        "Empty vec ([]byte{})",
 		// 	input:       []byte{},
 		// 	expectedOut: []byte{},
 		// 	expectedErr: "",
 		// },
 		// {
-		// 	name:        "slice",
+		// 	name:        "vec",
 		// 	input:       []byte{0, 0, 0, 0},
 		// 	expectedOut: []byte{0, 0, 0, 0},
 		// 	expectedErr: "",
@@ -96,7 +96,7 @@ func TestEncodeDecode(t *testing.T) {
 				t.Fatalf("Unexpected error: %v", err)
 			}
 
-			rs, _ := DecodeToJSONC(bs)
+			rs, _ := DecodeToJsonc(bs)
 			fmt.Println(rs)
 			// switch rs.GetType() {
 			// case ir.NodeTypeArray:
@@ -117,7 +117,7 @@ func BenchmarkEncodeDecode(b *testing.B) {
 
 	for i := 0; i < b.N; i++ {
 		n, _ := EncodeFromValue(data, "")
-		_, _ = DecodeToJSONC(n)
+		_, _ = DecodeToJsonc(n)
 	}
 }
 

@@ -125,7 +125,7 @@ export class JSONCParser {
                 }
                 data = '';
               } else {
-                const result = strTag.validateString(text);
+                const result = strTag.validateStr(text);
                 if (!result.valid) {
                   throw new Error(result.error || 'String validation failed');
                 }
@@ -274,7 +274,7 @@ export class JSONCParser {
               } else if (strTag.type === ValueType.Decimal) {
                 defaultResult = strTag.validateDecimal(text);
               } else {
-                defaultResult = strTag.validateString(text);
+                defaultResult = strTag.validateStr(text);
               }
               if (!defaultResult.valid) {
                 throw new Error(
@@ -317,7 +317,7 @@ export class JSONCParser {
                   if (isNaN(f64)) {
                     throw new Error(`invalid float32 "${text}"`);
                   }
-                  const result = numTag.validateFloat32(f64);
+                  const result = numTag.validateF32(f64);
                   if (!result.valid) {
                     throw new Error(
                       result.error || 'Float32 validation failed',
@@ -339,7 +339,7 @@ export class JSONCParser {
                   if (isNaN(f64)) {
                     throw new Error(`invalid float64 "${text}"`);
                   }
-                  const result = numTag.validateFloat64(f64);
+                  const result = numTag.validateF64(f64);
                   if (!result.valid) {
                     throw new Error(
                       result.error || 'Float64 validation failed',
@@ -351,7 +351,7 @@ export class JSONCParser {
                 break;
 
               default:
-                const floatDefaultResult = numTag.validateFloat64(
+                const floatDefaultResult = numTag.validateF64(
                   parseFloat(text),
                 );
                 if (!floatDefaultResult.valid) {
@@ -371,16 +371,16 @@ export class JSONCParser {
 
             switch (numTag.type) {
               case ValueType.Int8:
-                data = this.parseAndValidateInt(text, numTag, 'validateInt8');
+                data = this.parseAndValidateI(text, numTag, 'validateI8');
                 break;
               case ValueType.Int16:
-                data = this.parseAndValidateInt(text, numTag, 'validateInt16');
+                data = this.parseAndValidateI(text, numTag, 'validateI16');
                 break;
               case ValueType.Int32:
-                data = this.parseAndValidateInt(text, numTag, 'validateInt32');
+                data = this.parseAndValidateI(text, numTag, 'validateI32');
                 break;
               case ValueType.Int64:
-                data = this.parseAndValidateInt(text, numTag, 'validateInt64');
+                data = this.parseAndValidateI(text, numTag, 'validateI64');
                 break;
               case ValueType.BigInt:
                 if (numTag.isNull) {
@@ -390,7 +390,7 @@ export class JSONCParser {
                   data = BigInt(0);
                 } else {
                   const bi = BigInt(text);
-                  const result = numTag.validateBigInt(bi);
+                  const result = numTag.validateBigint(bi);
                   if (!result.valid) {
                     throw new Error(result.error || 'BigInt validation failed');
                   }
@@ -399,7 +399,7 @@ export class JSONCParser {
                 break;
               default:
                 const num = BigInt(text);
-                let negResult = numTag.validateInt(num);
+                let negResult = numTag.validateI(num);
                 if (!negResult.valid) {
                   throw new Error(
                     negResult.error ||
@@ -416,45 +416,45 @@ export class JSONCParser {
 
             switch (numTag.type) {
               case ValueType.Int:
-                data = this.parseAndValidateInt(text, numTag, 'validateInt');
+                data = this.parseAndValidateI(text, numTag, 'validateI');
                 break;
               case ValueType.Int8:
-                data = this.parseAndValidateInt(text, numTag, 'validateInt8');
+                data = this.parseAndValidateI(text, numTag, 'validateI8');
                 break;
               case ValueType.Int16:
-                data = this.parseAndValidateInt(text, numTag, 'validateInt16');
+                data = this.parseAndValidateI(text, numTag, 'validateI16');
                 break;
               case ValueType.Int32:
-                data = this.parseAndValidateInt(text, numTag, 'validateInt32');
+                data = this.parseAndValidateI(text, numTag, 'validateI32');
                 break;
               case ValueType.Int64:
-                data = this.parseAndValidateInt(text, numTag, 'validateInt64');
+                data = this.parseAndValidateI(text, numTag, 'validateI64');
                 break;
               case ValueType.Uint:
-                data = this.parseAndValidateUint(text, numTag, 'validateUint');
+                data = this.parseAndValidateU(text, numTag, 'validateU');
                 break;
               case ValueType.Uint8:
-                data = this.parseAndValidateUint(text, numTag, 'validateUint8');
+                data = this.parseAndValidateU(text, numTag, 'validateU8');
                 break;
               case ValueType.Uint16:
-                data = this.parseAndValidateUint(
+                data = this.parseAndValidateU(
                   text,
                   numTag,
-                  'validateUint16',
+                  'validateU16',
                 );
                 break;
               case ValueType.Uint32:
-                data = this.parseAndValidateUint(
+                data = this.parseAndValidateU(
                   text,
                   numTag,
-                  'validateUint32',
+                  'validateU32',
                 );
                 break;
               case ValueType.Uint64:
-                data = this.parseAndValidateUint(
+                data = this.parseAndValidateU(
                   text,
                   numTag,
-                  'validateUint64',
+                  'validateU64',
                 );
                 break;
               case ValueType.BigInt:
@@ -465,7 +465,7 @@ export class JSONCParser {
                   data = BigInt(0);
                 } else {
                   const bi = BigInt(text);
-                  const result = numTag.validateBigInt(bi);
+                  const result = numTag.validateBigint(bi);
                   if (!result.valid) {
                     throw new Error(result.error || 'BigInt validation failed');
                   }
@@ -559,7 +559,7 @@ export class JSONCParser {
     }
   }
 
-  private parseAndValidateInt(
+  private parseAndValidateI(
     text: string,
     tag: Tag,
     methodName: string,
@@ -583,7 +583,7 @@ export class JSONCParser {
     return result.data;
   }
 
-  private parseAndValidateUint(
+  private parseAndValidateU(
     text: string,
     tag: Tag,
     methodName: string,
@@ -675,7 +675,7 @@ export class JSONCParser {
     }
 
     if (tag.type === ValueType.Map || tag.type === ValueType.Object) {
-      const result = tag.validateStruct();
+      const result = tag.validateObj();
       if (!result.valid) {
         throw new Error(`validate failed: ${result.error}`);
       }
@@ -748,7 +748,7 @@ export class JSONCParser {
     }
 
     if (tag.type === ValueType.Array) {
-      const result = tag.validateArray([]);
+      const result = tag.validateArr([]);
       if (!result.valid) {
         throw new Error(`validate failed: ${result.error}`);
       }

@@ -6,6 +6,7 @@ public class JsoncScanner
     private int _position;
     private int _line;
     private int _column;
+    private bool _newLine = true;
     private JsoncToken? _lastToken;
     private JsoncToken? _currentToken;
 
@@ -86,10 +87,7 @@ public class JsoncScanner
 
         char next = _input[_position + 1];
         string comment;
-        bool isLeading = _lastToken == null || _lastToken.Type == JsoncTokenType.Comma ||
-                          _lastToken.Type == JsoncTokenType.Colon ||
-                          _lastToken.Type == JsoncTokenType.LBrace ||
-                          _lastToken.Type == JsoncTokenType.LBracket;
+        bool isLeading = _newLine || _lastToken == null;
 
         if (next == '/')
         {
@@ -306,10 +304,12 @@ public class JsoncScanner
 
     private void SkipWhitespace()
     {
+        _newLine = false;
         while (_position < _input.Length && IsWhitespace(_input[_position]))
         {
             if (_input[_position] == '\n')
             {
+                _newLine = true;
                 _line++;
                 _column = 1;
             }

@@ -27,7 +27,7 @@ echo "Input JSONC:\n";
 echo $jsonc . "\n";
 
 // 解析 JSONC
-$node = Jsonc::parseFromString($jsonc);
+$node = Jsonc::ParseFromString($jsonc);
 
 // 绑定到 User 对象
 $user = new User();

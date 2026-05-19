@@ -171,19 +171,19 @@ func TestEncodeString(t *testing.T) {
 			expectedErr: "not allow empty value",
 		},
 		{
-			name:        "Ordinary byte slice",
+			name:        "Ordinary byte vec",
 			input:       []byte("hello world"),
 			expectedOut: []byte("hello world"),
 			expectedErr: "",
 		},
 		{
-			name:        "Empty slice ([]byte{})",
+			name:        "Empty vec ([]byte{})",
 			input:       []byte{},
 			expectedOut: nil,
 			expectedErr: "not allow empty value",
 		},
 		{
-			name:        "slice",
+			name:        "vec",
 			input:       []byte{0, 0, 0, 0},
 			expectedOut: nil,
 			expectedErr: "not allow empty value",

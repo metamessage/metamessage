@@ -185,21 +185,21 @@ private class JSONCDecoder: Decoder {
 
     func container<Key>(keyedBy type: Key.Type) throws -> KeyedDecodingContainer<Key> where Key: CodingKey {
         guard let obj = node as? MMObject else {
-            throw BinderError.typeMismatch(expected: "Object", actual: "\(type(of: node))")
+            throw BinderError.typeMismatch(expected: "Object", actual: node.getType().rawValue)
         }
         return KeyedDecodingContainer(JSONCKeyedDecodingContainer(node: obj, codingPath: codingPath))
     }
 
     func unkeyedContainer() throws -> UnkeyedDecodingContainer {
         guard let arr = node as? MMArray else {
-            throw BinderError.typeMismatch(expected: "Array", actual: "\(type(of: node))")
+            throw BinderError.typeMismatch(expected: "Array", actual: node.getType().rawValue)
         }
         return JSONCUnkeyedDecodingContainer(node: arr, codingPath: codingPath)
     }
 
     func singleValueContainer() throws -> SingleValueDecodingContainer {
         guard let value = node as? JSONCValue else {
-            throw BinderError.typeMismatch(expected: "Value", actual: "\(type(of: node))")
+            throw BinderError.typeMismatch(expected: "Value", actual: node.getType().rawValue)
         }
         return JSONCSingleValueDecodingContainer(node: value, codingPath: codingPath)
     }
@@ -215,6 +215,14 @@ private struct JSONCKeyedDecodingContainer<Key: CodingKey>: KeyedDecodingContain
 
     func contains(_ key: Key) -> Bool {
         return node.fields.contains(where: { $0.key == key.stringValue })
+    }
+
+    func decodeNil(forKey key: Key) throws -> Bool {
+        guard let field = node.fields.first(where: { $0.key == key.stringValue }),
+              let valueNode = field.value as? JSONCValue else {
+            return true
+        }
+        return valueNode.getTag()?.isNull ?? valueNode.data == nil
     }
 
     func decode(_ type: Bool.Type, forKey key: Key) throws -> Bool {
@@ -379,6 +387,105 @@ private struct JSONCKeyedDecodingContainer<Key: CodingKey>: KeyedDecodingContain
         return intVal
     }
 
+    func decodeIfPresent(_ type: Int8.Type, forKey key: Key) throws -> Int8? {
+        guard let field = node.fields.first(where: { $0.key == key.stringValue }),
+              let valueNode = field.value as? JSONCValue,
+              let intVal = valueNode.data as? Int else {
+            return nil
+        }
+        return Int8(intVal)
+    }
+
+    func decodeIfPresent(_ type: Int16.Type, forKey key: Key) throws -> Int16? {
+        guard let field = node.fields.first(where: { $0.key == key.stringValue }),
+              let valueNode = field.value as? JSONCValue,
+              let intVal = valueNode.data as? Int else {
+            return nil
+        }
+        return Int16(intVal)
+    }
+
+    func decodeIfPresent(_ type: Int32.Type, forKey key: Key) throws -> Int32? {
+        guard let field = node.fields.first(where: { $0.key == key.stringValue }),
+              let valueNode = field.value as? JSONCValue,
+              let intVal = valueNode.data as? Int else {
+            return nil
+        }
+        return Int32(intVal)
+    }
+
+    func decodeIfPresent(_ type: Int64.Type, forKey key: Key) throws -> Int64? {
+        guard let field = node.fields.first(where: { $0.key == key.stringValue }),
+              let valueNode = field.value as? JSONCValue,
+              let intVal = valueNode.data as? Int64 else {
+            return nil
+        }
+        return intVal
+    }
+
+    func decodeIfPresent(_ type: UInt.Type, forKey key: Key) throws -> UInt? {
+        guard let field = node.fields.first(where: { $0.key == key.stringValue }),
+              let valueNode = field.value as? JSONCValue,
+              let uintVal = valueNode.data as? UInt else {
+            return nil
+        }
+        return uintVal
+    }
+
+    func decodeIfPresent(_ type: UInt8.Type, forKey key: Key) throws -> UInt8? {
+        guard let field = node.fields.first(where: { $0.key == key.stringValue }),
+              let valueNode = field.value as? JSONCValue,
+              let uintVal = valueNode.data as? UInt else {
+            return nil
+        }
+        return UInt8(uintVal)
+    }
+
+    func decodeIfPresent(_ type: UInt16.Type, forKey key: Key) throws -> UInt16? {
+        guard let field = node.fields.first(where: { $0.key == key.stringValue }),
+              let valueNode = field.value as? JSONCValue,
+              let uintVal = valueNode.data as? UInt else {
+            return nil
+        }
+        return UInt16(uintVal)
+    }
+
+    func decodeIfPresent(_ type: UInt32.Type, forKey key: Key) throws -> UInt32? {
+        guard let field = node.fields.first(where: { $0.key == key.stringValue }),
+              let valueNode = field.value as? JSONCValue,
+              let uintVal = valueNode.data as? UInt else {
+            return nil
+        }
+        return UInt32(uintVal)
+    }
+
+    func decodeIfPresent(_ type: UInt64.Type, forKey key: Key) throws -> UInt64? {
+        guard let field = node.fields.first(where: { $0.key == key.stringValue }),
+              let valueNode = field.value as? JSONCValue,
+              let uintVal = valueNode.data as? UInt64 else {
+            return nil
+        }
+        return uintVal
+    }
+
+    func decodeIfPresent(_ type: Float.Type, forKey key: Key) throws -> Float? {
+        guard let field = node.fields.first(where: { $0.key == key.stringValue }),
+              let valueNode = field.value as? JSONCValue,
+              let doubleVal = valueNode.data as? Double else {
+            return nil
+        }
+        return Float(doubleVal)
+    }
+
+    func decodeIfPresent(_ type: Double.Type, forKey key: Key) throws -> Double? {
+        guard let field = node.fields.first(where: { $0.key == key.stringValue }),
+              let valueNode = field.value as? JSONCValue,
+              let doubleVal = valueNode.data as? Double else {
+            return nil
+        }
+        return doubleVal
+    }
+
     func decodeIfPresent(_ type: String.Type, forKey key: Key) throws -> String? {
         guard let field = node.fields.first(where: { $0.key == key.stringValue }),
               let valueNode = field.value as? JSONCValue,
@@ -386,6 +493,15 @@ private struct JSONCKeyedDecodingContainer<Key: CodingKey>: KeyedDecodingContain
             return nil
         }
         return stringVal
+    }
+
+    func decodeIfPresent(_ type: Data.Type, forKey key: Key) throws -> Data? {
+        guard let field = node.fields.first(where: { $0.key == key.stringValue }),
+              let valueNode = field.value as? JSONCValue,
+              let dataVal = valueNode.data as? Data else {
+            return nil
+        }
+        return dataVal
     }
 
     func decodeIfPresent<T>(_ type: T.Type, forKey key: Key) throws -> T? where T: Decodable {
@@ -442,6 +558,14 @@ private struct JSONCUnkeyedDecodingContainer: UnkeyedDecodingContainer {
     init(node: MMArray, codingPath: [CodingKey]) {
         self.node = node
         self.codingPath = codingPath
+    }
+
+    mutating func decodeNil() throws -> Bool {
+        guard currentIndex < node.items.count,
+              let valueNode = node.items[currentIndex] as? JSONCValue else {
+            return true
+        }
+        return valueNode.getTag()?.isNull ?? valueNode.data == nil
     }
 
     mutating func decode(_ type: Bool.Type) throws -> Bool {
@@ -624,6 +748,116 @@ private struct JSONCUnkeyedDecodingContainer: UnkeyedDecodingContainer {
         return intVal
     }
 
+    mutating func decodeIfPresent(_ type: Int8.Type) throws -> Int8? {
+        guard currentIndex < node.items.count,
+              let valueNode = node.items[currentIndex] as? JSONCValue,
+              let intVal = valueNode.data as? Int else {
+            return nil
+        }
+        currentIndex += 1
+        return Int8(intVal)
+    }
+
+    mutating func decodeIfPresent(_ type: Int16.Type) throws -> Int16? {
+        guard currentIndex < node.items.count,
+              let valueNode = node.items[currentIndex] as? JSONCValue,
+              let intVal = valueNode.data as? Int else {
+            return nil
+        }
+        currentIndex += 1
+        return Int16(intVal)
+    }
+
+    mutating func decodeIfPresent(_ type: Int32.Type) throws -> Int32? {
+        guard currentIndex < node.items.count,
+              let valueNode = node.items[currentIndex] as? JSONCValue,
+              let intVal = valueNode.data as? Int else {
+            return nil
+        }
+        currentIndex += 1
+        return Int32(intVal)
+    }
+
+    mutating func decodeIfPresent(_ type: Int64.Type) throws -> Int64? {
+        guard currentIndex < node.items.count,
+              let valueNode = node.items[currentIndex] as? JSONCValue,
+              let intVal = valueNode.data as? Int64 else {
+            return nil
+        }
+        currentIndex += 1
+        return intVal
+    }
+
+    mutating func decodeIfPresent(_ type: UInt.Type) throws -> UInt? {
+        guard currentIndex < node.items.count,
+              let valueNode = node.items[currentIndex] as? JSONCValue,
+              let uintVal = valueNode.data as? UInt else {
+            return nil
+        }
+        currentIndex += 1
+        return uintVal
+    }
+
+    mutating func decodeIfPresent(_ type: UInt8.Type) throws -> UInt8? {
+        guard currentIndex < node.items.count,
+              let valueNode = node.items[currentIndex] as? JSONCValue,
+              let uintVal = valueNode.data as? UInt else {
+            return nil
+        }
+        currentIndex += 1
+        return UInt8(uintVal)
+    }
+
+    mutating func decodeIfPresent(_ type: UInt16.Type) throws -> UInt16? {
+        guard currentIndex < node.items.count,
+              let valueNode = node.items[currentIndex] as? JSONCValue,
+              let uintVal = valueNode.data as? UInt else {
+            return nil
+        }
+        currentIndex += 1
+        return UInt16(uintVal)
+    }
+
+    mutating func decodeIfPresent(_ type: UInt32.Type) throws -> UInt32? {
+        guard currentIndex < node.items.count,
+              let valueNode = node.items[currentIndex] as? JSONCValue,
+              let uintVal = valueNode.data as? UInt else {
+            return nil
+        }
+        currentIndex += 1
+        return UInt32(uintVal)
+    }
+
+    mutating func decodeIfPresent(_ type: UInt64.Type) throws -> UInt64? {
+        guard currentIndex < node.items.count,
+              let valueNode = node.items[currentIndex] as? JSONCValue,
+              let uintVal = valueNode.data as? UInt64 else {
+            return nil
+        }
+        currentIndex += 1
+        return uintVal
+    }
+
+    mutating func decodeIfPresent(_ type: Float.Type) throws -> Float? {
+        guard currentIndex < node.items.count,
+              let valueNode = node.items[currentIndex] as? JSONCValue,
+              let doubleVal = valueNode.data as? Double else {
+            return nil
+        }
+        currentIndex += 1
+        return Float(doubleVal)
+    }
+
+    mutating func decodeIfPresent(_ type: Double.Type) throws -> Double? {
+        guard currentIndex < node.items.count,
+              let valueNode = node.items[currentIndex] as? JSONCValue,
+              let doubleVal = valueNode.data as? Double else {
+            return nil
+        }
+        currentIndex += 1
+        return doubleVal
+    }
+
     mutating func decodeIfPresent(_ type: String.Type) throws -> String? {
         guard currentIndex < node.items.count,
               let valueNode = node.items[currentIndex] as? JSONCValue,
@@ -632,6 +866,16 @@ private struct JSONCUnkeyedDecodingContainer: UnkeyedDecodingContainer {
         }
         currentIndex += 1
         return stringVal
+    }
+
+    mutating func decodeIfPresent(_ type: Data.Type) throws -> Data? {
+        guard currentIndex < node.items.count,
+              let valueNode = node.items[currentIndex] as? JSONCValue,
+              let dataVal = valueNode.data as? Data else {
+            return nil
+        }
+        currentIndex += 1
+        return dataVal
     }
 
     mutating func decodeIfPresent<T>(_ type: T.Type) throws -> T? where T: Decodable {

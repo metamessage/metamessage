@@ -240,7 +240,7 @@ def test_roundtrip_complex():
     assert result['tags'] == ['admin', 'user']
     assert result['meta']['created'] == '2024-01-15'
     assert result['meta']['count'] == 100
-    assert result['data'] is None
+    assert result['data'] == ''
 
 
 def test_null_values():
@@ -248,6 +248,12 @@ def test_null_values():
     enc = Encoder()
     dec = Decoder
     
+    expected = {
+        'bool': False,
+        'int': 0,
+        'float': 0.0,
+        'string': '',
+    }
     for typ, tag in [
         ('bool', Tag(type=ValueType.Bool, is_null=True)),
         ('int', Tag(type=ValueType.Int, is_null=True)),
@@ -257,7 +263,7 @@ def test_null_values():
         v = Val(None, 'null', tag)
         b = enc.encode(v)
         result = dec(b).decode()
-        assert result is None, f"Null {typ} should decode as None"
+        assert result == expected[typ], f"Null {typ} should decode as {expected[typ]}"
 
 
 if __name__ == '__main__':

@@ -438,7 +438,146 @@ func TestEncodeFloat32Precision(t *testing.T) {
 	}
 }
 
-// TestEncodeFloatRepresentation 测试 float 表示
+// TestEncodeFloatNegativeRoundtrip 负 float 编码→字节→解码 往返验证
+//
+// go test ./internal/core -v -run TestEncodeFloatNegativeRoundtrip
+func TestEncodeFloatNegativeRoundtrip(t *testing.T) {
+	type testCase struct {
+		name       string
+		input      float64
+		wantBytes  []byte
+	}
+
+	testCases := []testCase{
+		// ─── 短编码负浮点 (-0.1 ~ -0.7): 单字节 ───
+		{
+			name:      "neg_0_1",
+			input:     -0.1,
+			wantBytes: []byte{0x71},
+		},
+		{
+			name:      "neg_0_2",
+			input:     -0.2,
+			wantBytes: []byte{0x72},
+		},
+		{
+			name:      "neg_0_3",
+			input:     -0.3,
+			wantBytes: []byte{0x73},
+		},
+		{
+			name:      "neg_0_4",
+			input:     -0.4,
+			wantBytes: []byte{0x74},
+		},
+		{
+			name:      "neg_0_5",
+			input:     -0.5,
+			wantBytes: []byte{0x75},
+		},
+		{
+			name:      "neg_0_6",
+			input:     -0.6,
+			wantBytes: []byte{0x76},
+		},
+		{
+			name:      "neg_0_7",
+			input:     -0.7,
+			wantBytes: []byte{0x77},
+		},
+
+		// ─── 长编码负浮点 (mantissa > 7, 但仍 exponent = -1) ───
+		{
+			name:      "neg_0_8",
+			input:     -0.8,
+			wantBytes: []byte{0x78, 0xFF, 0x08},
+		},
+		{
+			name:      "neg_0_9",
+			input:     -0.9,
+			wantBytes: []byte{0x78, 0xFF, 0x09},
+		},
+
+		// ─── 长编码负浮点 (exponent != -1) ───
+		{
+			name:      "neg_1_5",
+			input:     -1.5,
+			wantBytes: []byte{0x78, 0xFF, 0x0F},
+		},
+		{
+			name:      "neg_2_5",
+			input:     -2.5,
+			wantBytes: []byte{0x78, 0xFF, 0x19},
+		},
+		{
+			name:      "neg_3_14",
+			input:     -3.14,
+			wantBytes: []byte{0x79, 0xFE, 0x01, 0x3A},
+		},
+
+		// ─── 负整数 (exponent = 0) ───
+		{
+			name:      "neg_1",
+			input:     -1.0,
+			wantBytes: []byte{0x78, 0xFF, 0x0A},
+		},
+		{
+			name:      "neg_42",
+			input:     -42.0,
+			wantBytes: []byte{0x79, 0xFF, 0x01, 0xA4},
+		},
+
+		// ─── 小负浮点 (exponent < -1) ───
+		{
+			name:      "neg_0_01",
+			input:     -0.01,
+			wantBytes: []byte{0x78, 0xFE, 0x01},
+		},
+		{
+			name:      "neg_0_001",
+			input:     -0.001,
+			wantBytes: []byte{0x78, 0xFD, 0x01},
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			// 编码
+			bs, err := FromValue(tc.input, "")
+			if err != nil {
+				t.Fatalf("encode failed: %v", err)
+			}
+
+			// 验证字节序列
+			if len(bs) != len(tc.wantBytes) {
+				t.Errorf("byte length mismatch: expected %d bytes, got %d bytes (expected: %x, got: %x)",
+					len(tc.wantBytes), len(bs), tc.wantBytes, bs)
+			} else {
+				for i := range bs {
+					if bs[i] != tc.wantBytes[i] {
+						t.Errorf("byte[%d] mismatch: expected 0x%02x, got 0x%02x (full: %x vs %x)",
+							i, tc.wantBytes[i], bs[i], tc.wantBytes, bs)
+						break
+					}
+				}
+			}
+
+			// 解码
+			decoded, err := Decode(bs)
+			if err != nil {
+				t.Fatalf("decode failed: %v", err)
+			}
+
+			decodedVal := decoded.(*ir.Value).Data.(float64)
+
+			if !almostEqual(decodedVal, tc.input, 1e-10) {
+				t.Errorf("value mismatch: expected %v, got %v", tc.input, decodedVal)
+			}
+
+			t.Logf("%s: %v -> %x -> %v", tc.name, tc.input, bs, decodedVal)
+		})
+	}
+}
 func TestEncodeFloatRepresentation(t *testing.T) {
 	testCases := []struct {
 		name  string

@@ -21,7 +21,7 @@ func EncodeFromValue(value any, tag string) (wire []byte, err error) {
 	return core.FromValue(value, tag)
 }
 
-func EncodeFromJSONC(jsonc string) (wire []byte, err error) {
+func EncodeFromJsonc(jsonc string) (wire []byte, err error) {
 	return core.FromJSONC(jsonc)
 }
 
@@ -44,7 +44,7 @@ func DecodeToValue(wire []byte, value any) (err error) {
 	return core.Bind(node, value)
 }
 
-func DecodeToJSONC(wire []byte) (jsonc string, err error) {
+func DecodeToJsonc(wire []byte) (jsonc string, err error) {
 	var node ir.Node
 	node, err = core.Decode(wire)
 	if err != nil {
@@ -54,7 +54,7 @@ func DecodeToJSONC(wire []byte) (jsonc string, err error) {
 	return jc.ToJSONC(node), nil
 }
 
-func ValueToJSONC(value any, tag string) (jsonc string, err error) {
+func ValueToJsonc(value any, tag string) (jsonc string, err error) {
 	var node ir.Node
 	node, err = core.ValueToNode(value, tag)
 	if err != nil {
@@ -64,7 +64,7 @@ func ValueToJSONC(value any, tag string) (jsonc string, err error) {
 	return jc.ToJSONC(node), nil
 }
 
-func JSONCToValue(jsonc string, value any) (err error) {
+func JsoncToValue(jsonc string, value any) (err error) {
 	var node ir.Node
 	node, err = core.ParseFromJSONC(jsonc)
 	if err != nil {

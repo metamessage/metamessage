@@ -122,6 +122,61 @@ def get_prefix(b: int) -> int:
     return b & 0b11100000
 
 
+def _to_bits(v: int, n: int):
+    b = [0] * n
+    for i in range(n):
+        b[n - 1 - i] = (v >> i) & 1
+    return b
+
+
+def _write_bits(write_byte_fn, bits) -> int:
+    bt = 0
+    bl = 0
+    n = 0
+    for b in bits:
+        bt = (bt << 1) | b
+        bl += 1
+        if bl == 8:
+            write_byte_fn(bt)
+            n += 1
+            bt = 0
+            bl = 0
+    if bl > 0:
+        bt <<= (8 - bl)
+        write_byte_fn(bt)
+        n += 1
+    return n
+
+
+def _encode_big_int(write_byte_fn, s: str) -> int:
+    if not s:
+        return 0
+    neg = s.startswith('-')
+    if neg:
+        s = s[1:]
+
+    bits = [1 if neg else 0]
+
+    n = len(s)
+    i = 0
+    while i < n:
+        rem = n - i
+        if rem >= 3:
+            num = int(s[i:i + 3])
+            bits.extend(_to_bits(num, 10))
+            i += 3
+        elif rem == 2:
+            num = int(s[i:i + 2])
+            bits.extend(_to_bits(num, 7))
+            i += 2
+        else:
+            num = int(s[i:i + 1])
+            bits.extend(_to_bits(num, 4))
+            i += 1
+
+    return _write_bits(write_byte_fn, bits)
+
+
 class Encoder:
     """
     Binary encoder for metamessage format.
@@ -259,18 +314,9 @@ class Encoder:
             return self._encode_int(NegativeInt, uv)
 
     def _encode_big_int(self, s: str) -> int:
-        # Write length byte first
-        self._ensure_capacity(1)
-        # We'll write the length byte after encoding the big int bytes
-        # Encode big int (simplified - storing as string for now)
-        encoded = s.encode('utf-8')
-        if len(encoded) > Max2Byte:
-            raise ValueError("big int string too long")
-        # Write length prefix
-        n = self._write_byte(len(encoded))
-        n += self._write_bytes(encoded)
-        # Wrap in bytes encoding
-        return self._encode_bytes(self.buf[self.offset - n:self.offset])
+        self._write_byte(len(s))
+        n = _encode_big_int(self._write_byte, s)
+        return self._encode_bytes(self.buf[self.offset - n - 1:self.offset])
 
     # ===== Floats =====
 
@@ -472,127 +518,90 @@ class Encoder:
                 (length >> 8) & 0xFF, length & 0xFF
             )
 
-    def _encode_tag(self, payload: bytes, tag_bytes: bytes) -> int:
-        """Encode payload with tag metadata.
-        
-        Format: [PrefixTag|total_len][tag_data_len][tag_data...][payload...]
-        total_len = 1 (tag_data_len byte) + len(tag_data) + len(payload)
-        """
-        if len(tag_bytes) == 0:
+    def _encode_tag(self, payload: bytes, tag: bytes) -> int:
+        if len(tag) == 0:
             return 0
 
-        total_length = 1 + len(tag_bytes) + len(payload)
-        if total_length > Max2Byte:
-            raise ValueError(f"tag+payload too long: {total_length}")
+        length = len(payload) + len(tag)
+        if length > Max2Byte:
+            raise ValueError(f"tag+payload too long: {length}")
 
         sign = PrefixTag
-        if total_length < TagLen1Byte:  # total_length < 30
-            n = self._write_byte(sign | total_length)
-        elif total_length < Max1Byte:  # total_length < 256
-            n = self._write_bytes_with_prefix(b'', sign | TagLen1Byte, total_length)
-        else:  # total_length < 65536
-            n = self._write_bytes_with_prefix(
-                b'', sign | TagLen2Byte,
-                (total_length >> 8) & 0xFF, total_length & 0xFF
-            )
-        
-        # Write tag data with length prefix
-        n += self._write_byte(len(tag_bytes))
-        n += self._write_bytes(tag_bytes)
-        
-        # Write payload
-        n += self._write_bytes(payload)
-        return n
+        ns = 0
+        nb = 0
+        if length < TagLen1Byte:
+            sign |= length
+            ns = self._write_bytes_with_prefix(tag, sign)
+            nb = self._write_bytes(payload)
+        elif length < Max1Byte:
+            sign |= TagLen1Byte
+            ns = self._write_bytes_with_prefix(tag, sign, length)
+            nb = self._write_bytes(payload)
+        else:
+            sign |= TagLen2Byte
+            ns = self._write_bytes_with_prefix(tag, sign, (length >> 8) & 0xFF, length & 0xFF)
+            nb = self._write_bytes(payload)
+
+        return nb + ns
 
     def _encode_comment(self, payload: bytes, tag: Optional[Tag]) -> int:
-        """Wrap payload with tag metadata if tag has properties."""
         if tag is None:
             return 0
         tag_bytes = tag.bytes()
         if len(tag_bytes) == 0:
             return 0
-        return self._encode_tag(payload, tag_bytes)
+        ns = self._encode_t(tag_bytes)
+        if ns == 0:
+            return 0
+        encoded_tag = self.buf[self.offset - ns:self.offset]
+        return self._encode_tag(payload, bytes(encoded_tag))
 
     # ===== Node encoding =====
 
     def _encode_node_object(self, obj: Obj) -> int:
-        """Encode an Obj node.
-        
-        Binary layout: [container_prefix][key_array][values...]
-        Where key_array is an array of encoded field keys.
-        """
         tag = obj.get_tag()
-        tag_bytes = tag.bytes() if tag else b''
-
-        # Strategy: encode everything sequentially to buf, tracking offsets
-        # Format: [key_array][value1][value2]...
-        # But we need key_array before values. So encode values first,
-        # track them, then encode key array, then combine.
-
-        # Step 1: Encode all values and keys to temp storage
-        start = self.offset
-        values_data = bytearray()
-        keys_data = bytearray()
+        buf_key = bytearray()
+        buf = bytearray()
 
         for field in obj.fields:
-            # Encode value
             n = self._encode_any_node(field.value)
-            values_data.extend(bytes(self.buf[self.offset - n:self.offset]))
+            encoded_sub = self.buf[self.offset - n:self.offset]
+            buf.extend(encoded_sub)
 
-            # Encode key
             nk = self._encode_string(field.key)
-            keys_data.extend(bytes(self.buf[self.offset - nk:self.offset]))
+            encoded_key = self.buf[self.offset - nk:self.offset]
+            buf_key.extend(encoded_key)
 
-        # Step 2: Encode key array
-        nk = self._encode_array(bytes(keys_data))
+        nk = self._encode_array(bytes(buf_key))
+        encoded_key_array = self.buf[self.offset - nk:self.offset]
 
-        # Now buffer has: [values][keys][array_header]
-        # We need: [array_header][keys][values]
-        # So let's build the correct data and overwrite
+        buf_all = bytearray(len(encoded_key_array) + len(buf))
+        buf_all[:len(encoded_key_array)] = encoded_key_array
+        buf_all[len(encoded_key_array):] = buf
 
-        # Read the key array encoding
-        key_array = bytes(self.buf[self.offset - nk:self.offset])
+        n = self._encode_object(bytes(buf_all))
 
-        # Build final combined data: key_array + values
-        combined = key_array + bytes(values_data)
-
-        # Rewind to before we started
-        self.offset = start
-
-        # Write final object
-        n = self._encode_object(combined)
-
-        # Wrap with tag
-        if len(tag_bytes) > 0:
-            payload = bytes(self.buf[self.offset - n:self.offset])
-            n = self._encode_tag(payload, tag_bytes)
-
+        n1 = self._encode_comment(bytes(self.buf[self.offset - n:self.offset]), tag)
+        if n1 == 0:
+            return n
+        n = n1
         return n
 
     def _encode_node_array(self, arr: Arr) -> int:
-        """Encode an Arr node."""
         tag = arr.get_tag()
-        tag_bytes = tag.bytes() if tag else b''
-
-        start = self.offset
+        buf = bytearray()
 
         for item in arr.items:
-            self._encode_any_node(item)
+            n = self._encode_any_node(item)
+            encoded_sub = self.buf[self.offset - n:self.offset]
+            buf.extend(encoded_sub)
 
-        # Now buffer has all items sequentially
-        data = bytes(self.buf[start:self.offset])
+        n = self._encode_array(bytes(buf))
 
-        # Rewind
-        self.offset = start
-
-        # Wrap in array container
-        n = self._encode_array(data)
-
-        # Wrap with tag
-        if len(tag_bytes) > 0:
-            payload = bytes(self.buf[self.offset - n:self.offset])
-            n = self._encode_tag(payload, tag_bytes)
-
+        n1 = self._encode_comment(bytes(self.buf[self.offset - n:self.offset]), tag)
+        if n1 == 0:
+            return n
+        n = n1
         return n
 
     def _encode_any_node(self, node: Node) -> int:
@@ -606,109 +615,116 @@ class Encoder:
             raise ValueError(f"unsupported node type: {type(node)}")
 
     def _encode_node_value(self, val: Val) -> int:
-        """Encode a Val node."""
         tag = val.get_tag()
         if tag is None:
             tag = Tag()
 
-        tag_bytes = tag.bytes()
         start = self.offset
 
-        # Handle null first - if is_null, encode null simple value
-        if tag.is_null:
-            # Use String null as default for unknown types
-            self._encode_simple(SimpleNullString)
-        elif tag.type == ValueType.DateTime:
-            self._encode_datetime(val.data)
+        if tag.type == ValueType.DateTime:
+            if not tag.is_null:
+                self._encode_datetime(val.data)
         elif tag.type == ValueType.Date:
+            if not tag.is_null:
                 self._encode_date(val.data)
         elif tag.type == ValueType.Time:
+            if not tag.is_null:
                 self._encode_time(val.data)
-        elif tag.type in (ValueType.Int, ValueType.Int8, ValueType.Int16, ValueType.Int32, ValueType.Int64):
+        elif tag.type == ValueType.Int:
+            if tag.is_null:
+                self._encode_simple(SimpleNullInt)
+            else:
+                self._encode_int64(int(val.data))
+        elif tag.type in (ValueType.Int8, ValueType.Int16, ValueType.Int32, ValueType.Int64):
+            if not tag.is_null:
                 self._encode_int64(int(val.data))
         elif tag.type in (ValueType.Uint, ValueType.Uint8, ValueType.Uint16, ValueType.Uint32, ValueType.Uint64):
+            if not tag.is_null:
                 self._encode_uint64(int(val.data))
         elif tag.type == ValueType.Float32:
+            if not tag.is_null:
                 self._encode_float(val.text)
         elif tag.type == ValueType.Float64:
+            if tag.is_null:
+                self._encode_simple(SimpleNullFloat)
+            else:
                 self._encode_float(val.text)
         elif tag.type == ValueType.String:
+            if tag.is_null:
+                self._encode_simple(SimpleNullString)
+            else:
                 self._encode_string(val.text)
         elif tag.type == ValueType.Email:
+            if not tag.is_null:
                 self._encode_string(val.text)
         elif tag.type == ValueType.UUID:
-            data = val.data
-            if isinstance(data, str):
-                import binascii
-                raw = data.replace('-', '')
-                data_bytes = binascii.unhexlify(raw)
-                self._encode_bytes(data_bytes)
-            elif isinstance(data, (bytes, bytearray)):
-                self._encode_bytes(bytes(data[:16]))
-            else:
-                self._encode_bytes(bytes(data)[:16] if hasattr(data, '__len__') else bytes(16))
+            if not tag.is_null:
+                data = val.data
+                if isinstance(data, (bytes, bytearray)):
+                    self._encode_bytes(bytes(data[:16]))
+                elif isinstance(data, str):
+                    import binascii
+                    raw = data.replace('-', '')
+                    data_bytes = binascii.unhexlify(raw)
+                    self._encode_bytes(data_bytes)
+                else:
+                    self._encode_bytes(bytes(data)[:16])
         elif tag.type == ValueType.Decimal:
+            if not tag.is_null:
                 self._encode_float(val.text)
         elif tag.type == ValueType.URL:
+            if not tag.is_null:
                 self._encode_string(val.text)
         elif tag.type == ValueType.IP:
-            ip = val.data
-            if isinstance(ip, str):
-                pass
-            ver = tag.version
-            if ver == 0:
-                self._encode_string(val.text)
-            elif ver == 4:
-                if isinstance(ip, (bytes, bytearray)):
-                    self._encode_bytes(bytes(ip[:4]))
-                else:
+            if not tag.is_null:
+                ip = val.data
+                ver = tag.version
+                if ver == 0:
                     self._encode_string(val.text)
-            elif ver == 6:
-                if isinstance(ip, (bytes, bytearray)) and len(ip) >= 16:
-                    self._encode_bytes(bytes(ip[:16]))
+                elif ver == 4:
+                    if isinstance(ip, (bytes, bytearray)):
+                        self._encode_bytes(bytes(ip[:4]))
+                    else:
+                        self._encode_string(val.text)
+                elif ver == 6:
+                    if isinstance(ip, (bytes, bytearray)) and len(ip) >= 16:
+                        self._encode_bytes(bytes(ip[:16]))
+                    else:
+                        self._encode_string(val.text)
                 else:
-                    self._encode_string(val.text)
-            else:
-                raise ValueError(f"unsupported IP version: {ver}")
+                    raise ValueError(f"unsupported IP version: {ver}")
         elif tag.type == ValueType.Bytes:
-            data = val.data
-            if isinstance(data, str):
-                data = data.encode('utf-8')
-            elif not isinstance(data, (bytes, bytearray)):
-                data = bytes(data)
-            self._encode_bytes(bytes(data))
+            if tag.is_null:
+                self._encode_simple(SimpleNullBytes)
+            else:
+                data = val.data
+                if isinstance(data, str):
+                    data = data.encode('utf-8')
+                elif not isinstance(data, (bytes, bytearray)):
+                    data = bytes(data)
+                self._encode_bytes(bytes(data))
         elif tag.type == ValueType.BigInt:
+            if not tag.is_null:
                 self._encode_big_int(val.text)
         elif tag.type == ValueType.Bool:
+            if tag.is_null:
+                self._encode_simple(SimpleNullBool)
+            else:
                 self._encode_bool(bool(val.data))
         elif tag.type == ValueType.Enum:
+            if not tag.is_null:
                 self._encode_int64(int(val.data))
-        elif tag.type == ValueType.Unknown:
-            # Unknown type - encode as simple value or string
-            if val.data is None:
-                self._encode_simple(SimpleNullString)
-            elif isinstance(val.data, str):
-                self._encode_string(val.text)
-            elif isinstance(val.data, bool):
-                self._encode_bool(val.data)
-            elif isinstance(val.data, int):
-                self._encode_int64(val.data)
-            elif isinstance(val.data, float):
-                self._encode_float(val.text)
-            else:
-                self._encode_string(str(val.data))
         else:
             raise ValueError(f"unsupported value type: {tag.type}")
 
         n = self.offset - start
-        if n == 0:
+        if n == 0 and not tag.is_null:
             raise ValueError(f"failed to encode value type: {tag.type}")
 
-        # Wrap with tag if tag has properties
-        if len(tag_bytes) > 0:
-            payload = bytes(self.buf[start:self.offset])
-            self.offset = start
-            n = self._encode_tag(payload, tag_bytes)
+        n1 = self._encode_comment(bytes(self.buf[start:self.offset]), tag)
+        if n1 == 0:
+            return n
+        n = n1
 
         return n
 
@@ -736,7 +752,8 @@ class Encoder:
         if isinstance(t, dt_time):
             v = t.hour * 3600 + t.minute * 60 + t.second
         elif isinstance(t, datetime):
-            v = t.hour * 3600 + t.minute * 60 + t.second
+            utc = t.utctimetuple()
+            v = utc.tm_hour * 3600 + utc.tm_min * 60 + utc.tm_sec
         else:
             v = int(t)
         self._encode_uint64(v)
@@ -747,10 +764,9 @@ class Encoder:
         return bytes(self.buf[self.offset - written:self.offset])
 
     def encode(self, node: Node) -> bytes:
-        """Encode a Node tree to binary format."""
         self.offset = 0
-        self._encode_any_node(node)
-        result = bytes(self.buf[:self.offset])
+        n = self._encode_any_node(node)
+        result = bytes(self.buf[self.offset - n:self.offset])
         self.offset = 0
         return result
 

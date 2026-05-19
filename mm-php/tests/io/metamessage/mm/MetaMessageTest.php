@@ -1,35 +1,40 @@
 <?php
 
-use io\metamessage\mm\MM;
-use io\metamessage\mm\MetaMessage;
-use io\metamessage\mm\ValueType;
+use io\metamessage\core\MM;
+use io\metamessage\core\MetaMessage;
+use io\metamessage\ir\ValueType;
 use PHPUnit\Framework\TestCase;
 
 #[MM]
-class Person {
+class Person
+{
     public string $name = 'Ada';
     public int $age = 40;
 }
 
 #[MM]
-class Team {
+class Team
+{
     public string $teamName = 'core';
     #[MM(childType: ValueType::STRING)]
     public array $members = ['a', 'b'];
 }
 
 #[MM]
-class Clock {
+class Clock
+{
     #[MM(type: ValueType::DATETIME)]
     public \DateTime $when;
 
-    public function __construct() {
+    public function __construct()
+    {
         $this->when = new \DateTime('2024-06-01 12:00:00', new \DateTimeZone('UTC'));
     }
 }
 
 #[MM]
-class AllTypes {
+class AllTypes
+{
     public string $stringField = 'test';
     public int $intField = 42;
     public float $floatField = 3.14;
@@ -40,38 +45,45 @@ class AllTypes {
     public int $enumField = 1;
     public array $arrayField = [1, 2, 3];
 
-    public function __construct() {
+    public function __construct()
+    {
         $this->datetimeField = new \DateTime('2024-01-01 00:00:00', new \DateTimeZone('UTC'));
     }
 }
 
 #[MM]
-class NestedObject {
+class NestedObject
+{
     public string $name = 'parent';
     public ChildObject $child;
 
-    public function __construct() {
+    public function __construct()
+    {
         $this->child = new ChildObject();
     }
 }
 
 #[MM]
-class ChildObject {
+class ChildObject
+{
     public string $name = 'child';
     public int $value = 100;
 }
 
 #[MM]
-class NullableTypes {
+class NullableTypes
+{
     #[MM(nullable: true)]
     public ?string $nullableString = null;
     #[MM(nullable: true)]
     public ?int $nullableInt = null;
 }
 
-class MetaMessageTest extends TestCase {
+class MetaMessageTest extends TestCase
+{
 
-    public function testRoundtripSimpleStruct() {
+    public function testRoundtripSimpleStruct()
+    {
         $p = new Person();
         $wire = MetaMessage::encode($p);
         $out = MetaMessage::decode($wire, Person::class);
@@ -79,7 +91,8 @@ class MetaMessageTest extends TestCase {
         $this->assertEquals($p->age, $out->age);
     }
 
-    public function testRoundtripListField() {
+    public function testRoundtripListField()
+    {
         $t = new Team();
         $wire = MetaMessage::encode($t);
         $out = MetaMessage::decode($wire, Team::class);
@@ -87,14 +100,16 @@ class MetaMessageTest extends TestCase {
         $this->assertEquals($t->members, $out->members);
     }
 
-    public function testRoundtripDateTime() {
+    public function testRoundtripDateTime()
+    {
         $c = new Clock();
         $wire = MetaMessage::encode($c);
         $out = MetaMessage::decode($wire, Clock::class);
         $this->assertEquals($c->when->format('Y-m-d H:i:s'), $out->when->format('Y-m-d H:i:s'));
     }
 
-    public function testRoundtripAllTypes() {
+    public function testRoundtripAllTypes()
+    {
         $obj = new AllTypes();
         $wire = MetaMessage::encode($obj);
         $out = MetaMessage::decode($wire, AllTypes::class);
@@ -107,7 +122,8 @@ class MetaMessageTest extends TestCase {
         $this->assertEquals($obj->arrayField, $out->arrayField);
     }
 
-    public function testRoundtripNestedObject() {
+    public function testRoundtripNestedObject()
+    {
         $obj = new NestedObject();
         $wire = MetaMessage::encode($obj);
         $out = MetaMessage::decode($wire, NestedObject::class);
@@ -116,7 +132,8 @@ class MetaMessageTest extends TestCase {
         $this->assertEquals($obj->child->value, $out->child->value);
     }
 
-    public function testRoundtripNullableTypes() {
+    public function testRoundtripNullableTypes()
+    {
         $obj = new NullableTypes();
         $wire = MetaMessage::encode($obj);
         $out = MetaMessage::decode($wire, NullableTypes::class);
@@ -124,7 +141,8 @@ class MetaMessageTest extends TestCase {
         $this->assertNull($out->nullableInt);
     }
 
-    public function testRoundtripNullableTypesWithValues() {
+    public function testRoundtripNullableTypesWithValues()
+    {
         $obj = new NullableTypes();
         $obj->nullableString = 'test';
         $obj->nullableInt = 42;
@@ -134,7 +152,8 @@ class MetaMessageTest extends TestCase {
         $this->assertEquals(42, $out->nullableInt);
     }
 
-    public function testEmptyArray() {
+    public function testEmptyArray()
+    {
         $t = new Team();
         $t->members = [];
         $wire = MetaMessage::encode($t);
@@ -142,7 +161,8 @@ class MetaMessageTest extends TestCase {
         $this->assertEquals([], $out->members);
     }
 
-    public function testLargeArray() {
+    public function testLargeArray()
+    {
         $t = new Team();
         $t->members = array_fill(0, 10, 'member');
         $wire = MetaMessage::encode($t);

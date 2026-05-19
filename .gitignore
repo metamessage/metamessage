@@ -60,6 +60,7 @@ mm-swift/.idea/
 mm-php/vendor/
 mm-php/.idea/
 mm-php/*.log
+mm-php/.phpunit.cache
 
 # Build artifacts
 build/

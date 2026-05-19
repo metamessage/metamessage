@@ -12,7 +12,7 @@ func main() {
 	str := `123`
 
 	// encode
-	encoded, err := mm.EncodeFromJSONC(str)
+	encoded, err := mm.EncodeFromJsonc(str)
 	if err != nil {
 		log.Fatalf("error: %v\n", err)
 	}
@@ -20,7 +20,7 @@ func main() {
 	log.Printf("encoded len: %d, original len: %d", len(encoded), len(str))
 
 	// decode to JSONC
-	resultJsonc, err := mm.DecodeToJSONC(encoded)
+	resultJsonc, err := mm.DecodeToJsonc(encoded)
 	if err != nil {
 		log.Fatalf("error: %v\n", err)
 	}

@@ -73,20 +73,20 @@ func TestParseMMTag_QuotedAndSemicolon(t *testing.T) {
 
 func TestTagValidate_NumericRange(t *testing.T) {
 	tag := &Tag{Min: "1", Max: "10"}
-	_, _, err := tag.ValidateInt(5)
+	_, _, err := tag.ValidateI(5)
 	if err != nil {
 		t.Fatalf("expected valid for 5, got %v", err)
 	}
-	_, _, err = tag.ValidateInt(0)
+	_, _, err = tag.ValidateI(0)
 	if err == nil {
 		t.Fatalf("expected invalid for 0")
 	}
-	_, _, err = tag.ValidateInt(11)
+	_, _, err = tag.ValidateI(11)
 	if err == nil {
 		t.Fatalf("expected invalid for 11")
 	}
 	// floats
-	_, _, err = tag.ValidateFloat64(3.14)
+	_, _, err = tag.ValidateF64(3.14)
 	if err != nil {
 		t.Fatalf("expected valid for 3.14, got  %v", err)
 	}
@@ -95,11 +95,11 @@ func TestTagValidate_NumericRange(t *testing.T) {
 func TestTagValidate_StringRuneLength(t *testing.T) {
 	tag := &Tag{Min: "2", Max: "4"}
 	// multibyte characters
-	_, _, err := tag.ValidateString("你好") // 2 runes
+	_, _, err := tag.ValidateStr("你好") // 2 runes
 	if err != nil {
 		t.Fatalf("expected valid for 你好, got %v", err)
 	}
-	_, _, err = tag.ValidateString("😀😀😀😀😀") // 5 runes
+	_, _, err = tag.ValidateStr("😀😀😀😀😀") // 5 runes
 	if err == nil {
 		t.Fatalf("expected invalid for 5 runes")
 	}
@@ -107,11 +107,11 @@ func TestTagValidate_StringRuneLength(t *testing.T) {
 
 func TestTagValidate_PatternAndEnum(t *testing.T) {
 	tag := &Tag{Pattern: `^\d{3}$`}
-	_, _, err := tag.ValidateString("123")
+	_, _, err := tag.ValidateStr("123")
 	if err != nil {
 		t.Fatalf("expected pattern match for 123, got  %v", err)
 	}
-	_, _, err = tag.ValidateString("12a")
+	_, _, err = tag.ValidateStr("12a")
 	if err == nil {
 		t.Fatalf("expected pattern mismatch for 12a")
 	}
@@ -129,12 +129,12 @@ func TestTagValidate_PatternAndEnum(t *testing.T) {
 
 func TestTagValidate_NilPointerNullable(t *testing.T) {
 	tag := &Tag{AllowEmpty: true}
-	_, _, err := tag.ValidateInt(0)
+	_, _, err := tag.ValidateI(0)
 	if err != nil {
 		t.Fatalf("expected 0 accepted when allow_empty: %v", err)
 	}
 	tag.AllowEmpty = false
-	_, _, err = tag.ValidateInt(0)
+	_, _, err = tag.ValidateI(0)
 	if err == nil {
 		t.Fatalf("expected 0 rejected when not allow_empty")
 	}
@@ -142,11 +142,11 @@ func TestTagValidate_NilPointerNullable(t *testing.T) {
 
 func TestTagValidate_TypeSpecificWrappers(t *testing.T) {
 	intTag := &Tag{Min: "1", Max: "10"}
-	_, _, err := intTag.ValidateInt(5)
+	_, _, err := intTag.ValidateI(5)
 	if err != nil {
 		t.Fatalf("expected valid int value")
 	}
-	_, _, err = intTag.ValidateInt(0)
+	_, _, err = intTag.ValidateI(0)
 	if err == nil {
 		t.Fatalf("expected invalid int value below min")
 	}
@@ -173,12 +173,12 @@ func TestTagValidate_TypeSpecificWrappers(t *testing.T) {
 
 	bigTag := &Tag{Type: ValueTypeBigInt}
 	bi, _ := new(big.Int).SetString("12345678901234567890", 10)
-	_, _, err = bigTag.ValidateBigInt(*bi)
+	_, _, err = bigTag.ValidateBigint(*bi)
 	if err != nil {
 		t.Fatalf("expected valid big.Int value, got %v", err)
 	}
 	b2 := big.NewInt(42)
-	if _, _, err := bigTag.ValidateBigInt(*b2); err != nil {
+	if _, _, err := bigTag.ValidateBigint(*b2); err != nil {
 		t.Fatalf("expected valid big.Int value object, got %v", err)
 	}
 

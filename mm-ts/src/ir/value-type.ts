@@ -39,7 +39,7 @@ export const ValueTypeString = [
   'unknown',
   'doc',
   'arr',
-  'slice',
+  'vec',
   'obj',
   'map',
   'str',
@@ -57,7 +57,7 @@ export const ValueTypeString = [
   'u64',
   'f32',
   'f64',
-  'bi',
+  'bigint',
   'datetime',
   'date',
   'time',
@@ -81,7 +81,7 @@ export function stringToType(value: string): ValueType {
       return ValueType.Doc;
     case 'arr':
       return ValueType.Array;
-    case 'slice':
+    case 'vec':
       return ValueType.Slice;
     case 'obj':
       return ValueType.Object;
@@ -117,7 +117,7 @@ export function stringToType(value: string): ValueType {
       return ValueType.Float32;
     case 'f64':
       return ValueType.Float64;
-    case 'bi':
+    case 'bigint':
       return ValueType.BigInt;
     case 'datetime':
       return ValueType.DateTime;

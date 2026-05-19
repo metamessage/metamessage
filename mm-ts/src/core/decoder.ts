@@ -845,6 +845,11 @@ export class MMDecoder {
 
     if (prefix >= p && prefix <= p + 7) {
       v = (prefix & 0x0f) / 10;
+    } else if (
+      prefix >= (p | FloatPositiveNegativeMask) &&
+      prefix <= (p | FloatPositiveNegativeMask) + 7
+    ) {
+      v = -(prefix & 0x0f) / 10;
     } else {
       const exp = this.readByte();
 
@@ -926,10 +931,10 @@ export class MMDecoder {
       const decimalStr = this.mantissaToDecimal(mantissa, (exp << 24) >> 24);
       v = parseFloat(decimalStr);
       length = l1 + 2;
-    }
 
-    if (prefix & FloatPositiveNegativeMask) {
-      v = -v;
+      if (prefix & FloatPositiveNegativeMask) {
+        v = -v;
+      }
     }
 
     if (!tag) {

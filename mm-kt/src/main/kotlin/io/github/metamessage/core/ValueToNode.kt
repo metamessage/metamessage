@@ -99,7 +99,7 @@ private fun valueToNode(v: Any?, tag: Tag?, depth: Int, path: String): Node {
             }
             when (workTag.type) {
                 ValueType.INT8 -> {
-                    val result = workTag.validateInt8(v)
+                    val result = workTag.validateI8(v)
                     data = result.data
                     text = result.text ?: Null
                 }
@@ -115,7 +115,7 @@ private fun valueToNode(v: Any?, tag: Tag?, depth: Int, path: String): Node {
             }
             when (workTag.type) {
                 ValueType.INT16 -> {
-                    val result = workTag.validateInt16(v)
+                    val result = workTag.validateI16(v)
                     data = result.data
                     text = result.text ?: Null
                 }
@@ -131,7 +131,7 @@ private fun valueToNode(v: Any?, tag: Tag?, depth: Int, path: String): Node {
             }
             when (workTag.type) {
                 ValueType.INT, ValueType.INT32 -> {
-                    val result = workTag.validateInt32(v)
+                    val result = workTag.validateI32(v)
                     data = result.data
                     text = result.text ?: Null
                 }
@@ -147,12 +147,12 @@ private fun valueToNode(v: Any?, tag: Tag?, depth: Int, path: String): Node {
             }
             when (workTag.type) {
                 ValueType.INT64 -> {
-                    val result = workTag.validateInt64(v)
+                    val result = workTag.validateI64(v)
                     data = result.data
                     text = result.text ?: Null
                 }
                 ValueType.UINT64 -> {
-                    val result = workTag.validateUint64(BigInteger.valueOf(v))
+                    val result = workTag.validateU64(BigInteger.valueOf(v))
                     data = result.data
                     text = result.text ?: Null
                 }
@@ -177,7 +177,7 @@ private fun valueToNode(v: Any?, tag: Tag?, depth: Int, path: String): Node {
                                 }
                         throw IllegalArgumentException("${workTag.type} unsupported value: $desc")
                     }
-                    val result = workTag.validateFloat32(v)
+                    val result = workTag.validateF32(v)
                     data = result.data
                     text = result.text ?: Null
                 }
@@ -202,7 +202,7 @@ private fun valueToNode(v: Any?, tag: Tag?, depth: Int, path: String): Node {
                                 }
                         throw IllegalArgumentException("${workTag.type} unsupported value: $desc")
                     }
-                    val result = workTag.validateFloat64(v)
+                    val result = workTag.validateF64(v)
                     data = result.data
                     text = result.text ?: Null
                 }
@@ -223,7 +223,7 @@ private fun valueToNode(v: Any?, tag: Tag?, depth: Int, path: String): Node {
             }
             when (workTag.type) {
                 ValueType.STRING -> {
-                    val result = workTag.validateString(v)
+                    val result = workTag.validateStr(v)
                     data = result.data
                     text = result.text ?: Null
                 }
@@ -269,7 +269,7 @@ private fun valueToNode(v: Any?, tag: Tag?, depth: Int, path: String): Node {
             }
             when (workTag.type) {
                 ValueType.BIGINT -> {
-                    val result = workTag.validateBigInt(v)
+                    val result = workTag.validateBigint(v)
                     data = result.data
                     text = result.text ?: Null
                 }
@@ -521,7 +521,7 @@ private fun convertStruct(obj: Any, objTag: Tag, depth: Int, path: String): Node
         objNode.fields.add(Field(effectiveFieldKey, fieldNode))
     }
 
-    val result = objTag.validateStruct()
+    val result = objTag.validateObj()
     if (!result.valid) {
         throw IllegalArgumentException("validate failed: ${result.error}")
     }
@@ -598,7 +598,7 @@ private fun convertSlice(list: List<*>, tag: Tag, depth: Int, path: String): Nod
         node.items.add(itemNode)
     }
 
-    val result = tag.validateSlice(node.items)
+    val result = tag.validateVec(node.items)
     if (!result.valid) {
         throw IllegalArgumentException("validate failed: ${result.error}")
     }

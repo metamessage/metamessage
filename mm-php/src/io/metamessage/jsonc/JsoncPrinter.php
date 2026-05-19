@@ -2,202 +2,142 @@
 
 namespace io\metamessage\jsonc;
 
-class JsoncPrinter {
-    private const INDENT = "    ";
+use io\metamessage\ir\Object_;
+use io\metamessage\ir\Array_;
+use io\metamessage\ir\Value;
+use io\metamessage\ir\Node;
+use io\metamessage\ir\Tag;
+use io\metamessage\ir\ValueType;
 
-    public static function toString(JsoncNode $node, int $indentLevel = 0): string {
-        if ($node instanceof JsoncObject) {
-            return self::objectToString($node, $indentLevel);
-        } elseif ($node instanceof JsoncArray) {
-            return self::arrayToString($node, $indentLevel);
-        } elseif ($node instanceof JsoncValue) {
-            return self::valueToString($node, $indentLevel);
+class JsoncPrinter
+{
+    private const INDENT_UNIT = "\t";
+
+    public static function ToJSONC(Node $n): string
+    {
+        if ($n === null) {
+            return '';
         }
-        return "";
+        return self::writeNodeJSONC($n, 0);
     }
 
-    private static function objectToString(JsoncObject $obj, int $indentLevel): string {
+    private static function writeNodeJSONC(Node $n, int $indent): string
+    {
+        if ($n instanceof Value) {
+            return self::writeValueJSONC($n);
+        } elseif ($n instanceof Object_) {
+            return self::writeObjectJSONC($n, $indent);
+        } elseif ($n instanceof Array_) {
+            return self::writeArrayJSONC($n, $indent);
+        }
+        return '';
+    }
+
+    private static function writeValueJSONC(Value $v): string
+    {
+        if ($v->getTag() === null) {
+            return '';
+        }
+
+        switch ($v->getTag()->type) {
+            case ValueType::STRING:
+            case ValueType::BYTES:
+            case ValueType::DATETIME:
+            case ValueType::DATE:
+            case ValueType::TIME:
+            case ValueType::UUID:
+            case ValueType::IP:
+            case ValueType::URL:
+            case ValueType::EMAIL:
+            case ValueType::ENUM:
+                return '"' . $v->Text . '"';
+
+            case ValueType::INT:
+            case ValueType::INT8:
+            case ValueType::INT16:
+            case ValueType::INT32:
+            case ValueType::INT64:
+            case ValueType::UINT:
+            case ValueType::UINT8:
+            case ValueType::UINT16:
+            case ValueType::UINT32:
+            case ValueType::UINT64:
+            case ValueType::BIGINT:
+            case ValueType::DECIMAL:
+            case ValueType::BOOL:
+            case ValueType::FLOAT32:
+            case ValueType::FLOAT64:
+                return $v->Text;
+
+            default:
+                return $v->Text;
+        }
+    }
+
+    private static function writeObjectJSONC(Object_ $o, int $indent): string
+    {
         $sb = "{\n";
 
-        foreach ($obj->fields as $field) {
-            for ($i = 0; $i < $indentLevel + 1; $i++) {
-                $sb .= self::INDENT;
+        foreach ($o->Fields as $f) {
+            $val = $f->Value;
+            if ($val !== null) {
+                $sb .= self::writeLeadingComments($val->getTag(), $indent + 1);
             }
 
-            $fieldValue = $field->value;
-            if ($fieldValue instanceof JsoncValue && $fieldValue->tag !== null && $fieldValue->tag->desc !== "") {
-                $sb .= "// mm: " . self::tagToString($fieldValue->tag) . "\n";
-                for ($i = 0; $i < $indentLevel + 1; $i++) {
-                    $sb .= self::INDENT;
-                }
+            self::writeIndent($sb, $indent + 1);
+
+            $sb .= '"' . $f->Key . '": ';
+
+            if ($val !== null) {
+                $sb .= self::writeNodeJSONC($val, $indent + 1);
+            } else {
+                $sb .= 'null';
             }
 
-            $sb .= "\"" . $field->key . "\": ";
-            $sb .= self::toString($fieldValue ?? new JsoncValue(), $indentLevel + 1);
             $sb .= ",\n";
         }
 
-        for ($i = 0; $i < $indentLevel; $i++) {
-            $sb .= self::INDENT;
-        }
-        $sb .= "}";
+        self::writeIndent($sb, $indent);
+        $sb .= '}';
         return $sb;
     }
 
-    private static function arrayToString(JsoncArray $arr, int $indentLevel): string {
+    private static function writeArrayJSONC(Array_ $a, int $indent): string
+    {
         $sb = "[\n";
 
-        foreach ($arr->items as $item) {
-            for ($i = 0; $i < $indentLevel + 1; $i++) {
-                $sb .= self::INDENT;
-            }
-            $sb .= self::toString($item, $indentLevel + 1);
+        foreach ($a->Items as $item) {
+            $sb .= self::writeLeadingComments($item->getTag(), $indent + 1);
+
+            self::writeIndent($sb, $indent + 1);
+
+            $sb .= self::writeNodeJSONC($item, $indent + 1);
+
             $sb .= ",\n";
         }
 
-        for ($i = 0; $i < $indentLevel; $i++) {
-            $sb .= self::INDENT;
-        }
-        $sb .= "]";
+        self::writeIndent($sb, $indent);
+        $sb .= ']';
         return $sb;
     }
 
-    private static function valueToString(JsoncValue $value, int $indentLevel): string {
-        $sb = "";
-        if ($value->tag !== null && $value->tag->desc !== "") {
-            $sb .= "// mm: " . self::tagToString($value->tag) . "\n";
-            for ($i = 0; $i < $indentLevel; $i++) {
-                $sb .= self::INDENT;
-            }
+    private static function writeLeadingComments(?Tag $tag, int $indent): string
+    {
+        $sb = '';
+        if ($tag === null) {
+            return $sb;
         }
-        $sb .= self::valueToStringOnly($value);
+        $tagStr = $tag->toString();
+        if ($tagStr !== '') {
+            $sb .= "\n";
+            self::writeIndent($sb, $indent);
+            $sb .= '// mm: ' . $tagStr . "\n";
+        }
         return $sb;
     }
 
-    private static function valueToStringOnly(JsoncValue $value): string {
-        $tag = $value->tag;
-        $type = $tag?->type ?? JsoncValueType::Unknown;
-
-        $needsQuotes = match ($type) {
-            JsoncValueType::String,
-            JsoncValueType::Bytes,
-            JsoncValueType::DateTime,
-            JsoncValueType::Date,
-            JsoncValueType::Time,
-            JsoncValueType::UUID,
-            JsoncValueType::IP,
-            JsoncValueType::URL,
-            JsoncValueType::Email,
-            JsoncValueType::Enum => true,
-            default => false,
-        };
-
-        if ($needsQuotes) {
-            return "\"" . $value->text . "\"";
-        } else {
-            return $value->text;
-        }
+    private static function writeIndent(string &$sb, int $indent): void
+    {
+        $sb .= str_repeat(self::INDENT_UNIT, $indent);
     }
-
-    private static function tagToString(JsoncTag $tag): string {
-        $parts = [];
-
-        if ($tag->type !== JsoncValueType::Unknown) {
-            $parts[] = "type=" . self::typeToString($tag->type);
-        }
-        if ($tag->desc !== "") {
-            $parts[] = "desc=" . $tag->desc;
-        }
-        if ($tag->nullable) {
-            $parts[] = "nullable";
-        }
-        if ($tag->isNull) {
-            $parts[] = "is_null";
-        }
-        if ($tag->raw) {
-            $parts[] = "raw";
-        }
-        if ($tag->defaultValue !== "") {
-            $parts[] = "default=" . $tag->defaultValue;
-        }
-        if ($tag->enum !== "") {
-            $parts[] = "enum=" . $tag->enum;
-        }
-
-        return implode("; ", $parts);
-    }
-
-    private static function typeToString(JsoncValueType $type): string {
-        return match ($type) {
-            JsoncValueType::String => "str",
-            JsoncValueType::Int => "i",
-            JsoncValueType::Int8 => "i8",
-            JsoncValueType::Int16 => "i16",
-            JsoncValueType::Int32 => "i32",
-            JsoncValueType::Int64 => "i64",
-            JsoncValueType::Uint => "u",
-            JsoncValueType::Uint8 => "u8",
-            JsoncValueType::Uint16 => "u16",
-            JsoncValueType::Uint32 => "u32",
-            JsoncValueType::Uint64 => "u64",
-            JsoncValueType::Float32 => "f32",
-            JsoncValueType::Float64 => "f64",
-            JsoncValueType::Bool => "bool",
-            JsoncValueType::Bytes => "bytes",
-            JsoncValueType::BigInt => "bi",
-            JsoncValueType::DateTime => "datetime",
-            JsoncValueType::Date => "date",
-            JsoncValueType::Time => "time",
-            JsoncValueType::UUID => "uuid",
-            JsoncValueType::Decimal => "decimal",
-            JsoncValueType::IP => "ip",
-            JsoncValueType::URL => "url",
-            JsoncValueType::Email => "email",
-            JsoncValueType::Enum => "enum",
-            JsoncValueType::Array => "arr",
-            JsoncValueType::Struct => "obj",
-            JsoncValueType::Null => "null",
-            JsoncValueType::Unknown => "unknown",
-            default => "unknown",
-        };
-    }
-
-    public static function toCompactString(JsoncNode $node): string {
-        if ($node instanceof JsoncObject) {
-            return self::compactObject($node);
-        } elseif ($node instanceof JsoncArray) {
-            return self::compactArray($node);
-        } elseif ($node instanceof JsoncValue) {
-            return self::compactValue($node);
-        }
-        return "";
-    }
-
-    private static function compactObject(JsoncObject $obj): string {
-        $fields = array_map(
-            fn(JsoncField $f) => "\"" . $f->key . "\": " . self::toCompactString($f->value ?? new JsoncValue()),
-            $obj->fields
-        );
-        return "{" . implode(",", $fields) . "}";
-    }
-
-    private static function compactArray(JsoncArray $arr): string {
-        $items = array_map(
-            fn(JsoncNode $item) => self::toCompactString($item),
-            $arr->items
-        );
-        return "[" . implode(",", $items) . "]";
-    }
-
-    private static function compactValue(JsoncValue $value): string {
-        return self::valueToStringOnly($value);
-    }
-}
-
-function printJsonc(JsoncNode $node): string {
-    return JsoncPrinter::toString($node);
-}
-
-function printJsoncCompact(JsoncNode $node): string {
-    return JsoncPrinter::toCompactString($node);
 }

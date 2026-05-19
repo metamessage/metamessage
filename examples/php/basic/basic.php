@@ -1,7 +1,7 @@
 <?php
 require_once __DIR__ . '/../../../mm-php/vendor/autoload.php';
 
-use io\metamessage\mm\MetaMessage;
+use io\metamessage\core\MetaMessage;
 
 class Person {
     public string $name = "Ed";

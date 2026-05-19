@@ -165,7 +165,7 @@ func (p *Parser) parse(path string) (val ir.Node, err error) {
 				ir.SimpleKeyStr,
 				ir.SimpleValStr:
 				tag.Type = ir.ValueTypeString
-				data, text, err = tag.ValidateString(text)
+				data, text, err = tag.ValidateStr(text)
 				if err != nil {
 					return nil, err
 				}
@@ -180,7 +180,7 @@ func (p *Parser) parse(path string) (val ir.Node, err error) {
 
 						data = ""
 					} else {
-						data, text, err = tag.ValidateString(text)
+						data, text, err = tag.ValidateStr(text)
 					}
 
 				case ir.ValueTypeBytes:
@@ -219,7 +219,7 @@ func (p *Parser) parse(path string) (val ir.Node, err error) {
 							return nil, fmt.Errorf("invalid datetime %q: %w", text, err)
 						}
 
-						data, text, err = tag.ValidateDateTime(d)
+						data, text, err = tag.ValidateDatetime(d)
 					}
 
 				case ir.ValueTypeDate:
@@ -411,7 +411,7 @@ func (p *Parser) parse(path string) (val ir.Node, err error) {
 							return nil, fmt.Errorf("invalid float32 %q: %w", text, err)
 						}
 
-						data, text, err = tag.ValidateFloat32(float32(f64))
+						data, text, err = tag.ValidateF32(float32(f64))
 					}
 
 				case ir.ValueTypeFloat64:
@@ -427,7 +427,7 @@ func (p *Parser) parse(path string) (val ir.Node, err error) {
 							return nil, fmt.Errorf("invalid float64 %q: %w", text, err)
 						}
 
-						data, text, err = tag.ValidateFloat64(f64)
+						data, text, err = tag.ValidateF64(f64)
 					}
 
 				default:
@@ -452,7 +452,7 @@ func (p *Parser) parse(path string) (val ir.Node, err error) {
 							return nil, fmt.Errorf("invalid int %q: %w", text, err)
 						}
 
-						data, text, err = tag.ValidateInt(int(uv))
+						data, text, err = tag.ValidateI(int(uv))
 					}
 
 				case ir.ValueTypeInt8:
@@ -468,7 +468,7 @@ func (p *Parser) parse(path string) (val ir.Node, err error) {
 							return nil, fmt.Errorf("invalid int8 %q: %w", text, err)
 						}
 
-						data, text, err = tag.ValidateInt8(int8(uv))
+						data, text, err = tag.ValidateI8(int8(uv))
 					}
 
 				case ir.ValueTypeInt16:
@@ -484,7 +484,7 @@ func (p *Parser) parse(path string) (val ir.Node, err error) {
 							return nil, fmt.Errorf("invalid int16 %q: %w", text, err)
 						}
 
-						data, text, err = tag.ValidateInt16(int16(uv))
+						data, text, err = tag.ValidateI16(int16(uv))
 					}
 
 				case ir.ValueTypeInt32:
@@ -500,7 +500,7 @@ func (p *Parser) parse(path string) (val ir.Node, err error) {
 							return nil, fmt.Errorf("invalid int32 %q: %w", text, err)
 						}
 
-						data, text, err = tag.ValidateInt32(int32(uv))
+						data, text, err = tag.ValidateI32(int32(uv))
 					}
 
 				case ir.ValueTypeInt64:
@@ -516,7 +516,7 @@ func (p *Parser) parse(path string) (val ir.Node, err error) {
 							return nil, fmt.Errorf("invalid int64 %q: %w", text, err)
 						}
 
-						data, text, err = tag.ValidateInt64(uv)
+						data, text, err = tag.ValidateI64(uv)
 					}
 
 				case ir.ValueTypeBigInt:
@@ -532,7 +532,7 @@ func (p *Parser) parse(path string) (val ir.Node, err error) {
 							return nil, fmt.Errorf("invalid bigint %q", text)
 						}
 
-						data, text, err = tag.ValidateBigInt(*bi)
+						data, text, err = tag.ValidateBigint(*bi)
 					}
 
 				// // It is recommended that floating - point numbers must include a decimal point, e.g., 1.0.
@@ -546,7 +546,7 @@ func (p *Parser) parse(path string) (val ir.Node, err error) {
 				// 			return nil, fmt.Errorf("invalid float32 literal: %w", err)
 				// 		}
 
-				// 		data, text, err = tag.ValidateFloat32(float32(f64))
+				// 		data, text, err = tag.ValidateF32(float32(f64))
 				// 	}
 
 				// // It is recommended that floating - point numbers must include a decimal point, e.g., 1.0.
@@ -560,7 +560,7 @@ func (p *Parser) parse(path string) (val ir.Node, err error) {
 				// 			return nil, fmt.Errorf("invalid float64 literal: %w", err)
 				// 		}
 
-				// 		data, text, err = tag.ValidateFloat64(f64)
+				// 		data, text, err = tag.ValidateF64(f64)
 				// 	}
 
 				default:
@@ -585,7 +585,7 @@ func (p *Parser) parse(path string) (val ir.Node, err error) {
 							return nil, fmt.Errorf("invalid int %q: %w", text, err)
 						}
 
-						data, text, err = tag.ValidateInt(int(uv))
+						data, text, err = tag.ValidateI(int(uv))
 					}
 
 				case ir.ValueTypeInt8:
@@ -601,7 +601,7 @@ func (p *Parser) parse(path string) (val ir.Node, err error) {
 							return nil, fmt.Errorf("invalid int8 %q: %w", text, err)
 						}
 
-						data, text, err = tag.ValidateInt8(int8(uv))
+						data, text, err = tag.ValidateI8(int8(uv))
 					}
 
 				case ir.ValueTypeInt16:
@@ -617,7 +617,7 @@ func (p *Parser) parse(path string) (val ir.Node, err error) {
 							return nil, fmt.Errorf("invalid int16 %q: %w", text, err)
 						}
 
-						data, text, err = tag.ValidateInt16(int16(uv))
+						data, text, err = tag.ValidateI16(int16(uv))
 					}
 
 				case ir.ValueTypeInt32:
@@ -633,7 +633,7 @@ func (p *Parser) parse(path string) (val ir.Node, err error) {
 							return nil, fmt.Errorf("invalid int32 %q: %w", text, err)
 						}
 
-						data, text, err = tag.ValidateInt32(int32(uv))
+						data, text, err = tag.ValidateI32(int32(uv))
 					}
 
 				case ir.ValueTypeInt64:
@@ -649,7 +649,7 @@ func (p *Parser) parse(path string) (val ir.Node, err error) {
 							return nil, fmt.Errorf("invalid int64 %q: %w", text, err)
 						}
 
-						data, text, err = tag.ValidateInt64(uv)
+						data, text, err = tag.ValidateI64(uv)
 					}
 
 				case ir.ValueTypeUint:
@@ -665,7 +665,7 @@ func (p *Parser) parse(path string) (val ir.Node, err error) {
 							return nil, fmt.Errorf("invalid uint %q: %w", text, err)
 						}
 
-						data, text, err = tag.ValidateUint(uint(uv))
+						data, text, err = tag.ValidateU(uint(uv))
 					}
 
 				case ir.ValueTypeUint8:
@@ -681,7 +681,7 @@ func (p *Parser) parse(path string) (val ir.Node, err error) {
 							return nil, fmt.Errorf("invalid uint8 %q: %w", text, err)
 						}
 
-						data, text, err = tag.ValidateUint8(uint8(uv))
+						data, text, err = tag.ValidateU8(uint8(uv))
 					}
 
 				case ir.ValueTypeUint16:
@@ -697,7 +697,7 @@ func (p *Parser) parse(path string) (val ir.Node, err error) {
 							return nil, fmt.Errorf("invalid uint16 %q: %w", text, err)
 						}
 
-						data, text, err = tag.ValidateUint16(uint16(uv))
+						data, text, err = tag.ValidateU16(uint16(uv))
 					}
 
 				case ir.ValueTypeUint32:
@@ -713,7 +713,7 @@ func (p *Parser) parse(path string) (val ir.Node, err error) {
 							return nil, fmt.Errorf("invalid uint32 %q: %w", text, err)
 						}
 
-						data, text, err = tag.ValidateUint32(uint32(uv))
+						data, text, err = tag.ValidateU32(uint32(uv))
 					}
 
 				case ir.ValueTypeUint64:
@@ -729,7 +729,7 @@ func (p *Parser) parse(path string) (val ir.Node, err error) {
 							return nil, fmt.Errorf("invalid uint64 %q: %w", text, err)
 						}
 
-						data, text, err = tag.ValidateUint64(uv)
+						data, text, err = tag.ValidateU64(uv)
 					}
 
 				case ir.ValueTypeBigInt:
@@ -745,7 +745,7 @@ func (p *Parser) parse(path string) (val ir.Node, err error) {
 							return nil, fmt.Errorf("invalid bigint %q", text)
 						}
 
-						data, text, err = tag.ValidateBigInt(*bi)
+						data, text, err = tag.ValidateBigint(*bi)
 					}
 
 				// // It is recommended that floating - point numbers must include a decimal point, e.g., 1.0.
@@ -759,7 +759,7 @@ func (p *Parser) parse(path string) (val ir.Node, err error) {
 				// 			return nil, fmt.Errorf("invalid float32 literal: %w", err)
 				// 		}
 
-				// 		data, text, err = tag.ValidateFloat32(float32(f64))
+				// 		data, text, err = tag.ValidateF32(float32(f64))
 				// 	}
 
 				// // It is recommended that floating - point numbers must include a decimal point, e.g., 1.0.
@@ -773,7 +773,7 @@ func (p *Parser) parse(path string) (val ir.Node, err error) {
 				// 			return nil, fmt.Errorf("invalid float64 literal: %w", err)
 				// 		}
 
-				// 		data, text, err = tag.ValidateFloat64(f64)
+				// 		data, text, err = tag.ValidateF64(f64)
 				// 	}
 
 				default:
@@ -982,7 +982,7 @@ func (p *Parser) parseObject(openLine int, path string) (*ir.Object, error) {
 		}
 
 	case ir.ValueTypeObject:
-		err = tag.ValidateStruct()
+		err = tag.ValidateObj()
 		if err != nil {
 			err = fmt.Errorf("validate failed: %w", err)
 			return nil, err
@@ -1080,14 +1080,14 @@ func (p *Parser) parseArray(openLine int, path string) (*ir.Array, error) {
 
 	switch tag.Type {
 	case ir.ValueTypeArray:
-		err = tag.ValidateArray(arr.Items)
+		err = tag.ValidateArr(arr.Items)
 		if err != nil {
 			err = fmt.Errorf("validate failed: %w", err)
 			return nil, err
 		}
 
 	case ir.ValueTypeSlice:
-		err = tag.ValidateSlice(arr.Items)
+		err = tag.ValidateVec(arr.Items)
 		if err != nil {
 			err = fmt.Errorf("validate failed: %w", err)
 			return nil, err

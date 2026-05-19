@@ -2,31 +2,40 @@
 
 namespace io\metamessage\jsonc;
 
-class JsoncScanner {
-    private string $source;
-    private int $length;
-    private int $pos = 0;
-    private int $line = 1;
-    private int $col = 1;
-    private bool $newLine = false;
+/**
+ * JSONC scanner that tokenizes JSON with comments (// and /* *​/)
+ */
+class JsoncScanner
+{
+    private array $src;
+    private int $pos;
+    private int $line;
+    private int $col;
+    private bool $newLine;
 
-    public function __construct(string $source) {
-        $this->source = $source;
-        $this->length = strlen($source);
+    public function __construct(string $input)
+    {
+        $this->src     = mb_str_split($input);
+        $this->pos     = 0;
+        $this->line    = 1;
+        $this->col     = 1;
+        $this->newLine = false;
     }
 
-    private function peek(): string {
-        if ($this->pos >= $this->length) {
+    private function peek(): string
+    {
+        if ($this->pos >= count($this->src)) {
             return "\0";
         }
-        return $this->source[$this->pos];
+        return $this->src[$this->pos];
     }
 
-    private function next(): string {
-        if ($this->pos >= $this->length) {
+    private function next(): string
+    {
+        if ($this->pos >= count($this->src)) {
             return "\0";
         }
-        $ch = $this->source[$this->pos];
+        $ch = $this->src[$this->pos];
         $this->pos++;
 
         if ($ch === "\n") {
@@ -36,17 +45,18 @@ class JsoncScanner {
         } else {
             $this->col++;
         }
-
         return $ch;
     }
 
-    private function skipWhitespace(): void {
-        while ($this->pos < $this->length && ctype_space($this->source[$this->pos])) {
+    private function skipWhitespace(): void
+    {
+        while ($this->pos < count($this->src) && ctype_space($this->src[$this->pos])) {
             $this->next();
         }
     }
 
-    public function nextToken(): JsoncToken {
+    public function nextToken(): JsoncToken
+    {
         $this->skipWhitespace();
 
         $ch = $this->peek();
@@ -55,7 +65,7 @@ class JsoncScanner {
         }
 
         $startLine = $this->line;
-        $startCol = $this->col;
+        $startCol  = $this->col;
 
         switch ($ch) {
             case '{':
@@ -87,12 +97,13 @@ class JsoncScanner {
         }
     }
 
-    private function scanString(): JsoncToken {
+    private function scanString(): JsoncToken
+    {
         $startLine = $this->line;
-        $startCol = $this->col;
+        $startCol  = $this->col;
         $this->next();
 
-        $buf = '';
+        $buf = "";
         while (true) {
             $ch = $this->next();
             if ($ch === "\0" || $ch === "\n") {
@@ -101,7 +112,7 @@ class JsoncScanner {
             if ($ch === '"') {
                 break;
             }
-            if ($ch === '\\') {
+            if ($ch === "\\") {
                 $buf .= $ch;
                 $buf .= $this->next();
                 continue;
@@ -112,15 +123,16 @@ class JsoncScanner {
         return new JsoncToken(JsoncTokenType::String, $buf, $startLine, $startCol);
     }
 
-    private function scanComment(): JsoncToken {
+    private function scanComment(): JsoncToken
+    {
         $startLine = $this->line;
-        $startCol = $this->col;
+        $startCol  = $this->col;
         $this->next();
 
         if ($this->peek() === '/') {
-            $tokenType = !$this->newLine ? JsoncTokenType::TrailingComment : JsoncTokenType::LeadingComment;
+            $c = $this->newLine ? JsoncTokenType::LeadingComment : JsoncTokenType::TrailingComment;
             $this->next();
-            $buf = '';
+            $buf = "";
             while (true) {
                 $ch = $this->peek();
                 if ($ch === "\n" || $ch === "\0") {
@@ -128,34 +140,35 @@ class JsoncScanner {
                 }
                 $buf .= $this->next();
             }
-            return new JsoncToken($tokenType, trim($buf), $startLine, $startCol);
+            return new JsoncToken($c, trim($buf), $startLine, $startCol);
         }
 
         if ($this->peek() === '*') {
-            $tokenType = !$this->newLine ? JsoncTokenType::TrailingComment : JsoncTokenType::LeadingComment;
+            $c = $this->newLine ? JsoncTokenType::LeadingComment : JsoncTokenType::TrailingComment;
             $this->next();
-            $buf = '';
+            $buf = "";
             while (true) {
                 if ($this->peek() === "\0") {
                     break;
                 }
-                if ($this->peek() === '*' && $this->pos + 1 < $this->length && $this->source[$this->pos + 1] === '/') {
+                if ($this->peek() === '*' && $this->pos + 1 < count($this->src) && $this->src[$this->pos + 1] === '/') {
                     $this->next();
                     $this->next();
                     break;
                 }
                 $buf .= $this->next();
             }
-            return new JsoncToken($tokenType, trim($buf), $startLine, $startCol);
+            return new JsoncToken($c, trim($buf), $startLine, $startCol);
         }
 
         return new JsoncToken(JsoncTokenType::EOF, "", $this->line, $this->col);
     }
 
-    private function scanLiteral(): JsoncToken {
+    private function scanLiteral(): JsoncToken
+    {
         $startLine = $this->line;
-        $startCol = $this->col;
-        $buf = '';
+        $startCol  = $this->col;
+        $buf = "";
 
         while (true) {
             $ch = $this->peek();
@@ -166,10 +179,23 @@ class JsoncScanner {
         }
 
         return match ($buf) {
-            'true' => new JsoncToken(JsoncTokenType::True, $buf, $startLine, $startCol),
+            'true'  => new JsoncToken(JsoncTokenType::True, $buf, $startLine, $startCol),
             'false' => new JsoncToken(JsoncTokenType::False, $buf, $startLine, $startCol),
-            'null' => new JsoncToken(JsoncTokenType::Null, $buf, $startLine, $startCol),
+            'null'  => new JsoncToken(JsoncTokenType::Null, $buf, $startLine, $startCol),
             default => new JsoncToken(JsoncTokenType::Number, $buf, $startLine, $startCol),
         };
+    }
+
+    public function scanAll(): array
+    {
+        $tokens = [];
+        while (true) {
+            $tok = $this->nextToken();
+            $tokens[] = $tok;
+            if ($tok->type === JsoncTokenType::EOF) {
+                break;
+            }
+        }
+        return $tokens;
     }
 }

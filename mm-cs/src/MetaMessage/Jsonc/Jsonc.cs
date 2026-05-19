@@ -61,4 +61,31 @@ public static class Jsonc
         var printer = new JsoncPrinter(prettyPrint: false);
         return printer.Print(node);
     }
+
+    public static object? ExtractValue(IJsoncNode node)
+    {
+        if (node is JsoncValue value)
+        {
+            return value.Value;
+        }
+        if (node is JsoncObject obj)
+        {
+            var dict = new Dictionary<string, object?>();
+            foreach (var kvp in obj.Fields)
+            {
+                dict[kvp.Key] = ExtractValue(kvp.Value);
+            }
+            return dict;
+        }
+        if (node is JsoncArray array)
+        {
+            var list = new List<object?>();
+            foreach (var element in array.Elements)
+            {
+                list.Add(ExtractValue(element));
+            }
+            return list;
+        }
+        return null;
+    }
 }

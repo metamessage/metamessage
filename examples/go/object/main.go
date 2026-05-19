@@ -26,7 +26,7 @@ func main() {
 	log.Printf("encoded len: %d", len(encoded))
 
 	// decode to JSONC
-	resultJsonc, err := mm.DecodeToJSONC(encoded)
+	resultJsonc, err := mm.DecodeToJsonc(encoded)
 	if err != nil {
 		log.Fatalf("error: %v\n", err)
 	}

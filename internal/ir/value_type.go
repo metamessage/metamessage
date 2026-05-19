@@ -54,7 +54,7 @@ const (
 
 	vtDocStr    = "doc"
 	vtArrayStr  = "arr"
-	vtSliceStr  = "slice"
+	vtSliceStr  = "vec"
 	vtObjectStr = "obj"
 	vtMapStr    = "map"
 
@@ -76,7 +76,7 @@ const (
 	vtF32Str = "f32"
 	vtF64Str = "f64"
 
-	vtBiStr       = "bi"
+	vtBiStr       = "bigint"
 	vtDateTimeStr = "datetime"
 	vtDateStr     = "date"
 	vtTimeStr     = "time"

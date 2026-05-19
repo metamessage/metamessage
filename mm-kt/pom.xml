@@ -6,7 +6,7 @@
 
     <groupId>io.github.metamessage</groupId>
     <artifactId>metamessage</artifactId>
-    <version>0.1.1</version>
+    <version>0.1.2</version>
     <packaging>jar</packaging>
     <name>MetaMessage</name>
     <description>Kotlin implementation of metamessage binary codec (compatible with github.com/metamessage/metamessage Go mm package). Field metadata via @MM annotation.</description>

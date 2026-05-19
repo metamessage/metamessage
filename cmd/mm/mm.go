@@ -127,7 +127,7 @@ func main() {
 	switch {
 	case *encode:
 		fmt.Printf("Encoding Mode, Input: %s, Output: %s\n", *in, *out)
-		output, err := metamessage.EncodeFromJSONC(string(data))
+		output, err := metamessage.EncodeFromJsonc(string(data))
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "parse error: %v\n", err)
 			os.Exit(2)
@@ -162,7 +162,7 @@ func main() {
 
 	case *decode:
 		fmt.Printf("Decoding Mode, Input: %s, Output:%s\n", *in, *out)
-		outputStr, err := metamessage.DecodeToJSONC(data)
+		outputStr, err := metamessage.DecodeToJsonc(data)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "parse error: %v\n", err)
 			os.Exit(2)

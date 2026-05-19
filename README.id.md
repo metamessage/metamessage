@@ -36,7 +36,11 @@ MetaMessage (mm) adalah protokol pertukaran data terstruktur. Itu menjelaskan di
 
 MetaMessage secara alami cocok untuk pemahaman dan interaksi AI, menyelesaikan ambiguitas dan ketidakakuratan. Ini menggantikan dokumentasi API tradisional, kesepakatan format verbal, dan sinkronisasi versi manual dengan membuat data menjelaskan dirinya sendiri dan berkembang secara independen.
 
-Catatan: Sedang dalam tahap pengembangan dan pengujian, tidak disarankan untuk penggunaan produksi.
+Catatan:
+
+- Encoding saat ini mendukung hingga 65535 byte (64KB). Batas ini dapat diperluas setelah dukungan penuh untuk tipe dokumen diterapkan.
+- Proyek ini sedang dalam pengembangan dan pengujian aktif, dan belum direkomendasikan untuk penggunaan produksi.
+- API dan perilaku masih bisa berubah, jadi harap perhatikan pembaruan versi.
 
 [meta-message](https://github.com/metamessage/metamessage)
 
@@ -65,38 +69,40 @@ Catatan: Sedang dalam tahap pengembangan dan pengujian, tidak disarankan untuk p
 
 ## Tipe data
 
+Definisikan tipe data menggunakan tag `type=`. Formatnya adalah `type=typeIdentifier`, misalnya `type=i` berarti integer.
+
 - doc: Encoding mendukung hingga 65535 byte (64KB). Batasan ini mungkin diperluas setelah dukungan penuh untuk tipe dokumen
-- slice: Array dan slice tidak mengizinkan tipe komposit
-- array: arr
-- struct:
+- vec: array/slice dinamis, tidak mengizinkan tipe komposit
+- arr: array panjang tetap, tidak mengizinkan tipe komposit
+- obj: objek/struct, struktur komposit, sesuai dengan struct/object lintas-bahasa
 - map: Kunci map harus string dan nilai tidak boleh tipe komposit
-- string: str
-- bytes:
-- bool:
-- int: i; literal integer tidak boleh menyertakan titik desimal
-- int8: i8
-- int16: i16
-- int32: i32
-- int64: i64
-- uint: u
-- uint8: u8
-- uint16: u16
-- uint32: u32
-- uint64: u64
-- float32: f32; float tidak mendukung NaN/Inf/-0; literal float harus menyertakan titik desimal, misalnya 0.0
-- float64: f64
-- bigint: bi
+- str: string
+- bytes: array byte
+- bool: boolean
+- i: i; literal integer tidak boleh menyertakan titik desimal
+- i8: i8
+- i16: i16
+- i32: i32
+- i64: i64
+- u: u
+- u8: u8
+- u16: u16
+- u32: u32
+- u64: u64
+- f32: float32; float tidak mendukung NaN/Inf/-0; literal float harus menyertakan titik desimal, misalnya 0.0
+- f64: float64; float tidak mendukung NaN/Inf/-0; literal float harus menyertakan titik desimal, misalnya 0.0
+- bigint: bigint
 - datetime: default UTC 1970-01-01 00:00:00
 - date: 1970-01-01
 - time: 00:00:00
-- uuid
-- decimal
-- ip
-- url
-- email
-- enum
-- image
-- video
+- uuid: pengenal unik
+- decimal: desimal, harus dikirim sebagai string
+- ip: IP, mendukung IPv4/IPv6
+- url: URL, valid
+- email: email, valid
+- enum: enum, nilai adalah string yang dipisahkan oleh |
+- image: gambar, bytes di bawahnya
+- video: video, bytes di bawahnya
 
 ## Tag
 
@@ -271,12 +277,12 @@ func main() {
     fmt.Printf("Decoded: %+v\n", decoded)
 
     jsoncStr := `{"name": "Bob", "age": 25}`
-    data2, err := mm.EncodeFromJSONC(jsoncStr)
+    data2, err := mm.EncodeFromJsonc(jsoncStr)
     if err != nil {
         panic(err)
     }
 
-    jsoncOut, err := mm.DecodeToJSONC(data2)
+    jsoncOut, err := mm.DecodeToJsonc(data2)
     if err != nil {
         panic(err)
     }
@@ -288,10 +294,10 @@ func main() {
 
 - `NewEncoder(w io.Writer) Encoder`: buat encoder
 - `EncodeFromValue(in any) ([]byte, error)`: encoding dari struct
-- `EncodeFromJSONC(in string) ([]byte, error)`: encoding dari string JSONC
+- `EncodeFromJsonc(in string) ([]byte, error)`: encoding dari string JSONC
 - `NewDecoder(r io.Reader) Decoder`: buat decoder
 - `DecodeToValue(in []byte, out any) error`: decode ke struct
-- `DecodeToJSONC(in []byte) (string, error)`: decode ke string JSONC
+- `DecodeToJsonc(in []byte) (string, error)`: decode ke string JSONC
 
 ### Contoh dalam bahasa lain
 

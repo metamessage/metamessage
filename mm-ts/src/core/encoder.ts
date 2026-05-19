@@ -182,7 +182,7 @@ export class MMEncoder {
       case ValueType.Uint32:
       case ValueType.Uint64:
         if (!tag.isNull) {
-          n = this.encodeUint64(BigInt(val.getValue()));
+          n = this.encodeU64(BigInt(val.getValue()));
         }
         break;
 
@@ -408,7 +408,7 @@ export class MMEncoder {
     return this.encodeIntWithSign(sign, uv);
   }
 
-  encodeUint64(value: bigint): number {
+  encodeU64(value: bigint): number {
     return this.encodeIntWithSign(Prefix.PositiveInt, value);
   }
 
@@ -843,7 +843,7 @@ export class MMEncoder {
       utcDate.getHours() * 3600 +
       utcDate.getMinutes() * 60 +
       utcDate.getSeconds();
-    return this.encodeUint64(BigInt(seconds));
+    return this.encodeU64(BigInt(seconds));
   }
 
   private encodeArrayToBytes(value: Uint8Array): Uint8Array {

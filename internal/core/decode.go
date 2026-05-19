@@ -943,6 +943,11 @@ func (d *decoder) decodeFloat(prefix byte, tag *ir.Tag, path string) (node ir.No
 		v = float64(p&0xF) / 10
 		length = 1
 
+	// -0.x
+	case p >= PrefixFloat|FloatPositiveNegativeMask && p <= PrefixFloat|FloatPositiveNegativeMask+7:
+		v = -float64(p&0xF) / 10
+		length = 1
+
 	// // 0.0x
 	// case p >= PositiveFloat+10 && p <= PositiveFloat+19:
 	// 	v = float64(p&0xF-10) / 100
@@ -1018,11 +1023,10 @@ func (d *decoder) decodeFloat(prefix byte, tag *ir.Tag, path string) (node ir.No
 			err = fmt.Errorf("Failed to convert to float64 | Mantissa = %d | Exponent = %d | Original error: %w", mantissa, exp, err)
 			return
 		}
+		if p&FloatPositiveNegativeMask != 0 {
+			v = -v
+		}
 		length = l1 + 2
-	}
-
-	if p&FloatPositiveNegativeMask != 0 {
-		v = -v
 	}
 
 	var data any

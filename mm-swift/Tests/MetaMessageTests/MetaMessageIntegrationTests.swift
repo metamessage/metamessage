@@ -171,7 +171,10 @@ final class MetaMessageIntegrationTests: XCTestCase {
         """
 
         let node = try parseJSONC(json)
-        XCTAssertNotNil(node)
+        guard let node = node else {
+            XCTFail("Failed to parse JSONC")
+            return
+        }
 
         let printer = JSONCPrinter()
         let output = printer.print(node)
@@ -188,7 +191,10 @@ final class MetaMessageIntegrationTests: XCTestCase {
         """
 
         let node = try parseJSONC(json)
-        XCTAssertNotNil(node)
+        guard let node = node else {
+            XCTFail("Failed to parse JSONC")
+            return
+        }
 
         let printer = JSONCPrinter()
         let output = printer.printCompact(node)
@@ -206,7 +212,10 @@ final class MetaMessageIntegrationTests: XCTestCase {
         """
 
         let node = try parseJSONC(json)
-        XCTAssertNotNil(node)
+        guard let node = node else {
+            XCTFail("Failed to parse JSONC")
+            return
+        }
 
         let binder = Binder()
         let result = try binder.bind(node, to: TestStruct.self)

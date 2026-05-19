@@ -36,7 +36,11 @@ MetaMessage (mm) ist ein strukturiertes Datenaustauschprotokoll. Es ist selbstbe
 
 MetaMessage eignet sich von Natur aus für das Verständnis und die Interaktion mit KI und löst Mehrdeutigkeiten und Ungenauigkeiten. Es ersetzt traditionelle API-Dokumentation, mündliche Formatvereinbarungen und manuelle Versionssynchronisierung, indem es Daten selbsterklärend und unabhängig entwickelbar macht.
 
-Hinweis: Derzeit in Entwicklung und Test, nicht für den Produktionseinsatz empfohlen
+Hinweis:
+
+- Die Codierung unterstützt derzeit bis zu 65535 Bytes (64KB). Diese Grenze kann erweitert werden, sobald der vollständige Support für Dokumenttypen umgesetzt ist.
+- Das Projekt befindet sich in aktiver Entwicklung und Testphase und wird für den Produktionseinsatz noch nicht empfohlen.
+- APIs und Verhalten können sich noch ändern, daher bitte die Versionshinweise beachten.
 
 [meta-message](https://github.com/metamessage/metamessage)
 
@@ -65,38 +69,40 @@ Hinweis: Derzeit in Entwicklung und Test, nicht für den Produktionseinsatz empf
 
 ## Datentypen
 
+Definieren Sie Datentypen mit dem Tag `type=`. Das Format ist `type=typeIdentifier`, z. B. `type=i` bedeutet Integer.
+
 - doc: Die Kodierung unterstützt bis zu 65535 Bytes (64KB). Diese Grenze kann nach vollständiger Unterstützung von Dokumenttypen überschritten werden
-- slice: Arrays und Slices erlauben keine zusammengesetzten Typen
-- array: arr
-- struct:
+- vec: dynamische Arrays/Slices, erlauben keine zusammengesetzten Typen
+- arr: Array, feste Länge, erlaubt keine zusammengesetzten Typen
+- obj: Objekt/Struct, zusammengesetzte Struktur, entspricht mehrsprachigem struct/object
 - map: Map-Schlüssel müssen Strings sein und Werte dürfen keine zusammengesetzten Typen sein
-- string: str
-- bytes:
-- bool:
-- int: i; Ganzzahl-Literale dürfen keinen Dezimalpunkt enthalten
-- int8: i8
-- int16: i16
-- int32: i32
-- int64: i64
-- uint: u
-- uint8: u8
-- uint16: u16
-- uint32: u32
-- uint64: u64
-- float32: f32; Floats unterstützen NaN/Inf/-0 nicht; Float-Literale müssen einen Dezimalpunkt enthalten, z.B. 0.0
-- float64: f64
-- bigint: bi
+- str: string
+- bytes: Byte-Array
+- bool: boolean
+- i: int; Ganzzahl-Literale dürfen keinen Dezimalpunkt enthalten
+- i8: int8
+- i16: int16
+- i32: int32
+- i64: int64
+- u: uint
+- u8: uint8
+- u16: uint16
+- u32: uint32
+- u64: uint64
+- f32: float32; Floats unterstützen NaN/Inf/-0 nicht; Float-Literale müssen einen Dezimalpunkt enthalten, z.B. 0.0
+- f64: float64; Floats unterstützen NaN/Inf/-0 nicht; Float-Literale müssen einen Dezimalpunkt enthalten, z.B. 0.0
+- bigint: bigint
 - datetime: Standard UTC 1970-01-01 00:00:00
 - date: 1970-01-01
 - time: 00:00:00
-- uuid
-- decimal
-- ip
-- url
-- email
-- enum
-- image
-- video
+- uuid: eindeutige Kennung
+- decimal: Dezimalzahl, muss als Zeichenfolge übergeben werden
+- ip: IP, unterstützt IPv4/IPv6
+- url: URL, muss eine gültige URL sein
+- email: E-Mail, muss gültig sein
+- enum: enum, Werte sind Strings, getrennt durch |
+- image: Bild, intern bytes
+- video: Video, intern bytes
 
 ## Tags
 
@@ -271,12 +277,12 @@ func main() {
     fmt.Printf("Decoded: %+v\n", decoded)
 
     jsoncStr := `{"name": "Bob", "age": 25}`
-    data2, err := mm.EncodeFromJSONC(jsoncStr)
+    data2, err := mm.EncodeFromJsonc(jsoncStr)
     if err != nil {
         panic(err)
     }
 
-    jsoncOut, err := mm.DecodeToJSONC(data2)
+    jsoncOut, err := mm.DecodeToJsonc(data2)
     if err != nil {
         panic(err)
     }
@@ -288,10 +294,10 @@ func main() {
 
 - `NewEncoder(w io.Writer) Encoder`: erstellt einen Encoder
 - `EncodeFromValue(in any) ([]byte, error)`: codiert aus einer Struct
-- `EncodeFromJSONC(in string) ([]byte, error)`: codiert aus einer JSONC-Zeichenkette
+- `EncodeFromJsonc(in string) ([]byte, error)`: codiert aus einer JSONC-Zeichenkette
 - `NewDecoder(r io.Reader) Decoder`: erstellt einen Decoder
 - `DecodeToValue(in []byte, out any) error`: dekodiert in eine Struct
-- `DecodeToJSONC(in []byte) (string, error)`: dekodiert in eine JSONC-Zeichenkette
+- `DecodeToJsonc(in []byte) (string, error)`: dekodiert in eine JSONC-Zeichenkette
 
 ### Beispiele in anderen Sprachen
 

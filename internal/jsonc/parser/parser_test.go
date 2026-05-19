@@ -113,7 +113,7 @@ func TestParseArrayValNil_EOFAfterOpen(t *testing.T) {
 	p := scan(`[`)
 	_, err := p.Parse()
 	if err == nil {
-		t.Fatal("expected error for empty array (ValidateSlice: not allow empty)")
+		t.Fatal("expected error for empty array (ValidateVec: not allow empty)")
 	}
 }
 

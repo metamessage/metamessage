@@ -1,6 +1,6 @@
 {
   "name": "metamessage",
-  "version": "0.1.10",
+  "version": "0.1.12",
   "description": "MetaMessage (mm) is a structured data exchange protocol. It is self-describing, self-constraining, and self-exemplifying, enabling lossless data exchange. It is designed as a next-generation universal protocol that natively supports AI, humans, and machines.",
   "type": "commonjs",
   "main": "dist/metamessage.js",

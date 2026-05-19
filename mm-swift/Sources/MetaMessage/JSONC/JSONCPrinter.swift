@@ -1,5 +1,13 @@
 import Foundation
 
+private protocol ObjectFieldsProvider {
+    var fields: [JSONCField] { get }
+    var tag: JSONCTag? { get }
+}
+
+extension MMObject: ObjectFieldsProvider {}
+extension MMDoc: ObjectFieldsProvider {}
+
 public class JSONCPrinter {
     private var indentLevel: Int
     private let indentString: String
@@ -43,7 +51,7 @@ public class JSONCPrinter {
         indentLevel = max(0, indentLevel - 1)
     }
 
-    private func printObject(_ obj: MMObject) -> String {
+    private func printObject(_ obj: ObjectFieldsProvider) -> String {
         if obj.fields.isEmpty {
             return "{}"
         }
@@ -239,7 +247,7 @@ public class JSONCPrinter {
         }
     }
 
-    private func printObjectCompact(_ obj: MMObject) -> String {
+    private func printObjectCompact(_ obj: ObjectFieldsProvider) -> String {
         var parts: [String] = []
 
         for field in obj.fields {

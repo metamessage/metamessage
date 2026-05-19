@@ -2,7 +2,7 @@
 require_once __DIR__ . '/../../../mm-php/vendor/autoload.php';
 
 use io\metamessage\jsonc\Jsonc;
-use io\metamessage\mm\MetaMessage;
+use io\metamessage\core\MetaMessage;
 
 // JSONC 字符串
 $jsonc = '{
@@ -20,15 +20,15 @@ echo "Original JSONC:\n";
 echo $jsonc . "\n";
 
 // 解析并编码
-$node = Jsonc::parseFromString($jsonc);
+$node = Jsonc::ParseFromString($jsonc);
 $wire = MetaMessage::encode($node);
 
 echo "\nEncoded Wire:\n";
 echo bin2hex(implode(array_map('chr', $wire))) . "\n";
 
-// 从 Wire 解码到 JSONC
-$decodedNode = MetaMessage::decode($wire, 'io\metamessage\jsonc\JcNode');
-$outputJsonc = Jsonc::toString($decodedNode);
+// 从 Wire 解码
+$decodedNode = MetaMessage::DecodeWire($wire);
+$outputJsonc = Jsonc::ToJSONC($decodedNode);
 
 echo "\nDecoded to JSONC:\n";
 echo $outputJsonc . "\n";

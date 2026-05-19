@@ -36,7 +36,11 @@ MetaMessage (mm) est un protocole d'échange de données structurées. Il est au
 
 MetaMessage est naturellement adapté à la compréhension et à l'interaction avec l'IA, résolvant l'ambiguïté et l'imprécision. Il remplace la documentation d'API traditionnelle, les accords verbaux de format et la synchronisation manuelle des versions en rendant les données auto-explicatives et indépendamment évolutives.
 
-Note : Actuellement en développement et test, utilisation en production non recommandée
+Note :
+
+- L'encodage prend actuellement en charge jusqu'à 65535 octets (64KB). Cette limite pourra être étendue une fois le support complet des types document implémenté.
+- Le projet est en développement et en test actif, et n'est pas encore recommandé pour une utilisation en production.
+- L'API et le comportement peuvent encore évoluer, suivez les mises à jour de version.
 
 [meta-message](https://github.com/metamessage/metamessage)
 
@@ -65,38 +69,40 @@ Note : Actuellement en développement et test, utilisation en production non rec
 
 ## Types de données
 
+Définissez les types de données à l'aide du tag `type=`. Le format est `type=typeIdentifier`, par exemple `type=i` signifie entier.
+
 - doc: L'encodage prend en charge jusqu'à 65535 octets (64KB). Cette limite peut être étendue après la prise en charge complète des types de documents
-- slice: Les tableaux et slices n'autorisent pas les types composites
-- array: arr
-- struct:
+- vec: tableaux/slices dynamiques, pas de types composites
+- arr: tableau, longueur fixe, pas de types composites
+- obj: objet/structure, structure composite, correspond à struct/object multilingue
 - map: Les clés de map doivent être des chaînes et les valeurs ne doivent pas être des types composites
-- string: str
-- bytes:
-- bool:
-- int: i; les littéraux entiers ne doivent pas inclure de point décimal
-- int8: i8
-- int16: i16
-- int32: i32
-- int64: i64
-- uint: u
-- uint8: u8
-- uint16: u16
-- uint32: u32
-- uint64: u64
-- float32: f32; les floats ne prennent pas en charge NaN/Inf/-0; les littéraux à virgule flottante doivent inclure un point décimal, par exemple 0.0
-- float64: f64
-- bigint: bi
+- str: string
+- bytes: tableau d'octets
+- bool: booléen
+- i: int; les littéraux entiers ne doivent pas inclure de point décimal
+- i8: int8
+- i16: int16
+- i32: int32
+- i64: int64
+- u: uint
+- u8: uint8
+- u16: uint16
+- u32: uint32
+- u64: uint64
+- f32: float32; les floats ne prennent pas en charge NaN/Inf/-0; les littéraux à virgule flottante doivent inclure un point décimal, par exemple 0.0
+- f64: float64; les floats ne prennent pas en charge NaN/Inf/-0; les littéraux à virgule flottante doivent inclure un point décimal, par exemple 0.0
+- bigint: bigint
 - datetime: UTC par défaut 1970-01-01 00:00:00
 - date: 1970-01-01
 - time: 00:00:00
-- uuid
-- decimal
-- ip
-- url
-- email
-- enum
-- image
-- video
+- uuid: identifiant unique
+- decimal: décimal, doit être passé comme chaîne
+- ip: IP, prend en charge IPv4/IPv6
+- url: URL, doit être une URL valide
+- email: e-mail, doit être valide
+- enum: enum, les valeurs sont des chaînes séparées par |
+- image: image, sous-jacent bytes
+- video: vidéo, sous-jacent bytes
 
 ## Tags
 
@@ -271,12 +277,12 @@ func main() {
     fmt.Printf("Decoded: %+v\n", decoded)
 
     jsoncStr := `{"name": "Bob", "age": 25}`
-    data2, err := mm.EncodeFromJSONC(jsoncStr)
+    data2, err := mm.EncodeFromJsonc(jsoncStr)
     if err != nil {
         panic(err)
     }
 
-    jsoncOut, err := mm.DecodeToJSONC(data2)
+    jsoncOut, err := mm.DecodeToJsonc(data2)
     if err != nil {
         panic(err)
     }
@@ -288,10 +294,10 @@ func main() {
 
 - `NewEncoder(w io.Writer) Encoder` : crée un encodeur
 - `EncodeFromValue(in any) ([]byte, error)` : encode à partir d'une struct
-- `EncodeFromJSONC(in string) ([]byte, error)` : encode à partir d'une chaîne JSONC
+- `EncodeFromJsonc(in string) ([]byte, error)` : encode à partir d'une chaîne JSONC
 - `NewDecoder(r io.Reader) Decoder` : crée un décodeur
 - `DecodeToValue(in []byte, out any) error` : décode vers une struct
-- `DecodeToJSONC(in []byte) (string, error)` : décode vers une chaîne JSONC
+- `DecodeToJsonc(in []byte) (string, error)` : décode vers une chaîne JSONC
 
 ### Exemples dans d'autres langages
 

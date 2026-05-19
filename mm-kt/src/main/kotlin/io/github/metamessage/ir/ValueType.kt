@@ -41,7 +41,7 @@ enum class ValueType {
             when (this) {
                 UNKNOWN -> "unknown"
                 DOC -> "doc"
-                SLICE -> "slice"
+                SLICE -> "vec"
                 ARRAY -> "arr"
                 STRUCT -> "obj"
                 MAP -> "map"
@@ -60,7 +60,7 @@ enum class ValueType {
                 UINT64 -> "u64"
                 FLOAT32 -> "f32"
                 FLOAT64 -> "f64"
-                BIGINT -> "bi"
+                BIGINT -> "bigint"
                 DATETIME -> "datetime"
                 DATE -> "date"
                 TIME -> "time"

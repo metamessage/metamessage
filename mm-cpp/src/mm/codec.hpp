@@ -87,7 +87,7 @@ struct Encoder {
 
     size_t encodeBool(bool value);
     size_t encodeInt64(int64_t value);
-    size_t encodeUint64(uint64_t value);
+    size_t encodeU64(uint64_t value);
     size_t encodeFloat(double value);
     size_t encodeString(const std::string& value);
     size_t encodeBytes(const std::vector<uint8_t>& value);
@@ -194,7 +194,7 @@ std::vector<uint8_t> encodeValue(const T& value) {
     } else if constexpr (std::is_integral_v<T> && std::is_signed_v<T>) {
         enc.encodeInt64(static_cast<int64_t>(value));
     } else if constexpr (std::is_integral_v<T> && std::is_unsigned_v<T>) {
-        enc.encodeUint64(static_cast<uint64_t>(value));
+        enc.encodeU64(static_cast<uint64_t>(value));
     } else if constexpr (std::is_floating_point_v<T>) {
         enc.encodeFloat(static_cast<double>(value));
     } else if constexpr (is_string_v<T>) {

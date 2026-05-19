@@ -2,24 +2,38 @@
 
 namespace io\metamessage\jsonc;
 
-class Jsonc {
-    public static function parseFromString(string $s): JsoncNode {
-        return parseJsonc($s);
+use io\metamessage\ir\Node;
+
+class Jsonc
+{
+    public static function ToJSONC(?Node $n): string
+    {
+        if ($n === null) {
+            return '';
+        }
+
+        $printer = new JsoncPrinter();
+        return $printer::ToJSONC($n);
     }
 
-    public static function parseFromBytes(string $b): JsoncNode {
-        return parseJsonc($b);
+    public static function ParseFromString(string $s): Node
+    {
+        $scanner = new JsoncScanner($s);
+        $toks = [];
+        while (true) {
+            $t = $scanner->nextToken();
+            $toks[] = $t;
+            if ($t->type === JsoncTokenType::EOF) {
+                break;
+            }
+        }
+
+        $parser = new JsoncParser($toks);
+        return $parser->parse();
     }
 
-    public static function toString(JsoncNode $n): string {
-        return JsoncPrinter::toString($n);
-    }
-
-    public static function toCompactString(JsoncNode $n): string {
-        return JsoncPrinter::toCompactString($n);
-    }
-
-    public static function print(JsoncNode $n): void {
-        echo self::toString($n) . "\n";
+    public static function Print(Node $n): void
+    {
+        echo self::ToJSONC($n) . "\n";
     }
 }

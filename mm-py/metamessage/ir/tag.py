@@ -3,6 +3,8 @@ from enum import IntEnum
 from dataclasses import dataclass
 import re
 
+from .mime import ParseMIME
+
 
 class ValueType(IntEnum):
     Unknown = 0
@@ -39,12 +41,12 @@ class ValueType(IntEnum):
     Image = 31
     Video = 32
 
-    def to_str(self) -> str:
+    def __str__(self) -> str:
         mapping = {
             ValueType.Unknown: "unknown",
             ValueType.Doc: "doc",
             ValueType.Array: "arr",
-            ValueType.Slice: "slice",
+            ValueType.Slice: "vec",
             ValueType.Object: "obj",
             ValueType.Map: "map",
             ValueType.String: "str",
@@ -62,7 +64,7 @@ class ValueType(IntEnum):
             ValueType.Uint64: "u64",
             ValueType.Float32: "f32",
             ValueType.Float64: "f64",
-            ValueType.BigInt: "bi",
+            ValueType.BigInt: "bigint",
             ValueType.DateTime: "datetime",
             ValueType.Date: "date",
             ValueType.Time: "time",
@@ -75,17 +77,17 @@ class ValueType(IntEnum):
             ValueType.Image: "image",
             ValueType.Video: "video",
         }
-        return mapping.get(self, str(self.value))
+        return mapping.get(self, "ValueType(%d)" % self.value)
 
 
 _str_to_value_type = {
     "unknown": ValueType.Unknown, "doc": ValueType.Doc, "arr": ValueType.Array,
-    "slice": ValueType.Slice, "obj": ValueType.Object, "map": ValueType.Map,
+    "vec": ValueType.Slice, "obj": ValueType.Object, "map": ValueType.Map,
     "str": ValueType.String, "bytes": ValueType.Bytes, "bool": ValueType.Bool,
     "i": ValueType.Int, "i8": ValueType.Int8, "i16": ValueType.Int16, "i32": ValueType.Int32, "i64": ValueType.Int64,
     "u": ValueType.Uint, "u8": ValueType.Uint8, "u16": ValueType.Uint16, "u32": ValueType.Uint32, "u64": ValueType.Uint64,
     "f32": ValueType.Float32, "f64": ValueType.Float64,
-    "bi": ValueType.BigInt, "datetime": ValueType.DateTime, "date": ValueType.Date, "time": ValueType.Time,
+    "bigint": ValueType.BigInt, "datetime": ValueType.DateTime, "date": ValueType.Date, "time": ValueType.Time,
     "uuid": ValueType.UUID, "decimal": ValueType.Decimal, "ip": ValueType.IP, "url": ValueType.URL,
     "email": ValueType.Email, "enum": ValueType.Enum,
     "image": ValueType.Image, "video": ValueType.Video,
@@ -96,7 +98,7 @@ def parse_value_type(s: str) -> ValueType:
     s = s.lower().strip()
     if s in _str_to_value_type:
         return _str_to_value_type[s]
-    return ValueType.Unknown
+    raise ValueError("Invalid ValueType string: %s" % s)
 
 
 class TagKey(IntEnum):
@@ -173,8 +175,10 @@ def _encode_uint64(buf: bytearray, key: int, uv: int):
         buf.extend([key | 7, uv >> 56, uv >> 48, uv >> 40, uv >> 32, uv >> 24, uv >> 16, uv >> 8, uv & 0xFF])
 
 
+DefaultVersion = 0
+
 def NewTag() -> 'Tag':
-    return Tag()
+    return Tag(version=DefaultVersion, child_version=DefaultVersion, location=0, child_location=0)
 
 
 @dataclass
@@ -242,9 +246,9 @@ class Tag:
             self.enum = tag.child_enum
         if tag.child_pattern:
             self.pattern = tag.child_pattern
-        if tag.child_location is not None:
+        if tag.child_location is not None and tag.child_location != 0:
             self.location = tag.child_location
-        if tag.child_version:
+        if tag.child_version != DefaultVersion:
             self.version = tag.child_version
         if tag.child_mime:
             self.mime = tag.child_mime
@@ -278,8 +282,10 @@ class Tag:
                 buf.extend(desc_bytes)
 
         if self.type != ValueType.Unknown and not self.is_inherit:
-            if self.type not in (ValueType.String, ValueType.Bytes, ValueType.Int, ValueType.Float64, ValueType.Bool, ValueType.Object, ValueType.Slice):
-                if not (self.type == ValueType.Array and self.size > 0) and not (self.type == ValueType.Enum and self.enum):
+            if self.type not in (ValueType.String, ValueType.Bytes, ValueType.Int, ValueType.Float64,
+                                 ValueType.Bool, ValueType.Object, ValueType.Slice):
+                if not (self.type == ValueType.Array and self.size > 0) and not (
+                        self.type == ValueType.Enum and self.enum):
                     buf.append(TagKey.Type)
                     buf.append(self.type)
 
@@ -357,11 +363,11 @@ class Tag:
             buf.append(TagKey.Location | len(loc_str))
             buf.extend(loc_str.encode('utf-8'))
 
-        if self.version and not self.is_inherit:
+        if self.version != DefaultVersion and not self.is_inherit:
             _encode_uint64(buf, TagKey.Version, self.version)
 
         if self.mime and not self.is_inherit:
-            l = len(self.mime)
+            l = ParseMIME(self.mime)
             if l < 7:
                 buf.append(TagKey.Mime | l)
             else:
@@ -384,8 +390,10 @@ class Tag:
                 buf.extend(child_desc_bytes)
 
         if self.child_type != ValueType.Unknown:
-            if self.child_type not in (ValueType.String, ValueType.Int, ValueType.Float64, ValueType.Bool, ValueType.Object, ValueType.Slice):
-                if not (self.child_type == ValueType.Array and self.child_size > 0) and not (self.child_type == ValueType.Enum and self.child_enum):
+            if self.child_type not in (ValueType.String, ValueType.Int, ValueType.Float64,
+                                       ValueType.Bool, ValueType.Object, ValueType.Slice):
+                if not (self.child_type == ValueType.Array and self.child_size > 0) and not (
+                        self.child_type == ValueType.Enum and self.child_enum):
                     buf.append(TagKey.ChildType)
                     buf.append(self.child_type)
 
@@ -466,11 +474,11 @@ class Tag:
             buf.append(TagKey.ChildLocation | len(loc_str))
             buf.extend(loc_str.encode('utf-8'))
 
-        if self.child_version:
+        if self.child_version != DefaultVersion:
             _encode_uint64(buf, TagKey.ChildVersion, self.child_version)
 
         if self.child_mime:
-            l = len(self.child_mime)
+            l = ParseMIME(self.child_mime)
             if l < 7:
                 buf.append(TagKey.ChildMime | l)
             else:
@@ -481,54 +489,56 @@ class Tag:
 
     def __str__(self) -> str:
         parts = []
-        
+
         if self.type != ValueType.Unknown and not self.is_inherit:
-            if self.type in (ValueType.String, ValueType.Int, ValueType.Float64, ValueType.Bool, ValueType.Object, ValueType.Slice):
+            if self.type in (ValueType.String, ValueType.Int, ValueType.Float64, ValueType.Bool,
+                             ValueType.Object, ValueType.Slice):
                 pass
             else:
-                if not (self.type == ValueType.Array and self.size > 0) and not (self.type == ValueType.Enum and self.enum):
-                    parts.append(f"type={self.type.to_str()}")
+                if not (self.type == ValueType.Array and self.size > 0) and not (
+                        self.type == ValueType.Enum and self.enum):
+                    parts.append("type=%s" % str(self.type))
 
         if self.example:
             parts.append("example")
-        
+
         if self.is_null:
             parts.append("is_null")
-        
+
         if self.nullable and not self.is_inherit:
             if not self.is_null:
                 parts.append("nullable")
-        
+
         if self.desc and not self.is_inherit:
-            parts.append(f'desc="{self.desc}"')
-        
+            parts.append('desc="%s"' % self.desc)
+
         if self.raw and not self.is_inherit:
             parts.append("raw")
-        
+
         if self.allow_empty and not self.is_inherit:
             parts.append("allow_empty")
-        
+
         if self.unique and not self.is_inherit:
             parts.append("unique")
-        
+
         if self.default and not self.is_inherit:
-            parts.append(f"default={self.default}")
-        
+            parts.append("default=%s" % self.default)
+
         if self.min and not self.is_inherit:
-            parts.append(f"min={self.min}")
-        
+            parts.append("min=%s" % self.min)
+
         if self.max and not self.is_inherit:
-            parts.append(f"max={self.max}")
-        
+            parts.append("max=%s" % self.max)
+
         if self.size and not self.is_inherit:
-            parts.append(f"size={self.size}")
-        
+            parts.append("size=%d" % self.size)
+
         if self.enum and not self.is_inherit:
-            parts.append(f"enum={self.enum}")
-        
+            parts.append("enum=%s" % self.enum)
+
         if self.pattern and not self.is_inherit:
-            parts.append(f"pattern={self.pattern}")
-        
+            parts.append("pattern=%s" % self.pattern)
+
         location_offset_hour = 0
         if self.location is not None:
             try:
@@ -536,52 +546,54 @@ class Tag:
             except (ValueError, TypeError):
                 pass
         if location_offset_hour != 0 and not self.is_inherit:
-            parts.append(f"location={location_offset_hour}")
+            parts.append("location=%d" % location_offset_hour)
 
-        if self.version and not self.is_inherit:
-            parts.append(f"version={self.version}")
-        
+        if self.version != DefaultVersion and not self.is_inherit:
+            parts.append("version=%d" % self.version)
+
         if self.mime and not self.is_inherit:
-            parts.append(f"mime={self.mime}")
-        
+            parts.append("mime=%s" % self.mime)
+
         if self.child_desc:
-            parts.append(f'child_desc="{self.child_desc}"')
+            parts.append('child_desc="%s"' % self.child_desc)
 
         if self.child_type != ValueType.Unknown:
-            if self.child_type not in (ValueType.String, ValueType.Int, ValueType.Float64, ValueType.Bool, ValueType.Object, ValueType.Slice):
-                if not (self.child_type == ValueType.Array and self.child_size > 0) and not (self.child_type == ValueType.Enum and self.child_enum):
-                    parts.append(f"child_type={self.child_type.to_str()}")
+            if self.child_type not in (ValueType.String, ValueType.Int, ValueType.Float64,
+                                       ValueType.Bool, ValueType.Object, ValueType.Slice):
+                if not (self.child_type == ValueType.Array and self.child_size > 0) and not (
+                        self.child_type == ValueType.Enum and self.child_enum):
+                    parts.append("child_type=%s" % str(self.child_type))
 
         if self.child_raw:
             parts.append("child_raw")
-        
+
         if self.child_nullable:
             parts.append("child_nullable")
-        
+
         if self.child_allow_empty:
             parts.append("child_allow_empty")
-        
+
         if self.child_unique:
             parts.append("child_unique")
-        
+
         if self.child_default:
-            parts.append(f"child_default={self.child_default}")
-        
+            parts.append("child_default=%s" % self.child_default)
+
         if self.child_min:
-            parts.append(f"child_min={self.child_min}")
-        
+            parts.append("child_min=%s" % self.child_min)
+
         if self.child_max:
-            parts.append(f"child_max={self.child_max}")
-        
+            parts.append("child_max=%s" % self.child_max)
+
         if self.child_size:
-            parts.append(f"child_size={self.child_size}")
-        
+            parts.append("child_size=%d" % self.child_size)
+
         if self.child_enum:
-            parts.append(f"child_enum={self.child_enum}")
-        
+            parts.append("child_enum=%s" % self.child_enum)
+
         if self.child_pattern:
-            parts.append(f"child_pattern={self.child_pattern}")
-        
+            parts.append("child_pattern=%s" % self.child_pattern)
+
         child_location_offset_hour = 0
         if self.child_location is not None:
             try:
@@ -589,14 +601,14 @@ class Tag:
             except (ValueError, TypeError):
                 pass
         if child_location_offset_hour != 0:
-            parts.append(f"child_location={child_location_offset_hour}")
+            parts.append("child_location=%d" % child_location_offset_hour)
 
-        if self.child_version:
-            parts.append(f"child_version={self.child_version}")
-        
+        if self.child_version != DefaultVersion:
+            parts.append("child_version=%d" % self.child_version)
+
         if self.child_mime:
-            parts.append(f"child_mime={self.child_mime}")
-        
+            parts.append("child_mime=%s" % self.child_mime)
+
         return "; ".join(parts)
 
 
@@ -656,35 +668,36 @@ def _split_tag(tag_str: str) -> list:
 
 def mm_tag(tag_str: str) -> Tag:
     if not tag_str:
-        return Tag()
-    
+        return NewTag()
+
     tag_str = tag_str.strip()
     tag_str = tag_str.lstrip("//")
     tag_str = tag_str.strip()
     tag_str = tag_str.lstrip("mm:")
     tag_str = tag_str.strip()
     if not tag_str:
-        return Tag()
-    
-    tag = Tag()
-    
+        return NewTag()
+
+    tag = NewTag()
+
     parts = _split_tag(tag_str)
     for p in parts:
         if not p:
             continue
-        
+
         k, v = p, ""
         if "=" in p:
             kv = p.split("=", 1)
             k = kv[0].strip()
             v = kv[1].strip() if len(kv) > 1 else ""
-        
+
         k = k.lower()
-        # strip quotes from value
         if len(v) >= 2 and v.startswith('"') and v.endswith('"'):
             v = v[1:-1]
 
-        if k == "is_null":
+        if k == "name":
+            tag.name = v
+        elif k == "is_null":
             tag.is_null = True
             tag.nullable = True
         elif k == "example":
@@ -769,7 +782,7 @@ def mm_tag(tag_str: str) -> Tag:
                 pass
         elif k == "child_mime":
             tag.child_mime = v
-    
+
     return tag
 
 
@@ -811,9 +824,9 @@ def MergeTag(dst: Tag, src: Tag) -> Tag:
         dst.enum = src.enum
     if src.pattern:
         dst.pattern = src.pattern
-    if src.location is not None:
+    if src.location is not None and src.location != 0:
         dst.location = src.location
-    if src.version:
+    if src.version != DefaultVersion:
         dst.version = src.version
     if src.mime:
         dst.mime = src.mime
@@ -841,9 +854,9 @@ def MergeTag(dst: Tag, src: Tag) -> Tag:
         dst.child_enum = src.child_enum
     if src.child_pattern:
         dst.child_pattern = src.child_pattern
-    if src.child_location is not None:
+    if src.child_location is not None and src.child_location != 0:
         dst.child_location = src.child_location
-    if src.child_version:
+    if src.child_version != DefaultVersion:
         dst.child_version = src.child_version
     if src.child_mime:
         dst.child_mime = src.child_mime

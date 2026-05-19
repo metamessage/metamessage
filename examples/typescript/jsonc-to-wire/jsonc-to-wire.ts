@@ -1,5 +1,6 @@
-import { fromJSONC, toJSONC, encode, decode } from '../../../mm-ts/src/mm/index.js';
-import { parseFromString, toString } from '../../../mm-ts/src/jsonc/index.js';
+import { encodeNode } from '../../../mm-ts/src/core/index.js';
+import { parseJSONC, toJSONC } from '../../../mm-ts/src/jsonc/index.js';
+import { decodeToJsonc } from '../../../mm-ts/src/metamessage.js';
 
 // JSONC 字符串
 const jsonc = `{
@@ -17,17 +18,17 @@ console.log('Input JSONC:');
 console.log(jsonc);
 
 // 解析 JSONC
-const parsed = parseFromString(jsonc);
+const parsed = parseJSONC(jsonc);
 console.log('\nParsed:');
-console.log(toString(parsed));
+console.log(toJSONC(parsed));
 
 // 编码到 Wire 格式
-const wire = encode(parsed);
+const wire = encodeNode(parsed);
 console.log('\nEncoded Wire:');
 console.log(bytesToHex(wire));
 
 // 解码回 JSONC
-const jsoncOut = toJSONC(wire);
+const jsoncOut = decodeToJsonc(wire);
 console.log('\nDecoded to JSONC:');
 console.log(jsoncOut);
 

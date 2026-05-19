@@ -242,31 +242,31 @@ func (e *encoder) encodeNodeValue(val *ir.Value) (n uint32, err error) {
 	case ir.ValueTypeUint:
 		if tag.IsNull {
 		} else {
-			n, err = e.encodeUint64(uint64(val.Data.(uint)))
+			n, err = e.encodeU64(uint64(val.Data.(uint)))
 		}
 
 	case ir.ValueTypeUint8:
 		if tag.IsNull {
 		} else {
-			n, err = e.encodeUint64(uint64(val.Data.(uint8)))
+			n, err = e.encodeU64(uint64(val.Data.(uint8)))
 		}
 
 	case ir.ValueTypeUint16:
 		if tag.IsNull {
 		} else {
-			n, err = e.encodeUint64(uint64(val.Data.(uint16)))
+			n, err = e.encodeU64(uint64(val.Data.(uint16)))
 		}
 
 	case ir.ValueTypeUint32:
 		if tag.IsNull {
 		} else {
-			n, err = e.encodeUint64(uint64(val.Data.(uint32)))
+			n, err = e.encodeU64(uint64(val.Data.(uint32)))
 		}
 
 	case ir.ValueTypeUint64:
 		if tag.IsNull {
 		} else {
-			n, err = e.encodeUint64(val.Data.(uint64))
+			n, err = e.encodeU64(val.Data.(uint64))
 		}
 
 	case ir.ValueTypeFloat32:
@@ -454,7 +454,7 @@ func (e *encoder) encodeBool(v bool) (n uint32, err error) {
 	return e.encodeSimple(value)
 }
 
-func (e *encoder) encodeUint64(uv uint64) (n uint32, err error) {
+func (e *encoder) encodeU64(uv uint64) (n uint32, err error) {
 	return e.encodeInt(PositiveInt, uv)
 }
 

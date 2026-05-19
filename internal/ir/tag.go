@@ -503,7 +503,7 @@ func (t *Tag) Bytes() []byte {
 	}
 
 	if t.Size != 0 && !t.IsInherit {
-		encodeUint64(&bs, KSize, uint64(t.Size))
+		encodeU64(&bs, KSize, uint64(t.Size))
 	}
 
 	if t.Enum != "" && !t.IsInherit {
@@ -547,7 +547,7 @@ func (t *Tag) Bytes() []byte {
 	}
 
 	if t.Version != DefaultVersion && !t.IsInherit {
-		encodeUint64(&bs, KVersion, uint64(t.Version))
+		encodeU64(&bs, KVersion, uint64(t.Version))
 	}
 
 	if t.Mime != "" && !t.IsInherit {
@@ -651,7 +651,7 @@ func (t *Tag) Bytes() []byte {
 	}
 
 	if t.ChildSize != 0 {
-		encodeUint64(&bs, KChildSize, uint64(t.ChildSize))
+		encodeU64(&bs, KChildSize, uint64(t.ChildSize))
 	}
 
 	if t.ChildEnum != "" {
@@ -695,7 +695,7 @@ func (t *Tag) Bytes() []byte {
 	}
 
 	if t.ChildVersion != DefaultVersion {
-		encodeUint64(&bs, KChildVersion, uint64(t.ChildVersion))
+		encodeU64(&bs, KChildVersion, uint64(t.ChildVersion))
 	}
 
 	if t.ChildMime != "" {
@@ -735,7 +735,7 @@ const (
 	IntLen8Byte = IntLenMask
 )
 
-func encodeUint64(buf *bytes.Buffer, sign TagKey, uv uint64) {
+func encodeU64(buf *bytes.Buffer, sign TagKey, uv uint64) {
 	switch {
 	case uv <= Max1Byte:
 		sign |= 0

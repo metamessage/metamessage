@@ -188,7 +188,7 @@ class JsoncParser(private val tokens: List<JsoncToken>) {
             }
             "" to ""
         } else {
-            val result = tag.validateString(text)
+            val result = tag.validateStr(text)
             if (!result.valid) {
                 throw JsoncException(result.error ?: "String validation failed")
             }
@@ -387,7 +387,7 @@ class JsoncParser(private val tokens: List<JsoncToken>) {
                     0.0f to "0.0"
                 } else {
                     val value = text.toFloat()
-                    val result = tag.validateFloat32(value)
+                    val result = tag.validateF32(value)
                     if (!result.valid) {
                         throw JsoncException(result.error ?: "Float32 validation failed")
                     }
@@ -402,7 +402,7 @@ class JsoncParser(private val tokens: List<JsoncToken>) {
                     0.0 to "0.0"
                 } else {
                     val value = text.toDouble()
-                    val result = tag.validateFloat64(value)
+                    val result = tag.validateF64(value)
                     if (!result.valid) {
                         throw JsoncException(result.error ?: "Float64 validation failed")
                     }
@@ -425,7 +425,7 @@ class JsoncParser(private val tokens: List<JsoncToken>) {
                     0 to "0"
                 } else {
                     val value = text.toInt()
-                    val result = tag.validateInt(value)
+                    val result = tag.validateI(value)
                     if (!result.valid) throw JsoncException(result.error ?: "Int validation failed")
                     result.data to result.text
                 }
@@ -436,7 +436,7 @@ class JsoncParser(private val tokens: List<JsoncToken>) {
                     0.toByte() to "0"
                 } else {
                     val value = text.toByte()
-                    val result = tag.validateInt8(value)
+                    val result = tag.validateI8(value)
                     if (!result.valid) throw JsoncException(result.error ?: "Int8 validation failed")
                     result.data to result.text
                 }
@@ -447,7 +447,7 @@ class JsoncParser(private val tokens: List<JsoncToken>) {
                     0.toShort() to "0"
                 } else {
                     val value = text.toShort()
-                    val result = tag.validateInt16(value)
+                    val result = tag.validateI16(value)
                     if (!result.valid) throw JsoncException(result.error ?: "Int16 validation failed")
                     result.data to result.text
                 }
@@ -458,7 +458,7 @@ class JsoncParser(private val tokens: List<JsoncToken>) {
                     0 to "0"
                 } else {
                     val value = text.toInt()
-                    val result = tag.validateInt32(value)
+                    val result = tag.validateI32(value)
                     if (!result.valid) throw JsoncException(result.error ?: "Int32 validation failed")
                     result.data to result.text
                 }
@@ -469,7 +469,7 @@ class JsoncParser(private val tokens: List<JsoncToken>) {
                     0L to "0"
                 } else {
                     val value = text.toLong()
-                    val result = tag.validateInt64(value)
+                    val result = tag.validateI64(value)
                     if (!result.valid) throw JsoncException(result.error ?: "Int64 validation failed")
                     result.data to result.text
                 }
@@ -480,7 +480,7 @@ class JsoncParser(private val tokens: List<JsoncToken>) {
                     BigInteger.ZERO to "0"
                 } else {
                     val value = BigInteger(text)
-                    val result = tag.validateBigInt(value)
+                    val result = tag.validateBigint(value)
                     if (!result.valid) throw JsoncException(result.error ?: "BigInt validation failed")
                     result.data to result.text
                 }
@@ -501,7 +501,7 @@ class JsoncParser(private val tokens: List<JsoncToken>) {
                     0 to "0"
                 } else {
                     val value = text.toInt()
-                    val result = tag.validateInt(value)
+                    val result = tag.validateI(value)
                     if (!result.valid) throw JsoncException(result.error ?: "Int validation failed")
                     result.data to result.text
                 }
@@ -512,7 +512,7 @@ class JsoncParser(private val tokens: List<JsoncToken>) {
                     0.toByte() to "0"
                 } else {
                     val value = text.toByte()
-                    val result = tag.validateInt8(value)
+                    val result = tag.validateI8(value)
                     if (!result.valid) throw JsoncException(result.error ?: "Int8 validation failed")
                     result.data to result.text
                 }
@@ -523,7 +523,7 @@ class JsoncParser(private val tokens: List<JsoncToken>) {
                     0.toShort() to "0"
                 } else {
                     val value = text.toShort()
-                    val result = tag.validateInt16(value)
+                    val result = tag.validateI16(value)
                     if (!result.valid) throw JsoncException(result.error ?: "Int16 validation failed")
                     result.data to result.text
                 }
@@ -534,7 +534,7 @@ class JsoncParser(private val tokens: List<JsoncToken>) {
                     0 to "0"
                 } else {
                     val value = text.toInt()
-                    val result = tag.validateInt32(value)
+                    val result = tag.validateI32(value)
                     if (!result.valid) throw JsoncException(result.error ?: "Int32 validation failed")
                     result.data to result.text
                 }
@@ -545,7 +545,7 @@ class JsoncParser(private val tokens: List<JsoncToken>) {
                     0L to "0"
                 } else {
                     val value = text.toLong()
-                    val result = tag.validateInt64(value)
+                    val result = tag.validateI64(value)
                     if (!result.valid) throw JsoncException(result.error ?: "Int64 validation failed")
                     result.data to result.text
                 }
@@ -556,7 +556,7 @@ class JsoncParser(private val tokens: List<JsoncToken>) {
                     0L to "0"
                 } else {
                     val value = text.toLong()
-                    val result = tag.validateUint(value)
+                    val result = tag.validateU(value)
                     if (!result.valid) throw JsoncException(result.error ?: "Uint validation failed")
                     result.data to result.text
                 }
@@ -567,7 +567,7 @@ class JsoncParser(private val tokens: List<JsoncToken>) {
                     0.toShort() to "0"
                 } else {
                     val value = text.toShort()
-                    val result = tag.validateUint8(value)
+                    val result = tag.validateU8(value)
                     if (!result.valid) throw JsoncException(result.error ?: "Uint8 validation failed")
                     result.data to result.text
                 }
@@ -578,7 +578,7 @@ class JsoncParser(private val tokens: List<JsoncToken>) {
                     0 to "0"
                 } else {
                     val value = text.toInt()
-                    val result = tag.validateUint16(value)
+                    val result = tag.validateU16(value)
                     if (!result.valid) throw JsoncException(result.error ?: "Uint16 validation failed")
                     result.data to result.text
                 }
@@ -589,7 +589,7 @@ class JsoncParser(private val tokens: List<JsoncToken>) {
                     0L to "0"
                 } else {
                     val value = text.toLong()
-                    val result = tag.validateUint32(value)
+                    val result = tag.validateU32(value)
                     if (!result.valid) throw JsoncException(result.error ?: "Uint32 validation failed")
                     result.data to result.text
                 }
@@ -600,7 +600,7 @@ class JsoncParser(private val tokens: List<JsoncToken>) {
                     BigInteger.ZERO to "0"
                 } else {
                     val value = BigInteger(text)
-                    val result = tag.validateUint64(value)
+                    val result = tag.validateU64(value)
                     if (!result.valid) throw JsoncException(result.error ?: "Uint64 validation failed")
                     result.data to result.text
                 }
@@ -611,7 +611,7 @@ class JsoncParser(private val tokens: List<JsoncToken>) {
                     BigInteger.ZERO to "0"
                 } else {
                     val value = BigInteger(text)
-                    val result = tag.validateBigInt(value)
+                    val result = tag.validateBigint(value)
                     if (!result.valid) throw JsoncException(result.error ?: "BigInt validation failed")
                     result.data to result.text
                 }
@@ -699,7 +699,7 @@ class JsoncParser(private val tokens: List<JsoncToken>) {
                 }
             }
             ValueType.STRUCT -> {
-                val result = tag.validateStruct()
+                val result = tag.validateObj()
                 if (!result.valid) {
                     throw JsoncException(result.error ?: "Struct validation failed")
                 }
@@ -779,13 +779,13 @@ class JsoncParser(private val tokens: List<JsoncToken>) {
 
         when (tag.type) {
             ValueType.ARRAY -> {
-                val result = tag.validateArray(arr.items)
+                val result = tag.validateArr(arr.items)
                 if (!result.valid) {
                     throw JsoncException(result.error ?: "Array validation failed")
                 }
             }
             ValueType.SLICE -> {
-                val result = tag.validateSlice(arr.items)
+                val result = tag.validateVec(arr.items)
                 if (!result.valid) {
                     throw JsoncException(result.error ?: "Slice validation failed")
                 }
@@ -839,7 +839,7 @@ class JsoncParser(private val tokens: List<JsoncToken>) {
                         "f64" -> ValueType.FLOAT64
                         "bool" -> ValueType.BOOL
                         "bytes" -> ValueType.BYTES
-                        "bi" -> ValueType.BIGINT
+                        "bigint" -> ValueType.BIGINT
                         "datetime" -> ValueType.DATETIME
                         "date" -> ValueType.DATE
                         "time" -> ValueType.TIME
@@ -850,7 +850,7 @@ class JsoncParser(private val tokens: List<JsoncToken>) {
                         "email" -> ValueType.EMAIL
                         "enum" -> ValueType.ENUM
                         "arr" -> ValueType.ARRAY
-                        "slice" -> ValueType.SLICE
+                        "vec" -> ValueType.SLICE
                         "obj" -> ValueType.STRUCT
                         "map" -> ValueType.MAP
                         else -> ValueType.UNKNOWN

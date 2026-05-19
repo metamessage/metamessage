@@ -36,7 +36,11 @@ MetaMessage (mm) is a structured data exchange protocol. It is self-describing, 
 
 MetaMessage is naturally suited for AI understanding and interaction, solving ambiguity and imprecision in data. It replaces traditional API docs, verbal format agreements, and manual version sync by making data self-explanatory and independently evolvable.
 
-Note: Currently in development and testing, not recommended for production use
+Note:
+
+- Encoding currently supports up to 65535 bytes (64KB). This limit may be extended once full support for document types is implemented.
+- The project is under active development and testing, and is not yet recommended for production use.
+- APIs and behavior may still change, so please track version updates.
 
 [meta-message](https://github.com/metamessage/metamessage)
 
@@ -65,38 +69,40 @@ Note: Currently in development and testing, not recommended for production use
 
 ## Data Types
 
+Define data types using the tag `type=`. The format is `type=typeIdentifier`, e.g. `type=i` means integer.
+
 - doc: Encoding supports up to 65535 bytes (64KB). This limit may be extended after full support for document types
-- slice: Arrays and slices do not allow composite types
-- array: arr
-- struct:
+- vec: dynamic arrays/slices, do not allow composite types
+- arr: array, fixed length, do not allow composite types
+- obj: object/struct, composite structure, corresponds to multi-language struct/object
 - map: Map keys must be strings, and values must not be composite types
-- string: str
-- bytes:
-- bool:
-- int: i; integer literals must not include a decimal point
-- int8: i8
-- int16: i16
-- int32: i32
-- int64: i64
-- uint: u
-- uint8: u8
-- uint16: u16
-- uint32: u32
-- uint64: u64
-- float32: f32; floats do not support NaN / Inf / -0; float literals must include a decimal point, e.g., 0.0
-- float64: f64
-- bigint: bi
+- str: string
+- bytes: byte array
+- bool: boolean
+- i: int; integer literals must not include a decimal point
+- i8: int8
+- i16: int16
+- i32: int32
+- i64: int64
+- u: uint
+- u8: uint8
+- u16: uint16
+- u32: uint32
+- u64: uint64
+- f32: float32; floats do not support NaN / Inf / -0; float literals must include a decimal point, e.g., 0.0
+- f64: float64; floats do not support NaN / Inf / -0; float literals must include a decimal point, e.g., 0.0
+- bigint: bigint
 - datetime: default UTC 1970-01-01 00:00:00
 - date: 1970-01-01
 - time: 00:00:00
-- uuid
-- decimal
-- ip
-- url
-- email
-- enum
-- image
-- video
+- uuid: unique identifier
+- decimal: decimal string, must be passed as a string
+- ip: IP, supports IPv4/IPv6
+- url: URL, must be a valid URL
+- email: email, must be a valid email address
+- enum: enum values are strings separated by | 
+- image: image, underlying bytes
+- video: video, underlying bytes
 
 ## Tags
 
@@ -271,12 +277,12 @@ func main() {
     fmt.Printf("Decoded: %+v\n", decoded)
 
     jsoncStr := `{"name": "Bob", "age": 25}`
-    data2, err := mm.EncodeFromJSONC(jsoncStr)
+    data2, err := mm.EncodeFromJsonc(jsoncStr)
     if err != nil {
         panic(err)
     }
 
-    jsoncOut, err := mm.DecodeToJSONC(data2)
+    jsoncOut, err := mm.DecodeToJsonc(data2)
     if err != nil {
         panic(err)
     }
@@ -288,10 +294,10 @@ func main() {
 
 - `NewEncoder(w io.Writer) Encoder`: create encoder
 - `EncodeFromValue(in any) ([]byte, error)`: encode from struct
-- `EncodeFromJSONC(in string) ([]byte, error)`: encode from JSONC string
+- `EncodeFromJsonc(in string) ([]byte, error)`: encode from JSONC string
 - `NewDecoder(r io.Reader) Decoder`: create decoder
 - `DecodeToValue(in []byte, out any) error`: decode to struct
-- `DecodeToJSONC(in []byte) (string, error)`: decode to JSONC string
+- `DecodeToJsonc(in []byte) (string, error)`: decode to JSONC string
 
 ### Other Language Examples
 

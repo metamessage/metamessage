@@ -1,5 +1,5 @@
 using Xunit;
-using static MetaMessage.Mm.MetaMessage;
+using static MetaMessage.Core.MetaMessage;
 
 namespace MetaMessageTests;
 
@@ -8,7 +8,6 @@ public class MetaMessageTest
     [Fact]
     public void TestEncodeDecodeBasicTypes()
     {
-        // 测试基本类型
         var testObj = new TestBasicTypes
         {
             BoolValue = true,
@@ -33,7 +32,6 @@ public class MetaMessageTest
     [Fact]
     public void TestEncodeDecodeNullableTypes()
     {
-        // 测试可空类型
         var testObj = new TestNullableTypes
         {
             NullableBool = null,
@@ -50,9 +48,26 @@ public class MetaMessageTest
     }
 
     [Fact]
+    public void TestEncodeDecodeNullableTypesWithValues()
+    {
+        var testObj = new TestNullableTypes
+        {
+            NullableBool = true,
+            NullableInt = 42,
+            NullableString = "hello"
+        };
+
+        var encoded = Encode(testObj);
+        var decoded = Decode<TestNullableTypes>(encoded);
+
+        Assert.True(decoded.NullableBool);
+        Assert.Equal(42, decoded.NullableInt);
+        Assert.Equal("hello", decoded.NullableString);
+    }
+
+    [Fact]
     public void TestEncodeDecodeArrayTypes()
     {
-        // 测试数组类型
         var testObj = new TestArrayTypes
         {
             IntArray = new int[] { 1, 2, 3, 4, 5 },
@@ -76,9 +91,24 @@ public class MetaMessageTest
     }
 
     [Fact]
+    public void TestEncodeDecodeEmptyArrayTypes()
+    {
+        var testObj = new TestArrayTypes
+        {
+            IntArray = Array.Empty<int>(),
+            StringList = new List<string>()
+        };
+
+        var encoded = Encode(testObj);
+        var decoded = Decode<TestArrayTypes>(encoded);
+
+        Assert.Empty(decoded.IntArray);
+        Assert.Empty(decoded.StringList);
+    }
+
+    [Fact]
     public void TestEncodeDecodeStructTypes()
     {
-        // 测试结构体类型
         var testObj = new TestStructTypes
         {
             Name = "Test",
@@ -99,7 +129,6 @@ public class MetaMessageTest
     [Fact]
     public void TestEncodeDecodeDateTimeTypes()
     {
-        // 测试日期时间类型
         var testObj = new TestDateTimeTypes
         {
             DateTimeValue = DateTime.Now
@@ -108,14 +137,12 @@ public class MetaMessageTest
         var encoded = Encode(testObj);
         var decoded = Decode<TestDateTimeTypes>(encoded);
 
-        // 允许一定的时间误差
         Assert.InRange(decoded.DateTimeValue, testObj.DateTimeValue.AddSeconds(-1), testObj.DateTimeValue.AddSeconds(1));
     }
 
     [Fact]
     public void TestEncodeDecodeEnumTypes()
     {
-        // 测试枚举类型
         var testObj = new TestEnumTypes
         {
             EnumValue = TestEnum.Value2
@@ -130,7 +157,6 @@ public class MetaMessageTest
     [Fact]
     public void TestEncodeDecodeBytesTypes()
     {
-        // 测试字节数组类型
         var testObj = new TestBytesTypes
         {
             BytesValue = new byte[] { 1, 2, 3, 4, 5 }
@@ -149,7 +175,6 @@ public class MetaMessageTest
     [Fact]
     public void TestRoundtripAllTypes()
     {
-        // 测试所有类型的往返编码解码
         var testObj = new TestAllTypes
         {
             BoolValue = true,
@@ -190,7 +215,6 @@ public class MetaMessageTest
         Assert.Equal(testObj.Nested.Value, decoded.Nested.Value);
     }
 
-    // 测试类定义
     public class TestBasicTypes
     {
         public bool BoolValue { get; set; }

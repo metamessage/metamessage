@@ -317,7 +317,7 @@ export class Tag {
     return mime.length;
   }
 
-  private encodeUint64(buf: number[], sign: number, uv: bigint): void {
+  private encodeU64(buf: number[], sign: number, uv: bigint): void {
     const uvNum = Number(uv);
     if (uv <= Max1Byte) {
       sign |= 0;
@@ -510,7 +510,7 @@ export class Tag {
     }
 
     if (this.size !== 0n && !this.isInherit) {
-      this.encodeUint64(buf, KSize, this.size);
+      this.encodeU64(buf, KSize, this.size);
     }
 
     if (this.enum !== '' && !this.isInherit) {
@@ -558,7 +558,7 @@ export class Tag {
     }
 
     if (this.version !== 0 && !this.isInherit) {
-      this.encodeUint64(buf, KVersion, BigInt(this.version));
+      this.encodeU64(buf, KVersion, BigInt(this.version));
     }
 
     if (this.mime !== '' && !this.isInherit) {
@@ -674,7 +674,7 @@ export class Tag {
     }
 
     if (this.childSize !== 0n) {
-      this.encodeUint64(buf, KChildSize, BigInt(this.childSize));
+      this.encodeU64(buf, KChildSize, BigInt(this.childSize));
     }
 
     if (this.childEnum !== '') {
@@ -724,7 +724,7 @@ export class Tag {
     }
 
     if (this.childVersion !== 0) {
-      this.encodeUint64(buf, KChildVersion, BigInt(this.childVersion));
+      this.encodeU64(buf, KChildVersion, BigInt(this.childVersion));
     }
 
     if (this.childMime !== '') {
@@ -740,7 +740,7 @@ export class Tag {
     return new Uint8Array(buf);
   }
 
-  validateString(val: string): ValidationResult {
+  validateStr(val: string): ValidationResult {
     if (val === '') {
       if (this.allowEmpty) {
         return { valid: true, data: val, text: val };
@@ -880,7 +880,7 @@ export class Tag {
     return { valid: true, data: val, text: val ? 'true' : 'false' };
   }
 
-  validateInt(val: bigint): ValidationResult {
+  validateI(val: bigint): ValidationResult {
     if (val === 0n) {
       if (this.allowEmpty) {
         return { valid: true, data: val, text: '0' };
@@ -921,7 +921,7 @@ export class Tag {
     return { valid: true, data: val, text: val.toString() };
   }
 
-  validateInt8(val: number): ValidationResult {
+  validateI8(val: number): ValidationResult {
     if (val === 0) {
       if (this.allowEmpty) {
         return { valid: true, data: val, text: '0' };
@@ -962,7 +962,7 @@ export class Tag {
     return { valid: true, data: val, text: val.toString() };
   }
 
-  validateInt16(val: number): ValidationResult {
+  validateI16(val: number): ValidationResult {
     if (val === 0) {
       if (this.allowEmpty) {
         return { valid: true, data: val, text: '0' };
@@ -1003,7 +1003,7 @@ export class Tag {
     return { valid: true, data: val, text: val.toString() };
   }
 
-  validateInt32(val: number): ValidationResult {
+  validateI32(val: number): ValidationResult {
     if (val === 0) {
       if (this.allowEmpty) {
         return { valid: true, data: val, text: '0' };
@@ -1044,7 +1044,7 @@ export class Tag {
     return { valid: true, data: val, text: val.toString() };
   }
 
-  validateInt64(val: number): ValidationResult {
+  validateI64(val: number): ValidationResult {
     if (val === 0) {
       if (this.allowEmpty) {
         return { valid: true, data: val, text: '0' };
@@ -1079,7 +1079,7 @@ export class Tag {
     return { valid: true, data: val, text: val.toString() };
   }
 
-  validateUint(val: number): ValidationResult {
+  validateU(val: number): ValidationResult {
     if (val === 0) {
       if (this.allowEmpty) {
         return { valid: true, data: val, text: '0' };
@@ -1120,7 +1120,7 @@ export class Tag {
     return { valid: true, data: val, text: val.toString() };
   }
 
-  validateUint8(val: number): ValidationResult {
+  validateU8(val: number): ValidationResult {
     if (val === 0) {
       if (this.allowEmpty) {
         return { valid: true, data: val, text: '0' };
@@ -1161,7 +1161,7 @@ export class Tag {
     return { valid: true, data: val, text: val.toString() };
   }
 
-  validateUint16(val: number): ValidationResult {
+  validateU16(val: number): ValidationResult {
     if (val === 0) {
       if (this.allowEmpty) {
         return { valid: true, data: val, text: '0' };
@@ -1205,7 +1205,7 @@ export class Tag {
     return { valid: true, data: val, text: val.toString() };
   }
 
-  validateUint32(val: number): ValidationResult {
+  validateU32(val: number): ValidationResult {
     if (val === 0) {
       if (this.allowEmpty) {
         return { valid: true, data: val, text: '0' };
@@ -1249,7 +1249,7 @@ export class Tag {
     return { valid: true, data: val, text: val.toString() };
   }
 
-  validateUint64(val: number): ValidationResult {
+  validateU64(val: number): ValidationResult {
     if (val === 0) {
       if (this.allowEmpty) {
         return { valid: true, data: val, text: '0' };
@@ -1287,7 +1287,7 @@ export class Tag {
     return { valid: true, data: val, text: val.toString() };
   }
 
-  validateFloat32(val: number): ValidationResult {
+  validateF32(val: number): ValidationResult {
     if (val === 0.0) {
       if (this.allowEmpty) {
         return { valid: true, data: val, text: '0.0' };
@@ -1322,7 +1322,7 @@ export class Tag {
     return { valid: true, data: val, text: val.toString() };
   }
 
-  validateFloat64(val: number): ValidationResult {
+  validateF64(val: number): ValidationResult {
     if (val === 0.0) {
       if (this.allowEmpty) {
         return { valid: true, data: val, text: '0.0' };
@@ -1355,7 +1355,7 @@ export class Tag {
     return { valid: true, data: val, text: val.toString() };
   }
 
-  validateBigInt(val: bigint): ValidationResult {
+  validateBigint(val: bigint): ValidationResult {
     if (val === BigInt(0)) {
       if (this.allowEmpty) {
         return { valid: true, data: val, text: '0' };
@@ -1667,7 +1667,7 @@ export class Tag {
     };
   }
 
-  validateStruct(): ValidationResult {
+  validateObj(): ValidationResult {
     if (this.desc && this.desc.length > 65535) {
       return { valid: false, error: 'desc length exceeds 65535 bytes' };
     }
@@ -1697,7 +1697,7 @@ export class Tag {
     return { valid: true };
   }
 
-  validateSlice(value: any[]): ValidationResult {
+  validateVec(value: any[]): ValidationResult {
     if (this.desc && this.desc.length > 65535) {
       return { valid: false, error: 'desc length exceeds 65535 bytes' };
     }
@@ -1726,7 +1726,7 @@ export class Tag {
         if (seen.has(key)) {
           return {
             valid: false,
-            error: `slice duplicate value found: ${data}, index: ${i}`,
+            error: `vec duplicate value found: ${data}, index: ${i}`,
           };
         }
         seen.add(key);
@@ -1736,7 +1736,7 @@ export class Tag {
     return { valid: true };
   }
 
-  validateArray(value: any[]): ValidationResult {
+  validateArr(value: any[]): ValidationResult {
     if (this.desc && this.desc.length > 65535) {
       return { valid: false, error: 'desc length exceeds 65535 bytes' };
     }

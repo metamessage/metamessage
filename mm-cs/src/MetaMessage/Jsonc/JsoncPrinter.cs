@@ -6,7 +6,7 @@ public class JsoncPrinter
     private readonly int _indentSize;
     private int _currentIndent;
 
-    public JsoncPrinter(bool prettyPrint = true, int indentSize = 2)
+    public JsoncPrinter(bool prettyPrint = true, int indentSize = 1)
     {
         _prettyPrint = prettyPrint;
         _indentSize = indentSize;
@@ -251,7 +251,7 @@ public class JsoncPrinter
     {
         for (int i = 0; i < _currentIndent; i++)
         {
-            sb.Append(' ');
+            sb.Append('\t');
         }
     }
 

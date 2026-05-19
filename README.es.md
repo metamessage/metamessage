@@ -36,7 +36,11 @@ MetaMessage (mm) es un protocolo de intercambio de datos estructurados. Es autod
 
 MetaMessage es naturalmente adecuado para la comprensión e interacción de IA, resolviendo ambigüedades e imprecisiones. Reemplaza la documentación de API tradicional, los acuerdos de formato verbales y la sincronización manual de versiones, al hacer que los datos sean autoexplicativos y evolucionen de manera independiente.
 
-Nota: Actualmente en desarrollo y pruebas, no se recomienda para uso en producción
+Nota:
+
+- La codificación admite actualmente hasta 65535 bytes (64KB). Este límite puede ampliarse cuando se implemente el soporte completo de tipos de documento.
+- El proyecto está en desarrollo y pruebas activas, y aún no se recomienda su uso en producción.
+- Las API y el comportamiento aún pueden cambiar, por lo que conviene seguir las actualizaciones de versión.
 
 [meta-message](https://github.com/metamessage/metamessage)
 
@@ -69,38 +73,40 @@ Nota: Actualmente en desarrollo y pruebas, no se recomienda para uso en producci
 
 ## Tipos de datos
 
-- doc:
-- slice:
-- array: arr
-- struct:
-- map:
-- string: str
-- bytes:
-- bool:
-- int: i
-- int8: i8
-- int16: i16
-- int32: i32
-- int64: i64
-- uint: u
-- uint8: u8
-- uint16: u16
-- uint32: u32
-- uint64: u64
-- float32: f32
-- float64: f64
-- bigint: bi
+Defina tipos de datos usando la etiqueta `type=`. El formato es `type=typeIdentifier`, p. ej. `type=i` significa entero.
+
+- doc: La codificación admite hasta 65535 bytes (64KB). Este límite puede ampliarse después del soporte completo para tipos de documento
+- vec: arreglos/slices dinámicos, no permiten tipos compuestos
+- arr: array, longitud fija, no permite tipos compuestos
+- obj: objeto/estructura, estructura compuesta, corresponde a struct/object multilenguaje
+- map: Las claves de map deben ser cadenas y los valores no deben ser tipos compuestos
+- str: string
+- bytes: arreglo de bytes
+- bool: booleano
+- i: int; los literales enteros no deben incluir un punto decimal
+- i8: i8
+- i16: i16
+- i32: i32
+- i64: i64
+- u: uint
+- u8: uint8
+- u16: uint16
+- u32: uint32
+- u64: uint64
+- f32: float32; los floats no admiten NaN/Inf/-0; los literales float deben incluir un punto decimal, por ejemplo 0.0
+- f64: float64; los floats no admiten NaN/Inf/-0; los literales float deben incluir un punto decimal, por ejemplo 0.0
+- bigint: bigint
 - datetime: UTC por defecto 1970-01-01 00:00:00
 - date: 1970-01-01
 - time: 00:00:00
-- uuid
-- decimal
-- ip
-- url
-- email
-- enum
-- image
-- video
+- uuid: identificador único
+- decimal: decimal, debe pasarse como cadena
+- ip: IP, admite IPv4/IPv6
+- url: URL, debe ser una URL válida
+- email: correo electrónico, debe ser válido
+- enum: enum, valores son cadenas separadas por |
+- image: imagen, bytes subyacentes
+- video: video, bytes subyacentes
 
 ## Etiquetas
 
@@ -259,12 +265,12 @@ func main() {
     fmt.Printf("Decoded: %+v\n", decoded)
 
     jsoncStr := `{"name": "Bob", "age": 25}`
-    data2, err := mm.EncodeFromJSONC(jsoncStr)
+    data2, err := mm.EncodeFromJsonc(jsoncStr)
     if err != nil {
         panic(err)
     }
 
-    jsoncOut, err := mm.DecodeToJSONC(data2)
+    jsoncOut, err := mm.DecodeToJsonc(data2)
     if err != nil {
         panic(err)
     }
@@ -276,10 +282,10 @@ func main() {
 
 - `NewEncoder(w io.Writer) Encoder`: crea un codificador
 - `EncodeFromValue(in any) ([]byte, error)`: codificar desde struct
-- `EncodeFromJSONC(in string) ([]byte, error)`: codificar desde cadena JSONC
+- `EncodeFromJsonc(in string) ([]byte, error)`: codificar desde cadena JSONC
 - `NewDecoder(r io.Reader) Decoder`: crea un decodificador
 - `DecodeToValue(in []byte, out any) error`: decodificar a struct
-- `DecodeToJSONC(in []byte) (string, error)`: decodificar a cadena JSONC
+- `DecodeToJsonc(in []byte) (string, error)`: decodificar a cadena JSONC
 
 ### Ejemplos de otros lenguajes
 

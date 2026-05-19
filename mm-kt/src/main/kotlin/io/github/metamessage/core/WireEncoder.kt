@@ -34,7 +34,7 @@ class WireEncoder {
         return encodeUintWithPrefix(Prefix.NEGATIVE_INT, uv)
     }
 
-    fun encodeUint64(uv: Long): Int {
+    fun encodeU64(uv: Long): Int {
         require(uv >= 0) { "expected unsigned" }
         return encodeUintWithPrefix(Prefix.POSITIVE_INT, uv)
     }

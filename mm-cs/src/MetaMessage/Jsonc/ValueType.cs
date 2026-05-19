@@ -50,7 +50,7 @@ public static class ValueTypeConstants
     public const string UnknownStr = "unknown";
     public const string DocStr = "doc";
     public const string ArrayStr = "arr";
-    public const string SliceStr = "slice";
+    public const string SliceStr = "vec";
     public const string ObjectStr = "obj";
     public const string MapStr = "map";
     public const string StringStr = "str";
@@ -68,7 +68,7 @@ public static class ValueTypeConstants
     public const string Uint64Str = "u64";
     public const string Float32Str = "f32";
     public const string Float64Str = "f64";
-    public const string BigIntStr = "bi";
+    public const string BigIntStr = "bigint";
     public const string DateTimeStr = "datetime";
     public const string DateStr = "date";
     public const string TimeStr = "time";

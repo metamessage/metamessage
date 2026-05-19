@@ -342,7 +342,7 @@ class Tag(
         }
         if (min.isNotEmpty() && !isInherit) writeShortString(w, TagKey.K_MIN, min)
         if (max.isNotEmpty() && !isInherit) writeShortString(w, TagKey.K_MAX, max)
-        if (size != 0 && !isInherit) encodeUint64(w, TagKey.K_SIZE, size.toLong())
+        if (size != 0 && !isInherit) encodeU64(w, TagKey.K_SIZE, size.toLong())
         if (enum.isNotEmpty() && !isInherit) writeSizedString(w, TagKey.K_ENUM, enum)
         if (pattern.isNotEmpty() && !isInherit) writeShortString(w, TagKey.K_PATTERN, pattern)
         if (location != 0 && !isInherit) {
@@ -351,7 +351,7 @@ class Tag(
             w.writeAscii(v)
         }
         if (version != DEFAULT_VERSION && !isInherit)
-                encodeUint64(w, TagKey.K_VERSION, version.toLong())
+                encodeU64(w, TagKey.K_VERSION, version.toLong())
         if (mime.isNotEmpty() && !isInherit) {
             val m = Mime.parse(mime)
             if (m < 7) {
@@ -375,7 +375,7 @@ class Tag(
         if (childDefault.isNotEmpty()) writeShortString(w, TagKey.K_CHILD_DEFAULT, childDefault)
         if (childMin.isNotEmpty()) writeShortString(w, TagKey.K_CHILD_MIN, childMin)
         if (childMax.isNotEmpty()) writeShortString(w, TagKey.K_CHILD_MAX, childMax)
-        if (childSize != 0) encodeUint64(w, TagKey.K_CHILD_SIZE, childSize.toLong())
+        if (childSize != 0) encodeU64(w, TagKey.K_CHILD_SIZE, childSize.toLong())
         if (childEnum.isNotEmpty()) writeSizedString(w, TagKey.K_CHILD_ENUM, childEnum)
         if (childPattern.isNotEmpty()) writeShortString(w, TagKey.K_CHILD_PATTERN, childPattern)
         if (childLocation != 0) {
@@ -384,7 +384,7 @@ class Tag(
             w.writeAscii(v)
         }
         if (childVersion != DEFAULT_VERSION)
-                encodeUint64(w, TagKey.K_CHILD_VERSION, childVersion.toLong())
+                encodeU64(w, TagKey.K_CHILD_VERSION, childVersion.toLong())
         if (childMime.isNotEmpty()) {
             val l = childMime.length
             if (l < 7) {
@@ -463,7 +463,7 @@ class Tag(
         }
     }
 
-    private fun encodeUint64(buf: TagByteWriter, sign: Int, uv: Long) {
+    private fun encodeU64(buf: TagByteWriter, sign: Int, uv: Long) {
         require(uv >= 0) { "unsigned expected" }
         when {
             uv <= WireConstants.MAX_1 -> {
@@ -958,7 +958,7 @@ class Tag(
             val text: String? = null
     )
 
-    fun validateArray(value: List<*>): ValidationResult {
+    fun validateArr(value: List<*>): ValidationResult {
         if (desc.length > 65535) {
             return ValidationResult(false, "desc length exceeds 65535 bytes")
         }
@@ -994,7 +994,7 @@ class Tag(
         return ValidationResult(true, data = value, text = value.toString())
     }
 
-    fun validateStruct(): ValidationResult {
+    fun validateObj(): ValidationResult {
         if (desc.length > 65535) {
             return ValidationResult(false, "desc length exceeds 65535 bytes")
         }
@@ -1018,7 +1018,7 @@ class Tag(
         return ValidationResult(true)
     }
 
-    fun validateString(value: String): ValidationResult {
+    fun validateStr(value: String): ValidationResult {
         if (value.isEmpty()) {
             if (allowEmpty) {
                 return ValidationResult(true, data = value, text = value)
@@ -1152,7 +1152,7 @@ class Tag(
         return ValidationResult(true, data = value, text = value.toString())
     }
 
-    fun validateSlice(value: List<*>): ValidationResult {
+    fun validateVec(value: List<*>): ValidationResult {
         if (desc.length > 65535) {
             return ValidationResult(false, "desc length exceeds 65535 bytes")
         }
@@ -1184,7 +1184,7 @@ class Tag(
         return ValidationResult(true)
     }
 
-    fun validateInt(value: Int): ValidationResult {
+    fun validateI(value: Int): ValidationResult {
         if (value == 0) {
             if (allowEmpty) {
                 return ValidationResult(true, data = value, text = "0")
@@ -1225,7 +1225,7 @@ class Tag(
         return ValidationResult(true, data = value, text = value.toString())
     }
 
-    fun validateInt8(value: Byte): ValidationResult {
+    fun validateI8(value: Byte): ValidationResult {
         if (value == 0.toByte()) {
             if (allowEmpty) {
                 return ValidationResult(true, data = value, text = "0")
@@ -1278,7 +1278,7 @@ class Tag(
         return ValidationResult(true, data = value, text = value.toString())
     }
 
-    fun validateInt16(value: Short): ValidationResult {
+    fun validateI16(value: Short): ValidationResult {
         if (value == 0.toShort()) {
             if (allowEmpty) {
                 return ValidationResult(true, data = value, text = "0")
@@ -1319,7 +1319,7 @@ class Tag(
         return ValidationResult(true, data = value, text = value.toString())
     }
 
-    fun validateInt32(value: Int): ValidationResult {
+    fun validateI32(value: Int): ValidationResult {
         if (value == 0) {
             if (allowEmpty) {
                 return ValidationResult(true, data = value, text = "0")
@@ -1360,7 +1360,7 @@ class Tag(
         return ValidationResult(true, data = value, text = value.toString())
     }
 
-    fun validateInt64(value: Long): ValidationResult {
+    fun validateI64(value: Long): ValidationResult {
         if (value == 0L) {
             if (allowEmpty) {
                 return ValidationResult(true, data = value, text = "0")
@@ -1399,7 +1399,7 @@ class Tag(
         return ValidationResult(true, data = value, text = value.toString())
     }
 
-    fun validateUint(value: Long): ValidationResult {
+    fun validateU(value: Long): ValidationResult {
         if (value == 0L) {
             if (allowEmpty) {
                 return ValidationResult(true, data = value, text = "0")
@@ -1446,7 +1446,7 @@ class Tag(
         return ValidationResult(true, data = value, text = value.toString())
     }
 
-    fun validateUint8(value: Short): ValidationResult {
+    fun validateU8(value: Short): ValidationResult {
         if (value == 0.toShort()) {
             if (allowEmpty) {
                 return ValidationResult(true, data = value, text = "0")
@@ -1493,7 +1493,7 @@ class Tag(
         return ValidationResult(true, data = value, text = value.toString())
     }
 
-    fun validateUint16(value: Int): ValidationResult {
+    fun validateU16(value: Int): ValidationResult {
         if (value == 0) {
             if (allowEmpty) {
                 return ValidationResult(true, data = value, text = "0")
@@ -1540,7 +1540,7 @@ class Tag(
         return ValidationResult(true, data = value, text = value.toString())
     }
 
-    fun validateUint32(value: Long): ValidationResult {
+    fun validateU32(value: Long): ValidationResult {
         if (value == 0L) {
             if (allowEmpty) {
                 return ValidationResult(true, data = value, text = "0")
@@ -1587,7 +1587,7 @@ class Tag(
         return ValidationResult(true, data = value, text = value.toString())
     }
 
-    fun validateUint64(value: BigInteger): ValidationResult {
+    fun validateU64(value: BigInteger): ValidationResult {
         val zero = BigInteger.ZERO
 
         if (value == zero) {
@@ -1632,7 +1632,7 @@ class Tag(
         return ValidationResult(true, data = value, text = value.toString())
     }
 
-    fun validateFloat32(value: Float): ValidationResult {
+    fun validateF32(value: Float): ValidationResult {
         if (value == 0.0f) {
             if (allowEmpty) {
                 return ValidationResult(true, data = value, text = "0.0")
@@ -1673,7 +1673,7 @@ class Tag(
         return ValidationResult(true, data = value, text = value.toString())
     }
 
-    fun validateFloat64(value: Double): ValidationResult {
+    fun validateF64(value: Double): ValidationResult {
         if (value == 0.0) {
             if (allowEmpty) {
                 return ValidationResult(true, data = value, text = "0.0")
@@ -1712,7 +1712,7 @@ class Tag(
         return ValidationResult(true, data = value, text = value.toString())
     }
 
-    fun validateBigInt(value: BigInteger): ValidationResult {
+    fun validateBigint(value: BigInteger): ValidationResult {
         val zero = BigInteger.ZERO
 
         if (value == zero) {

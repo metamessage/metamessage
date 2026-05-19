@@ -36,7 +36,11 @@ MetaMessage (mm) là một giao thức trao đổi dữ liệu có cấu trúc. 
 
 MetaMessage tự nhiên phù hợp với hiểu biết và tương tác AI, giải quyết sự mơ hồ và thiếu chính xác. Nó thay thế tài liệu API truyền thống, thỏa thuận định dạng bằng lời và đồng bộ phiên bản thủ công bằng cách làm cho dữ liệu tự giải thích và phát triển độc lập.
 
-Lưu ý: Hiện đang trong giai đoạn phát triển và thử nghiệm, không khuyến nghị sử dụng cho môi trường sản xuất.
+Lưu ý:
+
+- Mã hóa hiện hỗ trợ tối đa 65535 byte (64KB). Giới hạn này có thể được mở rộng khi hỗ trợ đầy đủ các loại tài liệu.
+- Dự án đang trong giai đoạn phát triển và thử nghiệm, và chưa nên sử dụng trong môi trường sản xuất.
+- API và hành vi có thể vẫn thay đổi, nên theo dõi các bản cập nhật phiên bản.
 
 [meta-message](https://github.com/metamessage/metamessage)
 
@@ -65,38 +69,40 @@ Lưu ý: Hiện đang trong giai đoạn phát triển và thử nghiệm, khôn
 
 ## Kiểu dữ liệu
 
+Định nghĩa kiểu dữ liệu bằng thẻ `type=`. Định dạng là `type=typeIdentifier`, ví dụ `type=i` nghĩa là số nguyên.
+
 - doc: Mã hóa hỗ trợ đến 65535 byte (64KB). Giới hạn này có thể được mở rộng sau khi hỗ trợ đầy đủ các loại tài liệu
-- slice: Mảng và slice không cho phép kiểu hợp chất
-- array: arr
-- struct:
+- vec: mảng/slice động, không cho phép kiểu hợp chất
+- arr: mảng cố định, không cho phép kiểu hợp chất
+- obj: đối tượng/struct, cấu trúc hợp chất, tương ứng với struct/object đa ngôn ngữ
 - map: Khóa map phải là chuỗi và giá trị không được là kiểu hợp chất
-- string: str
-- bytes:
-- bool:
-- int: i; hằng số nguyên không được có dấu thập phân
-- int8: i8
-- int16: i16
-- int32: i32
-- int64: i64
-- uint: u
-- uint8: u8
-- uint16: u16
-- uint32: u32
-- uint64: u64
-- float32: f32; float không hỗ trợ NaN/Inf/-0; hằng số float phải có dấu thập phân, ví dụ 0.0
-- float64: f64
-- bigint: bi
+- str: string
+- bytes: mảng byte
+- bool: boolean
+- i: i; hằng số integer không được có dấu thập phân
+- i8: i8
+- i16: i16
+- i32: i32
+- i64: i64
+- u: u
+- u8: u8
+- u16: u16
+- u32: u32
+- u64: u64
+- f32: float32; float không hỗ trợ NaN/Inf/-0; hằng số float phải có dấu thập phân, ví dụ 0.0
+- f64: float64; float không hỗ trợ NaN/Inf/-0; hằng số float phải có dấu thập phân, ví dụ 0.0
+- bigint: bigint
 - datetime: mặc định UTC 1970-01-01 00:00:00
 - date: 1970-01-01
 - time: 00:00:00
-- uuid
-- decimal
-- ip
-- url
-- email
-- enum
-- image
-- video
+- uuid: định danh duy nhất
+- decimal: số thập phân, phải truyền dưới dạng chuỗi
+- ip: IP, hỗ trợ IPv4/IPv6
+- url: URL, hợp lệ
+- email: email, hợp lệ
+- enum: enum, giá trị là chuỗi phân tách bởi |
+- image: ảnh, dạng bytes
+- video: video, dạng bytes
 
 ## Thẻ
 
@@ -271,12 +277,12 @@ func main() {
     fmt.Printf("Decoded: %+v\n", decoded)
 
     jsoncStr := `{"name": "Bob", "age": 25}`
-    data2, err := mm.EncodeFromJSONC(jsoncStr)
+    data2, err := mm.EncodeFromJsonc(jsoncStr)
     if err != nil {
         panic(err)
     }
 
-    jsoncOut, err := mm.DecodeToJSONC(data2)
+    jsoncOut, err := mm.DecodeToJsonc(data2)
     if err != nil {
         panic(err)
     }
@@ -288,10 +294,10 @@ func main() {
 
 - `NewEncoder(w io.Writer) Encoder`: tạo encoder
 - `EncodeFromValue(in any) ([]byte, error)`: mã hóa từ struct
-- `EncodeFromJSONC(in string) ([]byte, error)`: mã hóa từ chuỗi JSONC
+- `EncodeFromJsonc(in string) ([]byte, error)`: mã hóa từ chuỗi JSONC
 - `NewDecoder(r io.Reader) Decoder`: tạo decoder
 - `DecodeToValue(in []byte, out any) error`: giải mã vào struct
-- `DecodeToJSONC(in []byte) (string, error)`: giải mã thành chuỗi JSONC
+- `DecodeToJsonc(in []byte) (string, error)`: giải mã thành chuỗi JSONC
 
 ### Ví dụ về các ngôn ngữ khác
 

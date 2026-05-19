@@ -1,4 +1,5 @@
-using MetaMessage.Mm;
+using MetaMessage.Core;
+using MmVT = MetaMessage.Core.ValueType;
 
 namespace MetaMessage.Jsonc;
 
@@ -6,7 +7,7 @@ public class JsoncParser
 {
     private readonly JsoncScanner _scanner;
     private JsoncToken? _currentToken;
-    private JsoncToken? _lastToken;
+    private readonly List<JsoncToken> _pendingComments = new();
 
     public JsoncParser(string input)
     {
@@ -21,7 +22,6 @@ public class JsoncParser
 
     private JsoncToken NextToken()
     {
-        _lastToken = _currentToken;
         _currentToken = _scanner.NextToken();
         return _currentToken;
     }
@@ -54,7 +54,7 @@ public class JsoncParser
 
     private JsoncNode ParsePrimitive()
     {
-        var token = NextToken();
+        var token = PeekToken();
         var valueNode = new JsoncValue();
 
         switch (token.Type)
@@ -88,13 +88,34 @@ public class JsoncParser
                 break;
         }
 
-        ProcessTrailingComment(valueNode);
+        NextToken();
 
-        // 验证值
+        var tag = ConsumeCommentsFor(token.Line, valueNode);
+        if (tag != null)
+        {
+            valueNode.Tag = tag;
+        }
+
+        if (PeekToken().Type == JsoncTokenType.TrailingComment)
+        {
+            var trailingToken = NextToken();
+            valueNode.TrailingComment = new JsoncComment
+            {
+                Text = trailingToken.Literal,
+                Line = trailingToken.Line,
+                Column = trailingToken.Column,
+                IsBlock = trailingToken.Literal.StartsWith("/*")
+            };
+            if (trailingToken.Literal.Contains("mm:") && valueNode.Tag == null)
+            {
+                valueNode.Tag = JsoncTag.Parse(trailingToken.Literal);
+            }
+        }
+
         if (valueNode.Tag != null)
         {
             var mmTag = ConvertJsoncTagToMmTag(valueNode.Tag);
-            var result = MmValidator.Validate(valueNode.Value, mmTag);
+            var result = Validator.Validate(valueNode.Value, mmTag);
             if (!result.IsValid)
             {
                 throw new Exception(string.Join(", ", result.Errors) ?? "Value validation failed");
@@ -106,27 +127,43 @@ public class JsoncParser
 
     private JsoncObject ParseObject()
     {
+        var openingBrace = PeekToken();
+        int openingBraceLine = openingBrace.Line;
         NextToken();
         var obj = new JsoncObject();
 
-        ProcessLeadingComment(obj);
+        var tag = ConsumeCommentsFor(openingBraceLine, obj);
+        if (tag != null)
+        {
+            obj.Tag = tag;
+        }
 
-        // 验证结构体 tag
         if (obj.Tag != null)
         {
             var mmTag = ConvertJsoncTagToMmTag(obj.Tag);
-            var result = MmValidator.Validate(obj, mmTag);
+            var result = Validator.Validate(obj, mmTag);
             if (!result.IsValid)
             {
                 throw new Exception(string.Join(", ", result.Errors) ?? "Struct validation failed");
             }
         }
 
+        IJsoncNode? lastValue = null;
+
         while (PeekToken().Type != JsoncTokenType.RBrace && PeekToken().Type != JsoncTokenType.EOF)
         {
             if (PeekToken().Type == JsoncTokenType.LeadingComment)
             {
-                NextToken();
+                var commentToken = NextToken();
+                if (_pendingComments.Count > 0)
+                {
+                    var lastPending = _pendingComments.Last();
+                    if (commentToken.Line - lastPending.Line > 1)
+                    {
+                        _pendingComments.Clear();
+                    }
+                }
+                _pendingComments.Add(commentToken);
                 continue;
             }
 
@@ -135,8 +172,9 @@ public class JsoncParser
                 throw new Exception($"Expected string key at line {PeekToken().Line}, column {PeekToken().Column}");
             }
 
-            var keyToken = NextToken();
+            var keyToken = PeekToken();
             var key = keyToken.Literal;
+            NextToken();
 
             if (PeekToken().Type != JsoncTokenType.Colon)
             {
@@ -146,11 +184,37 @@ public class JsoncParser
 
             var value = ParseValue();
             obj.Add(key, value);
+            lastValue = value;
 
             if (PeekToken().Type == JsoncTokenType.Comma)
             {
                 NextToken();
-                ProcessTrailingComment(value);
+                if (PeekToken().Type == JsoncTokenType.TrailingComment)
+                {
+                    var trailingToken = NextToken();
+                    if (lastValue != null)
+                    {
+                        lastValue.TrailingComment = new JsoncComment
+                        {
+                            Text = trailingToken.Literal,
+                            Line = trailingToken.Line,
+                            Column = trailingToken.Column,
+                            IsBlock = trailingToken.Literal.StartsWith("/*")
+                        };
+                        if (trailingToken.Literal.Contains("mm:"))
+                        {
+                            var trailingTag = JsoncTag.Parse(trailingToken.Literal);
+                            if (lastValue.Tag != null)
+                            {
+                                MergeTag(lastValue.Tag, trailingTag);
+                            }
+                            else
+                            {
+                                lastValue.Tag = trailingTag;
+                            }
+                        }
+                    }
+                }
             }
         }
 
@@ -160,43 +224,96 @@ public class JsoncParser
         }
         NextToken();
 
-        ProcessTrailingComment(obj);
+        if (PeekToken().Type == JsoncTokenType.TrailingComment)
+        {
+            var trailingToken = NextToken();
+            obj.TrailingComment = new JsoncComment
+            {
+                Text = trailingToken.Literal,
+                Line = trailingToken.Line,
+                Column = trailingToken.Column,
+                IsBlock = trailingToken.Literal.StartsWith("/*")
+            };
+        }
+
         return obj;
     }
 
     private JsoncArray ParseArray()
     {
+        var openingBracket = PeekToken();
+        int openingBracketLine = openingBracket.Line;
         NextToken();
         var array = new JsoncArray();
 
-        ProcessLeadingComment(array);
+        var tag = ConsumeCommentsFor(openingBracketLine, array);
+        if (tag != null)
+        {
+            array.Tag = tag;
+        }
 
-        // 验证数组 tag
         if (array.Tag != null)
         {
             var mmTag = ConvertJsoncTagToMmTag(array.Tag);
-            var result = MmValidator.Validate(array, mmTag);
+            var result = Validator.Validate(array, mmTag);
             if (!result.IsValid)
             {
                 throw new Exception(string.Join(", ", result.Errors) ?? "Array validation failed");
             }
         }
 
+        IJsoncNode? lastValue = null;
+
         while (PeekToken().Type != JsoncTokenType.RBracket && PeekToken().Type != JsoncTokenType.EOF)
         {
             if (PeekToken().Type == JsoncTokenType.LeadingComment)
             {
-                NextToken();
+                var commentToken = NextToken();
+                if (_pendingComments.Count > 0)
+                {
+                    var lastPending = _pendingComments.Last();
+                    if (commentToken.Line - lastPending.Line > 1)
+                    {
+                        _pendingComments.Clear();
+                    }
+                }
+                _pendingComments.Add(commentToken);
                 continue;
             }
 
             var value = ParseValue();
             array.Add(value);
+            lastValue = value;
 
             if (PeekToken().Type == JsoncTokenType.Comma)
             {
                 NextToken();
-                ProcessTrailingComment(value);
+                if (PeekToken().Type == JsoncTokenType.TrailingComment)
+                {
+                    var trailingToken = NextToken();
+                    if (lastValue != null)
+                    {
+                        lastValue.TrailingComment = new JsoncComment
+                        {
+                            Text = trailingToken.Literal,
+                            Line = trailingToken.Line,
+                            Column = trailingToken.Column,
+                            IsBlock = trailingToken.Literal.StartsWith("/*")
+                        };
+                        if (trailingToken.Literal.Contains("mm:"))
+                        {
+                            var trailingTag = JsoncTag.Parse(trailingToken.Literal);
+                            if (lastValue.Tag != null)
+                            {
+                                MergeTag(lastValue.Tag, trailingTag);
+                            }
+                            else
+                            {
+                                lastValue.Tag = trailingTag;
+                            }
+                        }
+                    }
+                }
             }
         }
 
@@ -206,89 +323,131 @@ public class JsoncParser
         }
         NextToken();
 
-        ProcessTrailingComment(array);
+        if (PeekToken().Type == JsoncTokenType.TrailingComment)
+        {
+            var trailingToken = NextToken();
+            array.TrailingComment = new JsoncComment
+            {
+                Text = trailingToken.Literal,
+                Line = trailingToken.Line,
+                Column = trailingToken.Column,
+                IsBlock = trailingToken.Literal.StartsWith("/*")
+            };
+        }
+
         return array;
     }
 
-    private void ProcessLeadingComment(JsoncNode node)
+    private JsoncTag? ConsumeCommentsFor(int anchorLine, JsoncNode? node = null)
     {
-        if (_lastToken != null && _lastToken.Type == JsoncTokenType.LeadingComment)
+        if (_pendingComments.Count == 0)
         {
-            var comment = new JsoncComment
-            {
-                Text = _lastToken.Literal,
-                Line = _lastToken.Line,
-                Column = _lastToken.Column,
-                IsBlock = _lastToken.Literal.StartsWith("/*")
-            };
-            node.LeadingComment = comment;
+            return null;
+        }
 
-            if (_lastToken.Literal.Contains("mm:"))
+        var lastPending = _pendingComments.Last();
+        if (anchorLine - lastPending.Line > 1)
+        {
+            _pendingComments.Clear();
+            return null;
+        }
+
+        if (node != null)
+        {
+            node.LeadingComment = new JsoncComment
             {
-                node.Tag = JsoncTag.Parse(_lastToken.Literal);
+                Text = _pendingComments[0].Literal,
+                Line = _pendingComments[0].Line,
+                Column = _pendingComments[0].Column,
+                IsBlock = _pendingComments[0].Literal.StartsWith("/*")
+            };
+        }
+
+        JsoncTag? mergedTag = null;
+        foreach (var commentToken in _pendingComments)
+        {
+            if (commentToken.Literal.Contains("mm:"))
+            {
+                var tag = JsoncTag.Parse(commentToken.Literal);
+                if (mergedTag == null)
+                {
+                    mergedTag = tag;
+                }
+                else
+                {
+                    MergeTag(mergedTag, tag);
+                }
             }
         }
+
+        _pendingComments.Clear();
+        return mergedTag;
     }
 
-    private void ProcessTrailingComment(JsoncNode node)
+    private static void MergeTag(JsoncTag target, JsoncTag source)
     {
-        if (PeekToken().Type == JsoncTokenType.TrailingComment)
-        {
-            var comment = new JsoncComment
-            {
-                Text = _currentToken!.Literal,
-                Line = _currentToken.Line,
-                Column = _currentToken.Column,
-                IsBlock = _currentToken.Literal.StartsWith("/*")
-            };
-            node.TrailingComment = comment;
-        }
+        if (source.Type != ValueType.Unknown) target.Type = source.Type;
+        if (source.Desc != null) target.Desc = source.Desc;
+        if (source.Nullable) target.Nullable = true;
+        if (source.DefaultValue != null) target.DefaultValue = source.DefaultValue;
+        if (source.MinValue != null) target.MinValue = source.MinValue;
+        if (source.MaxValue != null) target.MaxValue = source.MaxValue;
+        if (source.Size != null) target.Size = source.Size;
+        if (source.EnumValues != null) target.EnumValues = source.EnumValues;
+        if (source.Pattern != null) target.Pattern = source.Pattern;
+        if (source.Location != null) target.Location = source.Location;
+        if (source.Version != null) target.Version = source.Version;
+        if (source.Mime != null) target.Mime = source.Mime;
+        if (source.ChildType.HasValue) target.ChildType = source.ChildType;
+        if (source.ChildDesc != null) target.ChildDesc = source.ChildDesc;
+        if (source.KeyDesc != null) target.KeyDesc = source.KeyDesc;
+        if (source.ValueDesc != null) target.ValueDesc = source.ValueDesc;
+        if (source.EleDesc != null) target.EleDesc = source.EleDesc;
     }
 
     private MmTag ConvertJsoncTagToMmTag(JsoncTag jsoncTag)
     {
         var mmTag = new MmTag();
 
-        // 转换类型
         switch (jsoncTag.Type)
         {
             case ValueType.String:
-                mmTag.Type = ValueType.STRING;
+                mmTag.Type = MmVT.STRING;
                 break;
-            case ValueType.Number:
-                mmTag.Type = ValueType.INT;
+            case ValueType.Int:
+            case ValueType.Int8:
+            case ValueType.Int16:
+            case ValueType.Int32:
+            case ValueType.Int64:
+                mmTag.Type = MmVT.INT;
                 break;
-            case ValueType.Boolean:
-                mmTag.Type = ValueType.BOOL;
+            case ValueType.Float32:
+            case ValueType.Float64:
+            case ValueType.Decimal:
+                mmTag.Type = MmVT.FLOAT64;
                 break;
-            case ValueType.Null:
-                mmTag.Type = ValueType.NULL;
+            case ValueType.Bool:
+                mmTag.Type = MmVT.BOOL;
                 break;
-            case ValueType.Object:
-                mmTag.Type = ValueType.STRUCT;
+            case ValueType.Struct:
+                mmTag.Type = MmVT.STRUCT;
                 break;
             case ValueType.Array:
-                mmTag.Type = ValueType.ARRAY;
+                mmTag.Type = MmVT.ARRAY;
+                break;
+            case ValueType.Slice:
+                mmTag.Type = MmVT.SLICE;
+                break;
+            default:
+                mmTag.Type = MmVT.UNKNOWN;
                 break;
         }
 
-        // 转换其他属性
         mmTag.Nullable = jsoncTag.Nullable;
-        if (!string.IsNullOrEmpty(jsoncTag.MinValue) && double.TryParse(jsoncTag.MinValue, out double min))
-        {
-            mmTag.Min = min;
-        }
-        if (!string.IsNullOrEmpty(jsoncTag.MaxValue) && double.TryParse(jsoncTag.MaxValue, out double max))
-        {
-            mmTag.Max = max;
-        }
-        if (!string.IsNullOrEmpty(jsoncTag.Size) && int.TryParse(jsoncTag.Size, out int size))
-        {
-            mmTag.Size = size;
-        }
-        mmTag.Pattern = jsoncTag.Pattern;
-        mmTag.EnumValues = jsoncTag.EnumValues;
-        mmTag.DefaultValue = jsoncTag.DefaultValue;
+        mmTag.Min = jsoncTag.MinValue ?? string.Empty;
+        mmTag.Max = jsoncTag.MaxValue ?? string.Empty;
+        mmTag.EnumValues = jsoncTag.EnumValues ?? new List<string>();
+        mmTag.DefaultValue = jsoncTag.DefaultValue ?? string.Empty;
 
         return mmTag;
     }
