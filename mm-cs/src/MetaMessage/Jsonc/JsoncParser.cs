@@ -444,6 +444,7 @@ public class JsoncParser
         }
 
         mmTag.Nullable = jsoncTag.Nullable;
+        mmTag.IsNull = jsoncTag.IsNull;
         mmTag.Min = jsoncTag.MinValue ?? string.Empty;
         mmTag.Max = jsoncTag.MaxValue ?? string.Empty;
         mmTag.EnumValues = jsoncTag.EnumValues ?? new List<string>();

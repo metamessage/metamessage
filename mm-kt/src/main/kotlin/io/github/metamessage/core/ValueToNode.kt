@@ -455,7 +455,7 @@ private fun anyToJSONC(obj: Any, tag: Tag, depth: Int, path: String): Node {
     when {
         obj is List<*> -> {
             workTag.type = ValueType.SLICE
-            return convertSlice(obj, workTag, newDepth, objPath)
+            return convertVec(obj, workTag, newDepth, objPath)
         }
         obj is Map<*, *> -> {
             workTag.type = ValueType.MAP
@@ -463,16 +463,16 @@ private fun anyToJSONC(obj: Any, tag: Tag, depth: Int, path: String): Node {
         }
         obj is Array<*> -> {
             workTag.type = ValueType.SLICE
-            return convertSlice(obj.toList(), workTag, newDepth, objPath)
+            return convertVec(obj.toList(), workTag, newDepth, objPath)
         }
         else -> {
             workTag.type = ValueType.STRUCT
-            return convertStruct(obj, workTag, newDepth, objPath)
+            return convertObj(obj, workTag, newDepth, objPath)
         }
     }
 }
 
-private fun convertStruct(obj: Any, objTag: Tag, depth: Int, path: String): Node {
+private fun convertObj(obj: Any, objTag: Tag, depth: Int, path: String): Node {
     val kClass = obj::class
     val objNode = AstObject(mutableListOf(), objTag, path)
 
@@ -529,7 +529,7 @@ private fun convertStruct(obj: Any, objTag: Tag, depth: Int, path: String): Node
     return objNode
 }
 
-private fun convertSlice(list: List<*>, tag: Tag, depth: Int, path: String): Node {
+private fun convertVec(list: List<*>, tag: Tag, depth: Int, path: String): Node {
     val node = AstArray(mutableListOf(), tag, path)
     var setTag = false
 

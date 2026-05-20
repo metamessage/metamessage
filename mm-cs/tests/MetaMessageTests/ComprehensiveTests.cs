@@ -101,7 +101,8 @@ public class ComprehensiveTests
         inner.EncodeTaggedPayload(enc.ToByteArray(), tag.ToBytes());
         var dec = new WireDecoder(inner.ToByteArray());
         var result = (MmScalar)dec.Decode();
-        Assert.Null(result.Data);
+        Assert.Equal(false, result.Data);
+        Assert.Equal("false", result.Text);
         Assert.True(result.Tag.IsNull);
         Assert.Equal(MmVT.BOOL, result.Tag.Type);
     }
@@ -317,7 +318,8 @@ public class ComprehensiveTests
         byte[] encoded = EncodeTree(scalar);
         var decoded = DecodeToTree(encoded);
         var resultScalar = Assert.IsType<MmScalar>(decoded);
-        Assert.Null(resultScalar.Data);
+        Assert.Equal(0L, resultScalar.Data);
+        Assert.Equal("0", resultScalar.Text);
         Assert.True(resultScalar.Tag.IsNull);
     }
 

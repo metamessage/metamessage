@@ -128,7 +128,7 @@ public class WireDecoder
             throw new MmDecodeException("null_bool type mismatch");
         }
         tag.IsNull = true;
-        return new MmScalar(null, "null", tag);
+        return new MmScalar(false, "false", tag);
     }
 
     static private MmScalar NullInt(MmTag tag)
@@ -142,7 +142,7 @@ public class WireDecoder
             throw new MmDecodeException("null_int type mismatch");
         }
         tag.IsNull = true;
-        return new MmScalar(null, "null", tag);
+        return new MmScalar(0L, "0", tag);
     }
 
     static private MmScalar NullFloat(MmTag tag)
@@ -156,7 +156,7 @@ public class WireDecoder
             throw new MmDecodeException("null_float type mismatch");
         }
         tag.IsNull = true;
-        return new MmScalar(null, "null", tag);
+        return new MmScalar(0.0, "0.0", tag);
     }
 
     static private MmScalar NullString(MmTag tag)
@@ -166,7 +166,7 @@ public class WireDecoder
             tag.Type = ValueType.STRING;
         }
         tag.IsNull = true;
-        return new MmScalar(null, "null", tag);
+        return new MmScalar("", "", tag);
     }
 
     static private MmScalar NullBytes(MmTag tag)
@@ -180,7 +180,7 @@ public class WireDecoder
             throw new MmDecodeException("null_bytes type mismatch");
         }
         tag.IsNull = true;
-        return new MmScalar(null, "null", tag);
+        return new MmScalar(Array.Empty<byte>(), "", tag);
     }
 
     private IMmTree DecodePositiveInt(int first, MmTag? inherited)

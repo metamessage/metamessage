@@ -7,9 +7,9 @@ import (
 	"net/url"
 	"reflect"
 	"time"
-	"unicode"
 
 	"github.com/metamessage/metamessage/internal/ir"
+	"github.com/metamessage/metamessage/internal/utils"
 )
 
 func Bind(node ir.Node, out any) error {
@@ -23,55 +23,59 @@ func Bind(node ir.Node, out any) error {
 	switch n := node.(type) {
 	case *ir.Object:
 		if n.Tag.Type == ir.ValueTypeObj {
-			return convertStruct(n, outVal)
+			return convertObj(n, outVal)
 		} else {
 			return convertMap(n, outVal)
 		}
 
 	case *ir.Array:
 		if n.Tag.Type == ir.ValueTypeArr {
-			return convertArray(n, outVal)
+			return convertArr(n, outVal)
 		} else {
-			return convertSlice(n, outVal)
+			return convertVec(n, outVal)
 		}
 
 	case *ir.Value:
-		return convertValue(n, outVal)
+		return convertScalar(n, outVal)
 
 	default:
 		return fmt.Errorf("unsupported node type: %T", node)
 	}
 }
 
-func convertStruct(obj *ir.Object, outVal reflect.Value) error {
+func getFieldMap(t reflect.Type, val reflect.Value) map[string]reflect.Value {
+	fieldMap := make(map[string]reflect.Value)
+	for i := 0; i < t.NumField(); i++ {
+		field := t.Field(i)
+		if !field.IsExported() {
+			continue
+		}
+
+		fieldMap[utils.CamelToSnake(field.Name)] = val.Field(i)
+	}
+
+	return fieldMap
+}
+
+func convertObj(obj *ir.Object, outVal reflect.Value) error {
 	if obj.Tag.Nullable {
 		if outVal.Kind() != reflect.Pointer {
-			return fmt.Errorf("convertStruct requires pointer type, got %s", outVal.Kind())
+			return fmt.Errorf("convertObj requires pointer type, got %s", outVal.Kind())
 		}
 		if outVal.IsNil() {
-			return fmt.Errorf("convertStruct: nullable pointer must point to struct, got nil")
+			return fmt.Errorf("convertObj: nullable pointer must point to struct, got nil")
 		}
 		outVal = outVal.Elem()
 	}
 	if outVal.Kind() != reflect.Struct {
-		return fmt.Errorf("convertStruct requires struct type, got %s", outVal.Kind())
+		return fmt.Errorf("convertObj requires struct type, got %s", outVal.Kind())
 	}
+
+	fieldMap := getFieldMap(outVal.Type(), outVal)
 
 	for _, field := range obj.Fields {
 		fieldKey := field.Key
-		var fieldVal reflect.Value
-		found := false
-		runes := []rune(fieldKey)
-		runes[0] = unicode.ToUpper(runes[0])
-		name := string(runes)
-		for i := 0; i < outVal.NumField(); i++ {
-			structField := outVal.Type().Field(i)
-			if structField.Name == name {
-				fieldVal = outVal.Field(i)
-				found = true
-				break
-			}
-		}
+		fieldVal, found := fieldMap[fieldKey]
 
 		if !found {
 			return fmt.Errorf("struct has no field '%s'", fieldKey)
@@ -128,7 +132,7 @@ func convertMap(obj *ir.Object, outVal reflect.Value) error {
 	return nil
 }
 
-func convertArray(arr *ir.Array, outVal reflect.Value) error {
+func convertArr(arr *ir.Array, outVal reflect.Value) error {
 	if arr.Tag.Nullable {
 		if outVal.Kind() != reflect.Pointer {
 			return fmt.Errorf("convert array requires pointer type, got %s", outVal.Kind())
@@ -158,7 +162,7 @@ func convertArray(arr *ir.Array, outVal reflect.Value) error {
 	return nil
 }
 
-func convertSlice(arr *ir.Array, outVal reflect.Value) error {
+func convertVec(arr *ir.Array, outVal reflect.Value) error {
 	if arr.Tag.Nullable {
 		if outVal.Kind() != reflect.Pointer {
 			return fmt.Errorf("convert slice requires pointer type, got %s", outVal.Kind())
@@ -186,10 +190,10 @@ func convertSlice(arr *ir.Array, outVal reflect.Value) error {
 	return nil
 }
 
-func convertValue(val *ir.Value, outVal reflect.Value) error {
+func convertScalar(val *ir.Value, outVal reflect.Value) error {
 	if val.Tag.Nullable {
 		if outVal.Kind() != reflect.Pointer {
-			return fmt.Errorf("convertValue requires pointer type, got %s", outVal.Kind())
+			return fmt.Errorf("convertScalar requires pointer type, got %s", outVal.Kind())
 		}
 		if outVal.IsNil() {
 			outVal.Set(reflect.New(outVal.Type().Elem()))
@@ -211,12 +215,10 @@ func convertValue(val *ir.Value, outVal reflect.Value) error {
 		if outVal.Type() != targetType {
 			return fmt.Errorf("target type must be time.Time, got %s", outVal.Type())
 		}
-		if !outVal.CanAddr() {
-			return fmt.Errorf("unexpected: target time.Time value is unaddressable (bug)")
-		}
+
 		switch d := data.(type) {
 		case time.Time:
-			*(*time.Time)(outVal.Addr().UnsafePointer()) = d
+			outVal.Set(reflect.ValueOf(d))
 		default:
 			return fmt.Errorf("unsupported type for time conversion: %T (expected time.Time)", d)
 		}
@@ -229,7 +231,7 @@ func convertValue(val *ir.Value, outVal reflect.Value) error {
 
 		switch d := data.(type) {
 		case big.Int:
-			*(*big.Int)(outVal.UnsafePointer()) = d
+			outVal.Set(reflect.ValueOf(d))
 		default:
 			return fmt.Errorf("unsupported type for big.Int conversion: %T", d)
 		}
@@ -242,7 +244,7 @@ func convertValue(val *ir.Value, outVal reflect.Value) error {
 
 		switch d := data.(type) {
 		case string:
-			*(*string)(outVal.UnsafePointer()) = d
+			outVal.SetString(d)
 		default:
 			return fmt.Errorf("unsupported type for uuid conversion: %T", d)
 		}
@@ -255,7 +257,7 @@ func convertValue(val *ir.Value, outVal reflect.Value) error {
 
 		switch d := data.(type) {
 		case string:
-			*(*string)(outVal.UnsafePointer()) = d
+			outVal.SetString(d)
 		default:
 			return fmt.Errorf("unsupported type for decimal conversion: %T", d)
 		}
@@ -268,7 +270,7 @@ func convertValue(val *ir.Value, outVal reflect.Value) error {
 
 		switch d := data.(type) {
 		case string:
-			*(*string)(outVal.UnsafePointer()) = d
+			outVal.SetString(d)
 		default:
 			return fmt.Errorf("unsupported type for email conversion: %T", d)
 		}
@@ -281,7 +283,7 @@ func convertValue(val *ir.Value, outVal reflect.Value) error {
 
 		switch d := data.(type) {
 		case net.IP:
-			*(*net.IP)(outVal.UnsafePointer()) = d
+			outVal.Set(reflect.ValueOf(d))
 		default:
 			return fmt.Errorf("unsupported type for ip conversion: %T", d)
 		}
@@ -294,7 +296,7 @@ func convertValue(val *ir.Value, outVal reflect.Value) error {
 
 		switch d := data.(type) {
 		case url.URL:
-			*(*url.URL)(outVal.UnsafePointer()) = d
+			outVal.Set(reflect.ValueOf(d))
 		default:
 			return fmt.Errorf("unsupported type for url conversion: %T", d)
 		}
@@ -303,10 +305,13 @@ func convertValue(val *ir.Value, outVal reflect.Value) error {
 		if outVal.Type() != reflect.TypeFor[string]() {
 			return fmt.Errorf("target type must be string, got %s", outVal.Type())
 		}
-		if !outVal.CanAddr() {
-			return fmt.Errorf("unexpected: target string value is unaddressable (bug)")
+
+		switch d := data.(type) {
+		case string:
+			outVal.SetString(text)
+		default:
+			return fmt.Errorf("unsupported type for enum conversion: %T", d)
 		}
-		*(*string)(outVal.Addr().UnsafePointer()) = text
 
 	case ir.ValueTypeImage:
 		return fmt.Errorf("unsupported type: %s", tag.Type)
@@ -323,12 +328,10 @@ func convertValue(val *ir.Value, outVal reflect.Value) error {
 		if outVal.Type() != reflect.TypeFor[int]() {
 			return fmt.Errorf("target type must be int, got %s", outVal.Type())
 		}
-		if !outVal.CanAddr() {
-			return fmt.Errorf("unexpected: target int value is unaddressable (bug)")
-		}
+
 		switch d := data.(type) {
 		case int:
-			*(*int)(outVal.Addr().UnsafePointer()) = d
+			outVal.SetInt(int64(d))
 		default:
 			return fmt.Errorf("unsupported type for int conversion: %T", d)
 		}
@@ -337,12 +340,10 @@ func convertValue(val *ir.Value, outVal reflect.Value) error {
 		if outVal.Type() != reflect.TypeFor[int8]() {
 			return fmt.Errorf("target type must be int8, got %s", outVal.Type())
 		}
-		if !outVal.CanAddr() {
-			return fmt.Errorf("unexpected: target int8 value is unaddressable (bug)")
-		}
+
 		switch d := data.(type) {
 		case int8:
-			*(*int8)(outVal.Addr().UnsafePointer()) = d
+			outVal.SetInt(int64(d))
 		default:
 			return fmt.Errorf("unsupported type for int8 conversion: %T", d)
 		}
@@ -351,12 +352,10 @@ func convertValue(val *ir.Value, outVal reflect.Value) error {
 		if outVal.Type() != reflect.TypeFor[int16]() {
 			return fmt.Errorf("target type must be int16, got %s", outVal.Type())
 		}
-		if !outVal.CanAddr() {
-			return fmt.Errorf("unexpected: target int16 value is unaddressable (bug)")
-		}
+
 		switch d := data.(type) {
 		case int16:
-			*(*int16)(outVal.Addr().UnsafePointer()) = d
+			outVal.SetInt(int64(d))
 		default:
 			return fmt.Errorf("unsupported type for int16 conversion: %T (expected int16)", d)
 		}
@@ -365,12 +364,10 @@ func convertValue(val *ir.Value, outVal reflect.Value) error {
 		if outVal.Type() != reflect.TypeFor[int32]() {
 			return fmt.Errorf("target type must be int32, got %s", outVal.Type())
 		}
-		if !outVal.CanAddr() {
-			return fmt.Errorf("unexpected: target int32 value is unaddressable (bug)")
-		}
+
 		switch d := data.(type) {
 		case int32:
-			*(*int32)(outVal.Addr().UnsafePointer()) = d
+			outVal.SetInt(int64(d))
 		default:
 			return fmt.Errorf("unsupported type for int32 conversion: %T (expected int32)", d)
 		}
@@ -379,12 +376,10 @@ func convertValue(val *ir.Value, outVal reflect.Value) error {
 		if outVal.Type() != reflect.TypeFor[int64]() {
 			return fmt.Errorf("target type must be int64, got %s", outVal.Type())
 		}
-		if !outVal.CanAddr() {
-			return fmt.Errorf("unexpected: target int64 value is unaddressable (bug)")
-		}
+
 		switch d := data.(type) {
 		case int64:
-			*(*int64)(outVal.Addr().UnsafePointer()) = d
+			outVal.SetInt(d)
 		default:
 			return fmt.Errorf("unsupported type for int64 conversion: %T (expected int64)", d)
 		}
@@ -393,12 +388,10 @@ func convertValue(val *ir.Value, outVal reflect.Value) error {
 		if outVal.Type() != reflect.TypeFor[uint]() {
 			return fmt.Errorf("target type must be uint, got %s", outVal.Type())
 		}
-		if !outVal.CanAddr() {
-			return fmt.Errorf("unexpected: target uint value is unaddressable (bug)")
-		}
+
 		switch d := data.(type) {
 		case uint:
-			*(*uint)(outVal.Addr().UnsafePointer()) = d
+			outVal.SetUint(uint64(d))
 		default:
 			return fmt.Errorf("unsupported type for uint conversion: %T (expected uint)", d)
 		}
@@ -407,12 +400,10 @@ func convertValue(val *ir.Value, outVal reflect.Value) error {
 		if outVal.Type() != reflect.TypeFor[uint8]() {
 			return fmt.Errorf("target type must be uint8, got %s", outVal.Type())
 		}
-		if !outVal.CanAddr() {
-			return fmt.Errorf("unexpected: target uint8 value is unaddressable (bug)")
-		}
+
 		switch d := data.(type) {
 		case uint8:
-			*(*uint8)(outVal.Addr().UnsafePointer()) = d
+			outVal.SetUint(uint64(d))
 		default:
 			return fmt.Errorf("unsupported type for uint8 conversion: %T (expected uint8)", d)
 		}
@@ -421,12 +412,10 @@ func convertValue(val *ir.Value, outVal reflect.Value) error {
 		if outVal.Type() != reflect.TypeFor[uint16]() {
 			return fmt.Errorf("target type must be uint16, got %s", outVal.Type())
 		}
-		if !outVal.CanAddr() {
-			return fmt.Errorf("unexpected: target uint16 value is unaddressable (bug)")
-		}
+
 		switch d := data.(type) {
 		case uint16:
-			*(*uint16)(outVal.Addr().UnsafePointer()) = d
+			outVal.SetUint(uint64(d))
 		default:
 			return fmt.Errorf("unsupported type for uint16 conversion: %T (expected uint16)", d)
 		}
@@ -435,12 +424,10 @@ func convertValue(val *ir.Value, outVal reflect.Value) error {
 		if outVal.Type() != reflect.TypeFor[uint32]() {
 			return fmt.Errorf("target type must be uint32, got %s", outVal.Type())
 		}
-		if !outVal.CanAddr() {
-			return fmt.Errorf("unexpected: target uint32 value is unaddressable (bug)")
-		}
+
 		switch d := data.(type) {
 		case uint32:
-			*(*uint32)(outVal.Addr().UnsafePointer()) = d
+			outVal.SetUint(uint64(d))
 		default:
 			return fmt.Errorf("unsupported type for uint32 conversion: %T (expected uint32)", d)
 		}
@@ -449,12 +436,10 @@ func convertValue(val *ir.Value, outVal reflect.Value) error {
 		if outVal.Type() != reflect.TypeFor[uint64]() {
 			return fmt.Errorf("target type must be uint64, got %s", outVal.Type())
 		}
-		if !outVal.CanAddr() {
-			return fmt.Errorf("unexpected: target uint64 value is unaddressable (bug)")
-		}
+
 		switch d := data.(type) {
 		case uint64:
-			*(*uint64)(outVal.Addr().UnsafePointer()) = d
+			outVal.SetUint(d)
 		default:
 			return fmt.Errorf("unsupported type for uint64 conversion: %T (expected uint64)", d)
 		}
@@ -463,12 +448,10 @@ func convertValue(val *ir.Value, outVal reflect.Value) error {
 		if outVal.Type() != reflect.TypeFor[float32]() {
 			return fmt.Errorf("target type must be float32, got %s", outVal.Type())
 		}
-		if !outVal.CanAddr() {
-			return fmt.Errorf("unexpected: target float32 value is unaddressable (bug)")
-		}
+
 		switch d := data.(type) {
 		case float32:
-			*(*float32)(outVal.Addr().UnsafePointer()) = d
+			outVal.SetFloat(float64(d))
 		default:
 			return fmt.Errorf("unsupported type for float32 conversion: %T (expected float32)", d)
 		}
@@ -477,12 +460,10 @@ func convertValue(val *ir.Value, outVal reflect.Value) error {
 		if outVal.Type() != reflect.TypeFor[float64]() {
 			return fmt.Errorf("target type must be float64, got %s", outVal.Type())
 		}
-		if !outVal.CanAddr() {
-			return fmt.Errorf("unexpected: target float64 value is unaddressable (bug)")
-		}
+
 		switch d := data.(type) {
 		case float64:
-			*(*float64)(outVal.Addr().UnsafePointer()) = d
+			outVal.SetFloat(d)
 		default:
 			return fmt.Errorf("unsupported type for float64 conversion: %T (expected float64)", d)
 		}
@@ -491,21 +472,22 @@ func convertValue(val *ir.Value, outVal reflect.Value) error {
 		if outVal.Type() != reflect.TypeFor[string]() {
 			return fmt.Errorf("target type must be string, got %s", outVal.Type())
 		}
-		if !outVal.CanAddr() {
-			return fmt.Errorf("unexpected: target string value is unaddressable (bug)")
+
+		switch d := data.(type) {
+		case string:
+			outVal.SetString(text)
+		default:
+			return fmt.Errorf("unsupported type for string conversion: %T", d)
 		}
-		*(*string)(outVal.Addr().UnsafePointer()) = text
 
 	case ir.ValueTypeBool:
 		if outVal.Type() != reflect.TypeFor[bool]() {
 			return fmt.Errorf("target type must be bool, got %s", outVal.Type())
 		}
-		if !outVal.CanAddr() {
-			return fmt.Errorf("unexpected: target bool value is unaddressable (bug)")
-		}
+
 		switch d := data.(type) {
 		case bool:
-			*(*bool)(outVal.Addr().UnsafePointer()) = d
+			outVal.SetBool(d)
 		default:
 			return fmt.Errorf("unsupported type for bool conversion: %T (expected bool)", d)
 		}
@@ -514,12 +496,10 @@ func convertValue(val *ir.Value, outVal reflect.Value) error {
 		if outVal.Type() != reflect.TypeFor[[]byte]() {
 			return fmt.Errorf("target type must be []byte, got %s", outVal.Type())
 		}
-		if !outVal.CanAddr() {
-			return fmt.Errorf("unexpected: target []byte value is unaddressable (bug)")
-		}
+
 		switch d := data.(type) {
 		case []byte:
-			*(*[]byte)(outVal.Addr().UnsafePointer()) = d
+			outVal.SetBytes(d)
 		default:
 			return fmt.Errorf("unsupported type for bytes conversion: %T (expected []byte)", d)
 		}

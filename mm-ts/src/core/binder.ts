@@ -24,7 +24,7 @@ export class Binder {
     if (node instanceof MMObject) {
       const tag = node.getTag();
       if (tag?.type === ValueType.Object) {
-        return this.convertStruct(node, target);
+        return this.convertObj(node, target);
       } else {
         return this.convertMap(node, target);
       }
@@ -33,16 +33,16 @@ export class Binder {
     if (node instanceof MMArray) {
       const tag = node.getTag();
       if (tag?.type === ValueType.Array) {
-        return this.convertArray(node, target);
+        return this.convertArr(node, target);
       } else {
-        return this.convertSlice(node, target);
+        return this.convertVec(node, target);
       }
     }
 
     return { value: target, error: `unsupported node type: ${typeof node}` };
   }
 
-  private convertStruct(
+  private convertObj(
     obj: MMObject,
     target: any,
   ): { value: any; error: string | null } {
@@ -50,13 +50,13 @@ export class Binder {
     if (tag?.nullable && target === null) {
       return {
         value: target,
-        error: 'convertStruct requires object type, got null',
+        error: 'convertObj requires object type, got null',
       };
     }
     if (typeof target !== 'object' || target === null) {
       return {
         value: target,
-        error: `convertStruct requires object type, got ${typeof target}`,
+        error: `convertObj requires object type, got ${typeof target}`,
       };
     }
 
@@ -104,12 +104,12 @@ export class Binder {
     return { value: target, error: null };
   }
 
-  private convertArray(
+  private convertArr(
     arr: MMArray,
     target: any,
   ): { value: any; error: string | null } {
     if (!Array.isArray(target)) {
-      return { value: target, error: `convertArray requires array` };
+      return { value: target, error: `convertArr requires array` };
     }
 
     const elements = arr.getElements();
@@ -136,12 +136,12 @@ export class Binder {
     return { value: target, error: null };
   }
 
-  private convertSlice(
+  private convertVec(
     arr: MMArray,
     target: any[],
   ): { value: any; error: string | null } {
     if (!Array.isArray(target)) {
-      return { value: target, error: `convertSlice requires array` };
+      return { value: target, error: `convertVec requires array` };
     }
 
     const elements = arr.getElements();

@@ -1,15 +1,14 @@
 package io.github.metamessage.core
 
+import io.github.metamessage.ir.Array
+import io.github.metamessage.ir.Node
+import io.github.metamessage.ir.Object
+import io.github.metamessage.ir.Tag
+import io.github.metamessage.ir.Value
+import io.github.metamessage.ir.ValueType
 import java.math.BigInteger
 import java.time.LocalDateTime
 import java.util.UUID
-import io.github.metamessage.ir.Tag
-import io.github.metamessage.ir.ValueType
-import io.github.metamessage.ir.Node
-import io.github.metamessage.ir.Object
-import io.github.metamessage.ir.Array
-import io.github.metamessage.ir.Value
-import io.github.metamessage.MM
 
 object Binder {
     fun <T> bind(node: Node, clazz: Class<T>): T {
@@ -18,11 +17,10 @@ object Binder {
                 val tag = node.tag
                 if (tag != null && tag.type == ValueType.STRUCT) {
                     val inst = clazz.getDeclaredConstructor().newInstance()
-                    convertStruct(node, inst as Any)
+                    convertObj(node, inst as Any)
                     return inst
                 } else {
-                    @Suppress("UNCHECKED_CAST")
-                    val inst = mutableMapOf<String, Any?>()
+                    @Suppress("UNCHECKED_CAST") val inst = mutableMapOf<String, Any?>()
                     convertMap(node, inst)
                     return inst as T
                 }
@@ -30,20 +28,22 @@ object Binder {
             is Array -> {
                 val tag = node.tag
                 if (tag != null && tag.size > 0 && tag.type == ValueType.ARRAY) {
-                    @Suppress("UNCHECKED_CAST")
-                    return convertArray(node, clazz) as T
+                    @Suppress("UNCHECKED_CAST") return convertArr(node, clazz) as T
                 } else {
-                    return convertSlice(node, clazz)
+                    return convertVec(node, clazz)
                 }
             }
             is Value -> {
-                return convertValue(node, clazz)
+                return convertScalar(node, clazz)
             }
-            else -> throw IllegalArgumentException("unsupported node type: ${node::class.java.name}")
+            else ->
+                    throw IllegalArgumentException(
+                            "unsupported node type: ${node::class.java.name}"
+                    )
         }
     }
 
-    private fun convertStruct(obj: Object, out: Any) {
+    private fun convertObj(obj: Object, out: Any) {
         val outClazz = out.javaClass
         val nameToField = mutableMapOf<String, java.lang.reflect.Field>()
         for (f in outClazz.declaredFields) {
@@ -72,31 +72,32 @@ object Binder {
     private fun convertMap(obj: Object, out: MutableMap<String, Any?>) {
         for (field in obj.fields) {
             val key = field.key
-            val value = when (val v = field.value) {
-                is Value -> convertValueToAny(v)
-                is Object -> {
-                    val map = mutableMapOf<String, Any?>()
-                    convertMap(v, map)
-                    map
-                }
-                is Array -> {
-                    convertSlice(v, List::class.java).toList()
-                }
-                else -> null
-            }
+            val value =
+                    when (val v = field.value) {
+                        is Value -> convertScalarToAny(v)
+                        is Object -> {
+                            val map = mutableMapOf<String, Any?>()
+                            convertMap(v, map)
+                            map
+                        }
+                        is Array -> {
+                            convertVec(v, List::class.java).toList()
+                        }
+                        else -> null
+                    }
             out[key] = value
         }
     }
 
-    private fun convertArray(arr: Array, clazz: Class<*>): Any {
+    private fun convertArr(arr: Array, clazz: Class<*>): Any {
         val size = arr.tag?.size ?: arr.items.size
         val list = mutableListOf<Any?>()
         for (item in arr.items) {
             when (item) {
-                is Value -> list.add(convertValueToAny(item))
+                is Value -> list.add(convertScalarToAny(item))
                 is Object -> {
                     val inst = clazz.getDeclaredConstructor().newInstance()
-                    convertStruct(item, inst as Any)
+                    convertObj(item, inst as Any)
                     list.add(inst)
                 }
                 else -> list.add(null)
@@ -106,7 +107,7 @@ object Binder {
     }
 
     @Suppress("UNCHECKED_CAST")
-    private fun <T> convertSlice(arr: Array, clazz: Class<T>): T {
+    private fun <T> convertVec(arr: Array, clazz: Class<T>): T {
         val list = mutableListOf<Any?>()
         var elemClass: Class<*> = Any::class.java
         val gt = clazz.typeParameters.firstOrNull()
@@ -115,10 +116,10 @@ object Binder {
         }
         for (item in arr.items) {
             when (item) {
-                is Value -> list.add(convertValueToAny(item))
+                is Value -> list.add(convertScalarToAny(item))
                 is Object -> {
                     val inst = clazz.getDeclaredConstructor().newInstance()
-                    convertStruct(item, inst as Any)
+                    convertObj(item, inst as Any)
                     list.add(inst)
                 }
                 else -> list.add(null)
@@ -128,7 +129,7 @@ object Binder {
     }
 
     @Suppress("UNCHECKED_CAST")
-    private fun <T> convertValue(value: Value, clazz: Class<T>): T {
+    private fun <T> convertScalar(value: Value, clazz: Class<T>): T {
         val tag = value.tag ?: Tag.empty()
         val data = value.data
         val text = value.text
@@ -204,20 +205,20 @@ object Binder {
         }
     }
 
-    private fun convertValueToAny(value: Value): Any? {
-        return convertValue(value, Any::class.java) as? Any?
+    private fun convertScalarToAny(value: Value): Any? {
+        return convertScalar(value, Any::class.java) as? Any?
     }
 
     private fun materialize(f: java.lang.reflect.Field, node: Node): Any? {
         return when (node) {
-            is Value -> convertValue(node, f.type)
+            is Value -> convertScalar(node, f.type)
             is Object -> {
                 val inst = f.type.getDeclaredConstructor().newInstance()
-                convertStruct(node, inst)
+                convertObj(node, inst)
                 inst
             }
             is Array -> {
-                val list = convertSlice(node, f.type)
+                val list = convertVec(node, f.type)
                 list
             }
             else -> null

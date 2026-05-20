@@ -147,9 +147,8 @@ public class JsoncBinder
                 var arr = Array.CreateInstance(elementType, array.Elements.Count);
                 for (int i = 0; i < array.Elements.Count; i++)
                 {
-                    var element = Array.CreateInstance(elementType, 1);
-                    BindNodeToProperty(array.Elements[i], elementType.GetProperty("Item")!, element);
-                    arr.SetValue(element.GetValue(0), i);
+                    var itemValue = ConvertJsoncValue(array.Elements[i], elementType);
+                    arr.SetValue(itemValue, i);
                 }
                 prop.SetValue(target, arr);
             }
@@ -165,9 +164,8 @@ public class JsoncBinder
                 var list = (System.Collections.IList)Activator.CreateInstance(listType)!;
                 for (int i = 0; i < array.Elements.Count; i++)
                 {
-                    var element = Activator.CreateInstance(elementType)!;
-                    BindNodeToProperty(array.Elements[i], elementType.GetProperty("Item")!, element);
-                    list.Add(element);
+                    var itemValue = ConvertJsoncValue(array.Elements[i], elementType);
+                    list.Add(itemValue);
                 }
                 prop.SetValue(target, list);
             }
@@ -194,6 +192,46 @@ public class JsoncBinder
         }
     }
 
+    private object? ConvertJsoncValue(IJsoncNode node, Type targetType)
+    {
+        if (node is JsoncValue value)
+        {
+            if (targetType == typeof(string))
+                return value.Value?.ToString() ?? "";
+            if (targetType == typeof(bool))
+                return value.Value is bool b ? b : (bool.TryParse(value.Value?.ToString(), out bool br) ? br : false);
+            if (targetType == typeof(int))
+                return value.Value is int i ? i : (int.TryParse(value.Value?.ToString(), out int ir) ? ir : 0);
+            if (targetType == typeof(long))
+                return value.Value is long l ? l : (long.TryParse(value.Value?.ToString(), out long lr) ? lr : 0L);
+            if (targetType == typeof(double))
+                return value.Value is double d ? d : (double.TryParse(value.Value?.ToString(), out double dr) ? dr : 0.0);
+            if (targetType == typeof(float))
+                return value.Value is float f ? f : (float.TryParse(value.Value?.ToString(), out float fr) ? fr : 0f);
+            if (targetType == typeof(byte[]))
+                return value.Value is string s ? Convert.FromBase64String(s) : Array.Empty<byte>();
+            return value.Value;
+        }
+        if (node is JsoncObject childObj)
+        {
+            var childTarget = Activator.CreateInstance(targetType)!;
+            BindObject(childObj, childTarget);
+            return childTarget;
+        }
+        if (node is JsoncArray childArray && targetType.IsGenericType && targetType.GetGenericTypeDefinition() == typeof(List<>))
+        {
+            var elementType = targetType.GetGenericArguments()[0];
+            var listType = typeof(System.Collections.Generic.List<>).MakeGenericType(elementType);
+            var list = (System.Collections.IList)Activator.CreateInstance(listType)!;
+            foreach (var element in childArray.Elements)
+            {
+                list.Add(ConvertJsoncValue(element, elementType));
+            }
+            return list;
+        }
+        return null;
+    }
+
     private void BindArray(JsoncArray array, object target)
     {
         var type = target.GetType();
@@ -203,9 +241,8 @@ public class JsoncBinder
             var arr = Array.CreateInstance(elementType, array.Elements.Count);
             for (int i = 0; i < array.Elements.Count; i++)
             {
-                var element = Activator.CreateInstance(elementType)!;
-                BindNodeToProperty(array.Elements[i], elementType.GetProperty("Item")!, element);
-                arr.SetValue(element, i);
+                var itemValue = ConvertJsoncValue(array.Elements[i], elementType);
+                arr.SetValue(itemValue, i);
             }
             type.GetProperty("Length")!.SetValue(target, arr);
         }
@@ -215,9 +252,8 @@ public class JsoncBinder
             var list = (System.Collections.IList)target;
             for (int i = 0; i < array.Elements.Count; i++)
             {
-                var element = Activator.CreateInstance(elementType)!;
-                BindNodeToProperty(array.Elements[i], elementType.GetProperty("Item")!, element);
-                list.Add(element);
+                var itemValue = ConvertJsoncValue(array.Elements[i], elementType);
+                list.Add(itemValue);
             }
         }
     }
