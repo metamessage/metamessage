@@ -1,5 +1,5 @@
 use std::net::IpAddr;
-use chrono::{DateTime, TimeZone, Utc};
+use chrono::{DateTime, Utc};
 
 pub const DEFAULT_TIME: DateTime<Utc> = DateTime::from_timestamp(0, 0).unwrap();
 

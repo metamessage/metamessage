@@ -19,7 +19,7 @@ class MmValidator:
     uuid_regex = re.compile(r'^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$')
 
     @staticmethod
-    def validate_array(value: List[Any], tag: Tag) -> ValidationResult:
+    def validate_arr(value: List[Any], tag: Tag) -> ValidationResult:
         if len(tag.desc) > 65535:
             return ValidationResult(False, "desc length exceeds 65535 bytes")
 
@@ -52,7 +52,7 @@ class MmValidator:
         return ValidationResult(True, data=value, text=str(value))
 
     @staticmethod
-    def validate_struct(tag: Tag) -> ValidationResult:
+    def validate_obj(tag: Tag) -> ValidationResult:
         if len(tag.desc) > 65535:
             return ValidationResult(False, "desc length exceeds 65535 bytes")
 
@@ -82,7 +82,7 @@ class MmValidator:
         return ValidationResult(True)
 
     @staticmethod
-    def validate_slice(value: List[Any], tag: Tag) -> ValidationResult:
+    def validate_vec(value: List[Any], tag: Tag) -> ValidationResult:
         if len(tag.desc) > 65535:
             return ValidationResult(False, "desc length exceeds 65535 bytes")
 
@@ -92,13 +92,13 @@ class MmValidator:
         except (ValueError, TypeError):
             location_offset = 0
         if location_offset != 0:
-            return ValidationResult(False, "type slice not support location UTC%d" % location_offset)
+            return ValidationResult(False, "type vec not support location UTC%d" % location_offset)
 
         length = len(value)
 
         if length == 0:
             if not tag.allow_empty:
-                return ValidationResult(False, "type slice not allow empty")
+                return ValidationResult(False, "type vec not allow empty")
             return ValidationResult(True)
 
         if tag.child_unique:
@@ -106,13 +106,13 @@ class MmValidator:
             for i, item in enumerate(value):
                 key = item if not isinstance(item, (dict, list)) else str(item)
                 if key in seen:
-                    return ValidationResult(False, "slice duplicate value found: %s, index: %d" % (item, i))
+                    return ValidationResult(False, "vec duplicate value found: %s, index: %d" % (item, i))
                 seen[key] = True
 
         return ValidationResult(True)
 
     @staticmethod
-    def validate_string(value: str, tag: Tag) -> ValidationResult:
+    def validate_str(value: str, tag: Tag) -> ValidationResult:
         if value == "":
             if not tag.allow_empty:
                 return ValidationResult(False, "type string not allow empty value %s" % repr(value))
@@ -222,7 +222,7 @@ class MmValidator:
         return ValidationResult(True, data=value, text=str(value).lower())
 
     @staticmethod
-    def validate_int(value: int, tag: Tag) -> ValidationResult:
+    def validate_i(value: int, tag: Tag) -> ValidationResult:
         if value == 0:
             if not tag.allow_empty:
                 return ValidationResult(False, "type int not allow empty value %d" % value)
@@ -258,7 +258,7 @@ class MmValidator:
         return ValidationResult(True, data=value, text=str(value))
 
     @staticmethod
-    def validate_int8(value: int, tag: Tag) -> ValidationResult:
+    def validate_i8(value: int, tag: Tag) -> ValidationResult:
         if value == 0:
             if not tag.allow_empty:
                 return ValidationResult(False, "type int8 not allow empty value %d" % value)
@@ -294,7 +294,7 @@ class MmValidator:
         return ValidationResult(True, data=value, text=str(value))
 
     @staticmethod
-    def validate_int16(value: int, tag: Tag) -> ValidationResult:
+    def validate_i16(value: int, tag: Tag) -> ValidationResult:
         if value == 0:
             if not tag.allow_empty:
                 return ValidationResult(False, "type int16 not allow empty value %d" % value)
@@ -330,7 +330,7 @@ class MmValidator:
         return ValidationResult(True, data=value, text=str(value))
 
     @staticmethod
-    def validate_int32(value: int, tag: Tag) -> ValidationResult:
+    def validate_i32(value: int, tag: Tag) -> ValidationResult:
         if value == 0:
             if not tag.allow_empty:
                 return ValidationResult(False, "type int32 not allow empty value %d" % value)
@@ -366,7 +366,7 @@ class MmValidator:
         return ValidationResult(True, data=value, text=str(value))
 
     @staticmethod
-    def validate_int64(value: int, tag: Tag) -> ValidationResult:
+    def validate_i64(value: int, tag: Tag) -> ValidationResult:
         if value == 0:
             if not tag.allow_empty:
                 return ValidationResult(False, "type int64 not allow empty value %d" % value)
@@ -402,7 +402,7 @@ class MmValidator:
         return ValidationResult(True, data=value, text=str(value))
 
     @staticmethod
-    def validate_uint(value: int, tag: Tag) -> ValidationResult:
+    def validate_u(value: int, tag: Tag) -> ValidationResult:
         if value == 0:
             if not tag.allow_empty:
                 return ValidationResult(False, "type uint not allow empty value %d" % value)
@@ -442,7 +442,7 @@ class MmValidator:
         return ValidationResult(True, data=value, text=str(value))
 
     @staticmethod
-    def validate_uint8(value: int, tag: Tag) -> ValidationResult:
+    def validate_u8(value: int, tag: Tag) -> ValidationResult:
         if value == 0:
             if not tag.allow_empty:
                 return ValidationResult(False, "type uint8 not allow empty value %d" % value)
@@ -482,7 +482,7 @@ class MmValidator:
         return ValidationResult(True, data=value, text=str(value))
 
     @staticmethod
-    def validate_uint16(value: int, tag: Tag) -> ValidationResult:
+    def validate_u16(value: int, tag: Tag) -> ValidationResult:
         if value == 0:
             if not tag.allow_empty:
                 return ValidationResult(False, "type uint16 not allow empty value %d" % value)
@@ -522,7 +522,7 @@ class MmValidator:
         return ValidationResult(True, data=value, text=str(value))
 
     @staticmethod
-    def validate_uint32(value: int, tag: Tag) -> ValidationResult:
+    def validate_u32(value: int, tag: Tag) -> ValidationResult:
         if value == 0:
             if not tag.allow_empty:
                 return ValidationResult(False, "type uint32 not allow empty value %d" % value)
@@ -562,7 +562,7 @@ class MmValidator:
         return ValidationResult(True, data=value, text=str(value))
 
     @staticmethod
-    def validate_uint64(value: int, tag: Tag) -> ValidationResult:
+    def validate_u64(value: int, tag: Tag) -> ValidationResult:
         if value == 0:
             if not tag.allow_empty:
                 return ValidationResult(False, "type uint64 not allow empty value %d" % value)
@@ -602,7 +602,7 @@ class MmValidator:
         return ValidationResult(True, data=value, text=str(value))
 
     @staticmethod
-    def validate_float32(value: float, tag: Tag) -> ValidationResult:
+    def validate_f32(value: float, tag: Tag) -> ValidationResult:
         if value == 0.0:
             if not tag.allow_empty:
                 return ValidationResult(False, "type float32 not allow empty value 0.0")
@@ -638,7 +638,7 @@ class MmValidator:
         return ValidationResult(True, data=value, text=str(value))
 
     @staticmethod
-    def validate_float64(value: float, tag: Tag) -> ValidationResult:
+    def validate_f64(value: float, tag: Tag) -> ValidationResult:
         if value == 0.0:
             if not tag.allow_empty:
                 return ValidationResult(False, "type float64 not allow empty value 0.0")
@@ -674,7 +674,7 @@ class MmValidator:
         return ValidationResult(True, data=value, text=str(value))
 
     @staticmethod
-    def validate_big_int(value: str, tag: Tag) -> ValidationResult:
+    def validate_bigint(value: str, tag: Tag) -> ValidationResult:
         try:
             from decimal import Decimal
             val = Decimal(value)
@@ -993,21 +993,21 @@ class MmValidator:
     def validate(value: Any, tag: Tag) -> ValidationResult:
         if tag.type == ValueType.Array:
             if isinstance(value, list):
-                return MmValidator.validate_array(value, tag)
+                return MmValidator.validate_arr(value, tag)
             else:
                 return ValidationResult(False, "expected array, got %s" % type(value).__name__)
         elif tag.type == ValueType.Slice:
             if isinstance(value, list):
-                return MmValidator.validate_slice(value, tag)
+                return MmValidator.validate_vec(value, tag)
             else:
                 return ValidationResult(False, "expected slice, got %s" % type(value).__name__)
         elif tag.type == ValueType.Object:
-            return MmValidator.validate_struct(tag)
+            return MmValidator.validate_obj(tag)
         elif tag.type == ValueType.Map:
             return MmValidator.validate_map(tag)
         elif tag.type == ValueType.String:
             if isinstance(value, str):
-                return MmValidator.validate_string(value, tag)
+                return MmValidator.validate_str(value, tag)
             else:
                 return ValidationResult(False, "expected string, got %s" % type(value).__name__)
         elif tag.type == ValueType.Bytes:
@@ -1022,67 +1022,67 @@ class MmValidator:
                 return ValidationResult(False, "expected bool, got %s" % type(value).__name__)
         elif tag.type == ValueType.Int:
             if isinstance(value, int):
-                return MmValidator.validate_int(value, tag)
+                return MmValidator.validate_i(value, tag)
             else:
                 return ValidationResult(False, "expected int, got %s" % type(value).__name__)
         elif tag.type == ValueType.Int8:
             if isinstance(value, int):
-                return MmValidator.validate_int8(value, tag)
+                return MmValidator.validate_i8(value, tag)
             else:
                 return ValidationResult(False, "expected int8, got %s" % type(value).__name__)
         elif tag.type == ValueType.Int16:
             if isinstance(value, int):
-                return MmValidator.validate_int16(value, tag)
+                return MmValidator.validate_i16(value, tag)
             else:
                 return ValidationResult(False, "expected int16, got %s" % type(value).__name__)
         elif tag.type == ValueType.Int32:
             if isinstance(value, int):
-                return MmValidator.validate_int32(value, tag)
+                return MmValidator.validate_i32(value, tag)
             else:
                 return ValidationResult(False, "expected int32, got %s" % type(value).__name__)
         elif tag.type == ValueType.Int64:
             if isinstance(value, int):
-                return MmValidator.validate_int64(value, tag)
+                return MmValidator.validate_i64(value, tag)
             else:
                 return ValidationResult(False, "expected int64, got %s" % type(value).__name__)
         elif tag.type == ValueType.Uint:
             if isinstance(value, int):
-                return MmValidator.validate_uint(value, tag)
+                return MmValidator.validate_u(value, tag)
             else:
                 return ValidationResult(False, "expected uint, got %s" % type(value).__name__)
         elif tag.type == ValueType.Uint8:
             if isinstance(value, int):
-                return MmValidator.validate_uint8(value, tag)
+                return MmValidator.validate_u8(value, tag)
             else:
                 return ValidationResult(False, "expected uint8, got %s" % type(value).__name__)
         elif tag.type == ValueType.Uint16:
             if isinstance(value, int):
-                return MmValidator.validate_uint16(value, tag)
+                return MmValidator.validate_u16(value, tag)
             else:
                 return ValidationResult(False, "expected uint16, got %s" % type(value).__name__)
         elif tag.type == ValueType.Uint32:
             if isinstance(value, int):
-                return MmValidator.validate_uint32(value, tag)
+                return MmValidator.validate_u32(value, tag)
             else:
                 return ValidationResult(False, "expected uint32, got %s" % type(value).__name__)
         elif tag.type == ValueType.Uint64:
             if isinstance(value, int):
-                return MmValidator.validate_uint64(value, tag)
+                return MmValidator.validate_u64(value, tag)
             else:
                 return ValidationResult(False, "expected uint64, got %s" % type(value).__name__)
         elif tag.type == ValueType.Float32:
             if isinstance(value, (int, float)):
-                return MmValidator.validate_float32(float(value), tag)
+                return MmValidator.validate_f32(float(value), tag)
             else:
                 return ValidationResult(False, "expected float32, got %s" % type(value).__name__)
         elif tag.type == ValueType.Float64:
             if isinstance(value, (int, float)):
-                return MmValidator.validate_float64(float(value), tag)
+                return MmValidator.validate_f64(float(value), tag)
             else:
                 return ValidationResult(False, "expected float64, got %s" % type(value).__name__)
         elif tag.type == ValueType.BigInt:
             if isinstance(value, str):
-                return MmValidator.validate_big_int(value, tag)
+                return MmValidator.validate_bigint(value, tag)
             else:
                 return ValidationResult(False, "expected string for big.Int, got %s" % type(value).__name__)
         elif tag.type == ValueType.DateTime:

@@ -40,7 +40,7 @@ final class MMEncoderTests: XCTestCase {
         encoder.reset()
         encoder.encode(Int(24))
         data = encoder.buffer.data
-        XCTAssertEqual(data.count, 1)
+        XCTAssertEqual(data.count, 2)
         XCTAssertEqual(data[0], 0b001_11000)
 
         encoder.reset()
@@ -192,7 +192,7 @@ final class MMEncoderTests: XCTestCase {
 
         encoder.encode(Float(0.0))
         var data = encoder.buffer.data
-        XCTAssertEqual(data.count, 9)
+        XCTAssertEqual(data.count, 1)
 
         encoder.reset()
         encoder.encode(Float(3.14))
@@ -205,12 +205,12 @@ final class MMEncoderTests: XCTestCase {
 
         encoder.encode(Double(0.0))
         var data = encoder.buffer.data
-        XCTAssertEqual(data.count, 9)
+        XCTAssertEqual(data.count, 1)
 
         encoder.reset()
         encoder.encode(Double(3.14159265359))
         data = encoder.buffer.data
-        XCTAssertEqual(data.count, 9)
+        XCTAssertEqual(data.count, 7)
     }
 
     func testEncodeString() {

@@ -1,10 +1,10 @@
-use crate::jsonc::tag::Tag;
-use crate::jsonc::value_type::ValueType;
+use crate::ir::tag::Tag;
+use crate::ir::value_type::ValueType;
 use num_bigint::BigInt;
+use regex::Regex;
 use std::any::Any;
 use std::fmt::Debug;
 use std::sync::LazyLock;
-use regex::Regex;
 
 #[derive(Debug, Clone)]
 pub struct ValidationResult {
@@ -19,7 +19,15 @@ impl ValidationResult {
             errors: Vec::new(),
         }
     }
+}
 
+impl Default for ValidationResult {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+impl ValidationResult {
     pub fn add_error(&mut self, error: String) {
         self.is_valid = false;
         self.errors.push(error);
@@ -48,29 +56,31 @@ impl MmValidator {
 
         match tag.value_type {
             ValueType::Bool => self.validate_bool(value, tag, &mut result),
-            ValueType::Int => self.validate_int(value, tag, &mut result),
-            ValueType::Int8 => self.validate_int8(value, tag, &mut result),
-            ValueType::Int16 => self.validate_int16(value, tag, &mut result),
-            ValueType::Int32 => self.validate_int32(value, tag, &mut result),
-            ValueType::Int64 => self.validate_int64(value, tag, &mut result),
-            ValueType::Uint => self.validate_uint(value, tag, &mut result),
-            ValueType::Uint8 => self.validate_uint8(value, tag, &mut result),
-            ValueType::Uint16 => self.validate_uint16(value, tag, &mut result),
-            ValueType::Uint32 => self.validate_uint32(value, tag, &mut result),
-            ValueType::Uint64 => self.validate_uint64(value, tag, &mut result),
-            ValueType::BigInt => self.validate_big_int(value, tag, &mut result),
-            ValueType::Float32 => self.validate_float32(value, tag, &mut result),
-            ValueType::Float64 => self.validate_float64(value, tag, &mut result),
-            ValueType::Decimal => self.validate_float(value, tag, &mut result),
-            ValueType::String => self.validate_string(value, tag, &mut result),
+            ValueType::Int => self.validate_i(value, tag, &mut result),
+            ValueType::Int8 => self.validate_i8(value, tag, &mut result),
+            ValueType::Int16 => self.validate_i16(value, tag, &mut result),
+            ValueType::Int32 => self.validate_i32(value, tag, &mut result),
+            ValueType::Int64 => self.validate_i64(value, tag, &mut result),
+            ValueType::Uint => self.validate_u(value, tag, &mut result),
+            ValueType::Uint8 => self.validate_u8(value, tag, &mut result),
+            ValueType::Uint16 => self.validate_u16(value, tag, &mut result),
+            ValueType::Uint32 => self.validate_u32(value, tag, &mut result),
+            ValueType::Uint64 => self.validate_u64(value, tag, &mut result),
+            ValueType::BigInt => self.validate_bigint(value, tag, &mut result),
+            ValueType::Float32 => self.validate_f32(value, tag, &mut result),
+            ValueType::Float64 => self.validate_f64(value, tag, &mut result),
+            ValueType::Decimal => self.validate_f(value, tag, &mut result),
+            ValueType::String => self.validate_str(value, tag, &mut result),
             ValueType::Email => self.validate_email(value, tag, &mut result),
             ValueType::URL => self.validate_url(value, tag, &mut result),
             ValueType::Bytes => self.validate_bytes(value, tag, &mut result),
             ValueType::UUID => self.validate_uuid(value, tag, &mut result),
-            ValueType::DateTime | ValueType::Date | ValueType::Time => self.validate_datetime(value, tag, &mut result),
+            ValueType::DateTime | ValueType::Date | ValueType::Time => {
+                self.validate_datetime(value, tag, &mut result)
+            }
             ValueType::Enum => self.validate_enum(value, tag, &mut result),
-            ValueType::Array | ValueType::Slice => self.validate_array(value, tag, &mut result),
-            ValueType::Struct => self.validate_struct(value, tag, &mut result),
+            ValueType::Array | ValueType::Slice => self.validate_arr(value, tag, &mut result),
+            ValueType::Struct => self.validate_obj(value, tag, &mut result),
             _ => {}
         }
 
@@ -84,7 +94,7 @@ impl MmValidator {
         }
     }
 
-    fn validate_int(&self, value: &dyn Any, tag: &Tag, result: &mut ValidationResult) {
+    fn validate_i(&self, value: &dyn Any, tag: &Tag, result: &mut ValidationResult) {
         if let Some(int_value) = value.downcast_ref::<i64>() {
             if *int_value == 0 {
                 result.add_error("type int not allow empty value 0".to_string());
@@ -94,14 +104,20 @@ impl MmValidator {
             if let Some(ref min_str) = tag.min {
                 if let Ok(mini) = min_str.parse::<i64>() {
                     if val64 < mini {
-                        result.add_error(format!("value {} is less than the minimum limit {}", val64, mini));
+                        result.add_error(format!(
+                            "value {} is less than the minimum limit {}",
+                            val64, mini
+                        ));
                     }
                 }
             }
             if let Some(ref max_str) = tag.max {
                 if let Ok(maxi) = max_str.parse::<i64>() {
                     if val64 > maxi {
-                        result.add_error(format!("value {} exceeds the maximum limit {}", val64, maxi));
+                        result.add_error(format!(
+                            "value {} exceeds the maximum limit {}",
+                            val64, maxi
+                        ));
                     }
                 }
             }
@@ -110,7 +126,7 @@ impl MmValidator {
         }
     }
 
-    fn validate_int8(&self, value: &dyn Any, tag: &Tag, result: &mut ValidationResult) {
+    fn validate_i8(&self, value: &dyn Any, tag: &Tag, result: &mut ValidationResult) {
         if let Some(int_value) = value.downcast_ref::<i8>() {
             if *int_value == 0 {
                 result.add_error("type int8 not allow empty value 0".to_string());
@@ -121,9 +137,13 @@ impl MmValidator {
                 match min_str.parse::<i64>() {
                     Ok(mini) => {
                         if mini < i8::MIN as i64 || mini > i8::MAX as i64 {
-                            result.add_error(format!("failed to parse tag.min as int8: {}", min_str));
+                            result
+                                .add_error(format!("failed to parse tag.min as int8: {}", min_str));
                         } else if val64 < mini {
-                            result.add_error(format!("value {} is less than the minimum limit {}", val64, mini));
+                            result.add_error(format!(
+                                "value {} is less than the minimum limit {}",
+                                val64, mini
+                            ));
                         }
                     }
                     Err(_) => {
@@ -135,9 +155,13 @@ impl MmValidator {
                 match max_str.parse::<i64>() {
                     Ok(maxi) => {
                         if maxi < i8::MIN as i64 || maxi > i8::MAX as i64 {
-                            result.add_error(format!("failed to parse tag.max as int8: {}", max_str));
+                            result
+                                .add_error(format!("failed to parse tag.max as int8: {}", max_str));
                         } else if val64 > maxi {
-                            result.add_error(format!("value {} exceeds the maximum limit {}", val64, maxi));
+                            result.add_error(format!(
+                                "value {} exceeds the maximum limit {}",
+                                val64, maxi
+                            ));
                         }
                     }
                     Err(_) => {
@@ -150,7 +174,7 @@ impl MmValidator {
         }
     }
 
-    fn validate_int16(&self, value: &dyn Any, tag: &Tag, result: &mut ValidationResult) {
+    fn validate_i16(&self, value: &dyn Any, tag: &Tag, result: &mut ValidationResult) {
         if let Some(int_value) = value.downcast_ref::<i16>() {
             if *int_value == 0 {
                 result.add_error("type int16 not allow empty value 0".to_string());
@@ -161,9 +185,15 @@ impl MmValidator {
                 match min_str.parse::<i64>() {
                     Ok(mini) => {
                         if mini < i16::MIN as i64 || mini > i16::MAX as i64 {
-                            result.add_error(format!("failed to parse tag.min as int16: {}", min_str));
+                            result.add_error(format!(
+                                "failed to parse tag.min as int16: {}",
+                                min_str
+                            ));
                         } else if val64 < mini {
-                            result.add_error(format!("value {} is less than the minimum limit {}", val64, mini));
+                            result.add_error(format!(
+                                "value {} is less than the minimum limit {}",
+                                val64, mini
+                            ));
                         }
                     }
                     Err(_) => {
@@ -175,9 +205,15 @@ impl MmValidator {
                 match max_str.parse::<i64>() {
                     Ok(maxi) => {
                         if maxi < i16::MIN as i64 || maxi > i16::MAX as i64 {
-                            result.add_error(format!("failed to parse tag.max as int16: {}", max_str));
+                            result.add_error(format!(
+                                "failed to parse tag.max as int16: {}",
+                                max_str
+                            ));
                         } else if val64 > maxi {
-                            result.add_error(format!("value {} exceeds the maximum limit {}", val64, maxi));
+                            result.add_error(format!(
+                                "value {} exceeds the maximum limit {}",
+                                val64, maxi
+                            ));
                         }
                     }
                     Err(_) => {
@@ -190,7 +226,7 @@ impl MmValidator {
         }
     }
 
-    fn validate_int32(&self, value: &dyn Any, tag: &Tag, result: &mut ValidationResult) {
+    fn validate_i32(&self, value: &dyn Any, tag: &Tag, result: &mut ValidationResult) {
         if let Some(int_value) = value.downcast_ref::<i32>() {
             if *int_value == 0 {
                 result.add_error("type int32 not allow empty value 0".to_string());
@@ -201,9 +237,15 @@ impl MmValidator {
                 match min_str.parse::<i64>() {
                     Ok(mini) => {
                         if mini < i32::MIN as i64 || mini > i32::MAX as i64 {
-                            result.add_error(format!("failed to parse tag.min as int32: {}", min_str));
+                            result.add_error(format!(
+                                "failed to parse tag.min as int32: {}",
+                                min_str
+                            ));
                         } else if val64 < mini {
-                            result.add_error(format!("value {} is less than the minimum limit {}", val64, mini));
+                            result.add_error(format!(
+                                "value {} is less than the minimum limit {}",
+                                val64, mini
+                            ));
                         }
                     }
                     Err(_) => {
@@ -215,9 +257,15 @@ impl MmValidator {
                 match max_str.parse::<i64>() {
                     Ok(maxi) => {
                         if maxi < i32::MIN as i64 || maxi > i32::MAX as i64 {
-                            result.add_error(format!("failed to parse tag.max as int32: {}", max_str));
+                            result.add_error(format!(
+                                "failed to parse tag.max as int32: {}",
+                                max_str
+                            ));
                         } else if val64 > maxi {
-                            result.add_error(format!("value {} exceeds the maximum limit {}", val64, maxi));
+                            result.add_error(format!(
+                                "value {} exceeds the maximum limit {}",
+                                val64, maxi
+                            ));
                         }
                     }
                     Err(_) => {
@@ -230,7 +278,7 @@ impl MmValidator {
         }
     }
 
-    fn validate_int64(&self, value: &dyn Any, tag: &Tag, result: &mut ValidationResult) {
+    fn validate_i64(&self, value: &dyn Any, tag: &Tag, result: &mut ValidationResult) {
         if let Some(int_value) = value.downcast_ref::<i64>() {
             if *int_value == 0 {
                 result.add_error("type int64 not allow empty value 0".to_string());
@@ -241,7 +289,10 @@ impl MmValidator {
                 match min_str.parse::<i64>() {
                     Ok(mini) => {
                         if val < mini {
-                            result.add_error(format!("value {} is less than the minimum limit {}", val, mini));
+                            result.add_error(format!(
+                                "value {} is less than the minimum limit {}",
+                                val, mini
+                            ));
                         }
                     }
                     Err(_) => {
@@ -253,7 +304,10 @@ impl MmValidator {
                 match max_str.parse::<i64>() {
                     Ok(maxi) => {
                         if val > maxi {
-                            result.add_error(format!("value {} exceeds the maximum limit {}", val, maxi));
+                            result.add_error(format!(
+                                "value {} exceeds the maximum limit {}",
+                                val, maxi
+                            ));
                         }
                     }
                     Err(_) => {
@@ -266,7 +320,7 @@ impl MmValidator {
         }
     }
 
-    fn validate_uint(&self, value: &dyn Any, tag: &Tag, result: &mut ValidationResult) {
+    fn validate_u(&self, value: &dyn Any, tag: &Tag, result: &mut ValidationResult) {
         if let Some(int_value) = value.downcast_ref::<u32>() {
             if *int_value == 0 {
                 result.add_error("type uint not allow empty value 0".to_string());
@@ -276,14 +330,20 @@ impl MmValidator {
             if let Some(ref min_str) = tag.min {
                 if let Ok(mini) = min_str.parse::<u64>() {
                     if val64 < mini {
-                        result.add_error(format!("value {} is less than the minimum limit {}", val64, mini));
+                        result.add_error(format!(
+                            "value {} is less than the minimum limit {}",
+                            val64, mini
+                        ));
                     }
                 }
             }
             if let Some(ref max_str) = tag.max {
                 if let Ok(maxi) = max_str.parse::<u64>() {
                     if val64 > maxi {
-                        result.add_error(format!("value {} exceeds the maximum limit {}", val64, maxi));
+                        result.add_error(format!(
+                            "value {} exceeds the maximum limit {}",
+                            val64, maxi
+                        ));
                     }
                 }
             }
@@ -292,7 +352,7 @@ impl MmValidator {
         }
     }
 
-    fn validate_uint8(&self, value: &dyn Any, tag: &Tag, result: &mut ValidationResult) {
+    fn validate_u8(&self, value: &dyn Any, tag: &Tag, result: &mut ValidationResult) {
         if let Some(int_value) = value.downcast_ref::<u8>() {
             if *int_value == 0 {
                 result.add_error("type uint8 not allow empty value 0".to_string());
@@ -303,9 +363,15 @@ impl MmValidator {
                 match min_str.parse::<u64>() {
                     Ok(mini) => {
                         if mini < u8::MIN as u64 || mini > u8::MAX as u64 {
-                            result.add_error(format!("failed to parse tag.min as uint8: {}", min_str));
+                            result.add_error(format!(
+                                "failed to parse tag.min as uint8: {}",
+                                min_str
+                            ));
                         } else if val64 < mini {
-                            result.add_error(format!("value {} is less than the minimum limit {}", val64, mini));
+                            result.add_error(format!(
+                                "value {} is less than the minimum limit {}",
+                                val64, mini
+                            ));
                         }
                     }
                     Err(_) => {
@@ -317,9 +383,15 @@ impl MmValidator {
                 match max_str.parse::<u64>() {
                     Ok(maxi) => {
                         if maxi < u8::MIN as u64 || maxi > u8::MAX as u64 {
-                            result.add_error(format!("failed to parse tag.max as uint8: {}", max_str));
+                            result.add_error(format!(
+                                "failed to parse tag.max as uint8: {}",
+                                max_str
+                            ));
                         } else if val64 > maxi {
-                            result.add_error(format!("value {} exceeds the maximum limit {}", val64, maxi));
+                            result.add_error(format!(
+                                "value {} exceeds the maximum limit {}",
+                                val64, maxi
+                            ));
                         }
                     }
                     Err(_) => {
@@ -332,7 +404,7 @@ impl MmValidator {
         }
     }
 
-    fn validate_uint16(&self, value: &dyn Any, tag: &Tag, result: &mut ValidationResult) {
+    fn validate_u16(&self, value: &dyn Any, tag: &Tag, result: &mut ValidationResult) {
         if let Some(int_value) = value.downcast_ref::<u16>() {
             if *int_value == 0 {
                 result.add_error("type uint16 not allow empty value 0".to_string());
@@ -343,9 +415,15 @@ impl MmValidator {
                 match min_str.parse::<u64>() {
                     Ok(mini) => {
                         if mini < u16::MIN as u64 || mini > u16::MAX as u64 {
-                            result.add_error(format!("failed to parse tag.min as uint16: {}", min_str));
+                            result.add_error(format!(
+                                "failed to parse tag.min as uint16: {}",
+                                min_str
+                            ));
                         } else if val64 < mini {
-                            result.add_error(format!("value {} is less than the minimum limit {}", val64, mini));
+                            result.add_error(format!(
+                                "value {} is less than the minimum limit {}",
+                                val64, mini
+                            ));
                         }
                     }
                     Err(_) => {
@@ -357,9 +435,15 @@ impl MmValidator {
                 match max_str.parse::<u64>() {
                     Ok(maxi) => {
                         if maxi < u16::MIN as u64 || maxi > u16::MAX as u64 {
-                            result.add_error(format!("failed to parse tag.max as uint16: {}", max_str));
+                            result.add_error(format!(
+                                "failed to parse tag.max as uint16: {}",
+                                max_str
+                            ));
                         } else if val64 > maxi {
-                            result.add_error(format!("value {} exceeds the maximum limit {}", val64, maxi));
+                            result.add_error(format!(
+                                "value {} exceeds the maximum limit {}",
+                                val64, maxi
+                            ));
                         }
                     }
                     Err(_) => {
@@ -372,7 +456,7 @@ impl MmValidator {
         }
     }
 
-    fn validate_uint32(&self, value: &dyn Any, tag: &Tag, result: &mut ValidationResult) {
+    fn validate_u32(&self, value: &dyn Any, tag: &Tag, result: &mut ValidationResult) {
         if let Some(int_value) = value.downcast_ref::<u32>() {
             if *int_value == 0 {
                 result.add_error("type uint32 not allow empty value 0".to_string());
@@ -383,9 +467,15 @@ impl MmValidator {
                 match min_str.parse::<u64>() {
                     Ok(mini) => {
                         if mini < u32::MIN as u64 || mini > u32::MAX as u64 {
-                            result.add_error(format!("failed to parse tag.min as uint32: {}", min_str));
+                            result.add_error(format!(
+                                "failed to parse tag.min as uint32: {}",
+                                min_str
+                            ));
                         } else if val64 < mini {
-                            result.add_error(format!("value {} is less than the minimum limit {}", val64, mini));
+                            result.add_error(format!(
+                                "value {} is less than the minimum limit {}",
+                                val64, mini
+                            ));
                         }
                     }
                     Err(_) => {
@@ -397,9 +487,15 @@ impl MmValidator {
                 match max_str.parse::<u64>() {
                     Ok(maxi) => {
                         if maxi < u32::MIN as u64 || maxi > u32::MAX as u64 {
-                            result.add_error(format!("failed to parse tag.max as uint32: {}", max_str));
+                            result.add_error(format!(
+                                "failed to parse tag.max as uint32: {}",
+                                max_str
+                            ));
                         } else if val64 > maxi {
-                            result.add_error(format!("value {} exceeds the maximum limit {}", val64, maxi));
+                            result.add_error(format!(
+                                "value {} exceeds the maximum limit {}",
+                                val64, maxi
+                            ));
                         }
                     }
                     Err(_) => {
@@ -412,7 +508,7 @@ impl MmValidator {
         }
     }
 
-    fn validate_uint64(&self, value: &dyn Any, tag: &Tag, result: &mut ValidationResult) {
+    fn validate_u64(&self, value: &dyn Any, tag: &Tag, result: &mut ValidationResult) {
         if let Some(int_value) = value.downcast_ref::<u64>() {
             if *int_value == 0 {
                 result.add_error("type uint64 not allow empty value 0".to_string());
@@ -423,7 +519,10 @@ impl MmValidator {
                 match min_str.parse::<u64>() {
                     Ok(mini) => {
                         if val < mini {
-                            result.add_error(format!("value {} is less than the minimum limit {}", val, mini));
+                            result.add_error(format!(
+                                "value {} is less than the minimum limit {}",
+                                val, mini
+                            ));
                         }
                     }
                     Err(_) => {
@@ -435,7 +534,10 @@ impl MmValidator {
                 match max_str.parse::<u64>() {
                     Ok(maxi) => {
                         if val > maxi {
-                            result.add_error(format!("value {} exceeds the maximum limit {}", val, maxi));
+                            result.add_error(format!(
+                                "value {} exceeds the maximum limit {}",
+                                val, maxi
+                            ));
                         }
                     }
                     Err(_) => {
@@ -448,7 +550,7 @@ impl MmValidator {
         }
     }
 
-    fn validate_big_int(&self, value: &dyn Any, tag: &Tag, result: &mut ValidationResult) {
+    fn validate_bigint(&self, value: &dyn Any, tag: &Tag, result: &mut ValidationResult) {
         if let Some(big_int) = value.downcast_ref::<BigInt>() {
             if big_int.sign() == num_bigint::Sign::NoSign {
                 result.add_error("type big.Int not allow empty value 0".to_string());
@@ -473,7 +575,7 @@ impl MmValidator {
         }
     }
 
-    fn validate_float32(&self, value: &dyn Any, tag: &Tag, result: &mut ValidationResult) {
+    fn validate_f32(&self, value: &dyn Any, tag: &Tag, result: &mut ValidationResult) {
         if let Some(float_value) = value.downcast_ref::<f32>() {
             if *float_value == 0.0 {
                 result.add_error("type float32 not allow empty value 0.0".to_string());
@@ -484,13 +586,17 @@ impl MmValidator {
                 match min_str.parse::<f64>() {
                     Ok(mini) => {
                         if mini < f32::MIN as f64 || mini > f32::MAX as f64 {
-                            result.add_error(format!("failed to parse tag.min as float32: {}", min_str));
+                            result.add_error(format!(
+                                "failed to parse tag.min as float32: {}",
+                                min_str
+                            ));
                         } else if val64 < mini {
                             result.add_error(format!("{} < min {}", val64, mini));
                         }
                     }
                     Err(_) => {
-                        result.add_error(format!("failed to parse tag.min as float32: {}", min_str));
+                        result
+                            .add_error(format!("failed to parse tag.min as float32: {}", min_str));
                     }
                 }
             }
@@ -498,13 +604,17 @@ impl MmValidator {
                 match max_str.parse::<f64>() {
                     Ok(maxi) => {
                         if maxi < f32::MIN as f64 || maxi > f32::MAX as f64 {
-                            result.add_error(format!("failed to parse tag.max as float32: {}", max_str));
+                            result.add_error(format!(
+                                "failed to parse tag.max as float32: {}",
+                                max_str
+                            ));
                         } else if val64 > maxi {
                             result.add_error(format!("{} > max {}", val64, maxi));
                         }
                     }
                     Err(_) => {
-                        result.add_error(format!("failed to parse tag.max as float32: {}", max_str));
+                        result
+                            .add_error(format!("failed to parse tag.max as float32: {}", max_str));
                     }
                 }
             }
@@ -513,7 +623,7 @@ impl MmValidator {
         }
     }
 
-    fn validate_float64(&self, value: &dyn Any, tag: &Tag, result: &mut ValidationResult) {
+    fn validate_f64(&self, value: &dyn Any, tag: &Tag, result: &mut ValidationResult) {
         if let Some(float_value) = value.downcast_ref::<f64>() {
             if *float_value == 0.0 {
                 result.add_error("type float64 not allow empty value 0.0".to_string());
@@ -523,28 +633,36 @@ impl MmValidator {
             if let Some(ref min_str) = tag.min {
                 match min_str.parse::<f64>() {
                     Ok(mini) => {
-                        if mini < f64::MIN || mini > f64::MAX {
-                            result.add_error(format!("failed to parse tag.min as float64: {}", min_str));
+                        if !(f64::MIN..=f64::MAX).contains(&mini) {
+                            result.add_error(format!(
+                                "failed to parse tag.min as float64: {}",
+                                min_str
+                            ));
                         } else if val < mini {
                             result.add_error(format!("{} < min {}", val, mini));
                         }
                     }
                     Err(_) => {
-                        result.add_error(format!("failed to parse tag.min as float64: {}", min_str));
+                        result
+                            .add_error(format!("failed to parse tag.min as float64: {}", min_str));
                     }
                 }
             }
             if let Some(ref max_str) = tag.max {
                 match max_str.parse::<f64>() {
                     Ok(maxi) => {
-                        if maxi < f64::MIN || maxi > f64::MAX {
-                            result.add_error(format!("failed to parse tag.max as float64: {}", max_str));
+                        if !(f64::MIN..=f64::MAX).contains(&maxi) {
+                            result.add_error(format!(
+                                "failed to parse tag.max as float64: {}",
+                                max_str
+                            ));
                         } else if val > maxi {
                             result.add_error(format!("{} > max {}", val, maxi));
                         }
                     }
                     Err(_) => {
-                        result.add_error(format!("failed to parse tag.max as float64: {}", max_str));
+                        result
+                            .add_error(format!("failed to parse tag.max as float64: {}", max_str));
                     }
                 }
             }
@@ -553,7 +671,7 @@ impl MmValidator {
         }
     }
 
-    fn validate_float(&self, value: &dyn Any, tag: &Tag, result: &mut ValidationResult) {
+    fn validate_f(&self, value: &dyn Any, tag: &Tag, result: &mut ValidationResult) {
         if let Some(float_value) = value.downcast_ref::<f64>() {
             match tag.value_type {
                 ValueType::Float32 => {
@@ -589,7 +707,7 @@ impl MmValidator {
         }
     }
 
-    fn validate_string(&self, value: &dyn Any, tag: &Tag, result: &mut ValidationResult) {
+    fn validate_str(&self, value: &dyn Any, _tag: &Tag, result: &mut ValidationResult) {
         if let Some(str_value) = value.downcast_ref::<String>() {
             if str_value.is_empty() {
                 result.add_error("value is empty".to_string());
@@ -599,7 +717,7 @@ impl MmValidator {
         }
     }
 
-    fn validate_email(&self, value: &dyn Any, tag: &Tag, result: &mut ValidationResult) {
+    fn validate_email(&self, value: &dyn Any, _tag: &Tag, result: &mut ValidationResult) {
         if let Some(email) = value.downcast_ref::<String>() {
             if email.is_empty() {
                 result.add_error("value is empty".to_string());
@@ -611,7 +729,7 @@ impl MmValidator {
         }
     }
 
-    fn validate_url(&self, value: &dyn Any, tag: &Tag, result: &mut ValidationResult) {
+    fn validate_url(&self, value: &dyn Any, _tag: &Tag, result: &mut ValidationResult) {
         if let Some(url) = value.downcast_ref::<String>() {
             if url.is_empty() {
                 result.add_error("value is empty".to_string());
@@ -623,7 +741,7 @@ impl MmValidator {
         }
     }
 
-    fn validate_bytes(&self, value: &dyn Any, tag: &Tag, result: &mut ValidationResult) {
+    fn validate_bytes(&self, value: &dyn Any, _tag: &Tag, result: &mut ValidationResult) {
         if let Some(bytes) = value.downcast_ref::<Vec<u8>>() {
             if bytes.is_empty() {
                 result.add_error("value is empty".to_string());
@@ -633,7 +751,7 @@ impl MmValidator {
         }
     }
 
-    fn validate_uuid(&self, value: &dyn Any, tag: &Tag, result: &mut ValidationResult) {
+    fn validate_uuid(&self, value: &dyn Any, _tag: &Tag, result: &mut ValidationResult) {
         if let Some(uuid) = value.downcast_ref::<String>() {
             if uuid.is_empty() {
                 result.add_error("value is empty".to_string());
@@ -645,7 +763,7 @@ impl MmValidator {
         }
     }
 
-    fn validate_datetime(&self, value: &dyn Any, tag: &Tag, result: &mut ValidationResult) {
+    fn validate_datetime(&self, value: &dyn Any, _tag: &Tag, result: &mut ValidationResult) {
         if let Some(datetime) = value.downcast_ref::<String>() {
             if datetime.is_empty() {
                 result.add_error("value is empty".to_string());
@@ -669,14 +787,14 @@ impl MmValidator {
         }
     }
 
-    fn validate_array(&self, value: &dyn Any, tag: &Tag, result: &mut ValidationResult) {
+    fn validate_arr(&self, value: &dyn Any, tag: &Tag, result: &mut ValidationResult) {
         if let Some(array) = value.downcast_ref::<Vec<Box<dyn Any>>>() {
             if array.is_empty() {
                 result.add_error("value is empty".to_string());
             }
             for (index, item) in array.iter().enumerate() {
                 let child_tag = Tag {
-                    value_type: tag.child_type.unwrap_or(ValueType::Unknown),
+                    value_type: tag.child_type,
                     ..tag.clone()
                 };
                 let item_result = self.validate(item.as_ref(), &child_tag);
@@ -691,15 +809,13 @@ impl MmValidator {
         }
     }
 
-    fn validate_struct(&self, _value: &dyn Any, _tag: &Tag, _result: &mut ValidationResult) {
-    }
+    fn validate_obj(&self, _value: &dyn Any, _tag: &Tag, _result: &mut ValidationResult) {}
 }
 
-static EMAIL_REGEX: LazyLock<Regex> = LazyLock::new(|| {
-    Regex::new(r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$").unwrap()
-});
+static EMAIL_REGEX: LazyLock<Regex> =
+    LazyLock::new(|| Regex::new(r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$").unwrap());
 
-pub static VALIDATOR: LazyLock<MmValidator> = LazyLock::new(|| MmValidator::new());
+pub static VALIDATOR: LazyLock<MmValidator> = LazyLock::new(MmValidator::new);
 
 pub fn validate(value: &dyn Any, tag: &Tag) -> ValidationResult {
     VALIDATOR.validate(value, tag)

@@ -12,33 +12,33 @@ import (
 
 var swiftTypeMap = map[ir.ValueType]string{
 	ir.ValueTypeUnknown:  "Any",
-	ir.ValueTypeString:   "String",
+	ir.ValueTypeStr:      "String",
 	ir.ValueTypeBytes:    "Data",
 	ir.ValueTypeBool:     "Bool",
-	ir.ValueTypeArray:    "[Any]",
-	ir.ValueTypeSlice:    "[Any]",
+	ir.ValueTypeArr:      "[Any]",
+	ir.ValueTypeVec:      "[Any]",
 	ir.ValueTypeMap:      "[String: Any]",
-	ir.ValueTypeInt:      "Int",
-	ir.ValueTypeInt8:     "Int8",
-	ir.ValueTypeInt16:    "Int16",
-	ir.ValueTypeInt32:    "Int32",
-	ir.ValueTypeInt64:    "Int64",
-	ir.ValueTypeUint:     "UInt",
-	ir.ValueTypeUint8:    "UInt8",
-	ir.ValueTypeUint16:   "UInt16",
-	ir.ValueTypeUint32:   "UInt32",
-	ir.ValueTypeUint64:   "UInt64",
-	ir.ValueTypeFloat32:  "Float",
-	ir.ValueTypeFloat64:  "Double",
-	ir.ValueTypeBigInt:   "String",
-	ir.ValueTypeDateTime: "Date",
+	ir.ValueTypeI:        "Int",
+	ir.ValueTypeI8:       "Int8",
+	ir.ValueTypeI16:      "Int16",
+	ir.ValueTypeI32:      "Int32",
+	ir.ValueTypeI64:      "Int64",
+	ir.ValueTypeU:        "UInt",
+	ir.ValueTypeU8:       "UInt8",
+	ir.ValueTypeU16:      "UInt16",
+	ir.ValueTypeU32:      "UInt32",
+	ir.ValueTypeU64:      "UInt64",
+	ir.ValueTypeF32:      "Float",
+	ir.ValueTypeF64:      "Double",
+	ir.ValueTypeBigint:   "String",
+	ir.ValueTypeDatetime: "Date",
 	ir.ValueTypeDate:     "Date",
 	ir.ValueTypeTime:     "Date",
-	ir.ValueTypeUUID:     "UUID",
+	ir.ValueTypeUuid:     "UUID",
 	ir.ValueTypeDecimal:  "Decimal",
 	ir.ValueTypeEmail:    "String",
-	ir.ValueTypeIP:       "String",
-	ir.ValueTypeURL:      "URL",
+	ir.ValueTypeIp:       "String",
+	ir.ValueTypeUrl:      "URL",
 	ir.ValueTypeEnum:     "String",
 	ir.ValueTypeImage:    "String",
 }
@@ -128,7 +128,7 @@ func collectSwiftImportsRec(n ir.Node, imports map[string]struct{}) {
 
 func addSwiftImportForType(typ ir.ValueType, imports map[string]struct{}) {
 	switch typ {
-	case ir.ValueTypeBytes, ir.ValueTypeDateTime, ir.ValueTypeDate, ir.ValueTypeTime, ir.ValueTypeUUID, ir.ValueTypeDecimal, ir.ValueTypeURL:
+	case ir.ValueTypeBytes, ir.ValueTypeDatetime, ir.ValueTypeDate, ir.ValueTypeTime, ir.ValueTypeUuid, ir.ValueTypeDecimal, ir.ValueTypeUrl:
 		imports["Foundation"] = struct{}{}
 	}
 }
@@ -204,18 +204,7 @@ func genSwiftFields(b *strings.Builder, n ir.Node, indent int) {
 		b.WriteString(exportSwiftFieldName(f.Key))
 		b.WriteString(": ")
 		b.WriteString(getSwiftTypeForField(f))
-
-		// Check if field is nullable
-		isNullable := false
-		if tag := f.Value.GetTag(); tag != nil {
-			isNullable = tag.Nullable
-		}
-
-		if isNullable {
-			b.WriteString("?\n")
-		} else {
-			b.WriteString("\n")
-		}
+		b.WriteString("?\n")
 	}
 }
 
@@ -244,7 +233,7 @@ func genSwiftNestedStructs(b *strings.Builder, n ir.Node, generated map[string]s
 			b.WriteString("}\n")
 			genSwiftNestedStructs(b, v, generated)
 		case *ir.Array:
-			if nestedObj := findFirstObjectInArraySwift(v); nestedObj != nil {
+			if nestedObj := findFirstObjectInArray(v); nestedObj != nil {
 				structName := getSwiftObjectType(f.Key, nestedObj)
 				if _, ok := generated[structName]; ok {
 					continue
@@ -259,18 +248,6 @@ func genSwiftNestedStructs(b *strings.Builder, n ir.Node, generated map[string]s
 			}
 		}
 	}
-}
-
-func findFirstObjectInArraySwift(a *ir.Array) *ir.Object {
-	if a == nil {
-		return nil
-	}
-	for _, item := range a.Items {
-		if obj, ok := item.(*ir.Object); ok {
-			return obj
-		}
-	}
-	return nil
 }
 
 func exportSwiftStructName(s string) string {
@@ -302,7 +279,7 @@ func exportSwiftFieldName(s string) string {
 		if part == "" {
 			continue
 		}
-		name += strings.Title(part)
+		name += toTitle(part)
 	}
 
 	if unicode.IsDigit(rune(name[0])) {

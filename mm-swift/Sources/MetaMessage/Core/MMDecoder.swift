@@ -81,14 +81,17 @@ public class MMDecoder {
             guard let b = buffer.read() else {
                 throw MMError.unexpectedEndOfData
             }
-            value |= UInt64(b) << (i * 8)
+            value = (value << 8) | UInt64(b)
         }
 
         if extraBytes == 0 {
             let suffix = Int(byte & 0x1F)
-            value |= UInt64(suffix)
+            value = UInt64(suffix)
         }
 
+        if value > UInt64(Int64.max) {
+            return .uint(value)
+        }
         return .int(Int64(value))
     }
 
@@ -104,21 +107,73 @@ public class MMDecoder {
             guard let b = buffer.read() else {
                 throw MMError.unexpectedEndOfData
             }
-            value |= UInt64(b) << (i * 8)
+            value = (value << 8) | UInt64(b)
         }
 
         if extraBytes == 0 {
             let suffix = Int(byte & 0x1F)
-            value |= UInt64(suffix)
+            value = UInt64(suffix)
         }
 
-        return .int(-Int64(value) - 1)
+        if value > UInt64(Int64.max) {
+            return .int(Int64.min)
+        }
+        return .int(-Int64(value))
     }
 
     private func decodeFloat() throws -> DecodedValue {
-        _ = buffer.read()
-        let value = try buffer.readFloat64()
+        guard let prefix = buffer.read() else {
+            throw MMError.unexpectedEndOfData
+        }
+
+        let prefixLower = prefix & 0x0F
+
+        if prefixLower <= 6 {
+            let val = Double(prefixLower) / 10.0
+            if (prefix & MMConstants.floatPositiveNegativeMask) != 0 {
+                return .float(-val)
+            }
+            return .float(val)
+        }
+
+        guard let expByte = buffer.read() else {
+            throw MMError.unexpectedEndOfData
+        }
+        let exponent = Int8(bitPattern: expByte)
+
+        let (extraBytes, _) = floatLen(prefix)
+        var mantissa: UInt64 = 0
+        for _ in 0..<extraBytes {
+            guard let b = buffer.read() else {
+                throw MMError.unexpectedEndOfData
+            }
+            mantissa = (mantissa << 8) | UInt64(b)
+        }
+
+        let decimalStr = mantissaToDecimal(mantissa, exponent)
+        guard let value = Double(decimalStr) else {
+            throw MMError.invalidData
+        }
+
+        if (prefix & MMConstants.floatPositiveNegativeMask) != 0 {
+            return .float(-value)
+        }
         return .float(value)
+    }
+
+    private func mantissaToDecimal(_ mantissa: UInt64, _ exp: Int8) -> String {
+        let numStr = String(mantissa)
+        let decimalPos = numStr.count + Int(exp)
+
+        if decimalPos <= 0 {
+            return "0." + String(repeating: "0", count: -decimalPos) + numStr
+        } else if decimalPos > 0 && decimalPos < numStr.count {
+            let idx = numStr.index(numStr.startIndex, offsetBy: decimalPos)
+            return String(numStr[..<idx]) + "." + String(numStr[idx...])
+        } else {
+            let trailingZeros = decimalPos - numStr.count
+            return numStr + String(repeating: "0", count: trailingZeros)
+        }
     }
 
     private func decodeString() throws -> DecodedValue {
@@ -128,14 +183,17 @@ public class MMDecoder {
 
         let (extraBytes, len) = stringLen(byte)
 
-        var totalLen = len
+        var totalLen: Int
         if extraBytes > 0 {
             guard let bytes = buffer.read(extraBytes) else {
                 throw MMError.unexpectedEndOfData
             }
-            for (i, b) in bytes.enumerated() {
-                totalLen |= Int(b) << (i * 8)
+            totalLen = 0
+            for b in bytes {
+                totalLen = (totalLen << 8) | Int(b)
             }
+        } else {
+            totalLen = len
         }
 
         guard let bytes = buffer.read(totalLen) else {
@@ -156,14 +214,17 @@ public class MMDecoder {
 
         let (extraBytes, len) = bytesLen(byte)
 
-        var totalLen = len
+        var totalLen: Int
         if extraBytes > 0 {
             guard let bytes = buffer.read(extraBytes) else {
                 throw MMError.unexpectedEndOfData
             }
-            for (i, b) in bytes.enumerated() {
-                totalLen |= Int(b) << (i * 8)
+            totalLen = 0
+            for b in bytes {
+                totalLen = (totalLen << 8) | Int(b)
             }
+        } else {
+            totalLen = len
         }
 
         guard let result = buffer.read(totalLen) else {
@@ -182,14 +243,17 @@ public class MMDecoder {
 
         let (extraBytes, len) = containerLen(byte)
 
-        var totalLen = len
+        var totalLen: Int
         if extraBytes > 0 {
             guard let bytes = buffer.read(extraBytes) else {
                 throw MMError.unexpectedEndOfData
             }
-            for (i, b) in bytes.enumerated() {
-                totalLen |= Int(b) << (i * 8)
+            totalLen = 0
+            for b in bytes {
+                totalLen = (totalLen << 8) | Int(b)
             }
+        } else {
+            totalLen = len
         }
 
         if isArrayContainer {
@@ -227,14 +291,17 @@ public class MMDecoder {
         }
 
         let (extraBytes, len) = tagLen(byte)
-        var totalLen = len
+        var totalLen: Int
         if extraBytes > 0 {
             guard let bytes = buffer.read(extraBytes) else {
                 throw MMError.unexpectedEndOfData
             }
-            for (i, b) in bytes.enumerated() {
-                totalLen |= Int(b) << (i * 8)
+            totalLen = 0
+            for b in bytes {
+                totalLen = (totalLen << 8) | Int(b)
             }
+        } else {
+            totalLen = len
         }
 
         guard let data = buffer.read(totalLen) else {

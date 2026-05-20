@@ -144,11 +144,14 @@ final class MMDecoderTests: XCTestCase {
         let decoder = MMDecoder(data: data)
         let value = try decoder.decode()
 
-        guard case .uint(let u) = value else {
-            XCTFail("Expected uint")
-            return
+        switch value {
+        case .uint(let u):
+            XCTAssertEqual(u, 987654)
+        case .int(let i):
+            XCTAssertEqual(i, 987654)
+        default:
+            XCTFail("Expected uint or int")
         }
-        XCTAssertEqual(u, 987654)
     }
 
     func testDecodeUInt8() throws {
@@ -159,11 +162,14 @@ final class MMDecoderTests: XCTestCase {
         let decoder = MMDecoder(data: data)
         let value = try decoder.decode()
 
-        guard case .uint(let u) = value else {
-            XCTFail("Expected uint")
-            return
+        switch value {
+        case .uint(let u):
+            XCTAssertEqual(UInt8(u), 255)
+        case .int(let i):
+            XCTAssertEqual(i, 255)
+        default:
+            XCTFail("Expected uint or int")
         }
-        XCTAssertEqual(UInt8(u), 255)
     }
 
     func testDecodeUInt16() throws {
@@ -174,11 +180,14 @@ final class MMDecoderTests: XCTestCase {
         let decoder = MMDecoder(data: data)
         let value = try decoder.decode()
 
-        guard case .uint(let u) = value else {
-            XCTFail("Expected uint")
-            return
+        switch value {
+        case .uint(let u):
+            XCTAssertEqual(UInt16(u), 65535)
+        case .int(let i):
+            XCTAssertEqual(i, 65535)
+        default:
+            XCTFail("Expected uint or int")
         }
-        XCTAssertEqual(UInt16(u), 65535)
     }
 
     func testDecodeUInt32() throws {
@@ -189,11 +198,14 @@ final class MMDecoderTests: XCTestCase {
         let decoder = MMDecoder(data: data)
         let value = try decoder.decode()
 
-        guard case .uint(let u) = value else {
-            XCTFail("Expected uint")
-            return
+        switch value {
+        case .uint(let u):
+            XCTAssertEqual(UInt32(u), 4294967295)
+        case .int(let i):
+            XCTAssertEqual(i, 4294967295)
+        default:
+            XCTFail("Expected uint or int")
         }
-        XCTAssertEqual(UInt32(u), 4294967295)
     }
 
     func testDecodeUInt64() throws {

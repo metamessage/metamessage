@@ -190,7 +190,7 @@ func (e *encoder) encodeNodeValue(val *ir.Value) (n uint32, err error) {
 	tag := val.GetTag()
 
 	switch val.Tag.Type {
-	case ir.ValueTypeDateTime:
+	case ir.ValueTypeDatetime:
 		if tag.IsNull {
 		} else {
 			n, err = e.encodeDateTime(val.Data.(time.Time))
@@ -208,74 +208,74 @@ func (e *encoder) encodeNodeValue(val *ir.Value) (n uint32, err error) {
 			n, err = e.encodeTime(val.Data.(time.Time))
 		}
 
-	case ir.ValueTypeInt:
+	case ir.ValueTypeI:
 		if tag.IsNull {
 			n, err = e.encodeSimple(SimpleNullInt)
 		} else {
 			n, err = e.encodeInt64(int64(val.Data.(int)))
 		}
 
-	case ir.ValueTypeInt8:
+	case ir.ValueTypeI8:
 		if tag.IsNull {
 		} else {
 			n, err = e.encodeInt64(int64(val.Data.(int8)))
 		}
 
-	case ir.ValueTypeInt16:
+	case ir.ValueTypeI16:
 		if tag.IsNull {
 		} else {
 			n, err = e.encodeInt64(int64(val.Data.(int16)))
 		}
 
-	case ir.ValueTypeInt32:
+	case ir.ValueTypeI32:
 		if tag.IsNull {
 		} else {
 			n, err = e.encodeInt64(int64(val.Data.(int32)))
 		}
 
-	case ir.ValueTypeInt64:
+	case ir.ValueTypeI64:
 		if tag.IsNull {
 		} else {
 			n, err = e.encodeInt64(val.Data.(int64))
 		}
 
-	case ir.ValueTypeUint:
+	case ir.ValueTypeU:
 		if tag.IsNull {
 		} else {
 			n, err = e.encodeU64(uint64(val.Data.(uint)))
 		}
 
-	case ir.ValueTypeUint8:
+	case ir.ValueTypeU8:
 		if tag.IsNull {
 		} else {
 			n, err = e.encodeU64(uint64(val.Data.(uint8)))
 		}
 
-	case ir.ValueTypeUint16:
+	case ir.ValueTypeU16:
 		if tag.IsNull {
 		} else {
 			n, err = e.encodeU64(uint64(val.Data.(uint16)))
 		}
 
-	case ir.ValueTypeUint32:
+	case ir.ValueTypeU32:
 		if tag.IsNull {
 		} else {
 			n, err = e.encodeU64(uint64(val.Data.(uint32)))
 		}
 
-	case ir.ValueTypeUint64:
+	case ir.ValueTypeU64:
 		if tag.IsNull {
 		} else {
 			n, err = e.encodeU64(val.Data.(uint64))
 		}
 
-	case ir.ValueTypeFloat32:
+	case ir.ValueTypeF32:
 		if tag.IsNull {
 		} else {
 			n, err = e.encodeFloat(val.Text)
 		}
 
-	case ir.ValueTypeFloat64:
+	case ir.ValueTypeF64:
 		if tag.IsNull {
 			// type not in tag, use SimpleNullFloat to encode
 			n, err = e.encodeSimple(SimpleNullFloat)
@@ -283,7 +283,7 @@ func (e *encoder) encodeNodeValue(val *ir.Value) (n uint32, err error) {
 			n, err = e.encodeFloat(val.Text)
 		}
 
-	case ir.ValueTypeString:
+	case ir.ValueTypeStr:
 		if tag.IsNull {
 			n, err = e.encodeSimple(SimpleNullString)
 		} else {
@@ -296,7 +296,7 @@ func (e *encoder) encodeNodeValue(val *ir.Value) (n uint32, err error) {
 			n, err = e.encodeString(val.Text)
 		}
 
-	case ir.ValueTypeUUID:
+	case ir.ValueTypeUuid:
 		if tag.IsNull {
 		} else {
 			arr, ok := val.Data.([16]byte)
@@ -312,13 +312,13 @@ func (e *encoder) encodeNodeValue(val *ir.Value) (n uint32, err error) {
 			n, err = e.encodeFloat(val.Text)
 		}
 
-	case ir.ValueTypeURL:
+	case ir.ValueTypeUrl:
 		if tag.IsNull {
 		} else {
 			n, err = e.encodeString(val.Text)
 		}
 
-	case ir.ValueTypeIP:
+	case ir.ValueTypeIp:
 		if tag.IsNull {
 		} else {
 			ip := val.Data.(net.IP)
@@ -345,7 +345,7 @@ func (e *encoder) encodeNodeValue(val *ir.Value) (n uint32, err error) {
 			n, err = e.encodeBytes(val.Data.([]byte))
 		}
 
-	case ir.ValueTypeBigInt:
+	case ir.ValueTypeBigint:
 		if tag.IsNull {
 		} else {
 			n, err = e.encodeBigInt(val.Text)

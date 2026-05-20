@@ -10,33 +10,33 @@ import (
 
 var csharpTypeMap = map[ir.ValueType]string{
 	ir.ValueTypeUnknown:  "object",
-	ir.ValueTypeString:   "string",
+	ir.ValueTypeStr:      "string",
 	ir.ValueTypeBytes:    "byte[]",
 	ir.ValueTypeBool:     "bool",
-	ir.ValueTypeArray:    "List<object>",
-	ir.ValueTypeSlice:    "List<object>",
+	ir.ValueTypeArr:      "List<object>",
+	ir.ValueTypeVec:      "List<object>",
 	ir.ValueTypeMap:      "Dictionary<string, object>",
-	ir.ValueTypeInt:      "int",
-	ir.ValueTypeInt8:     "sbyte",
-	ir.ValueTypeInt16:    "short",
-	ir.ValueTypeInt32:    "int",
-	ir.ValueTypeInt64:    "long",
-	ir.ValueTypeUint:     "uint",
-	ir.ValueTypeUint8:    "byte",
-	ir.ValueTypeUint16:   "ushort",
-	ir.ValueTypeUint32:   "uint",
-	ir.ValueTypeUint64:   "ulong",
-	ir.ValueTypeFloat32:  "float",
-	ir.ValueTypeFloat64:  "double",
-	ir.ValueTypeBigInt:   "BigInteger",
-	ir.ValueTypeDateTime: "DateTime",
+	ir.ValueTypeI:        "int",
+	ir.ValueTypeI8:       "sbyte",
+	ir.ValueTypeI16:      "short",
+	ir.ValueTypeI32:      "int",
+	ir.ValueTypeI64:      "long",
+	ir.ValueTypeU:        "uint",
+	ir.ValueTypeU8:       "byte",
+	ir.ValueTypeU16:      "ushort",
+	ir.ValueTypeU32:      "uint",
+	ir.ValueTypeU64:      "ulong",
+	ir.ValueTypeF32:      "float",
+	ir.ValueTypeF64:      "double",
+	ir.ValueTypeBigint:   "BigInteger",
+	ir.ValueTypeDatetime: "DateTime",
 	ir.ValueTypeDate:     "DateTime",
 	ir.ValueTypeTime:     "DateTime",
-	ir.ValueTypeUUID:     "Guid",
+	ir.ValueTypeUuid:     "Guid",
 	ir.ValueTypeDecimal:  "decimal",
 	ir.ValueTypeEmail:    "string",
-	ir.ValueTypeIP:       "string",
-	ir.ValueTypeURL:      "string",
+	ir.ValueTypeIp:       "string",
+	ir.ValueTypeUrl:      "string",
 	ir.ValueTypeEnum:     "string",
 	ir.ValueTypeImage:    "string",
 }
@@ -141,9 +141,9 @@ func collectCSharpImportsRec(n ir.Node, imports map[string]struct{}) {
 
 func addCSharpImportForType(typ ir.ValueType, imports map[string]struct{}) {
 	switch typ {
-	case ir.ValueTypeBigInt:
+	case ir.ValueTypeBigint:
 		imports["System.Numerics"] = struct{}{}
-	case ir.ValueTypeDateTime, ir.ValueTypeDate, ir.ValueTypeTime, ir.ValueTypeUUID:
+	case ir.ValueTypeDatetime, ir.ValueTypeDate, ir.ValueTypeTime, ir.ValueTypeUuid:
 		imports["System"] = struct{}{}
 	case ir.ValueTypeMap:
 		imports["System.Collections.Generic"] = struct{}{}
@@ -262,7 +262,7 @@ func genCSharpNestedClasses(b *strings.Builder, n ir.Node, indent int) {
 			WriteIndent(b, indent)
 			b.WriteString("}\n")
 		case *ir.Array:
-			if nestedObj := findFirstObjectInArrayCSharp(v); nestedObj != nil {
+			if nestedObj := findFirstObjectInArray(v); nestedObj != nil {
 				className := getCSharpObjectType(f.Key, nestedObj)
 				b.WriteString("\n")
 				WriteIndent(b, indent)
@@ -276,18 +276,6 @@ func genCSharpNestedClasses(b *strings.Builder, n ir.Node, indent int) {
 			}
 		}
 	}
-}
-
-func findFirstObjectInArrayCSharp(a *ir.Array) *ir.Object {
-	if a == nil {
-		return nil
-	}
-	for _, item := range a.Items {
-		if obj, ok := item.(*ir.Object); ok {
-			return obj
-		}
-	}
-	return nil
 }
 
 func exportCSharpClassName(s string) string {

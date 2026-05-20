@@ -3,6 +3,8 @@ package gen
 import (
 	"strings"
 	"unicode"
+
+	"github.com/metamessage/metamessage/internal/ir"
 )
 
 const indentUnit = "\t"
@@ -44,4 +46,25 @@ func ExportName(s string) string {
 		return "Field"
 	}
 	return name
+}
+
+func toTitle(s string) string {
+	if s == "" {
+		return ""
+	}
+	runes := []rune(s)
+	runes[0] = unicode.ToUpper(runes[0])
+	return string(runes)
+}
+
+func findFirstObjectInArray(a *ir.Array) *ir.Object {
+	if a == nil {
+		return nil
+	}
+	for _, item := range a.Items {
+		if obj, ok := item.(*ir.Object); ok {
+			return obj
+		}
+	}
+	return nil
 }

@@ -1,5 +1,3 @@
-use std::collections::HashMap;
-
 #[derive(Debug, Clone, PartialEq)]
 pub enum TokenType {
     EOF,
@@ -33,6 +31,7 @@ pub struct Scanner {
     column: usize,
     last_token: Option<Token>,
     current_token: Option<Token>,
+    had_value_since_separator: bool,
 }
 
 impl Scanner {
@@ -44,6 +43,7 @@ impl Scanner {
             column: 1,
             last_token: None,
             current_token: None,
+            had_value_since_separator: false,
         }
     }
 
@@ -57,32 +57,49 @@ impl Scanner {
                 line: self.line,
                 column: self.column,
             };
-            self.last_token = self.current_token.take();
-            self.current_token = Some(token.clone());
             return token;
         }
 
         let ch = self.input[self.position];
 
-        if ch == '/' {
-            return self.scan_comment();
-        }
-
-        let token = match ch {
-            '{' => self.create_token(TokenType::LBrace),
-            '}' => self.create_token(TokenType::RBrace),
-            '[' => self.create_token(TokenType::LBracket),
-            ']' => self.create_token(TokenType::RBracket),
-            ':' => self.create_token(TokenType::Colon),
-            ',' => self.create_token(TokenType::Comma),
-            '"' => self.scan_string(),
-            _ if ch.is_ascii_digit() || ch == '-' => self.scan_number(),
-            _ if ch.is_alphabetic() => self.scan_identifier(),
-            _ => panic!("unexpected character: {} at line {}, column {}", ch, self.line, self.column),
+        let token = if ch == '/' {
+            self.scan_comment()
+        } else {
+            let t = match ch {
+                '{' => self.create_token(TokenType::LBrace),
+                '}' => self.create_token(TokenType::RBrace),
+                '[' => self.create_token(TokenType::LBracket),
+                ']' => self.create_token(TokenType::RBracket),
+                ':' => self.create_token(TokenType::Colon),
+                ',' => self.create_token(TokenType::Comma),
+                '"' => self.scan_string(),
+                _ if ch.is_ascii_digit() || ch == '-' => self.scan_number(),
+                _ if ch.is_alphabetic() => self.scan_identifier(),
+                _ => panic!(
+                    "unexpected character: {} at line {}, column {}",
+                    ch, self.line, self.column
+                ),
+            };
+            match t.token_type {
+                TokenType::String
+                | TokenType::Number
+                | TokenType::True
+                | TokenType::False
+                | TokenType::Null
+                | TokenType::RBrace
+                | TokenType::RBracket => {
+                    self.had_value_since_separator = true;
+                }
+                TokenType::LBrace | TokenType::LBracket | TokenType::Comma | TokenType::Colon => {
+                    self.had_value_since_separator = false;
+                }
+                _ => {}
+            }
+            self.last_token = self.current_token.take();
+            self.current_token = Some(t.clone());
+            t
         };
 
-        self.last_token = self.current_token.take();
-        self.current_token = Some(token.clone());
         token
     }
 
@@ -103,11 +120,7 @@ impl Scanner {
         }
 
         let next = self.input[self.position + 1];
-        let is_leading = self.last_token.is_none()
-            || matches!(
-                self.last_token.as_ref().map(|t| &t.token_type),
-                Some(TokenType::Comma) | Some(TokenType::Colon) | Some(TokenType::LBrace) | Some(TokenType::LBracket)
-            );
+        let is_leading = !self.had_value_since_separator;
 
         let start_pos = self.position;
         let start_line = self.line;
@@ -130,8 +143,6 @@ impl Scanner {
                 line: start_line,
                 column: start_column,
             };
-            self.last_token = self.current_token.take();
-            self.current_token = Some(token.clone());
             return token;
         } else if next == '*' {
             self.advance(2);
@@ -158,8 +169,6 @@ impl Scanner {
                 line: start_line,
                 column: start_column,
             };
-            self.last_token = self.current_token.take();
-            self.current_token = Some(token.clone());
             return token;
         }
 
@@ -187,7 +196,9 @@ impl Scanner {
                     'u' => {
                         if self.position + 4 < self.input.len() {
                             self.advance(1);
-                            let hex: String = self.input[self.position..self.position + 4].iter().collect();
+                            let hex: String = self.input[self.position..self.position + 4]
+                                .iter()
+                                .collect();
                             if let Ok(unicode) = u32::from_str_radix(&hex, 16) {
                                 sb.push(char::from_u32(unicode).unwrap_or('\u{FFFD}'));
                                 self.advance(3);
@@ -230,7 +241,8 @@ impl Scanner {
 
         while self.position < self.input.len() {
             let ch = self.input[self.position];
-            if ch.is_ascii_digit() || ch == '.' || ch == 'e' || ch == 'E' || ch == '+' || ch == '_' {
+            if ch.is_ascii_digit() || ch == '.' || ch == 'e' || ch == 'E' || ch == '+' || ch == '_'
+            {
                 if ch == '_' {
                     self.advance(1);
                     continue;
@@ -263,7 +275,9 @@ impl Scanner {
         let start_column = self.column;
         let mut sb = String::new();
 
-        while self.position < self.input.len() && (self.input[self.position].is_alphanumeric() || self.input[self.position] == '_') {
+        while self.position < self.input.len()
+            && (self.input[self.position].is_alphanumeric() || self.input[self.position] == '_')
+        {
             sb.push(self.input[self.position]);
             self.advance(1);
         }
@@ -288,10 +302,6 @@ impl Scanner {
         while self.position < self.input.len() {
             let ch = self.input[self.position];
             if ch == ' ' || ch == '\t' || ch == '\n' || ch == '\r' {
-                if ch == '\n' {
-                    self.line += 1;
-                    self.column = 0;
-                }
                 self.advance(1);
             } else {
                 break;

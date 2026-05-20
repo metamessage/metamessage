@@ -295,7 +295,7 @@ func (t *Tag) ValidateVec(value []Node) (err error) {
 		for i, node := range value {
 			data := node.(*Value).Data
 			if seen[data] {
-				return fmt.Errorf("slice duplicate value found: %v, index: %d", data, i)
+				return fmt.Errorf("vec duplicate value found: %v, index: %d", data, i)
 			}
 			seen[data] = true
 		}

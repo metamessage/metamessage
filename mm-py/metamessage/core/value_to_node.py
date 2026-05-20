@@ -330,7 +330,7 @@ def value_to_node(value: Any, tag: Optional[Tag] = None, depth: int = 0, path: s
             tag.type = ValueType.Int
         if tag.type in (ValueType.Int, ValueType.Int8, ValueType.Int16, ValueType.Int32, ValueType.Int64,
                         ValueType.Uint, ValueType.Uint8, ValueType.Uint16, ValueType.Uint32, ValueType.Uint64):
-            val_int = _validate_int(value, tag)
+            val_int = _validate_i(value, tag)
             if val_int is not None:
                 data, text = val_int
                 return Val(data=data, text=text, tag=tag, path=path)
@@ -340,7 +340,7 @@ def value_to_node(value: Any, tag: Optional[Tag] = None, depth: int = 0, path: s
         if tag.type in (ValueType(0), ValueType.String, ValueType.Int, ValueType.Bool):
             tag.type = ValueType.Float64
         if tag.type in (ValueType.Float32, ValueType.Float64):
-            val_float = _validate_float(value, tag)
+            val_float = _validate_f(value, tag)
             if val_float is not None:
                 data, text = val_float
                 return Val(data=data, text=text, tag=tag, path=path)
@@ -353,7 +353,7 @@ def value_to_node(value: Any, tag: Optional[Tag] = None, depth: int = 0, path: s
             tag.type = ValueType.String
         if tag.type in (ValueType.String, ValueType.Email, ValueType.Enum, ValueType.Decimal, ValueType.UUID,
                         ValueType.URL, ValueType.BigInt):
-            val_str = _validate_string(value, tag)
+            val_str = _validate_str(value, tag)
             if val_str is not None:
                 data, text = val_str
                 return Val(data=data, text=text, tag=tag, path=path)
@@ -418,7 +418,7 @@ def _validate_bool(val: bool, tag: Tag):
     return (tag, "true" if val else "false")
 
 
-def _validate_int(val: int, tag: Tag):
+def _validate_i(val: int, tag: Tag):
     data = val
     text = str(val)
     
@@ -445,7 +445,7 @@ def _validate_int(val: int, tag: Tag):
     return (data, text)
 
 
-def _validate_float(val: float, tag: Tag):
+def _validate_f(val: float, tag: Tag):
     import math
     if math.isinf(val) or math.isnan(val):
         raise ValueError(f"unsupported value: {val}")
@@ -475,7 +475,7 @@ def _validate_float(val: float, tag: Tag):
     return (data, text)
 
 
-def _validate_string(val: str, tag: Tag):
+def _validate_str(val: str, tag: Tag):
     data = val
     text = val
     

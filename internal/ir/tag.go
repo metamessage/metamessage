@@ -238,14 +238,14 @@ func (t *Tag) ToString() string {
 	}
 
 	if t.Type != ValueTypeUnknown && !t.IsInherit {
-		if t.Type == ValueTypeString ||
-			t.Type == ValueTypeInt ||
-			t.Type == ValueTypeFloat64 ||
+		if t.Type == ValueTypeStr ||
+			t.Type == ValueTypeI ||
+			t.Type == ValueTypeF64 ||
 			t.Type == ValueTypeBool ||
-			t.Type == ValueTypeObject ||
-			t.Type == ValueTypeSlice {
+			t.Type == ValueTypeObj ||
+			t.Type == ValueTypeVec {
 		} else {
-			if t.Type == ValueTypeArray && t.Size > 0 ||
+			if t.Type == ValueTypeArr && t.Size > 0 ||
 				t.Type == ValueTypeEnum && t.Enum != "" {
 
 			} else {
@@ -326,14 +326,14 @@ func (t *Tag) ToString() string {
 	}
 
 	if t.ChildType != ValueTypeUnknown {
-		if t.ChildType == ValueTypeString ||
-			t.ChildType == ValueTypeInt ||
-			t.ChildType == ValueTypeFloat64 ||
+		if t.ChildType == ValueTypeStr ||
+			t.ChildType == ValueTypeI ||
+			t.ChildType == ValueTypeF64 ||
 			t.ChildType == ValueTypeBool ||
-			t.ChildType == ValueTypeObject ||
-			t.ChildType == ValueTypeSlice {
+			t.ChildType == ValueTypeObj ||
+			t.ChildType == ValueTypeVec {
 		} else {
-			if t.ChildType == ValueTypeArray && t.ChildSize > 0 ||
+			if t.ChildType == ValueTypeArr && t.ChildSize > 0 ||
 				t.ChildType == ValueTypeEnum && t.ChildEnum != "" {
 
 			} else {
@@ -436,15 +436,15 @@ func (t *Tag) Bytes() []byte {
 	}
 
 	if t.Type != ValueTypeUnknown && !t.IsInherit {
-		if t.Type == ValueTypeString ||
+		if t.Type == ValueTypeStr ||
 			t.Type == ValueTypeBytes ||
-			t.Type == ValueTypeInt ||
-			t.Type == ValueTypeFloat64 ||
+			t.Type == ValueTypeI ||
+			t.Type == ValueTypeF64 ||
 			t.Type == ValueTypeBool ||
-			t.Type == ValueTypeObject ||
-			t.Type == ValueTypeSlice {
+			t.Type == ValueTypeObj ||
+			t.Type == ValueTypeVec {
 		} else {
-			if t.Type == ValueTypeArray && t.Size > 0 ||
+			if t.Type == ValueTypeArr && t.Size > 0 ||
 				t.Type == ValueTypeEnum && t.Enum != "" {
 
 			} else {
@@ -581,14 +581,14 @@ func (t *Tag) Bytes() []byte {
 		}
 	}
 	if t.ChildType != ValueTypeUnknown {
-		if t.ChildType == ValueTypeString ||
-			t.ChildType == ValueTypeInt ||
-			t.ChildType == ValueTypeFloat64 ||
+		if t.ChildType == ValueTypeStr ||
+			t.ChildType == ValueTypeI ||
+			t.ChildType == ValueTypeF64 ||
 			t.ChildType == ValueTypeBool ||
-			t.ChildType == ValueTypeObject ||
-			t.ChildType == ValueTypeSlice {
+			t.ChildType == ValueTypeObj ||
+			t.ChildType == ValueTypeVec {
 		} else {
-			if t.ChildType == ValueTypeArray && t.ChildSize > 0 ||
+			if t.ChildType == ValueTypeArr && t.ChildSize > 0 ||
 				t.ChildType == ValueTypeEnum && t.ChildEnum != "" {
 
 			} else {

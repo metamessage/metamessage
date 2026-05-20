@@ -1,5 +1,4 @@
-use std::collections::HashMap;
-use crate::jsonc::tag::Tag;
+use crate::ir::tag::Tag;
 
 #[derive(Debug, Clone)]
 pub enum ValueData {
@@ -17,6 +16,7 @@ pub struct Value {
     pub data: ValueData,
     pub text: String,
     pub tag: Option<Tag>,
+    pub path: String,
 }
 
 #[derive(Debug, Clone)]
@@ -29,12 +29,14 @@ pub struct Field {
 pub struct Object {
     pub fields: Vec<Field>,
     pub tag: Option<Tag>,
+    pub path: String,
 }
 
 #[derive(Debug, Clone)]
 pub struct Array {
     pub items: Vec<Node>,
     pub tag: Option<Tag>,
+    pub path: String,
 }
 
 #[derive(Debug, Clone)]
@@ -50,6 +52,22 @@ impl Node {
             Node::Value(v) => v.tag.as_ref(),
             Node::Object(o) => o.tag.as_ref(),
             Node::Array(a) => a.tag.as_ref(),
+        }
+    }
+
+    pub fn get_tag_mut(&mut self) -> Option<&mut Tag> {
+        match self {
+            Node::Value(v) => v.tag.as_mut(),
+            Node::Object(o) => o.tag.as_mut(),
+            Node::Array(a) => a.tag.as_mut(),
+        }
+    }
+
+    pub fn get_path(&self) -> &str {
+        match self {
+            Node::Value(v) => &v.path,
+            Node::Object(o) => &o.path,
+            Node::Array(a) => &a.path,
         }
     }
 }

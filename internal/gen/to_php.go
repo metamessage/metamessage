@@ -10,33 +10,33 @@ import (
 
 var phpTypeMap = map[ir.ValueType]string{
 	ir.ValueTypeUnknown:  "mixed",
-	ir.ValueTypeString:   "string",
+	ir.ValueTypeStr:      "string",
 	ir.ValueTypeBytes:    "string",
 	ir.ValueTypeBool:     "bool",
-	ir.ValueTypeArray:    "array",
-	ir.ValueTypeSlice:    "array",
+	ir.ValueTypeArr:      "array",
+	ir.ValueTypeVec:      "array",
 	ir.ValueTypeMap:      "array",
-	ir.ValueTypeInt:      "int",
-	ir.ValueTypeInt8:     "int",
-	ir.ValueTypeInt16:    "int",
-	ir.ValueTypeInt32:    "int",
-	ir.ValueTypeInt64:    "int",
-	ir.ValueTypeUint:     "int",
-	ir.ValueTypeUint8:    "int",
-	ir.ValueTypeUint16:   "int",
-	ir.ValueTypeUint32:   "int",
-	ir.ValueTypeUint64:   "int",
-	ir.ValueTypeFloat32:  "float",
-	ir.ValueTypeFloat64:  "float",
-	ir.ValueTypeBigInt:   "string",
-	ir.ValueTypeDateTime: "string",
+	ir.ValueTypeI:        "int",
+	ir.ValueTypeI8:       "int",
+	ir.ValueTypeI16:      "int",
+	ir.ValueTypeI32:      "int",
+	ir.ValueTypeI64:      "int",
+	ir.ValueTypeU:        "int",
+	ir.ValueTypeU8:       "int",
+	ir.ValueTypeU16:      "int",
+	ir.ValueTypeU32:      "int",
+	ir.ValueTypeU64:      "int",
+	ir.ValueTypeF32:      "float",
+	ir.ValueTypeF64:      "float",
+	ir.ValueTypeBigint:   "string",
+	ir.ValueTypeDatetime: "string",
 	ir.ValueTypeDate:     "string",
 	ir.ValueTypeTime:     "string",
-	ir.ValueTypeUUID:     "string",
+	ir.ValueTypeUuid:     "string",
 	ir.ValueTypeDecimal:  "string",
 	ir.ValueTypeEmail:    "string",
-	ir.ValueTypeIP:       "string",
-	ir.ValueTypeURL:      "string",
+	ir.ValueTypeIp:       "string",
+	ir.ValueTypeUrl:      "string",
 	ir.ValueTypeEnum:     "string",
 	ir.ValueTypeImage:    "string",
 }
@@ -183,25 +183,13 @@ func genPHPNestedClasses(b *strings.Builder, n ir.Node, generated map[string]str
 			genPHPClass(b, className, v, generated)
 			genPHPNestedClasses(b, v, generated)
 		case *ir.Array:
-			if nestedObj := findFirstObjectInArrayPHP(v); nestedObj != nil {
+			if nestedObj := findFirstObjectInArray(v); nestedObj != nil {
 				className := getPhpObjectType(f.Key, nestedObj)
 				genPHPClass(b, className, nestedObj, generated)
 				genPHPNestedClasses(b, nestedObj, generated)
 			}
 		}
 	}
-}
-
-func findFirstObjectInArrayPHP(a *ir.Array) *ir.Object {
-	if a == nil {
-		return nil
-	}
-	for _, item := range a.Items {
-		if obj, ok := item.(*ir.Object); ok {
-			return obj
-		}
-	}
-	return nil
 }
 
 func exportPhpClassName(s string) string {
@@ -231,7 +219,7 @@ func exportPhpFieldName(s string) string {
 		if part == "" {
 			continue
 		}
-		name += strings.Title(part)
+		name += toTitle(part)
 	}
 	if unicode.IsDigit(rune(name[0])) {
 		name = "f_" + name
@@ -270,7 +258,7 @@ func genPHPObjectAssignments(b *strings.Builder, varName string, n ir.Node, inde
 			b.WriteString(prop + " = new " + className + "();\n")
 			genPHPObjectAssignments(b, prop, v, indent)
 		case *ir.Array:
-			if nestedObj := findFirstObjectInArrayPHP(v); nestedObj != nil {
+			if nestedObj := findFirstObjectInArray(v); nestedObj != nil {
 				WriteIndent(b, indent)
 				b.WriteString(prop + " = [\n")
 				for i, item := range v.Items {
@@ -361,14 +349,14 @@ func formatPhpValueLiteral(v *ir.Value) string {
 
 	if v.Tag != nil {
 		switch v.Tag.Type {
-		case ir.ValueTypeString, ir.ValueTypeBytes, ir.ValueTypeDateTime, ir.ValueTypeDate, ir.ValueTypeTime, ir.ValueTypeUUID, ir.ValueTypeDecimal, ir.ValueTypeEmail, ir.ValueTypeIP, ir.ValueTypeURL, ir.ValueTypeEnum, ir.ValueTypeImage:
+		case ir.ValueTypeStr, ir.ValueTypeBytes, ir.ValueTypeDatetime, ir.ValueTypeDate, ir.ValueTypeTime, ir.ValueTypeUuid, ir.ValueTypeDecimal, ir.ValueTypeEmail, ir.ValueTypeIp, ir.ValueTypeUrl, ir.ValueTypeEnum, ir.ValueTypeImage:
 			return "\"" + strings.ReplaceAll(v.Text, "\"", "\\\"") + "\""
 		case ir.ValueTypeBool:
 			if strings.EqualFold(v.Text, "true") {
 				return "true"
 			}
 			return "false"
-		case ir.ValueTypeInt, ir.ValueTypeInt8, ir.ValueTypeInt16, ir.ValueTypeInt32, ir.ValueTypeInt64, ir.ValueTypeUint, ir.ValueTypeUint8, ir.ValueTypeUint16, ir.ValueTypeUint32, ir.ValueTypeUint64, ir.ValueTypeFloat32, ir.ValueTypeFloat64:
+		case ir.ValueTypeI, ir.ValueTypeI8, ir.ValueTypeI16, ir.ValueTypeI32, ir.ValueTypeI64, ir.ValueTypeU, ir.ValueTypeU8, ir.ValueTypeU16, ir.ValueTypeU32, ir.ValueTypeU64, ir.ValueTypeF32, ir.ValueTypeF64:
 			if v.Text == "" {
 				return "0"
 			}

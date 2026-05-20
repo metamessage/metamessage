@@ -57,7 +57,7 @@ func TestParseMMTag_QuotedAndSemicolon(t *testing.T) {
 	if r.Pattern != "^a,b$" {
 		t.Fatalf("expected pattern=^a,b$, got %s", r.Pattern)
 	}
-	if r.Type != ValueTypeString {
+	if r.Type != ValueTypeStr {
 		t.Fatalf("expected type=string, got %s", r.Type)
 	}
 	if r.Min != "1" || r.Max != "5" {
@@ -151,7 +151,7 @@ func TestTagValidate_TypeSpecificWrappers(t *testing.T) {
 		t.Fatalf("expected invalid int value below min")
 	}
 
-	urlTag := &Tag{Type: ValueTypeURL, AllowEmpty: true}
+	urlTag := &Tag{Type: ValueTypeUrl, AllowEmpty: true}
 	u, _ := url.Parse("https://example.com")
 	_, _, err = urlTag.ValidateURL(*u)
 	if err != nil {
@@ -164,14 +164,14 @@ func TestTagValidate_TypeSpecificWrappers(t *testing.T) {
 		t.Fatalf("expected valid email value, got %v", err)
 	}
 
-	ipTag := &Tag{Type: ValueTypeIP, Version: 4}
+	ipTag := &Tag{Type: ValueTypeIp, Version: 4}
 	ip := net.ParseIP("127.0.0.1")
 	_, _, err = ipTag.ValidateIP(ip)
 	if err != nil {
 		t.Fatalf("expected valid ipv4 value, got %v", err)
 	}
 
-	bigTag := &Tag{Type: ValueTypeBigInt}
+	bigTag := &Tag{Type: ValueTypeBigint}
 	bi, _ := new(big.Int).SetString("12345678901234567890", 10)
 	_, _, err = bigTag.ValidateBigint(*bi)
 	if err != nil {

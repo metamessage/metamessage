@@ -12,33 +12,33 @@ import (
 
 var goTypeMap = map[ir.ValueType]string{
 	ir.ValueTypeUnknown:  "any",
-	ir.ValueTypeString:   "string",
+	ir.ValueTypeStr:      "string",
 	ir.ValueTypeBytes:    "[]byte",
 	ir.ValueTypeBool:     "bool",
-	ir.ValueTypeArray:    "[]any",
-	ir.ValueTypeSlice:    "[]any",
+	ir.ValueTypeArr:      "[]any",
+	ir.ValueTypeVec:      "[]any",
 	ir.ValueTypeMap:      "map[string]any",
-	ir.ValueTypeInt:      "int",
-	ir.ValueTypeInt8:     "int8",
-	ir.ValueTypeInt16:    "int16",
-	ir.ValueTypeInt32:    "int32",
-	ir.ValueTypeInt64:    "int64",
-	ir.ValueTypeUint:     "uint",
-	ir.ValueTypeUint8:    "uint8",
-	ir.ValueTypeUint16:   "uint16",
-	ir.ValueTypeUint32:   "uint32",
-	ir.ValueTypeUint64:   "uint64",
-	ir.ValueTypeFloat32:  "float32",
-	ir.ValueTypeFloat64:  "float64",
-	ir.ValueTypeBigInt:   "big.Int",
-	ir.ValueTypeDateTime: "time.Time",
+	ir.ValueTypeI:        "int",
+	ir.ValueTypeI8:       "int8",
+	ir.ValueTypeI16:      "int16",
+	ir.ValueTypeI32:      "int32",
+	ir.ValueTypeI64:      "int64",
+	ir.ValueTypeU:        "uint",
+	ir.ValueTypeU8:       "uint8",
+	ir.ValueTypeU16:      "uint16",
+	ir.ValueTypeU32:      "uint32",
+	ir.ValueTypeU64:      "uint64",
+	ir.ValueTypeF32:      "float32",
+	ir.ValueTypeF64:      "float64",
+	ir.ValueTypeBigint:   "big.Int",
+	ir.ValueTypeDatetime: "time.Time",
 	ir.ValueTypeDate:     "time.Time",
 	ir.ValueTypeTime:     "time.Time",
-	ir.ValueTypeUUID:     "string",
+	ir.ValueTypeUuid:     "string",
 	ir.ValueTypeDecimal:  "string",
 	ir.ValueTypeEmail:    "string",
-	ir.ValueTypeIP:       "net.IP",
-	ir.ValueTypeURL:      "url.URL",
+	ir.ValueTypeIp:       "net.IP",
+	ir.ValueTypeUrl:      "url.URL",
 	ir.ValueTypeEnum:     "string",
 	ir.ValueTypeImage:    "string",
 }
@@ -287,13 +287,13 @@ func collectImports(n ir.Node, imports map[string]struct{}) {
 
 func addGoImportForType(typ ir.ValueType, imports map[string]struct{}) {
 	switch typ {
-	case ir.ValueTypeBigInt:
+	case ir.ValueTypeBigint:
 		imports["math/big"] = struct{}{}
-	case ir.ValueTypeDateTime, ir.ValueTypeDate, ir.ValueTypeTime:
+	case ir.ValueTypeDatetime, ir.ValueTypeDate, ir.ValueTypeTime:
 		imports["time"] = struct{}{}
-	case ir.ValueTypeIP:
+	case ir.ValueTypeIp:
 		imports["net"] = struct{}{}
-	case ir.ValueTypeURL:
+	case ir.ValueTypeUrl:
 		imports["net/url"] = struct{}{}
 	}
 }
@@ -411,21 +411,21 @@ func formatValueLiteral(v *ir.Value) string {
 	t := getGoType(v)
 
 	// switch v.Tag.Type {
-	// case ir.ValueTypeString,
+	// case ir.ValueTypeStr,
 	// 	ir.ValueTypeBytes,
-	// 	ir.ValueTypeDateTime,
+	// 	ir.ValueTypeDatetime,
 	// 	ir.ValueTypeDate,
 	// 	ir.ValueTypeTime,
-	// 	ir.ValueTypeUUID,
-	// 	ir.ValueTypeIP,
-	// 	ir.ValueTypeURL,
+	// 	ir.ValueTypeUuid,
+	// 	ir.ValueTypeIp,
+	// 	ir.ValueTypeUrl,
 	// 	ir.ValueTypeEmail,
 	// 	ir.ValueTypeEnum:
 	// 	b.WriteString(strconv.Quote(v.Text))
 
-	// case ir.ValueTypeInt, ir.ValueTypeInt8, ir.ValueTypeInt16, ir.ValueTypeInt32, ir.ValueTypeInt64,
-	// 	ir.ValueTypeUint, ir.ValueTypeUint8, ir.ValueTypeUint16, ir.ValueTypeUint32, ir.ValueTypeUint64,
-	// 	ir.ValueTypeBigInt,
+	// case ir.ValueTypeI, ir.ValueTypeI8, ir.ValueTypeI16, ir.ValueTypeI32, ir.ValueTypeI64,
+	// 	ir.ValueTypeU, ir.ValueTypeU8, ir.ValueTypeU16, ir.ValueTypeU32, ir.ValueTypeU64,
+	// 	ir.ValueTypeBigint,
 	// 	ir.ValueTypeDecimal,
 	// 	ir.ValueTypeBool:
 	// 	b.WriteString(v.Text)

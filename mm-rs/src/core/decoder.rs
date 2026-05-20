@@ -1,9 +1,9 @@
-use crate::jsonc::ast::{Node, Object, Array, Value, Field, ValueData};
-use crate::jsonc::tag::Tag;
-use crate::jsonc::ValueType;
-use crate::core::prefix::{Prefix, FLOAT_POSITIVE_NEGATIVE_MASK, FLOAT_LEN_MASK, FLOAT_LEN_1};
+use crate::core::constants::{CONTAINER_ARRAY, CONTAINER_LEN_MASK};
+use crate::core::prefix::{Prefix, FLOAT_LEN_1, FLOAT_LEN_MASK, FLOAT_POSITIVE_NEGATIVE_MASK};
 use crate::core::simple_value::SimpleValue;
-use crate::core::constants::{CONTAINER_ARRAY, CONTAINER_LEN_1, CONTAINER_LEN_2, CONTAINER_LEN_MASK};
+use crate::ir::ast::{Array, Field, Node, Object, Value, ValueData};
+use crate::ir::tag::Tag;
+use crate::ir::ValueType;
 
 pub struct Decoder {
     data: Vec<u8>,
@@ -17,7 +17,10 @@ impl Decoder {
 
     fn read_byte(&mut self) -> Result<u8, std::io::Error> {
         if self.offset >= self.data.len() {
-            return Err(std::io::Error::new(std::io::ErrorKind::UnexpectedEof, "unexpected eof"));
+            return Err(std::io::Error::new(
+                std::io::ErrorKind::UnexpectedEof,
+                "unexpected eof",
+            ));
         }
         let b = self.data[self.offset];
         self.offset += 1;
@@ -26,7 +29,10 @@ impl Decoder {
 
     fn read_bytes(&mut self, n: usize) -> Result<&[u8], std::io::Error> {
         if self.offset + n > self.data.len() {
-            return Err(std::io::Error::new(std::io::ErrorKind::UnexpectedEof, "unexpected eof"));
+            return Err(std::io::Error::new(
+                std::io::ErrorKind::UnexpectedEof,
+                "unexpected eof",
+            ));
         }
         let start = self.offset;
         self.offset += n;
@@ -57,7 +63,7 @@ impl Decoder {
     }
 
     fn decode_tag(&mut self, prefix: u8) -> Result<Node, std::io::Error> {
-        let l1 = match prefix & 0x03 {
+        let _l1 = match prefix & 0x03 {
             0 => 0,
             1 => {
                 let l = self.read_byte()?;
@@ -67,7 +73,12 @@ impl Decoder {
                 let l = self.read_bytes(2)?;
                 ((l[0] as usize) << 8) | (l[1] as usize)
             }
-            _ => return Err(std::io::Error::new(std::io::ErrorKind::InvalidData, "invalid tag length")),
+            _ => {
+                return Err(std::io::Error::new(
+                    std::io::ErrorKind::InvalidData,
+                    "invalid tag length",
+                ))
+            }
         };
 
         let mut tag = Tag::new();
@@ -100,6 +111,7 @@ impl Decoder {
             Ok(Node::Value(Value {
                 data,
                 text: String::new(),
+                path: String::new(),
                 tag: Some(tag),
             }))
         } else {
@@ -130,6 +142,7 @@ impl Decoder {
         Ok(Node::Value(Value {
             data,
             text,
+            path: String::new(),
             tag: Some(Tag::new()),
         }))
     }
@@ -141,7 +154,12 @@ impl Decoder {
                 let l = self.read_byte()?;
                 l as usize
             }
-            _ => return Err(std::io::Error::new(std::io::ErrorKind::InvalidData, "invalid int length")),
+            _ => {
+                return Err(std::io::Error::new(
+                    std::io::ErrorKind::InvalidData,
+                    "invalid int length",
+                ))
+            }
         };
 
         let mut v = 0u64;
@@ -156,6 +174,7 @@ impl Decoder {
         Ok(Node::Value(Value {
             data,
             text,
+            path: String::new(),
             tag: Some(Tag::new()),
         }))
     }
@@ -167,7 +186,12 @@ impl Decoder {
                 let l = self.read_byte()?;
                 l as usize
             }
-            _ => return Err(std::io::Error::new(std::io::ErrorKind::InvalidData, "invalid int length")),
+            _ => {
+                return Err(std::io::Error::new(
+                    std::io::ErrorKind::InvalidData,
+                    "invalid int length",
+                ))
+            }
         };
 
         let mut v = 0u64;
@@ -182,6 +206,7 @@ impl Decoder {
         Ok(Node::Value(Value {
             data,
             text,
+            path: String::new(),
             tag: Some(Tag::new()),
         }))
     }
@@ -194,7 +219,11 @@ impl Decoder {
             v = (prefix & 0xF) as f64 / 10.0;
         } else {
             let exp = self.read_byte()? as i8;
-            let l1 = if l < FLOAT_LEN_1 { 0 } else { l - FLOAT_LEN_1 + 1 };
+            let l1 = if l < FLOAT_LEN_1 {
+                0
+            } else {
+                l - FLOAT_LEN_1 + 1
+            };
 
             let mantissa: u64 = if l1 == 0 {
                 0
@@ -218,6 +247,7 @@ impl Decoder {
         Ok(Node::Value(Value {
             data: ValueData::Float(v),
             text: ryu::Buffer::new().format_finite(v).to_string(),
+            path: String::new(),
             tag: Some(Tag::new()),
         }))
     }
@@ -233,7 +263,12 @@ impl Decoder {
                 let l = self.read_bytes(2)?;
                 ((l[0] as usize) << 8) | (l[1] as usize)
             }
-            _ => return Err(std::io::Error::new(std::io::ErrorKind::InvalidData, "invalid string length")),
+            _ => {
+                return Err(std::io::Error::new(
+                    std::io::ErrorKind::InvalidData,
+                    "invalid string length",
+                ))
+            }
         };
 
         let s = if l1 > 0 {
@@ -245,6 +280,7 @@ impl Decoder {
         Ok(Node::Value(Value {
             data: ValueData::String(s.clone()),
             text: s,
+            path: String::new(),
             tag: Some(Tag::new()),
         }))
     }
@@ -260,7 +296,12 @@ impl Decoder {
                 let l = self.read_bytes(2)?;
                 ((l[0] as usize) << 8) | (l[1] as usize)
             }
-            _ => return Err(std::io::Error::new(std::io::ErrorKind::InvalidData, "invalid bytes length")),
+            _ => {
+                return Err(std::io::Error::new(
+                    std::io::ErrorKind::InvalidData,
+                    "invalid bytes length",
+                ))
+            }
         };
 
         let bytes = if l1 > 0 {
@@ -272,6 +313,7 @@ impl Decoder {
         Ok(Node::Value(Value {
             data: ValueData::Bytes(bytes.clone()),
             text: format!("{:?}", bytes),
+            path: String::new(),
             tag: Some(Tag::new()),
         }))
     }
@@ -285,7 +327,7 @@ impl Decoder {
         }
     }
 
-    fn decode_array(&mut self, tag: &Tag) -> Result<Node, std::io::Error> {
+    fn decode_array(&mut self, _tag: &Tag) -> Result<Node, std::io::Error> {
         let l = self.read_byte()?;
         let len = l as usize;
 
@@ -297,6 +339,7 @@ impl Decoder {
 
         Ok(Node::Array(Array {
             items,
+            path: String::new(),
             tag: Some(Tag::new()),
         }))
     }
@@ -332,7 +375,7 @@ impl Decoder {
             _ => {}
         }
 
-        let l_array = self.read_byte()?;
+        let _l_array = self.read_byte()?;
         let keys_array = self.decode_array(&Tag::new())?;
 
         let keys = if let Node::Array(arr) = keys_array {
@@ -361,6 +404,7 @@ impl Decoder {
 
         Ok(Node::Object(Object {
             fields,
+            path: String::new(),
             tag: Some(Tag::new()),
         }))
     }
@@ -373,8 +417,16 @@ fn mantissa_to_decimal(mantissa: u64, exp: i8) -> String {
     if decimal_pos <= 0 {
         format!("0.{}{}", "0".repeat((-decimal_pos) as usize), num_str)
     } else if (decimal_pos as usize) < num_str.len() {
-        format!("{}.{}", &num_str[..decimal_pos as usize], &num_str[decimal_pos as usize..])
+        format!(
+            "{}.{}",
+            &num_str[..decimal_pos as usize],
+            &num_str[decimal_pos as usize..]
+        )
     } else {
-        format!("{}{}", num_str, "0".repeat((decimal_pos as usize).saturating_sub(num_str.len())))
+        format!(
+            "{}{}",
+            num_str,
+            "0".repeat((decimal_pos as usize).saturating_sub(num_str.len()))
+        )
     }
 }

@@ -1,7 +1,10 @@
-use crate::jsonc::ast::{Node, Object, Array, Value};
 use crate::core::constants::*;
-use crate::core::prefix::{PREFIX_SIMPLE, PREFIX_POSITIVE_INT, PREFIX_NEGATIVE_INT, PREFIX_FLOAT, PREFIX_STRING, PREFIX_BYTES, PREFIX_CONTAINER, PREFIX_TAG, FLOAT_POSITIVE_NEGATIVE_MASK};
+use crate::core::prefix::{
+    FLOAT_POSITIVE_NEGATIVE_MASK, PREFIX_BYTES, PREFIX_CONTAINER, PREFIX_FLOAT,
+    PREFIX_NEGATIVE_INT, PREFIX_POSITIVE_INT, PREFIX_SIMPLE, PREFIX_STRING, PREFIX_TAG,
+};
 use crate::core::simple_value::SimpleValue;
+use crate::ir::ast::{Array, Node, Object, Value};
 
 pub struct Encoder {
     buf: Vec<u8>,
@@ -161,22 +164,22 @@ impl Encoder {
 
     fn encode_value(&mut self, val: &Value) {
         match &val.data {
-            crate::jsonc::ast::ValueData::Bool(b) => {
+            crate::ir::ast::ValueData::Bool(b) => {
                 self.encode_bool(*b);
             }
-            crate::jsonc::ast::ValueData::String(s) => {
+            crate::ir::ast::ValueData::String(s) => {
                 self.encode_string(s);
             }
-            crate::jsonc::ast::ValueData::Int(i) => {
+            crate::ir::ast::ValueData::Int(i) => {
                 self.encode_int64(*i);
             }
-            crate::jsonc::ast::ValueData::Float(f) => {
+            crate::ir::ast::ValueData::Float(f) => {
                 self.encode_float(*f);
             }
-            crate::jsonc::ast::ValueData::Bytes(b) => {
+            crate::ir::ast::ValueData::Bytes(b) => {
                 self.encode_bytes(b);
             }
-            crate::jsonc::ast::ValueData::Null => {
+            crate::ir::ast::ValueData::Null => {
                 self.encode_simple(SimpleValue::NullInt);
             }
             _ => {}
@@ -191,7 +194,11 @@ impl Encoder {
     }
 
     pub fn encode_bool(&mut self, v: bool) {
-        let value = if v { SimpleValue::True } else { SimpleValue::False };
+        let value = if v {
+            SimpleValue::True
+        } else {
+            SimpleValue::False
+        };
         self.encode_simple(value);
     }
 
@@ -237,14 +244,14 @@ impl Encoder {
             self.write_byte((v >> 16) as u8);
             self.write_byte((v >> 8) as u8);
             self.write_byte(v as u8);
-        } else if v < MAX_5 as u64 {
+        } else if v < MAX_5 {
             self.write_byte(sign | INT_LEN_5);
             self.write_byte((v >> 32) as u8);
             self.write_byte((v >> 24) as u8);
             self.write_byte((v >> 16) as u8);
             self.write_byte((v >> 8) as u8);
             self.write_byte(v as u8);
-        } else if v < MAX_6 as u64 {
+        } else if v < MAX_6 {
             self.write_byte(sign | INT_LEN_6);
             self.write_byte((v >> 40) as u8);
             self.write_byte((v >> 32) as u8);
@@ -252,7 +259,7 @@ impl Encoder {
             self.write_byte((v >> 16) as u8);
             self.write_byte((v >> 8) as u8);
             self.write_byte(v as u8);
-        } else if v < MAX_7 as u64 {
+        } else if v < MAX_7 {
             self.write_byte(sign | INT_LEN_7);
             self.write_byte((v >> 48) as u8);
             self.write_byte((v >> 40) as u8);

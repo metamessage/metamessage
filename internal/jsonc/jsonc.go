@@ -24,26 +24,26 @@ func writeValueJSONC(b *strings.Builder, v *ir.Value) {
 	}
 
 	switch v.Tag.Type {
-	case ir.ValueTypeString,
+	case ir.ValueTypeStr,
 		ir.ValueTypeBytes,
-		ir.ValueTypeDateTime,
+		ir.ValueTypeDatetime,
 		ir.ValueTypeDate,
 		ir.ValueTypeTime,
-		ir.ValueTypeUUID,
-		ir.ValueTypeIP,
-		ir.ValueTypeURL,
+		ir.ValueTypeUuid,
+		ir.ValueTypeIp,
+		ir.ValueTypeUrl,
 		ir.ValueTypeEmail,
 		ir.ValueTypeEnum:
 		b.WriteString(strconv.Quote(v.Text))
 
-	case ir.ValueTypeInt, ir.ValueTypeInt8, ir.ValueTypeInt16, ir.ValueTypeInt32, ir.ValueTypeInt64,
-		ir.ValueTypeUint, ir.ValueTypeUint8, ir.ValueTypeUint16, ir.ValueTypeUint32, ir.ValueTypeUint64,
-		ir.ValueTypeBigInt,
+	case ir.ValueTypeI, ir.ValueTypeI8, ir.ValueTypeI16, ir.ValueTypeI32, ir.ValueTypeI64,
+		ir.ValueTypeU, ir.ValueTypeU8, ir.ValueTypeU16, ir.ValueTypeU32, ir.ValueTypeU64,
+		ir.ValueTypeBigint,
 		ir.ValueTypeDecimal,
 		ir.ValueTypeBool:
 		b.WriteString(v.Text)
 
-	case ir.ValueTypeFloat32, ir.ValueTypeFloat64:
+	case ir.ValueTypeF32, ir.ValueTypeF64:
 		b.WriteString(v.Text)
 
 	default:

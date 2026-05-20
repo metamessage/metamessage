@@ -4,39 +4,40 @@ import (
 	"fmt"
 	"sort"
 	"strings"
+	"unicode"
 
 	"github.com/metamessage/metamessage/internal/ir"
 )
 
 var rustTypeMap = map[ir.ValueType]string{
 	ir.ValueTypeUnknown:  "serde_json::Value",
-	ir.ValueTypeString:   "String",
+	ir.ValueTypeStr:      "String",
 	ir.ValueTypeBytes:    "Vec<u8>",
 	ir.ValueTypeBool:     "bool",
-	ir.ValueTypeArray:    "Vec<serde_json::Value>",
-	ir.ValueTypeSlice:    "Vec<serde_json::Value>",
+	ir.ValueTypeArr:      "Vec<serde_json::Value>",
+	ir.ValueTypeVec:      "Vec<serde_json::Value>",
 	ir.ValueTypeMap:      "HashMap<String, serde_json::Value>",
-	ir.ValueTypeInt:      "i32",
-	ir.ValueTypeInt8:     "i8",
-	ir.ValueTypeInt16:    "i16",
-	ir.ValueTypeInt32:    "i32",
-	ir.ValueTypeInt64:    "i64",
-	ir.ValueTypeUint:     "u32",
-	ir.ValueTypeUint8:    "u8",
-	ir.ValueTypeUint16:   "u16",
-	ir.ValueTypeUint32:   "u32",
-	ir.ValueTypeUint64:   "u64",
-	ir.ValueTypeFloat32:  "f32",
-	ir.ValueTypeFloat64:  "f64",
-	ir.ValueTypeBigInt:   "String",
-	ir.ValueTypeDateTime: "String",
+	ir.ValueTypeI:        "i32",
+	ir.ValueTypeI8:       "i8",
+	ir.ValueTypeI16:      "i16",
+	ir.ValueTypeI32:      "i32",
+	ir.ValueTypeI64:      "i64",
+	ir.ValueTypeU:        "u32",
+	ir.ValueTypeU8:       "u8",
+	ir.ValueTypeU16:      "u16",
+	ir.ValueTypeU32:      "u32",
+	ir.ValueTypeU64:      "u64",
+	ir.ValueTypeF32:      "f32",
+	ir.ValueTypeF64:      "f64",
+	ir.ValueTypeBigint:   "String",
+	ir.ValueTypeDatetime: "String",
 	ir.ValueTypeDate:     "String",
 	ir.ValueTypeTime:     "String",
-	ir.ValueTypeUUID:     "String",
+	ir.ValueTypeUuid:     "String",
 	ir.ValueTypeDecimal:  "String",
 	ir.ValueTypeEmail:    "String",
-	ir.ValueTypeIP:       "String",
-	ir.ValueTypeURL:      "String",
+	ir.ValueTypeIp:       "String",
+	ir.ValueTypeUrl:      "String",
 	ir.ValueTypeEnum:     "String",
 	ir.ValueTypeImage:    "String",
 }
@@ -137,9 +138,9 @@ func addRustImportForType(typ ir.ValueType, imports map[string]struct{}) {
 		imports["serde_json::Value"] = struct{}{}
 	case ir.ValueTypeMap:
 		imports["std::collections::HashMap"] = struct{}{}
-	case ir.ValueTypeBigInt:
+	case ir.ValueTypeBigint:
 		// BigInt is represented as String for simplicity.
-	case ir.ValueTypeArray, ir.ValueTypeSlice:
+	case ir.ValueTypeArr, ir.ValueTypeVec:
 		imports["serde_json::Value"] = struct{}{}
 	}
 }
@@ -213,22 +214,9 @@ func genRustFields(b *strings.Builder, n ir.Node, indent int) {
 		WriteIndent(b, indent)
 		b.WriteString("pub ")
 		b.WriteString(exportRustFieldName(f.Key))
-		b.WriteString(": ")
-
-		// Check if field is nullable
-		isNullable := false
-		if tag := f.Value.GetTag(); tag != nil {
-			isNullable = tag.Nullable
-		}
-
-		if isNullable {
-			b.WriteString("Option<")
-			b.WriteString(getRustTypeForField(f))
-			b.WriteString(">,\n")
-		} else {
-			b.WriteString(getRustTypeForField(f))
-			b.WriteString(",\n")
-		}
+		b.WriteString(": Option<")
+		b.WriteString(getRustTypeForField(f))
+		b.WriteString(">,\n")
 	}
 }
 
@@ -254,7 +242,7 @@ func genRustNestedStructs(b *strings.Builder, n ir.Node, indent int) {
 			b.WriteString("}\n")
 			genRustNestedStructs(b, v, indent+1)
 		case *ir.Array:
-			if nestedObj := findFirstObjectInArrayRust(v); nestedObj != nil {
+			if nestedObj := findFirstObjectInArray(v); nestedObj != nil {
 				structName := getRustObjectType(f.Key, nestedObj)
 				b.WriteString("\n#[derive(Debug, Clone)]\n")
 				b.WriteString("pub struct ")
@@ -266,18 +254,6 @@ func genRustNestedStructs(b *strings.Builder, n ir.Node, indent int) {
 			}
 		}
 	}
-}
-
-func findFirstObjectInArrayRust(a *ir.Array) *ir.Object {
-	if a == nil {
-		return nil
-	}
-	for _, item := range a.Items {
-		if obj, ok := item.(*ir.Object); ok {
-			return obj
-		}
-	}
-	return nil
 }
 
 func exportRustStructName(s string) string {
@@ -294,7 +270,7 @@ func exportRustFieldName(s string) string {
 	}
 
 	parts := strings.FieldsFunc(s, func(r rune) bool {
-		return !('a' <= r && r <= 'z') && !('A' <= r && r <= 'Z') && !('0' <= r && r <= '9')
+		return !unicode.IsLetter(r) && !unicode.IsDigit(r)
 	})
 
 	for i, p := range parts {
@@ -305,7 +281,7 @@ func exportRustFieldName(s string) string {
 	if name == "" {
 		return "field"
 	}
-	if '0' <= name[0] && name[0] <= '9' {
+	if unicode.IsDigit(rune(name[0])) {
 		name = "f_" + name
 	}
 	return name

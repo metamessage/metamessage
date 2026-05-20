@@ -11,11 +11,11 @@ func TestToKotlinGeneratesCode(t *testing.T) {
 	obj := &ir.Object{
 		Tag: &ir.Tag{Name: "user"},
 		Fields: []*ir.Field{
-			{Key: "id", Value: &ir.Value{Tag: &ir.Tag{Type: ir.ValueTypeInt}, Text: "1"}},
-			{Key: "name", Value: &ir.Value{Tag: &ir.Tag{Type: ir.ValueTypeString}, Text: "Alice"}},
+			{Key: "id", Value: &ir.Value{Tag: &ir.Tag{Type: ir.ValueTypeI}, Text: "1"}},
+			{Key: "name", Value: &ir.Value{Tag: &ir.Tag{Type: ir.ValueTypeStr}, Text: "Alice"}},
 			{Key: "tags", Value: &ir.Array{Items: []ir.Node{
-				&ir.Value{Tag: &ir.Tag{Type: ir.ValueTypeString}, Text: "go"},
-				&ir.Value{Tag: &ir.Tag{Type: ir.ValueTypeString}, Text: "java"},
+				&ir.Value{Tag: &ir.Tag{Type: ir.ValueTypeStr}, Text: "go"},
+				&ir.Value{Tag: &ir.Tag{Type: ir.ValueTypeStr}, Text: "java"},
 			}}},
 		},
 	}

@@ -164,10 +164,10 @@ func TestGenerateGoStruct1(t *testing.T) {
 				Value: &ir.Array{
 					Tag: &ir.Tag{
 						Name: "ages",
-						Type: ir.ValueTypeInt8,
+						Type: ir.ValueTypeI8,
 					},
 					Items: []ir.Node{
-						&ir.Value{Tag: &ir.Tag{Type: ir.ValueTypeInt8}, Text: "18"},
+						&ir.Value{Tag: &ir.Tag{Type: ir.ValueTypeI8}, Text: "18"},
 						&ir.Object{
 							Tag: &ir.Tag{
 								Name: "user_info1",
@@ -176,11 +176,11 @@ func TestGenerateGoStruct1(t *testing.T) {
 							Fields: []*ir.Field{
 								{
 									Key:   "user_name",
-									Value: &ir.Value{Tag: &ir.Tag{Type: ir.ValueTypeString}, Text: "zhangsan"},
+									Value: &ir.Value{Tag: &ir.Tag{Type: ir.ValueTypeStr}, Text: "zhangsan"},
 								},
 								{
 									Key:   "age",
-									Value: &ir.Value{Tag: &ir.Tag{Type: ir.ValueTypeInt8}, Text: "18"},
+									Value: &ir.Value{Tag: &ir.Tag{Type: ir.ValueTypeI8}, Text: "18"},
 								},
 							},
 						},
@@ -189,7 +189,7 @@ func TestGenerateGoStruct1(t *testing.T) {
 			},
 			{
 				Key:   "age",
-				Value: &ir.Value{Tag: &ir.Tag{Type: ir.ValueTypeInt8}, Text: "18"},
+				Value: &ir.Value{Tag: &ir.Tag{Type: ir.ValueTypeI8}, Text: "18"},
 			},
 		},
 	}

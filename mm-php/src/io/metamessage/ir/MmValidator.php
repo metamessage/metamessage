@@ -1411,12 +1411,12 @@ class MmValidator
         }
 
         if ($tag->locationHours !== 0) {
-            $result->addError("type slice not support location UTC{$tag->locationHours}");
+            $result->addError("type vec not support location UTC{$tag->locationHours}");
             return;
         }
 
         if (!is_array($value)) {
-            $result->addError('value must be an array');
+            $result->addError('value must be an vec');
             return;
         }
 
@@ -1426,7 +1426,7 @@ class MmValidator
             if ($tag->allowEmpty) {
                 return;
             }
-            $result->addError('type slice not allow empty');
+            $result->addError('type vec not allow empty');
             return;
         }
 
@@ -1435,7 +1435,7 @@ class MmValidator
             foreach ($value as $i => $item) {
                 $key = is_object($item) ? spl_object_hash($item) : (is_array($item) ? serialize($item) : $item);
                 if (isset($seen[$key])) {
-                    $result->addError("slice duplicate value found at index: $i");
+                    $result->addError("vec duplicate value found at index: $i");
                     return;
                 }
                 $seen[$key] = true;

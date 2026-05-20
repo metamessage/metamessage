@@ -1175,7 +1175,7 @@ class Tag(
             for (i in value.indices) {
                 val data = value[i]
                 if (seen.contains(data)) {
-                    return ValidationResult(false, "slice duplicate value found: $data, index: $i")
+                    return ValidationResult(false, "vec duplicate value found: $data, index: $i")
                 }
                 seen.add(data)
             }
