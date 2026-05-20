@@ -5,6 +5,7 @@ public class JsoncTag
     public ValueType Type { get; set; } = ValueType.Unknown;
     public string? Desc { get; set; }
     public bool Nullable { get; set; }
+    public bool IsNull { get; set; }
     public string? DefaultValue { get; set; }
     public string? MinValue { get; set; }
     public string? MaxValue { get; set; }
@@ -76,6 +77,10 @@ public class JsoncTag
                 case "nullable":
                     tag.Nullable = value.Equals("true", StringComparison.OrdinalIgnoreCase);
                     break;
+                case "is_null":
+                    tag.IsNull = value.Equals("true", StringComparison.OrdinalIgnoreCase);
+                    if (tag.IsNull) tag.Nullable = true;
+                    break;
                 case "default":
                     tag.DefaultValue = value;
                     break;
@@ -139,6 +144,10 @@ public class JsoncTag
         if (Nullable)
         {
             parts.Add("nullable=true");
+        }
+        if (IsNull)
+        {
+            parts.Add("is_null=true");
         }
         if (!string.IsNullOrEmpty(DefaultValue))
         {

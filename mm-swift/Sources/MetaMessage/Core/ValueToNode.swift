@@ -36,10 +36,10 @@ func valueToNode(_ value: Any?, tag: JSONCTag?, depth: Int, path: String) throws
         return JSONCValue(data: nil, text: "null", tag: effectiveTag, path: currentPath)
     }
 
-    return try convertValue(v, tag: &effectiveTag, depth: depth, path: currentPath)
+    return try convertScalar(v, tag: &effectiveTag, depth: depth, path: currentPath)
 }
 
-private func convertValue(_ value: Any, tag: inout JSONCTag, depth: Int, path: String) throws -> JSONCNode {
+private func convertScalar(_ value: Any, tag: inout JSONCTag, depth: Int, path: String) throws -> JSONCNode {
     if depth > maxDepth {
         throw MMValueToNodeError.maxDepthExceeded
     }
@@ -153,7 +153,7 @@ private func convertValue(_ value: Any, tag: inout JSONCTag, depth: Int, path: S
 
     if let optionalVal = value as? OptionalProtocol {
         if let wrapped = optionalVal.wrapped {
-            return try convertValue(wrapped, tag: &tag, depth: depth, path: currentPath)
+            return try convertScalar(wrapped, tag: &tag, depth: depth, path: currentPath)
         }
         tag.isNull = true
         if !tag.nullable {
@@ -220,7 +220,7 @@ private func structToNode(_ value: Any, tag: inout JSONCTag, depth: Int, path: S
             }
         }
 
-        let childNode = try convertValue(child.value, tag: &childTag, depth: newDepth, path: subPath)
+        let childNode = try convertScalar(child.value, tag: &childTag, depth: newDepth, path: subPath)
         let field = JSONCField(key: fieldKey, value: childNode)
         obj.fields.append(field)
     }
@@ -241,7 +241,7 @@ private func arrayToNode(_ value: Any, tag: inout JSONCTag, depth: Int, path: St
         childTag.inherit(from: tag)
 
         let subPath = "\(path)[\(arr.items.count)]"
-        let childNode = try convertValue(child.value, tag: &childTag, depth: newDepth, path: subPath)
+        let childNode = try convertScalar(child.value, tag: &childTag, depth: newDepth, path: subPath)
         arr.items.append(childNode)
     }
 
@@ -265,7 +265,7 @@ private func dictToNode(_ value: Any, tag: inout JSONCTag, depth: Int, path: Str
         childTag.name = fieldKey
 
         let subPath = "\(path)[\(fieldKey)]"
-        let childNode = try convertValue(child.value, tag: &childTag, depth: newDepth, path: subPath)
+        let childNode = try convertScalar(child.value, tag: &childTag, depth: newDepth, path: subPath)
         let field = JSONCField(key: fieldKey, value: childNode)
         obj.fields.append(field)
     }

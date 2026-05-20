@@ -9,24 +9,20 @@ tmp/
 # Go
 mm-go/bin/
 mm-go/pkg/
-mm-go/.idea/
 mm-go/*.exe
 
 # Java
 mm-java/**/target/
-mm-java/.idea/
 mm-java/*.class
 mm-java/*.jar
 
 # TypeScript
 mm-ts/dist/
 mm-ts/node_modules/
-mm-ts/.idea/
 mm-ts/*.log
 
 # Kotlin
 mm-kt/build/
-mm-kt/.idea/
 mm-kt/*.class
 mm-kt/*.jar
 mm-kt/**/target/
@@ -34,31 +30,28 @@ mm-kt/**/target/
 # Python
 mm-py/__pycache__/
 mm-py/*.pyc
-mm-py/.idea/
 mm-py/*.egg-info/
 
 
 # JavaScript
 mm-js/node_modules/
 mm-js/dist/
-mm-js/.idea/
 
 # C#
+examples/**/[Bb]in/
+examples/**/[Oo]bj/
 mm-cs/**/[Bb]in/
 mm-cs/**/[Oo]bj/
-mm-cs/.idea/
+*.lscache
 
 # Rust
 mm-rs/target/
-mm-rs/.idea/
 
 # Swift
 mm-swift/.build/
-mm-swift/.idea/
 
 # PHP
 mm-php/vendor/
-mm-php/.idea/
 mm-php/*.log
 mm-php/.phpunit.cache
 

@@ -281,6 +281,8 @@ public static class MetaMessage
         return bytes;
     }
 
+    private static JsoncTag? _treeTag; // re-entry guard
+
     private static byte[] EncodeFromJsoncNode(IJsoncNode node)
     {
         var encoder = new WireEncoder();
@@ -290,21 +292,58 @@ public static class MetaMessage
 
     private static void EncodeJsoncNodeValue(WireEncoder encoder, IJsoncNode node)
     {
+        var payload = new WireEncoder();
         switch (node)
         {
             case JsoncValue jsoncValue:
-                EncodeJsoncScalar(encoder, jsoncValue);
+                EncodeJsoncScalarPayload(payload, jsoncValue);
                 break;
             case JsoncArray jsoncArray:
-                EncodeJsoncArrayNode(encoder, jsoncArray);
+                EncodeJsoncArrayPayload(payload, jsoncArray);
                 break;
             case JsoncObject jsoncObject:
-                EncodeJsoncObjectNode(encoder, jsoncObject);
+                EncodeJsoncObjectPayload(payload, jsoncObject);
                 break;
         }
+
+        var mmTag = MmTag.Empty();
+        if (node?.Tag != null)
+        {
+            mmTag = ConvertJsoncTagToMmTag(node.Tag);
+        }
+        encoder.EncodeTaggedPayload(payload.ToByteArray(), mmTag.ToBytes());
     }
 
-    private static void EncodeJsoncScalar(WireEncoder encoder, JsoncValue value)
+    private static MmTag ConvertJsoncTagToMmTag(JsoncTag tag)
+    {
+        var mmTag = new MmTag();
+        mmTag.Type = (Core.ValueType)(int)tag.Type;
+        mmTag.Desc = tag.Desc ?? string.Empty;
+        mmTag.Nullable = tag.Nullable;
+        mmTag.IsNull = tag.IsNull;
+        mmTag.Min = tag.MinValue ?? string.Empty;
+        mmTag.Max = tag.MaxValue ?? string.Empty;
+        mmTag.DefaultValue = tag.DefaultValue ?? string.Empty;
+        return mmTag;
+    }
+
+    private static JsoncTag ConvertMmTagToJsoncTag(MmTag mmTag)
+    {
+        var tag = new JsoncTag();
+        tag.Type = (Jsonc.ValueType)(int)mmTag.Type;
+        tag.Desc = mmTag.Desc;
+        tag.Nullable = mmTag.Nullable;
+        tag.IsNull = mmTag.IsNull;
+        if (!string.IsNullOrEmpty(mmTag.Min) && mmTag.Min != "0")
+            tag.MinValue = mmTag.Min;
+        if (!string.IsNullOrEmpty(mmTag.Max) && mmTag.Max != "0")
+            tag.MaxValue = mmTag.Max;
+        if (!string.IsNullOrEmpty(mmTag.DefaultValue))
+            tag.DefaultValue = mmTag.DefaultValue;
+        return tag;
+    }
+
+    private static void EncodeJsoncScalarPayload(WireEncoder encoder, JsoncValue value)
     {
         switch (value.TokenType)
         {
@@ -357,7 +396,7 @@ public static class MetaMessage
         }
     }
 
-    private static void EncodeJsoncArrayNode(WireEncoder encoder, JsoncArray array)
+    private static void EncodeJsoncArrayPayload(WireEncoder encoder, JsoncArray array)
     {
         var body = new GrowableByteBuf();
         var elementEncoder = new WireEncoder();
@@ -371,11 +410,10 @@ public static class MetaMessage
 
         elementEncoder.Reset();
         elementEncoder.EncodeArrayPayload(body.ToArray());
-        var emptyTag = MmTag.Empty();
-        encoder.EncodeTaggedPayload(elementEncoder.ToByteArray(), emptyTag.ToBytes());
+        encoder.EncodeArrayPayload(elementEncoder.ToByteArray());
     }
 
-    private static void EncodeJsoncObjectNode(WireEncoder encoder, JsoncObject obj)
+    private static void EncodeJsoncObjectPayload(WireEncoder encoder, JsoncObject obj)
     {
         var keysPacked = new GrowableByteBuf();
         var valsPacked = new GrowableByteBuf();
@@ -401,10 +439,7 @@ public static class MetaMessage
         mapBody.WriteAll(tmp.ToByteArray());
         mapBody.WriteAll(valsPacked.ToArray());
 
-        tmp.Reset();
-        tmp.EncodeObjectPayload(mapBody.ToArray());
-        var emptyTag = MmTag.Empty();
-        encoder.EncodeTaggedPayload(tmp.ToByteArray(), emptyTag.ToBytes());
+        encoder.EncodeObjectPayload(mapBody.ToArray());
     }
 
     private static IJsoncNode TreeToJsoncNode(IMmTree tree)
@@ -424,73 +459,132 @@ public static class MetaMessage
 
     private static IJsoncNode ScalarToJsoncValue(MmScalar scalar)
     {
-        if (scalar.Tag.IsNull || scalar.Data == null)
+        JsoncValue result;
+        if (scalar.Tag.IsNull)
         {
-            return new JsoncValue { Value = null, TokenType = JsoncTokenType.Null };
+            switch (scalar.Tag.Type)
+            {
+                case ValueType.BOOL:
+                    result = new JsoncValue { Value = false, TokenType = JsoncTokenType.False };
+                    break;
+                case ValueType.INT:
+                case ValueType.INT8:
+                case ValueType.INT16:
+                case ValueType.INT32:
+                case ValueType.INT64:
+                case ValueType.UINT:
+                case ValueType.UINT16:
+                case ValueType.UINT32:
+                case ValueType.UINT64:
+                case ValueType.BIGINT:
+                case ValueType.FLOAT32:
+                case ValueType.FLOAT64:
+                case ValueType.DECIMAL:
+                    result = new JsoncValue { Value = 0L, TokenType = JsoncTokenType.Number };
+                    break;
+                case ValueType.STRING:
+                case ValueType.EMAIL:
+                case ValueType.URL:
+                case ValueType.ENUM:
+                case ValueType.DATETIME:
+                case ValueType.DATE:
+                case ValueType.TIME:
+                case ValueType.UUID:
+                    result = new JsoncValue { Value = "", TokenType = JsoncTokenType.String };
+                    break;
+                case ValueType.BYTES:
+                    result = new JsoncValue { Value = "", TokenType = JsoncTokenType.String };
+                    break;
+                default:
+                    result = new JsoncValue { Value = "", TokenType = JsoncTokenType.String };
+                    break;
+            }
+        }
+        else if (scalar.Data == null)
+        {
+            result = new JsoncValue { Value = null, TokenType = JsoncTokenType.Null };
+        }
+        else
+        {
+            switch (scalar.Tag.Type)
+            {
+                case ValueType.BOOL:
+                    result = new JsoncValue
+                    {
+                        Value = scalar.Data,
+                        TokenType = (bool)scalar.Data ? JsoncTokenType.True : JsoncTokenType.False
+                    };
+                    break;
+                case ValueType.INT:
+                case ValueType.INT8:
+                case ValueType.INT16:
+                case ValueType.INT32:
+                case ValueType.INT64:
+                case ValueType.UINT:
+                case ValueType.UINT16:
+                case ValueType.UINT32:
+                case ValueType.UINT64:
+                    result = new JsoncValue { Value = scalar.Data, TokenType = JsoncTokenType.Number };
+                    break;
+                case ValueType.FLOAT32:
+                case ValueType.FLOAT64:
+                case ValueType.DECIMAL:
+                    result = new JsoncValue { Value = scalar.Data, TokenType = JsoncTokenType.Number };
+                    break;
+                case ValueType.BIGINT:
+                case ValueType.DATETIME:
+                case ValueType.DATE:
+                case ValueType.TIME:
+                case ValueType.UUID:
+                case ValueType.EMAIL:
+                case ValueType.URL:
+                case ValueType.STRING:
+                    result = new JsoncValue { Value = scalar.Data?.ToString(), TokenType = JsoncTokenType.String };
+                    break;
+                case ValueType.BYTES:
+                    result = new JsoncValue
+                    {
+                        Value = scalar.Data is byte[] b ? Convert.ToBase64String(b) : scalar.Data?.ToString(),
+                        TokenType = JsoncTokenType.String
+                    };
+                    break;
+                case ValueType.ENUM:
+                    result = new JsoncValue { Value = scalar.Data?.ToString(), TokenType = JsoncTokenType.String };
+                    break;
+                default:
+                    if (scalar.Data is string s)
+                    {
+                        result = new JsoncValue { Value = s, TokenType = JsoncTokenType.String };
+                    }
+                    else if (scalar.Data is bool bb)
+                    {
+                        result = new JsoncValue
+                        {
+                            Value = bb,
+                            TokenType = bb ? JsoncTokenType.True : JsoncTokenType.False
+                        };
+                    }
+                    else if (scalar.Data is double || scalar.Data is float)
+                    {
+                        result = new JsoncValue { Value = scalar.Data, TokenType = JsoncTokenType.Number };
+                    }
+                    else if (scalar.Data is int || scalar.Data is long)
+                    {
+                        result = new JsoncValue { Value = scalar.Data, TokenType = JsoncTokenType.Number };
+                    }
+                    else
+                    {
+                        result = new JsoncValue { Value = scalar.Data?.ToString(), TokenType = JsoncTokenType.String };
+                    }
+                    break;
+            }
         }
 
-        switch (scalar.Tag.Type)
+        if (scalar.Tag != null)
         {
-            case ValueType.BOOL:
-                return new JsoncValue
-                {
-                    Value = scalar.Data,
-                    TokenType = (bool)scalar.Data ? JsoncTokenType.True : JsoncTokenType.False
-                };
-            case ValueType.INT:
-            case ValueType.INT8:
-            case ValueType.INT16:
-            case ValueType.INT32:
-            case ValueType.INT64:
-            case ValueType.UINT:
-            case ValueType.UINT16:
-            case ValueType.UINT32:
-            case ValueType.UINT64:
-                return new JsoncValue { Value = scalar.Data, TokenType = JsoncTokenType.Number };
-            case ValueType.FLOAT32:
-            case ValueType.FLOAT64:
-            case ValueType.DECIMAL:
-                return new JsoncValue { Value = scalar.Data, TokenType = JsoncTokenType.Number };
-            case ValueType.BIGINT:
-            case ValueType.DATETIME:
-            case ValueType.DATE:
-            case ValueType.TIME:
-            case ValueType.UUID:
-            case ValueType.EMAIL:
-            case ValueType.URL:
-            case ValueType.STRING:
-                return new JsoncValue { Value = scalar.Data?.ToString(), TokenType = JsoncTokenType.String };
-            case ValueType.BYTES:
-                return new JsoncValue
-                {
-                    Value = scalar.Data is byte[] b ? Convert.ToBase64String(b) : scalar.Data?.ToString(),
-                    TokenType = JsoncTokenType.String
-                };
-            case ValueType.ENUM:
-                return new JsoncValue { Value = scalar.Data?.ToString(), TokenType = JsoncTokenType.String };
-            default:
-                if (scalar.Data is string s)
-                {
-                    return new JsoncValue { Value = s, TokenType = JsoncTokenType.String };
-                }
-                if (scalar.Data is bool bb)
-                {
-                    return new JsoncValue
-                    {
-                        Value = bb,
-                        TokenType = bb ? JsoncTokenType.True : JsoncTokenType.False
-                    };
-                }
-                if (scalar.Data is double || scalar.Data is float)
-                {
-                    return new JsoncValue { Value = scalar.Data, TokenType = JsoncTokenType.Number };
-                }
-                if (scalar.Data is int || scalar.Data is long)
-                {
-                    return new JsoncValue { Value = scalar.Data, TokenType = JsoncTokenType.Number };
-                }
-                return new JsoncValue { Value = scalar.Data?.ToString(), TokenType = JsoncTokenType.String };
+            result.Tag = ConvertMmTagToJsoncTag(scalar.Tag);
         }
+        return result;
     }
 
     private static IJsoncNode ArrayToJsoncArray(MmArray array)
@@ -499,6 +593,10 @@ public static class MetaMessage
         foreach (var child in array.Children)
         {
             jsoncArray.Add(TreeToJsoncNode(child));
+        }
+        if (array.Tag != null)
+        {
+            jsoncArray.Tag = ConvertMmTagToJsoncTag(array.Tag);
         }
         return jsoncArray;
     }
