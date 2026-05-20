@@ -10,33 +10,33 @@ import (
 
 var jsTypeMap = map[ir.ValueType]string{
 	ir.ValueTypeUnknown:  "any",
-	ir.ValueTypeString:   "string",
+	ir.ValueTypeStr:      "string",
 	ir.ValueTypeBytes:    "Uint8Array",
 	ir.ValueTypeBool:     "boolean",
-	ir.ValueTypeArray:    "Array<any>",
-	ir.ValueTypeSlice:    "Array<any>",
+	ir.ValueTypeArr:      "Array<any>",
+	ir.ValueTypeVec:      "Array<any>",
 	ir.ValueTypeMap:      "Object",
-	ir.ValueTypeInt:      "number",
-	ir.ValueTypeInt8:     "number",
-	ir.ValueTypeInt16:    "number",
-	ir.ValueTypeInt32:    "number",
-	ir.ValueTypeInt64:    "number",
-	ir.ValueTypeUint:     "number",
-	ir.ValueTypeUint8:    "number",
-	ir.ValueTypeUint16:   "number",
-	ir.ValueTypeUint32:   "number",
-	ir.ValueTypeUint64:   "number",
-	ir.ValueTypeFloat32:  "number",
-	ir.ValueTypeFloat64:  "number",
-	ir.ValueTypeBigInt:   "number",
-	ir.ValueTypeDateTime: "string",
+	ir.ValueTypeI:        "number",
+	ir.ValueTypeI8:       "number",
+	ir.ValueTypeI16:      "number",
+	ir.ValueTypeI32:      "number",
+	ir.ValueTypeI64:      "number",
+	ir.ValueTypeU:        "number",
+	ir.ValueTypeU8:       "number",
+	ir.ValueTypeU16:      "number",
+	ir.ValueTypeU32:      "number",
+	ir.ValueTypeU64:      "number",
+	ir.ValueTypeF32:      "number",
+	ir.ValueTypeF64:      "number",
+	ir.ValueTypeBigint:   "number",
+	ir.ValueTypeDatetime: "string",
 	ir.ValueTypeDate:     "string",
 	ir.ValueTypeTime:     "string",
-	ir.ValueTypeUUID:     "string",
+	ir.ValueTypeUuid:     "string",
 	ir.ValueTypeDecimal:  "string",
 	ir.ValueTypeEmail:    "string",
-	ir.ValueTypeIP:       "string",
-	ir.ValueTypeURL:      "string",
+	ir.ValueTypeIp:       "string",
+	ir.ValueTypeUrl:      "string",
 	ir.ValueTypeEnum:     "string",
 	ir.ValueTypeImage:    "string",
 }
@@ -176,7 +176,7 @@ func genJSNestedClasses(b *strings.Builder, n ir.Node) {
 			b.WriteString("\t}\n}\n")
 			genJSNestedClasses(b, v)
 		case *ir.Array:
-			if nestedObj := findFirstObjectInArrayJS(v); nestedObj != nil {
+			if nestedObj := findFirstObjectInArray(v); nestedObj != nil {
 				className := getJSObjectType(f.Key, nestedObj)
 				b.WriteString("\nexport class ")
 				b.WriteString(className)
@@ -187,18 +187,6 @@ func genJSNestedClasses(b *strings.Builder, n ir.Node) {
 			}
 		}
 	}
-}
-
-func findFirstObjectInArrayJS(a *ir.Array) *ir.Object {
-	if a == nil {
-		return nil
-	}
-	for _, item := range a.Items {
-		if obj, ok := item.(*ir.Object); ok {
-			return obj
-		}
-	}
-	return nil
 }
 
 func exportJSClassName(s string) string {
@@ -323,14 +311,14 @@ func formatJSValueLiteral(v *ir.Value) string {
 	}
 
 	switch v.Tag.Type {
-	case ir.ValueTypeString, ir.ValueTypeBytes, ir.ValueTypeDateTime, ir.ValueTypeDate, ir.ValueTypeTime, ir.ValueTypeUUID, ir.ValueTypeDecimal, ir.ValueTypeEmail, ir.ValueTypeIP, ir.ValueTypeURL, ir.ValueTypeEnum, ir.ValueTypeImage:
+	case ir.ValueTypeStr, ir.ValueTypeBytes, ir.ValueTypeDatetime, ir.ValueTypeDate, ir.ValueTypeTime, ir.ValueTypeUuid, ir.ValueTypeDecimal, ir.ValueTypeEmail, ir.ValueTypeIp, ir.ValueTypeUrl, ir.ValueTypeEnum, ir.ValueTypeImage:
 		return "\"" + strings.ReplaceAll(v.Text, "\"", "\\\"") + "\""
 	case ir.ValueTypeBool:
 		if strings.EqualFold(v.Text, "true") {
 			return "true"
 		}
 		return "false"
-	case ir.ValueTypeInt, ir.ValueTypeInt8, ir.ValueTypeInt16, ir.ValueTypeInt32, ir.ValueTypeInt64, ir.ValueTypeUint, ir.ValueTypeUint8, ir.ValueTypeUint16, ir.ValueTypeUint32, ir.ValueTypeUint64, ir.ValueTypeFloat32, ir.ValueTypeFloat64:
+	case ir.ValueTypeI, ir.ValueTypeI8, ir.ValueTypeI16, ir.ValueTypeI32, ir.ValueTypeI64, ir.ValueTypeU, ir.ValueTypeU8, ir.ValueTypeU16, ir.ValueTypeU32, ir.ValueTypeU64, ir.ValueTypeF32, ir.ValueTypeF64:
 		if v.Text == "" {
 			return "0"
 		}
@@ -357,9 +345,7 @@ func exportJSFieldName(s string) string {
 
 	name := parts[0]
 	for _, p := range parts[1:] {
-		if len(p) > 0 {
-			name += strings.Title(p)
-		}
+			name += toTitle(p)
 	}
 	if unicode.IsDigit(rune(name[0])) {
 		name = "f_" + name

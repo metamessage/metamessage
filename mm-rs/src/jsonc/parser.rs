@@ -1,211 +1,375 @@
+use crate::ir::ast::{Array, Field, Node, Object, Value, ValueData};
+use crate::ir::tag::Tag;
+use crate::ir::value_type::ValueType;
 use crate::jsonc::scanner::{Scanner, Token, TokenType};
-use crate::jsonc::ast::{Node, Object, Array, Value, Field, ValueData};
-use crate::jsonc::tag::Tag;
-use crate::core::validator::validate;
+
+const MAX_DEPTH: usize = 32;
 
 pub struct Parser {
-    scanner: Scanner,
-    current_token: Option<Token>,
+    toks: Vec<Token>,
+    pos: usize,
+    pending: Vec<Token>,
+    depth: usize,
 }
 
 impl Parser {
     pub fn new(input: &str) -> Self {
-        Self {
-            scanner: Scanner::new(input),
-            current_token: None,
+        let mut scanner = Scanner::new(input);
+        let mut toks = Vec::new();
+        loop {
+            let tok = scanner.next_token();
+            let is_eof = tok.token_type == TokenType::EOF;
+            toks.push(tok);
+            if is_eof {
+                break;
+            }
         }
-    }
-
-    pub fn parse(&mut self) -> Result<Node, String> {
-        self.current_token = Some(self.scanner.next_token());
-        self.parse_value()
-    }
-
-    fn next_token(&mut self) {
-        self.current_token = Some(self.scanner.next_token());
+        Self {
+            toks,
+            pos: 0,
+            pending: Vec::new(),
+            depth: 0,
+        }
     }
 
     fn peek(&self) -> &Token {
-        self.current_token.as_ref().expect("no current token")
+        if self.pos >= self.toks.len() {
+            static EOF: Token = Token {
+                token_type: TokenType::EOF,
+                literal: String::new(),
+                line: 0,
+                column: 0,
+            };
+            return &EOF;
+        }
+        &self.toks[self.pos]
     }
 
-    fn parse_value(&mut self) -> Result<Node, String> {
-        let token = self.peek();
+    fn next(&mut self) -> Token {
+        let tok = self.peek().clone();
+        self.pos += 1;
+        tok
+    }
 
-        match &token.token_type {
-            TokenType::LBrace => {
-                self.next_token();
-                self.parse_object()
+    fn consume_comments_for(&mut self, anchor_line: usize) -> Option<Tag> {
+        if self.pending.is_empty() {
+            return None;
+        }
+
+        let last = &self.pending[self.pending.len() - 1];
+        if anchor_line - last.line > 1 {
+            self.pending.clear();
+            return None;
+        }
+
+        let mut result: Option<Tag> = None;
+        for comment in &self.pending {
+            if let Some(parsed) = Tag::parse(&comment.literal) {
+                result = Some(Tag::merge(result, parsed));
             }
-            TokenType::LBracket => {
-                self.next_token();
-                self.parse_array()
+        }
+
+        self.pending.clear();
+        result
+    }
+
+    pub fn parse(&mut self) -> Result<Node, String> {
+        loop {
+            let tok = self.peek().clone();
+            if tok.token_type == TokenType::EOF {
+                return Err("empty input".to_string());
             }
-            TokenType::String | TokenType::Number | TokenType::True | TokenType::False | TokenType::Null => {
-                self.parse_primitive()
+
+            if tok.token_type == TokenType::LeadingComment {
+                if !self.pending.is_empty() {
+                    let last = &self.pending[self.pending.len() - 1];
+                    if tok.line - last.line > 1 {
+                        self.pending.clear();
+                    }
+                }
+                self.pending.push(tok);
+                self.next();
+                continue;
             }
-            TokenType::EOF => Err("unexpected EOF".to_string()),
-            _ => Err(format!("unexpected token: {:?}", token.token_type)),
+
+            if tok.token_type == TokenType::TrailingComment {
+                self.next();
+                continue;
+            }
+
+            return self
+                .parse_node("")
+                .and_then(|opt| opt.ok_or_else(|| "no value parsed".to_string()));
         }
     }
 
-    fn parse_primitive(&mut self) -> Result<Node, String> {
-        let token = self.peek().clone();
-        self.next_token();
+    fn parse_node(&mut self, path: &str) -> Result<Option<Node>, String> {
+        let tok = self.next();
 
-        let mut tag = Tag::new();
-
-        let data = match token.token_type {
+        match tok.token_type {
+            TokenType::EOF => Ok(None),
+            TokenType::LBrace => self.parse_object(tok.line, path).map(Some),
+            TokenType::LBracket => self.parse_array(tok.line, path).map(Some),
             TokenType::String => {
-                tag.value_type = crate::jsonc::value_type::ValueType::String;
-                ValueData::String(token.literal.clone())
+                let mut tag = self.consume_comments_for(tok.line).unwrap_or_default();
+                if tag.value_type == ValueType::Unknown {
+                    tag.value_type = ValueType::String;
+                }
+                let text = tok.literal;
+                let value = Node::Value(Value {
+                    data: ValueData::String(text.clone()),
+                    text,
+                    tag: Some(tag),
+                    path: path.to_string(),
+                });
+                Ok(Some(value))
             }
             TokenType::Number => {
-                if let Ok(n) = token.literal.parse::<i64>() {
-                    tag.value_type = crate::jsonc::value_type::ValueType::Int;
-                    ValueData::Int(n)
-                } else if let Ok(f) = token.literal.parse::<f64>() {
-                    tag.value_type = crate::jsonc::value_type::ValueType::Float64;
-                    ValueData::Float(f)
-                } else {
-                    tag.value_type = crate::jsonc::value_type::ValueType::String;
-                    ValueData::String(token.literal.clone())
+                let mut tag = self.consume_comments_for(tok.line).unwrap_or_default();
+                let text = tok.literal;
+
+                if tag.value_type == ValueType::Unknown {
+                    if text.contains('.') {
+                        tag.value_type = ValueType::Float64;
+                    } else {
+                        tag.value_type = ValueType::Int;
+                    }
                 }
+
+                let data: ValueData;
+                if text.contains('.') {
+                    data = ValueData::Float(text.parse::<f64>().unwrap_or(0.0));
+                } else if text.starts_with('-') {
+                    if let Ok(ival) = text.parse::<i64>() {
+                        data = ValueData::Int(ival);
+                    } else {
+                        data = ValueData::Int(i64::MIN);
+                    }
+                } else if let Ok(uval) = text.parse::<u64>() {
+                    if uval > i64::MAX as u64 {
+                        data = ValueData::Uint(uval);
+                    } else {
+                        data = ValueData::Int(uval as i64);
+                    }
+                } else {
+                    data = ValueData::Int(0);
+                }
+
+                let value = Node::Value(Value {
+                    data,
+                    text,
+                    tag: Some(tag),
+                    path: path.to_string(),
+                });
+                Ok(Some(value))
             }
             TokenType::True => {
-                tag.value_type = crate::jsonc::value_type::ValueType::Bool;
-                ValueData::Bool(true)
+                let mut tag = self.consume_comments_for(tok.line).unwrap_or_default();
+                if tag.value_type == ValueType::Unknown {
+                    tag.value_type = ValueType::Bool;
+                }
+                let value = Node::Value(Value {
+                    data: ValueData::Bool(true),
+                    text: "true".to_string(),
+                    tag: Some(tag),
+                    path: path.to_string(),
+                });
+                Ok(Some(value))
             }
             TokenType::False => {
-                tag.value_type = crate::jsonc::value_type::ValueType::Bool;
-                ValueData::Bool(false)
+                let mut tag = self.consume_comments_for(tok.line).unwrap_or_default();
+                if tag.value_type == ValueType::Unknown {
+                    tag.value_type = ValueType::Bool;
+                }
+                let value = Node::Value(Value {
+                    data: ValueData::Bool(false),
+                    text: "false".to_string(),
+                    tag: Some(tag),
+                    path: path.to_string(),
+                });
+                Ok(Some(value))
             }
             TokenType::Null => {
-                tag.value_type = crate::jsonc::value_type::ValueType::Unknown;
-                ValueData::Null
+                let mut tag = self.consume_comments_for(tok.line).unwrap_or_default();
+                tag.nullable = true;
+                tag.is_null = true;
+                let value = Node::Value(Value {
+                    data: ValueData::Null,
+                    text: "null".to_string(),
+                    tag: Some(tag),
+                    path: path.to_string(),
+                });
+                Ok(Some(value))
             }
-            _ => return Err(format!("unexpected token type: {:?}", token.token_type)),
-        };
-
-        // 验证值
-        let result = match &data {
-            ValueData::Bool(b) => validate(b, &tag),
-            ValueData::String(s) => validate(s, &tag),
-            ValueData::Int(i) => validate(i, &tag),
-            ValueData::Uint(u) => validate(u, &tag),
-            ValueData::Float(f) => validate(f, &tag),
-            ValueData::Bytes(b) => validate(b, &tag),
-            ValueData::Null => validate(&(), &tag),
-        };
-
-        if !result.is_valid {
-            return Err(result.errors.join(", "));
+            TokenType::TrailingComment => Ok(None),
+            _ => Err(format!("unexpected token: {:?}", tok.token_type)),
         }
-
-        Ok(Node::Value(Value {
-            data,
-            text: token.literal,
-            tag: Some(tag),
-        }))
     }
 
-    fn parse_object(&mut self) -> Result<Node, String> {
-        let mut fields = Vec::new();
-        let mut tag = Tag::new();
-        tag.value_type = crate::jsonc::value_type::ValueType::Struct;
+    fn parse_object(&mut self, open_line: usize, path: &str) -> Result<Node, String> {
+        self.depth += 1;
+        if self.depth > MAX_DEPTH {
+            return Err("max depth exceeded".to_string());
+        }
+
+        let mut tag = self.consume_comments_for(open_line).unwrap_or_default();
+        if tag.value_type == ValueType::Unknown {
+            tag.value_type = ValueType::Struct;
+        }
+
+        let obj_path = path.to_string();
+        let mut fields: Vec<Field> = Vec::new();
 
         loop {
-            let token = self.peek();
+            let tok = self.peek().clone();
+            if tok.token_type == TokenType::EOF {
+                break;
+            }
+            if tok.token_type == TokenType::RBrace {
+                self.next();
+                break;
+            }
 
-            match &token.token_type {
-                TokenType::RBrace => {
-                    self.next_token();
-                    break;
-                }
-                TokenType::EOF => break,
-                TokenType::Comma => {
-                    self.next_token();
-                }
-                TokenType::LeadingComment => {
-                    self.next_token();
-                }
-                TokenType::String => {
-                    let key = token.literal.clone();
-                    self.next_token();
-
-                    if !matches!(self.peek().token_type, TokenType::Colon) {
-                        return Err("expected colon after key".to_string());
+            if tok.token_type == TokenType::LeadingComment {
+                if !self.pending.is_empty() {
+                    let last = &self.pending[self.pending.len() - 1];
+                    if tok.line - last.line > 1 {
+                        self.pending.clear();
                     }
-                    self.next_token();
+                }
+                self.pending.push(tok);
+                self.next();
+                continue;
+            }
 
-                    let value = self.parse_value()?;
-                    fields.push(Field { key, value });
+            if tok.token_type == TokenType::TrailingComment {
+                if let Some(parsed) = Tag::parse(&tok.literal) {
+                    if let Some(last) = fields.last_mut() {
+                        if let Some(ref mut existing) = last.value.get_tag_mut() {
+                            let merged = Tag::merge(Some(existing.clone()), parsed);
+                            **existing = merged;
+                        }
+                    }
                 }
-                _ => {
-                    return Err(format!("unexpected token in object: {:?}", token.token_type));
+                self.next();
+                continue;
+            }
+
+            let key_tok = self.next();
+            if key_tok.token_type != TokenType::String {
+                return Err("expected string key".to_string());
+            }
+            let key = key_tok.literal;
+
+            let colon = self.next();
+            if colon.token_type != TokenType::Colon {
+                return Err("expected colon".to_string());
+            }
+
+            let child_path = format!("{}.{}", obj_path, key);
+            if let Some(mut val) = self.parse_node(&child_path)? {
+                if let Some(mut ct) = val.get_tag().cloned() {
+                    ct.inherit(&tag);
+                    if let Some(t) = val.get_tag_mut() {
+                        *t = ct;
+                    }
                 }
+                fields.push(Field { key, value: val });
+            }
+
+            if self.peek().token_type == TokenType::Comma {
+                self.next();
             }
         }
 
-        // 验证结构体 tag
-        let result = validate(&fields, &tag);
-        if !result.is_valid {
-            return Err(result.errors.join(", "));
-        }
-
+        self.depth -= 1;
         Ok(Node::Object(Object {
             fields,
             tag: Some(tag),
+            path: obj_path,
         }))
     }
 
-    fn parse_array(&mut self) -> Result<Node, String> {
-        let mut items = Vec::new();
-        let mut tag = Tag::new();
-        tag.value_type = crate::jsonc::value_type::ValueType::Array;
+    fn parse_array(&mut self, open_line: usize, path: &str) -> Result<Node, String> {
+        self.depth += 1;
+        if self.depth > MAX_DEPTH {
+            return Err("max depth exceeded".to_string());
+        }
 
-        loop {
-            let token = self.peek();
-
-            match &token.token_type {
-                TokenType::RBracket => {
-                    self.next_token();
-                    break;
+        let mut tag = self.consume_comments_for(open_line).unwrap_or_default();
+        if tag.value_type == ValueType::Unknown {
+            if let Some(size) = tag.size {
+                if size > 0 {
+                    tag.value_type = ValueType::Array;
+                } else {
+                    tag.value_type = ValueType::Slice;
                 }
-                TokenType::EOF => break,
-                TokenType::Comma => {
-                    self.next_token();
-                }
-                TokenType::LeadingComment => {
-                    self.next_token();
-                }
-                TokenType::String | TokenType::Number | TokenType::True | TokenType::False | TokenType::Null => {
-                    let value = self.parse_value()?;
-                    items.push(value);
-                }
-                TokenType::LBrace => {
-                    let value = self.parse_value()?;
-                    items.push(value);
-                }
-                TokenType::LBracket => {
-                    let value = self.parse_value()?;
-                    items.push(value);
-                }
-                _ => {
-                    return Err(format!("unexpected token in array: {:?}", token.token_type));
-                }
+            } else {
+                tag.value_type = ValueType::Slice;
             }
         }
 
-        // 验证数组 tag
-        let result = validate(&items, &tag);
-        if !result.is_valid {
-            return Err(result.errors.join(", "));
+        let arr_path = path.to_string();
+        let mut items: Vec<Node> = Vec::new();
+        let mut index: usize = 0;
+
+        loop {
+            let tok = self.peek().clone();
+            if tok.token_type == TokenType::EOF {
+                break;
+            }
+            if tok.token_type == TokenType::RBracket {
+                self.next();
+                break;
+            }
+
+            if tok.token_type == TokenType::LeadingComment {
+                if !self.pending.is_empty() {
+                    let last = &self.pending[self.pending.len() - 1];
+                    if tok.line - last.line > 1 {
+                        self.pending.clear();
+                    }
+                }
+                self.pending.push(tok);
+                self.next();
+                continue;
+            }
+
+            if tok.token_type == TokenType::TrailingComment {
+                if let Some(parsed) = Tag::parse(&tok.literal) {
+                    if let Some(last) = items.last_mut() {
+                        if let Some(ref mut existing) = last.get_tag_mut() {
+                            let merged = Tag::merge(Some(existing.clone()), parsed);
+                            **existing = merged;
+                        }
+                    }
+                }
+                self.next();
+                continue;
+            }
+
+            let item_path = format!("{}[{}]", arr_path, index);
+            if let Some(mut item) = self.parse_node(&item_path)? {
+                if let Some(mut ct) = item.get_tag().cloned() {
+                    ct.inherit(&tag);
+                    if let Some(t) = item.get_tag_mut() {
+                        *t = ct;
+                    }
+                }
+                items.push(item);
+                index += 1;
+            }
+
+            if self.peek().token_type == TokenType::Comma {
+                self.next();
+            }
         }
 
+        self.depth -= 1;
         Ok(Node::Array(Array {
             items,
             tag: Some(tag),
+            path: arr_path,
         }))
     }
 }

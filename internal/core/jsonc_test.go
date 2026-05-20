@@ -25,7 +25,7 @@ func TestStrToJsonc(t *testing.T) {
 }`,
 		},
 		{
-			name:    "invalid_email",
+			name: "invalid_email",
 			input: `{
   // mm: type=email
   "Email": "Alice",
@@ -40,7 +40,7 @@ func TestStrToJsonc(t *testing.T) {
 }`,
 		},
 		{
-			name:    "invalid_url",
+			name: "invalid_url",
 			input: `{
   // mm: type=url
   "Url": "/\/Alice",
@@ -55,7 +55,7 @@ func TestStrToJsonc(t *testing.T) {
 }`,
 		},
 		{
-			name:    "invalid_ip",
+			name: "invalid_ip",
 			input: `{
   // mm: type=ip
   "Url": "/\/Alice",
@@ -77,7 +77,7 @@ func TestStrToJsonc(t *testing.T) {
 }`,
 		},
 		{
-			name:    "invalid_decimal",
+			name: "invalid_decimal",
 			input: `{
   // mm: type=decimal
   "Url": "/\/Alice",
@@ -92,7 +92,7 @@ func TestStrToJsonc(t *testing.T) {
 }`,
 		},
 		{
-			name:    "invalid_uuid",
+			name: "invalid_uuid",
 			input: `{
   // mm: type=uuid
   "Url": "/\/Alice",
@@ -112,7 +112,7 @@ func TestStrToJsonc(t *testing.T) {
 			wantErr: true,
 		},
 		{
-			name:    "slice with empty values",
+			name: "vec with empty values",
 			input: `[
   "a",
   "",

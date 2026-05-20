@@ -35,7 +35,7 @@ export enum ValueType {
 }
 
 // 你要的字符串名字，按顺序对应
-export const ValueTypeString = [
+export const ValueTypeStr = [
   'unknown',
   'doc',
   'arr',
@@ -72,7 +72,7 @@ export const ValueTypeString = [
 ];
 
 export function typeToString(value: ValueType): string {
-  return ValueTypeString[value as number] ?? 'unknown';
+  return ValueTypeStr[value as number] ?? 'unknown';
 }
 
 export function stringToType(value: string): ValueType {

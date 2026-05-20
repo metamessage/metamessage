@@ -11,33 +11,33 @@ import (
 
 var pyTypeMap = map[ir.ValueType]string{
 	ir.ValueTypeUnknown:  "Any",
-	ir.ValueTypeString:   "str",
+	ir.ValueTypeStr:      "str",
 	ir.ValueTypeBytes:    "bytes",
 	ir.ValueTypeBool:     "bool",
-	ir.ValueTypeArray:    "List[Any]",
-	ir.ValueTypeSlice:    "List[Any]",
+	ir.ValueTypeArr:      "List[Any]",
+	ir.ValueTypeVec:      "List[Any]",
 	ir.ValueTypeMap:      "Dict[str, Any]",
-	ir.ValueTypeInt:      "int",
-	ir.ValueTypeInt8:     "int",
-	ir.ValueTypeInt16:    "int",
-	ir.ValueTypeInt32:    "int",
-	ir.ValueTypeInt64:    "int",
-	ir.ValueTypeUint:     "int",
-	ir.ValueTypeUint8:    "int",
-	ir.ValueTypeUint16:   "int",
-	ir.ValueTypeUint32:   "int",
-	ir.ValueTypeUint64:   "int",
-	ir.ValueTypeFloat32:  "float",
-	ir.ValueTypeFloat64:  "float",
-	ir.ValueTypeBigInt:   "int",
-	ir.ValueTypeDateTime: "str",
+	ir.ValueTypeI:        "int",
+	ir.ValueTypeI8:       "int",
+	ir.ValueTypeI16:      "int",
+	ir.ValueTypeI32:      "int",
+	ir.ValueTypeI64:      "int",
+	ir.ValueTypeU:        "int",
+	ir.ValueTypeU8:       "int",
+	ir.ValueTypeU16:      "int",
+	ir.ValueTypeU32:      "int",
+	ir.ValueTypeU64:      "int",
+	ir.ValueTypeF32:      "float",
+	ir.ValueTypeF64:      "float",
+	ir.ValueTypeBigint:   "int",
+	ir.ValueTypeDatetime: "str",
 	ir.ValueTypeDate:     "str",
 	ir.ValueTypeTime:     "str",
-	ir.ValueTypeUUID:     "str",
+	ir.ValueTypeUuid:     "str",
 	ir.ValueTypeDecimal:  "str",
 	ir.ValueTypeEmail:    "str",
-	ir.ValueTypeIP:       "str",
-	ir.ValueTypeURL:      "str",
+	ir.ValueTypeIp:       "str",
+	ir.ValueTypeUrl:      "str",
 	ir.ValueTypeEnum:     "str",
 	ir.ValueTypeImage:    "str",
 }
@@ -193,7 +193,7 @@ func genPyNestedClasses(b *strings.Builder, n ir.Node, generated map[string]stru
 			b.WriteString("\n")
 			genPyNestedClasses(b, v, generated)
 		case *ir.Array:
-			if nestedObj := findFirstObjectInArrayPy(v); nestedObj != nil {
+			if nestedObj := findFirstObjectInArray(v); nestedObj != nil {
 				className := getPyObjectType(f.Key, nestedObj)
 				if _, ok := generated[className]; ok {
 					continue
@@ -209,18 +209,6 @@ func genPyNestedClasses(b *strings.Builder, n ir.Node, generated map[string]stru
 			}
 		}
 	}
-}
-
-func findFirstObjectInArrayPy(a *ir.Array) *ir.Object {
-	if a == nil {
-		return nil
-	}
-	for _, item := range a.Items {
-		if obj, ok := item.(*ir.Object); ok {
-			return obj
-		}
-	}
-	return nil
 }
 
 func exportPyClassName(s string) string {
@@ -339,7 +327,7 @@ func formatPyValueLiteral(v *ir.Value) string {
 		if v.Text == "" {
 			return "False"
 		}
-		return strings.Title(strings.ToLower(v.Text))
+		return toTitle(strings.ToLower(v.Text))
 	case "int", "float":
 		if v.Text == "" {
 			return "0"

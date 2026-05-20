@@ -11,14 +11,14 @@ func TestToSwiftGeneratesCode(t *testing.T) {
 	obj := &ir.Object{
 		Tag: &ir.Tag{Name: "sample"},
 		Fields: []*ir.Field{
-			{Key: "name", Value: &ir.Value{Text: "alice", Tag: &ir.Tag{Type: ir.ValueTypeString}}},
+			{Key: "name", Value: &ir.Value{Text: "alice", Tag: &ir.Tag{Type: ir.ValueTypeStr}}},
 			{Key: "data", Value: &ir.Value{Text: "abc", Tag: &ir.Tag{Type: ir.ValueTypeBytes}}},
-			{Key: "ids", Value: &ir.Array{Tag: &ir.Tag{Type: ir.ValueTypeArray, ChildType: ir.ValueTypeInt}, Items: []ir.Node{
-				&ir.Value{Text: "1", Tag: &ir.Tag{Type: ir.ValueTypeInt}},
-				&ir.Value{Text: "2", Tag: &ir.Tag{Type: ir.ValueTypeInt}},
+			{Key: "ids", Value: &ir.Array{Tag: &ir.Tag{Type: ir.ValueTypeArr, ChildType: ir.ValueTypeI}, Items: []ir.Node{
+				&ir.Value{Text: "1", Tag: &ir.Tag{Type: ir.ValueTypeI}},
+				&ir.Value{Text: "2", Tag: &ir.Tag{Type: ir.ValueTypeI}},
 			}}},
 			{Key: "meta", Value: &ir.Object{Tag: &ir.Tag{Name: "meta"}, Fields: []*ir.Field{
-				{Key: "count", Value: &ir.Value{Text: "5", Tag: &ir.Tag{Type: ir.ValueTypeInt}}},
+				{Key: "count", Value: &ir.Value{Text: "5", Tag: &ir.Tag{Type: ir.ValueTypeI}}},
 			}}},
 		},
 	}

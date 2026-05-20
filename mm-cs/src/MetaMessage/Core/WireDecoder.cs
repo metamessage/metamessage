@@ -117,7 +117,7 @@ public class WireDecoder
         }
     }
 
-    private IMmTree NullBool(MmTag tag)
+    static private MmScalar NullBool(MmTag tag)
     {
         if (tag.Type == ValueType.UNKNOWN)
         {
@@ -131,7 +131,7 @@ public class WireDecoder
         return new MmScalar(null, "null", tag);
     }
 
-    private IMmTree NullInt(MmTag tag)
+    static private MmScalar NullInt(MmTag tag)
     {
         if (tag.Type == ValueType.UNKNOWN)
         {
@@ -145,7 +145,7 @@ public class WireDecoder
         return new MmScalar(null, "null", tag);
     }
 
-    private IMmTree NullFloat(MmTag tag)
+    static private MmScalar NullFloat(MmTag tag)
     {
         if (tag.Type == ValueType.UNKNOWN)
         {
@@ -159,7 +159,7 @@ public class WireDecoder
         return new MmScalar(null, "null", tag);
     }
 
-    private IMmTree NullString(MmTag tag)
+    static private MmScalar NullString(MmTag tag)
     {
         if (tag.Type == ValueType.UNKNOWN)
         {
@@ -169,7 +169,7 @@ public class WireDecoder
         return new MmScalar(null, "null", tag);
     }
 
-    private IMmTree NullBytes(MmTag tag)
+    static private MmScalar NullBytes(MmTag tag)
     {
         if (tag.Type == ValueType.UNKNOWN)
         {

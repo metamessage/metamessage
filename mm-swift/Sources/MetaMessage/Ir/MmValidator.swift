@@ -655,8 +655,7 @@ public class MmValidator {
             if array.isEmpty && !tag.allowEmpty {
                 result.addError("value is empty")
             }
-            
-            // 验证数组元素
+
             for (index, item) in array.enumerated() {
                 let childTag = JSONCTag()
                 childTag.inherit(from: tag)
@@ -667,6 +666,7 @@ public class MmValidator {
                     }
                 }
             }
+        } else if value is MMArray {
         } else {
             result.addError("value must be an array")
         }

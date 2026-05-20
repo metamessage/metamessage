@@ -11,11 +11,11 @@ func TestToTSGeneratesCode(t *testing.T) {
 	obj := &ir.Object{
 		Tag: &ir.Tag{Name: "user"},
 		Fields: []*ir.Field{
-			{Key: "id", Value: &ir.Value{Tag: &ir.Tag{Type: ir.ValueTypeInt}, Text: "1"}},
-			{Key: "name", Value: &ir.Value{Tag: &ir.Tag{Type: ir.ValueTypeString}, Text: "Alice"}},
+			{Key: "id", Value: &ir.Value{Tag: &ir.Tag{Type: ir.ValueTypeI}, Text: "1"}},
+			{Key: "name", Value: &ir.Value{Tag: &ir.Tag{Type: ir.ValueTypeStr}, Text: "Alice"}},
 			{Key: "tags", Value: &ir.Array{Items: []ir.Node{
-				&ir.Value{Tag: &ir.Tag{Type: ir.ValueTypeString}, Text: "go"},
-				&ir.Value{Tag: &ir.Tag{Type: ir.ValueTypeString}, Text: "java"},
+				&ir.Value{Tag: &ir.Tag{Type: ir.ValueTypeStr}, Text: "go"},
+				&ir.Value{Tag: &ir.Tag{Type: ir.ValueTypeStr}, Text: "java"},
 			}}},
 		},
 	}
@@ -54,12 +54,12 @@ func TestToTSNullableFields(t *testing.T) {
 		Tag: &ir.Tag{Name: "profile"},
 		Fields: []*ir.Field{
 			// Non-nullable (default)
-			{Key: "id", Value: &ir.Value{Tag: &ir.Tag{Type: ir.ValueTypeInt, Nullable: false}, Text: "1"}},
+			{Key: "id", Value: &ir.Value{Tag: &ir.Tag{Type: ir.ValueTypeI, Nullable: false}, Text: "1"}},
 			// Nullable
-			{Key: "nickname", Value: &ir.Value{Tag: &ir.Tag{Type: ir.ValueTypeString, Nullable: true}, Text: ""}},
+			{Key: "nickname", Value: &ir.Value{Tag: &ir.Tag{Type: ir.ValueTypeStr, Nullable: true}, Text: ""}},
 			// Non-nullable array
 			{Key: "tags", Value: &ir.Array{Tag: &ir.Tag{Nullable: false}, Items: []ir.Node{
-				&ir.Value{Tag: &ir.Tag{Type: ir.ValueTypeString}, Text: "dev"},
+				&ir.Value{Tag: &ir.Tag{Type: ir.ValueTypeStr}, Text: "dev"},
 			}}},
 		},
 	}

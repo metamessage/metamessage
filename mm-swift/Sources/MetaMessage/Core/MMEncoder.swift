@@ -75,7 +75,7 @@ public class MMEncoder {
             if value == Int64.min {
                 uv = 9223372036854775808
             } else {
-                uv = UInt64(-value - 1)
+                uv = UInt64(-value)
             }
             encodeUInt64WithSign(MMPrefix.negativeInt.rawValue, uv)
         }
@@ -149,7 +149,7 @@ public class MMEncoder {
     }
 
     private func intExtraBytes(for value: UInt64) -> (Int, Int) {
-        if value < 32 {
+        if value < 24 {
             return (0, Int(value))
         } else if value < UInt64(MMConstants.max1Byte) {
             return (1, 0)
@@ -171,13 +171,116 @@ public class MMEncoder {
     }
 
     public func encode(_ value: Float) {
-        buffer.write(MMPrefix.prefixFloat.rawValue)
-        buffer.writeFloat32(value)
+        encodeFloat64(Double(value))
     }
 
     public func encode(_ value: Double) {
-        buffer.write(MMPrefix.prefixFloat.rawValue)
-        buffer.writeFloat64(value)
+        encodeFloat64(value)
+    }
+
+    private func encodeFloat64(_ value: Double) {
+        let decimalStr = floatDecimalString(value)
+        let (isNegative, exponent, mantissa) = parseFloatDecimalString(decimalStr)
+        writeFloatComponents(isNegative: isNegative, exponent: exponent, mantissa: mantissa)
+    }
+
+    private func floatDecimalString(_ value: Double) -> String {
+        if value.isZero {
+            return "0.0"
+        }
+        var s = String(describing: value).lowercased()
+        if s.contains("e") {
+            s = scientificToDecimal(s)
+        }
+        if !s.contains(".") {
+            s += ".0"
+        }
+        return s
+    }
+
+    private func scientificToDecimal(_ s: String) -> String {
+        let parts = s.split(separator: "e", maxSplits: 1)
+        guard parts.count == 2, let exponent = Int(parts[1]) else { return s }
+        var mantissaStr = String(parts[0])
+        if exponent >= 0 {
+            let dotIdx = mantissaStr.firstIndex(of: ".") ?? mantissaStr.endIndex
+            let digitsAfterDot = mantissaStr.distance(from: dotIdx == mantissaStr.endIndex ? mantissaStr.endIndex : mantissaStr.index(after: dotIdx), to: mantissaStr.endIndex)
+            mantissaStr.remove(at: dotIdx == mantissaStr.endIndex ? mantissaStr.endIndex : dotIdx)
+            let totalDigits = exponent + digitsAfterDot
+            if totalDigits >= mantissaStr.count {
+                mantissaStr += String(repeating: "0", count: totalDigits - mantissaStr.count)
+            } else {
+                let insertIdx = mantissaStr.index(mantissaStr.startIndex, offsetBy: mantissaStr.count - totalDigits)
+                mantissaStr.insert(".", at: insertIdx)
+            }
+        } else {
+            let absExp = -exponent
+            if let dotIdx = mantissaStr.firstIndex(of: ".") {
+                mantissaStr.remove(at: dotIdx)
+            }
+            if absExp >= mantissaStr.count {
+                mantissaStr = "0." + String(repeating: "0", count: absExp - mantissaStr.count) + mantissaStr
+            } else {
+                let insertIdx = mantissaStr.index(mantissaStr.startIndex, offsetBy: mantissaStr.count - absExp)
+                mantissaStr.insert(".", at: insertIdx)
+                if mantissaStr.hasPrefix(".") {
+                    mantissaStr = "0" + mantissaStr
+                }
+            }
+        }
+        return mantissaStr
+    }
+
+    private func parseFloatDecimalString(_ s: String) -> (isNegative: Bool, exponent: Int8, mantissa: UInt64) {
+        var s = s
+        let isNegative = s.hasPrefix("-")
+        if isNegative { s = String(s.dropFirst()) }
+
+        let parts = s.split(separator: ".", omittingEmptySubsequences: false)
+        let intPart = String(parts[0])
+        let fracPart = parts.count > 1 ? String(parts[1]) : ""
+
+        let baseExp = -fracPart.count
+        let mantissaStr = (intPart + fracPart).trimmingCharacters(in: CharacterSet(charactersIn: "0"))
+        let mantissa = UInt64(mantissaStr.isEmpty ? "0" : mantissaStr) ?? 0
+
+        return (isNegative, Int8(baseExp), mantissa)
+    }
+
+    private func writeFloatComponents(isNegative: Bool, exponent: Int8, mantissa: UInt64) {
+        let signBit: UInt8 = isNegative ? MMConstants.floatPositiveNegativeMask : 0
+        let basePrefix = MMPrefix.prefixFloat.rawValue | signBit
+
+        if exponent == -1 && mantissa <= 7 {
+            buffer.write(basePrefix | UInt8(mantissa))
+            return
+        }
+
+        var mantissaBytes = 0
+        var temp = mantissa
+        if temp == 0 {
+            mantissaBytes = 1
+        } else {
+            while temp > 0 {
+                mantissaBytes += 1
+                temp >>= 8
+            }
+        }
+
+        if mantissaBytes < 1 { mantissaBytes = 1 }
+        if mantissaBytes > 8 { mantissaBytes = 8 }
+
+        let lenByte = UInt8(mantissaBytes + 6)
+        buffer.write(basePrefix | lenByte)
+        buffer.write(UInt8(bitPattern: exponent))
+
+        var m = mantissa
+        var mantissaBuf: [UInt8] = []
+        for _ in 0..<mantissaBytes {
+            mantissaBuf.insert(UInt8(m & 0xFF), at: 0)
+            m >>= 8
+        }
+        buffer.write(mantissaBuf)
     }
 
     public func encode(_ value: String) {

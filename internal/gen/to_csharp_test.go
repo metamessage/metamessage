@@ -11,17 +11,17 @@ func TestToCSharpGeneratesCode(t *testing.T) {
 	obj := &ir.Object{
 		Tag: &ir.Tag{Name: "sample"},
 		Fields: []*ir.Field{
-			{Key: "when", Value: &ir.Value{Text: "2024-01-01T00:00:00Z", Tag: &ir.Tag{Type: ir.ValueTypeDateTime}}},
-			{Key: "id", Value: &ir.Value{Text: "123", Tag: &ir.Tag{Type: ir.ValueTypeBigInt}}},
+			{Key: "when", Value: &ir.Value{Text: "2024-01-01T00:00:00Z", Tag: &ir.Tag{Type: ir.ValueTypeDatetime}}},
+			{Key: "id", Value: &ir.Value{Text: "123", Tag: &ir.Tag{Type: ir.ValueTypeBigint}}},
 			{Key: "data", Value: &ir.Array{
-				Tag: &ir.Tag{Name: "data", Type: ir.ValueTypeArray, ChildType: ir.ValueTypeString},
+				Tag: &ir.Tag{Name: "data", Type: ir.ValueTypeArr, ChildType: ir.ValueTypeStr},
 				Items: []ir.Node{
-					&ir.Value{Text: "abc", Tag: &ir.Tag{Type: ir.ValueTypeString}},
+					&ir.Value{Text: "abc", Tag: &ir.Tag{Type: ir.ValueTypeStr}},
 				},
 			}},
 			{Key: "nested", Value: &ir.Object{
 				Tag:    &ir.Tag{Name: "nested"},
-				Fields: []*ir.Field{{Key: "count", Value: &ir.Value{Tag: &ir.Tag{Type: ir.ValueTypeInt}, Text: "5"}}},
+				Fields: []*ir.Field{{Key: "count", Value: &ir.Value{Tag: &ir.Tag{Type: ir.ValueTypeI}, Text: "5"}}},
 			}},
 		},
 	}

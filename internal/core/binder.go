@@ -22,14 +22,14 @@ func Bind(node ir.Node, out any) error {
 
 	switch n := node.(type) {
 	case *ir.Object:
-		if n.Tag.Type == ir.ValueTypeObject {
+		if n.Tag.Type == ir.ValueTypeObj {
 			return convertStruct(n, outVal)
 		} else {
 			return convertMap(n, outVal)
 		}
 
 	case *ir.Array:
-		if n.Tag.Type == ir.ValueTypeArray {
+		if n.Tag.Type == ir.ValueTypeArr {
 			return convertArray(n, outVal)
 		} else {
 			return convertSlice(n, outVal)
@@ -206,7 +206,7 @@ func convertValue(val *ir.Value, outVal reflect.Value) error {
 	}
 
 	switch tag.Type {
-	case ir.ValueTypeTime, ir.ValueTypeDate, ir.ValueTypeDateTime:
+	case ir.ValueTypeTime, ir.ValueTypeDate, ir.ValueTypeDatetime:
 		targetType := reflect.TypeFor[time.Time]()
 		if outVal.Type() != targetType {
 			return fmt.Errorf("target type must be time.Time, got %s", outVal.Type())
@@ -221,7 +221,7 @@ func convertValue(val *ir.Value, outVal reflect.Value) error {
 			return fmt.Errorf("unsupported type for time conversion: %T (expected time.Time)", d)
 		}
 
-	case ir.ValueTypeBigInt:
+	case ir.ValueTypeBigint:
 		targetType := reflect.TypeFor[big.Int]()
 		if outVal.Type() != targetType {
 			return fmt.Errorf("target type must be big.Int, got %s", outVal.Type())
@@ -234,7 +234,7 @@ func convertValue(val *ir.Value, outVal reflect.Value) error {
 			return fmt.Errorf("unsupported type for big.Int conversion: %T", d)
 		}
 
-	case ir.ValueTypeUUID:
+	case ir.ValueTypeUuid:
 		targetType := reflect.TypeFor[string]()
 		if outVal.Type() != targetType {
 			return fmt.Errorf("target type must be string, got %s", outVal.Type())
@@ -273,7 +273,7 @@ func convertValue(val *ir.Value, outVal reflect.Value) error {
 			return fmt.Errorf("unsupported type for email conversion: %T", d)
 		}
 
-	case ir.ValueTypeIP:
+	case ir.ValueTypeIp:
 		targetType := reflect.TypeFor[net.IP]()
 		if outVal.Type() != targetType {
 			return fmt.Errorf("target type must be net.IP, got %s", outVal.Type())
@@ -286,7 +286,7 @@ func convertValue(val *ir.Value, outVal reflect.Value) error {
 			return fmt.Errorf("unsupported type for ip conversion: %T", d)
 		}
 
-	case ir.ValueTypeURL:
+	case ir.ValueTypeUrl:
 		targetType := reflect.TypeFor[url.URL]()
 		if outVal.Type() != targetType {
 			return fmt.Errorf("target type must be url.URL, got %s", outVal.Type())
@@ -319,7 +319,7 @@ func convertValue(val *ir.Value, outVal reflect.Value) error {
 	// case ir.ValueTypeFont:
 	// 	return fmt.Errorf("unsupported type: %s", tag.Type)
 
-	case ir.ValueTypeInt:
+	case ir.ValueTypeI:
 		if outVal.Type() != reflect.TypeFor[int]() {
 			return fmt.Errorf("target type must be int, got %s", outVal.Type())
 		}
@@ -333,7 +333,7 @@ func convertValue(val *ir.Value, outVal reflect.Value) error {
 			return fmt.Errorf("unsupported type for int conversion: %T", d)
 		}
 
-	case ir.ValueTypeInt8:
+	case ir.ValueTypeI8:
 		if outVal.Type() != reflect.TypeFor[int8]() {
 			return fmt.Errorf("target type must be int8, got %s", outVal.Type())
 		}
@@ -347,7 +347,7 @@ func convertValue(val *ir.Value, outVal reflect.Value) error {
 			return fmt.Errorf("unsupported type for int8 conversion: %T", d)
 		}
 
-	case ir.ValueTypeInt16:
+	case ir.ValueTypeI16:
 		if outVal.Type() != reflect.TypeFor[int16]() {
 			return fmt.Errorf("target type must be int16, got %s", outVal.Type())
 		}
@@ -361,7 +361,7 @@ func convertValue(val *ir.Value, outVal reflect.Value) error {
 			return fmt.Errorf("unsupported type for int16 conversion: %T (expected int16)", d)
 		}
 
-	case ir.ValueTypeInt32:
+	case ir.ValueTypeI32:
 		if outVal.Type() != reflect.TypeFor[int32]() {
 			return fmt.Errorf("target type must be int32, got %s", outVal.Type())
 		}
@@ -375,7 +375,7 @@ func convertValue(val *ir.Value, outVal reflect.Value) error {
 			return fmt.Errorf("unsupported type for int32 conversion: %T (expected int32)", d)
 		}
 
-	case ir.ValueTypeInt64:
+	case ir.ValueTypeI64:
 		if outVal.Type() != reflect.TypeFor[int64]() {
 			return fmt.Errorf("target type must be int64, got %s", outVal.Type())
 		}
@@ -389,7 +389,7 @@ func convertValue(val *ir.Value, outVal reflect.Value) error {
 			return fmt.Errorf("unsupported type for int64 conversion: %T (expected int64)", d)
 		}
 
-	case ir.ValueTypeUint:
+	case ir.ValueTypeU:
 		if outVal.Type() != reflect.TypeFor[uint]() {
 			return fmt.Errorf("target type must be uint, got %s", outVal.Type())
 		}
@@ -403,7 +403,7 @@ func convertValue(val *ir.Value, outVal reflect.Value) error {
 			return fmt.Errorf("unsupported type for uint conversion: %T (expected uint)", d)
 		}
 
-	case ir.ValueTypeUint8:
+	case ir.ValueTypeU8:
 		if outVal.Type() != reflect.TypeFor[uint8]() {
 			return fmt.Errorf("target type must be uint8, got %s", outVal.Type())
 		}
@@ -417,7 +417,7 @@ func convertValue(val *ir.Value, outVal reflect.Value) error {
 			return fmt.Errorf("unsupported type for uint8 conversion: %T (expected uint8)", d)
 		}
 
-	case ir.ValueTypeUint16:
+	case ir.ValueTypeU16:
 		if outVal.Type() != reflect.TypeFor[uint16]() {
 			return fmt.Errorf("target type must be uint16, got %s", outVal.Type())
 		}
@@ -431,7 +431,7 @@ func convertValue(val *ir.Value, outVal reflect.Value) error {
 			return fmt.Errorf("unsupported type for uint16 conversion: %T (expected uint16)", d)
 		}
 
-	case ir.ValueTypeUint32:
+	case ir.ValueTypeU32:
 		if outVal.Type() != reflect.TypeFor[uint32]() {
 			return fmt.Errorf("target type must be uint32, got %s", outVal.Type())
 		}
@@ -445,7 +445,7 @@ func convertValue(val *ir.Value, outVal reflect.Value) error {
 			return fmt.Errorf("unsupported type for uint32 conversion: %T (expected uint32)", d)
 		}
 
-	case ir.ValueTypeUint64:
+	case ir.ValueTypeU64:
 		if outVal.Type() != reflect.TypeFor[uint64]() {
 			return fmt.Errorf("target type must be uint64, got %s", outVal.Type())
 		}
@@ -459,7 +459,7 @@ func convertValue(val *ir.Value, outVal reflect.Value) error {
 			return fmt.Errorf("unsupported type for uint64 conversion: %T (expected uint64)", d)
 		}
 
-	case ir.ValueTypeFloat32:
+	case ir.ValueTypeF32:
 		if outVal.Type() != reflect.TypeFor[float32]() {
 			return fmt.Errorf("target type must be float32, got %s", outVal.Type())
 		}
@@ -473,7 +473,7 @@ func convertValue(val *ir.Value, outVal reflect.Value) error {
 			return fmt.Errorf("unsupported type for float32 conversion: %T (expected float32)", d)
 		}
 
-	case ir.ValueTypeFloat64:
+	case ir.ValueTypeF64:
 		if outVal.Type() != reflect.TypeFor[float64]() {
 			return fmt.Errorf("target type must be float64, got %s", outVal.Type())
 		}
@@ -487,7 +487,7 @@ func convertValue(val *ir.Value, outVal reflect.Value) error {
 			return fmt.Errorf("unsupported type for float64 conversion: %T (expected float64)", d)
 		}
 
-	case ir.ValueTypeString:
+	case ir.ValueTypeStr:
 		if outVal.Type() != reflect.TypeFor[string]() {
 			return fmt.Errorf("target type must be string, got %s", outVal.Type())
 		}
@@ -526,11 +526,11 @@ func convertValue(val *ir.Value, outVal reflect.Value) error {
 
 	case ir.ValueTypeMap:
 		return fmt.Errorf("unsupported type: %s", tag.Type)
-	case ir.ValueTypeObject:
+	case ir.ValueTypeObj:
 		return fmt.Errorf("unsupported type: %s", tag.Type)
-	case ir.ValueTypeArray:
+	case ir.ValueTypeArr:
 		return fmt.Errorf("unsupported type: %s", tag.Type)
-	case ir.ValueTypeSlice:
+	case ir.ValueTypeVec:
 		return fmt.Errorf("unsupported type: %s", tag.Type)
 	case ir.ValueTypeUnknown:
 		return fmt.Errorf("unsupported type: %s", tag.Type)

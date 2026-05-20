@@ -1,6 +1,5 @@
+use crate::ir::ast::{Array, Node, Object, Value, ValueData};
 use std::collections::HashMap;
-use crate::jsonc::ast::{Node, Object, Array, Value, Field, ValueData};
-use crate::jsonc::tag::Tag;
 
 pub fn bind(node: &Node, target: &mut dyn std::any::Any) -> Result<(), String> {
     match node {
@@ -90,14 +89,10 @@ fn value_to_jsonvalue(val: &Value) -> Result<serde_json::Value, String> {
         ValueData::String(s) => Ok(serde_json::Value::String(s.clone())),
         ValueData::Int(i) => Ok(serde_json::Value::Number((*i).into())),
         ValueData::Uint(u) => Ok(serde_json::Value::Number((*u).into())),
-        ValueData::Float(f) => {
-            Ok(serde_json::Number::from_f64(*f)
-                .map(serde_json::Value::Number)
-                .unwrap_or(serde_json::Value::Null))
-        }
-        ValueData::Bytes(b) => {
-            Ok(serde_json::Value::String(format!("{:?}", b)))
-        }
+        ValueData::Float(f) => Ok(serde_json::Number::from_f64(*f)
+            .map(serde_json::Value::Number)
+            .unwrap_or(serde_json::Value::Null)),
+        ValueData::Bytes(b) => Ok(serde_json::Value::String(format!("{:?}", b))),
         ValueData::Null => Ok(serde_json::Value::Null),
     }
 }

@@ -11,38 +11,38 @@ const (
 	ValueTypeUnknown ValueType = iota
 
 	ValueTypeDoc
-	ValueTypeSlice
-	ValueTypeArray
-	ValueTypeObject
+	ValueTypeVec
+	ValueTypeArr
+	ValueTypeObj
 	ValueTypeMap
 
-	ValueTypeString
+	ValueTypeStr
 	ValueTypeBytes
 	ValueTypeBool
 
-	ValueTypeInt
-	ValueTypeInt8
-	ValueTypeInt16
-	ValueTypeInt32
-	ValueTypeInt64
-	ValueTypeUint
-	ValueTypeUint8
-	ValueTypeUint16
-	ValueTypeUint32
-	ValueTypeUint64
+	ValueTypeI
+	ValueTypeI8
+	ValueTypeI16
+	ValueTypeI32
+	ValueTypeI64
+	ValueTypeU
+	ValueTypeU8
+	ValueTypeU16
+	ValueTypeU32
+	ValueTypeU64
 
-	ValueTypeFloat32
-	ValueTypeFloat64
+	ValueTypeF32
+	ValueTypeF64
 
-	ValueTypeBigInt
-	ValueTypeDateTime
+	ValueTypeBigint
+	ValueTypeDatetime
 	ValueTypeDate
 	ValueTypeTime
 
-	ValueTypeUUID
+	ValueTypeUuid
 	ValueTypeDecimal
-	ValueTypeIP
-	ValueTypeURL
+	ValueTypeIp
+	ValueTypeUrl
 	ValueTypeEmail
 
 	ValueTypeEnum
@@ -52,15 +52,15 @@ const (
 
 	vtUnknownStr = "unknown"
 
-	vtDocStr    = "doc"
-	vtArrayStr  = "arr"
-	vtSliceStr  = "vec"
-	vtObjectStr = "obj"
-	vtMapStr    = "map"
+	vtDocStr = "doc"
+	vtArrStr = "arr"
+	vtVecStr = "vec"
+	vtObjStr = "obj"
+	vtMapStr = "map"
 
-	vtStringStr = "str"
-	vtBytesStr  = "bytes"
-	vtBoolStr   = "bool"
+	vtStrStr   = "str"
+	vtBytesStr = "bytes"
+	vtBoolStr  = "bool"
 
 	vtIStr   = "i"
 	vtI8Str  = "i8"
@@ -76,14 +76,14 @@ const (
 	vtF32Str = "f32"
 	vtF64Str = "f64"
 
-	vtBiStr       = "bigint"
-	vtDateTimeStr = "datetime"
+	vtBigintStr   = "bigint"
+	vtDatetimeStr = "datetime"
 	vtDateStr     = "date"
 	vtTimeStr     = "time"
-	vtUUIDStr     = "uuid"
+	vtUuidStr     = "uuid"
 	vtDecimalStr  = "decimal"
-	vtIPStr       = "ip"
-	vtURLStr      = "url"
+	vtIpStr       = "ip"
+	vtUrlStr      = "url"
 	vtEmailStr    = "email"
 
 	vtEnumStr = "enum"
@@ -98,60 +98,60 @@ func (v ValueType) String() string {
 		return vtUnknownStr
 	case ValueTypeDoc:
 		return vtDocStr
-	case ValueTypeArray:
-		return vtArrayStr
-	case ValueTypeSlice:
-		return vtSliceStr
-	case ValueTypeObject:
-		return vtObjectStr
+	case ValueTypeArr:
+		return vtArrStr
+	case ValueTypeVec:
+		return vtVecStr
+	case ValueTypeObj:
+		return vtObjStr
 	case ValueTypeMap:
 		return vtMapStr
-	case ValueTypeString:
-		return vtStringStr
+	case ValueTypeStr:
+		return vtStrStr
 	case ValueTypeBytes:
 		return vtBytesStr
 	case ValueTypeBool:
 		return vtBoolStr
-	case ValueTypeInt:
+	case ValueTypeI:
 		return vtIStr
-	case ValueTypeInt8:
+	case ValueTypeI8:
 		return vtI8Str
-	case ValueTypeInt16:
+	case ValueTypeI16:
 		return vtI16Str
-	case ValueTypeInt32:
+	case ValueTypeI32:
 		return vtI32Str
-	case ValueTypeInt64:
+	case ValueTypeI64:
 		return vtI64Str
-	case ValueTypeUint:
+	case ValueTypeU:
 		return vtUStr
-	case ValueTypeUint8:
+	case ValueTypeU8:
 		return vtU8Str
-	case ValueTypeUint16:
+	case ValueTypeU16:
 		return vtU16Str
-	case ValueTypeUint32:
+	case ValueTypeU32:
 		return vtU32Str
-	case ValueTypeUint64:
+	case ValueTypeU64:
 		return vtU64Str
-	case ValueTypeFloat32:
+	case ValueTypeF32:
 		return vtF32Str
-	case ValueTypeFloat64:
+	case ValueTypeF64:
 		return vtF64Str
-	case ValueTypeBigInt:
-		return vtBiStr
-	case ValueTypeDateTime:
-		return vtDateTimeStr
+	case ValueTypeBigint:
+		return vtBigintStr
+	case ValueTypeDatetime:
+		return vtDatetimeStr
 	case ValueTypeDate:
 		return vtDateStr
 	case ValueTypeTime:
 		return vtTimeStr
-	case ValueTypeUUID:
-		return vtUUIDStr
+	case ValueTypeUuid:
+		return vtUuidStr
 	case ValueTypeDecimal:
 		return vtDecimalStr
-	case ValueTypeIP:
-		return vtIPStr
-	case ValueTypeURL:
-		return vtURLStr
+	case ValueTypeIp:
+		return vtIpStr
+	case ValueTypeUrl:
+		return vtUrlStr
 	case ValueTypeEmail:
 		return vtEmailStr
 	case ValueTypeEnum:
@@ -168,33 +168,33 @@ func (v ValueType) String() string {
 var strToValueType = map[string]ValueType{
 	vtUnknownStr:  ValueTypeUnknown,
 	vtDocStr:      ValueTypeDoc,
-	vtArrayStr:    ValueTypeArray,
-	vtSliceStr:    ValueTypeSlice,
-	vtObjectStr:   ValueTypeObject,
+	vtArrStr:      ValueTypeArr,
+	vtVecStr:      ValueTypeVec,
+	vtObjStr:      ValueTypeObj,
 	vtMapStr:      ValueTypeMap,
-	vtStringStr:   ValueTypeString,
+	vtStrStr:      ValueTypeStr,
 	vtBytesStr:    ValueTypeBytes,
 	vtBoolStr:     ValueTypeBool,
-	vtIStr:        ValueTypeInt,
-	vtI8Str:       ValueTypeInt8,
-	vtI16Str:      ValueTypeInt16,
-	vtI32Str:      ValueTypeInt32,
-	vtI64Str:      ValueTypeInt64,
-	vtUStr:        ValueTypeUint,
-	vtU8Str:       ValueTypeUint8,
-	vtU16Str:      ValueTypeUint16,
-	vtU32Str:      ValueTypeUint32,
-	vtU64Str:      ValueTypeUint64,
-	vtF32Str:      ValueTypeFloat32,
-	vtF64Str:      ValueTypeFloat64,
-	vtBiStr:       ValueTypeBigInt,
-	vtDateTimeStr: ValueTypeDateTime,
+	vtIStr:        ValueTypeI,
+	vtI8Str:       ValueTypeI8,
+	vtI16Str:      ValueTypeI16,
+	vtI32Str:      ValueTypeI32,
+	vtI64Str:      ValueTypeI64,
+	vtUStr:        ValueTypeU,
+	vtU8Str:       ValueTypeU8,
+	vtU16Str:      ValueTypeU16,
+	vtU32Str:      ValueTypeU32,
+	vtU64Str:      ValueTypeU64,
+	vtF32Str:      ValueTypeF32,
+	vtF64Str:      ValueTypeF64,
+	vtBigintStr:   ValueTypeBigint,
+	vtDatetimeStr: ValueTypeDatetime,
 	vtDateStr:     ValueTypeDate,
 	vtTimeStr:     ValueTypeTime,
-	vtUUIDStr:     ValueTypeUUID,
+	vtUuidStr:     ValueTypeUuid,
 	vtDecimalStr:  ValueTypeDecimal,
-	vtIPStr:       ValueTypeIP,
-	vtURLStr:      ValueTypeURL,
+	vtIpStr:       ValueTypeIp,
+	vtUrlStr:      ValueTypeUrl,
 	vtEmailStr:    ValueTypeEmail,
 	vtEnumStr:     ValueTypeEnum,
 	vtImageStr:    ValueTypeImage,

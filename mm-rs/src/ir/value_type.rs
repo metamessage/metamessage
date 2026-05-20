@@ -36,12 +36,13 @@ pub enum ValueType {
 }
 
 impl ValueType {
+    #[allow(clippy::should_implement_trait)]
     pub fn from_str(s: &str) -> Self {
         match s.to_lowercase().as_str() {
             "unknown" => ValueType::Unknown,
             "doc" => ValueType::Doc,
-            "vec" => ValueType::Slice,
-            "arr" => ValueType::Array,
+            "vec" | "slice" => ValueType::Slice,
+            "arr" | "array" => ValueType::Array,
             "obj" => ValueType::Struct,
             "map" => ValueType::Map,
             "str" => ValueType::String,

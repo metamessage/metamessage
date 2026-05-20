@@ -186,7 +186,11 @@ public class JSONCParser {
             if tok.literal.contains(".") {
                 data = Double(tok.literal)
             } else if tok.literal.hasPrefix("-") {
-                data = Int64(tok.literal)
+                if let ival = Int(tok.literal) {
+                    data = ival
+                } else {
+                    data = Int64(tok.literal)
+                }
             } else {
                 if let uval = UInt64(tok.literal) {
                     if uval > UInt64(Int.max) {
@@ -233,9 +237,7 @@ public class JSONCParser {
 
         case .nullValue:
             var tag = try consumeCommentsFor(tok.line) ?? JSONCTag()
-            if tag.type == .unknown {
-                tag.type = .unknown
-            }
+            tag.nullable = true
             tag.isNull = true
             let value = JSONCValue(data: nil, text: "null", tag: tag, path: path)
             // 验证值

@@ -10,33 +10,33 @@ import (
 
 var tsTypeMap = map[ir.ValueType]string{
 	ir.ValueTypeUnknown:  "any",
-	ir.ValueTypeString:   "string",
+	ir.ValueTypeStr:      "string",
 	ir.ValueTypeBytes:    "Uint8Array",
 	ir.ValueTypeBool:     "boolean",
-	ir.ValueTypeArray:    "Array<any>",
-	ir.ValueTypeSlice:    "Array<any>",
+	ir.ValueTypeArr:      "Array<any>",
+	ir.ValueTypeVec:      "Array<any>",
 	ir.ValueTypeMap:      "Record<string, any>",
-	ir.ValueTypeInt:      "number",
-	ir.ValueTypeInt8:     "number",
-	ir.ValueTypeInt16:    "number",
-	ir.ValueTypeInt32:    "number",
-	ir.ValueTypeInt64:    "number",
-	ir.ValueTypeUint:     "number",
-	ir.ValueTypeUint8:    "number",
-	ir.ValueTypeUint16:   "number",
-	ir.ValueTypeUint32:   "number",
-	ir.ValueTypeUint64:   "number",
-	ir.ValueTypeFloat32:  "number",
-	ir.ValueTypeFloat64:  "number",
-	ir.ValueTypeBigInt:   "string",
-	ir.ValueTypeDateTime: "string",
+	ir.ValueTypeI:        "number",
+	ir.ValueTypeI8:       "number",
+	ir.ValueTypeI16:      "number",
+	ir.ValueTypeI32:      "number",
+	ir.ValueTypeI64:      "number",
+	ir.ValueTypeU:        "number",
+	ir.ValueTypeU8:       "number",
+	ir.ValueTypeU16:      "number",
+	ir.ValueTypeU32:      "number",
+	ir.ValueTypeU64:      "number",
+	ir.ValueTypeF32:      "number",
+	ir.ValueTypeF64:      "number",
+	ir.ValueTypeBigint:   "string",
+	ir.ValueTypeDatetime: "string",
 	ir.ValueTypeDate:     "string",
 	ir.ValueTypeTime:     "string",
-	ir.ValueTypeUUID:     "string",
+	ir.ValueTypeUuid:     "string",
 	ir.ValueTypeDecimal:  "string",
 	ir.ValueTypeEmail:    "string",
-	ir.ValueTypeIP:       "string",
-	ir.ValueTypeURL:      "string",
+	ir.ValueTypeIp:       "string",
+	ir.ValueTypeUrl:      "string",
 	ir.ValueTypeEnum:     "string",
 	ir.ValueTypeImage:    "string",
 }
@@ -177,7 +177,7 @@ func genTSNestedInterfaces(b *strings.Builder, n ir.Node, indent int) {
 			b.WriteString("}\n")
 			genTSNestedInterfaces(b, v, indent+1)
 		case *ir.Array:
-			if nestedObj := findFirstObjectInArrayTS(v); nestedObj != nil {
+			if nestedObj := findFirstObjectInArray(v); nestedObj != nil {
 				className := getTSObjectType(f.Key, nestedObj)
 				b.WriteString("\nexport interface ")
 				b.WriteString(className)
@@ -188,18 +188,6 @@ func genTSNestedInterfaces(b *strings.Builder, n ir.Node, indent int) {
 			}
 		}
 	}
-}
-
-func findFirstObjectInArrayTS(a *ir.Array) *ir.Object {
-	if a == nil {
-		return nil
-	}
-	for _, item := range a.Items {
-		if obj, ok := item.(*ir.Object); ok {
-			return obj
-		}
-	}
-	return nil
 }
 
 func exportTSInterfaceName(s string) string {

@@ -43,7 +43,7 @@ public class JSONCScanner {
         self.pos = 0
         self.line = 1
         self.col = 1
-        self.newLine = false
+        self.newLine = true
     }
 
     private func peek() -> Character {
@@ -87,6 +87,8 @@ public class JSONCScanner {
 
         let startLine = line
         let startCol = col
+        let hasNewLine = newLine
+        newLine = false
 
         switch ch {
         case "{":
@@ -103,16 +105,14 @@ public class JSONCScanner {
             return JSONCToken(type: .rBracket, line: startLine, column: startCol)
         case ":":
             _ = next()
-            newLine = false
             return JSONCToken(type: .colon, line: startLine, column: startCol)
         case ",":
             _ = next()
-            newLine = false
             return JSONCToken(type: .comma, line: startLine, column: startCol)
         case "\"":
             return scanString(startLine: startLine, startCol: startCol)
         case "/":
-            return scanComment(startLine: startLine, startCol: startCol)
+            return scanComment(startLine: startLine, startCol: startCol, hasNewLine: hasNewLine)
         default:
             return scanLiteral(startLine: startLine, startCol: startCol)
         }
@@ -143,11 +143,11 @@ public class JSONCScanner {
         return JSONCToken(type: .string, literal: buf, line: startLine, column: startCol)
     }
 
-    private func scanComment(startLine: Int, startCol: Int) -> JSONCToken {
+    private func scanComment(startLine: Int, startCol: Int, hasNewLine: Bool) -> JSONCToken {
         _ = next()
 
         if peekIfNotEmpty() == "/" {
-            let commentType: JSONCTokenType = newLine ? .leadingComment : .trailingComment
+            let commentType: JSONCTokenType = hasNewLine ? .leadingComment : .trailingComment
             _ = next()
 
             var buf = ""
@@ -160,7 +160,7 @@ public class JSONCScanner {
         }
 
         if peekIfNotEmpty() == "*" {
-            let commentType: JSONCTokenType = newLine ? .leadingComment : .trailingComment
+            let commentType: JSONCTokenType = hasNewLine ? .leadingComment : .trailingComment
             _ = next()
 
             var buf = ""

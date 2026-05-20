@@ -15,7 +15,7 @@ func TestGenerateGoStruct(t *testing.T) {
 	obj := &ir.Object{
 		Path: "",
 		Fields: []*ir.Field{
-			{Key: "name", Value: &ir.Value{Path: "name", Tag: &ir.Tag{Name: "name", Type: ir.ValueTypeString, Min: "20", Max: "30"}}},
+			{Key: "name", Value: &ir.Value{Path: "name", Tag: &ir.Tag{Name: "name", Type: ir.ValueTypeStr, Min: "20", Max: "30"}}},
 			{Key: "data", Value: &ir.Value{
 				Path: "data",
 				Data: "werwerwe",
@@ -24,7 +24,7 @@ func TestGenerateGoStruct(t *testing.T) {
 			{Key: "sss", Value: &ir.Object{
 				Path: "sss",
 				Fields: []*ir.Field{
-					{Key: "name", Value: &ir.Value{Path: "sss.name", Tag: &ir.Tag{Name: "name", Type: ir.ValueTypeString, Min: "20"}}},
+					{Key: "name", Value: &ir.Value{Path: "sss.name", Tag: &ir.Tag{Name: "name", Type: ir.ValueTypeStr, Min: "20"}}},
 					{Key: "data", Value: &ir.Value{Path: "sss.data", Tag: &ir.Tag{Name: "data", Type: ir.ValueTypeBytes}}},
 					{Key: "sss", Value: &ir.Value{Path: "sss.sss", Tag: &ir.Tag{Name: "data", Type: ir.ValueTypeBytes}}},
 				},
@@ -38,20 +38,20 @@ func TestGenerateGoStruct(t *testing.T) {
 					&ir.Value{
 						Path: "arr.0",
 						Data: "121212",
-						Tag:  &ir.Tag{Name: "name", Type: ir.ValueTypeString, Min: "20"}},
+						Tag:  &ir.Tag{Name: "name", Type: ir.ValueTypeStr, Min: "20"}},
 					&ir.Value{
 						Path: "arr.1",
 						Data: "121212",
-						Tag:  &ir.Tag{Name: "name", Type: ir.ValueTypeString, Min: "20"}},
+						Tag:  &ir.Tag{Name: "name", Type: ir.ValueTypeStr, Min: "20"}},
 					&ir.Value{
 						Path: "arr.2",
 						Data: "44334",
-						Tag:  &ir.Tag{Name: "name", Type: ir.ValueTypeString, Min: "20"}},
+						Tag:  &ir.Tag{Name: "name", Type: ir.ValueTypeStr, Min: "20"}},
 				},
 				Tag: &ir.Tag{Name: "data", Type: ir.ValueTypeBytes}},
 			},
 
-			{Key: "String", Value: &ir.Value{Path: "String", Tag: &ir.Tag{Type: ir.ValueTypeString}}},
+			{Key: "String", Value: &ir.Value{Path: "String", Tag: &ir.Tag{Type: ir.ValueTypeStr}}},
 		},
 		Tag: &ir.Tag{
 			Name: "obj",
@@ -68,7 +68,7 @@ func TestPrintGoStruct(t *testing.T) {
 		Path: "name",
 		Data: "abc",
 		Text: "abc",
-		Tag:  &ir.Tag{Name: "name", Type: ir.ValueTypeString, Min: "20"},
+		Tag:  &ir.Tag{Name: "name", Type: ir.ValueTypeStr, Min: "20"},
 	}
 
 	PrintGoStruct(val)
@@ -79,10 +79,10 @@ func TestPrintGoStruct(t *testing.T) {
 			Path: "arr.0",
 			Data: "abc",
 			Text: "abc",
-			Tag:  &ir.Tag{Name: "name", Type: ir.ValueTypeString, Min: "20"},
+			Tag:  &ir.Tag{Name: "name", Type: ir.ValueTypeStr, Min: "20"},
 		},
 		},
-		Tag: &ir.Tag{Name: "arr", Type: ir.ValueTypeArray},
+		Tag: &ir.Tag{Name: "arr", Type: ir.ValueTypeArr},
 	}
 
 	// var arr []string = []string{"abc", "def"}
@@ -98,10 +98,10 @@ func TestToGoGeneratesValidGo(t *testing.T) {
 		Path: "",
 		Tag:  &ir.Tag{Name: "sample"},
 		Fields: []*ir.Field{
-			{Key: "when", Value: &ir.Value{Path: "when", Text: "2024-01-01T00:00:00Z", Tag: &ir.Tag{Type: ir.ValueTypeDateTime}}},
-			{Key: "ip", Value: &ir.Value{Path: "ip", Text: "127.0.0.1", Tag: &ir.Tag{Type: ir.ValueTypeIP}}},
-			{Key: "site", Value: &ir.Value{Path: "site", Text: "https://example.com", Tag: &ir.Tag{Type: ir.ValueTypeURL}}},
-			{Key: "id", Value: &ir.Value{Path: "id", Text: "123", Tag: &ir.Tag{Type: ir.ValueTypeBigInt}}},
+			{Key: "when", Value: &ir.Value{Path: "when", Text: "2024-01-01T00:00:00Z", Tag: &ir.Tag{Type: ir.ValueTypeDatetime}}},
+			{Key: "ip", Value: &ir.Value{Path: "ip", Text: "127.0.0.1", Tag: &ir.Tag{Type: ir.ValueTypeIp}}},
+			{Key: "site", Value: &ir.Value{Path: "site", Text: "https://example.com", Tag: &ir.Tag{Type: ir.ValueTypeUrl}}},
+			{Key: "id", Value: &ir.Value{Path: "id", Text: "123", Tag: &ir.Tag{Type: ir.ValueTypeBigint}}},
 			{Key: "data", Value: &ir.Value{Path: "data", Text: "abc", Tag: &ir.Tag{Type: ir.ValueTypeBytes}}},
 		},
 	}
@@ -130,7 +130,7 @@ func TestGenerateGoStruct2(t *testing.T) {
 		Path: "username",
 		Tag: &ir.Tag{
 			Name: "username",
-			Type: ir.ValueTypeString,
+			Type: ir.ValueTypeStr,
 		},
 		Text: "zhangsan",
 	}
@@ -142,11 +142,11 @@ func TestGenerateGoStruct2(t *testing.T) {
 		Path: "ages",
 		Tag: &ir.Tag{
 			Name: "ages",
-			Type: ir.ValueTypeInt8,
+			Type: ir.ValueTypeI8,
 		},
 		Items: []ir.Node{
-			&ir.Value{Path: "ages.0", Tag: &ir.Tag{Type: ir.ValueTypeInt8}, Text: "18"},
-			&ir.Value{Path: "ages.1", Tag: &ir.Tag{Type: ir.ValueTypeInt8}, Text: "20"},
+			&ir.Value{Path: "ages.0", Tag: &ir.Tag{Type: ir.ValueTypeI8}, Text: "18"},
+			&ir.Value{Path: "ages.1", Tag: &ir.Tag{Type: ir.ValueTypeI8}, Text: "20"},
 		},
 	}
 	fmt.Println("\n=== Array 生成结果 ===")
@@ -157,16 +157,16 @@ func TestGenerateGoStruct2(t *testing.T) {
 		Path: "",
 		Tag: &ir.Tag{
 			Name: "user_info",
-			Type: ir.ValueTypeObject,
+			Type: ir.ValueTypeObj,
 		},
 		Fields: []*ir.Field{
 			{
 				Key:   "user_name",
-				Value: &ir.Value{Path: "user_name", Tag: &ir.Tag{Type: ir.ValueTypeString}, Text: "zhangsan"},
+				Value: &ir.Value{Path: "user_name", Tag: &ir.Tag{Type: ir.ValueTypeStr}, Text: "zhangsan"},
 			},
 			{
 				Key:   "age",
-				Value: &ir.Value{Path: "age", Tag: &ir.Tag{Type: ir.ValueTypeInt8}, Text: "18"},
+				Value: &ir.Value{Path: "age", Tag: &ir.Tag{Type: ir.ValueTypeI8}, Text: "18"},
 			},
 		},
 	}
@@ -177,7 +177,7 @@ func TestGenerateGoStruct2(t *testing.T) {
 		Path: "",
 		Tag: &ir.Tag{
 			Name: "user_info",
-			Type: ir.ValueTypeObject,
+			Type: ir.ValueTypeObj,
 		},
 		Fields: []*ir.Field{
 			{
@@ -186,24 +186,24 @@ func TestGenerateGoStruct2(t *testing.T) {
 					Path: "user_name",
 					Tag: &ir.Tag{
 						Name: "ages",
-						Type: ir.ValueTypeInt8,
+						Type: ir.ValueTypeI8,
 					},
 					Items: []ir.Node{
-						&ir.Value{Path: "user_name.0", Tag: &ir.Tag{Type: ir.ValueTypeInt8}, Text: "18"},
+						&ir.Value{Path: "user_name.0", Tag: &ir.Tag{Type: ir.ValueTypeI8}, Text: "18"},
 						&ir.Object{
 							Path: "user_name.1",
 							Tag: &ir.Tag{
 								Name: "user_info",
-								Type: ir.ValueTypeObject,
+								Type: ir.ValueTypeObj,
 							},
 							Fields: []*ir.Field{
 								{
 									Key:   "user_name",
-									Value: &ir.Value{Path: "user_name.1.user_name", Tag: &ir.Tag{Type: ir.ValueTypeString}, Text: "zhangsan"},
+									Value: &ir.Value{Path: "user_name.1.user_name", Tag: &ir.Tag{Type: ir.ValueTypeStr}, Text: "zhangsan"},
 								},
 								{
 									Key:   "age",
-									Value: &ir.Value{Path: "user_name.1.age", Tag: &ir.Tag{Type: ir.ValueTypeInt8}, Text: "18"},
+									Value: &ir.Value{Path: "user_name.1.age", Tag: &ir.Tag{Type: ir.ValueTypeI8}, Text: "18"},
 								},
 							},
 						},
@@ -212,7 +212,7 @@ func TestGenerateGoStruct2(t *testing.T) {
 			},
 			{
 				Key:   "age",
-				Value: &ir.Value{Path: "age", Tag: &ir.Tag{Type: ir.ValueTypeInt8}, Text: "18"},
+				Value: &ir.Value{Path: "age", Tag: &ir.Tag{Type: ir.ValueTypeI8}, Text: "18"},
 			},
 		},
 	}
@@ -233,7 +233,7 @@ func TestDuplicateStructNamesWithPath(t *testing.T) {
 					Path: "user",
 					Tag:  &ir.Tag{Name: "profile"},
 					Fields: []*ir.Field{
-						{Key: "name", Value: &ir.Value{Path: "user.name", Tag: &ir.Tag{Type: ir.ValueTypeString}, Text: "alice"}},
+						{Key: "name", Value: &ir.Value{Path: "user.name", Tag: &ir.Tag{Type: ir.ValueTypeStr}, Text: "alice"}},
 					},
 				},
 			},
@@ -243,7 +243,7 @@ func TestDuplicateStructNamesWithPath(t *testing.T) {
 					Path: "admin",
 					Tag:  &ir.Tag{Name: "profile"},
 					Fields: []*ir.Field{
-						{Key: "name", Value: &ir.Value{Path: "admin.name", Tag: &ir.Tag{Type: ir.ValueTypeString}, Text: "bob"}},
+						{Key: "name", Value: &ir.Value{Path: "admin.name", Tag: &ir.Tag{Type: ir.ValueTypeStr}, Text: "bob"}},
 					},
 				},
 			},

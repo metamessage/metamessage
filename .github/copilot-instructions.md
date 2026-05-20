@@ -1,4 +1,6 @@
 # Commit Message Rules
+
+- Commit messages should be in English
 - Format: `type(scope): subject`
 - Allowed types: feat / fix / docs / refactor / test / chore
 - Tone: imperative mood, start with lowercase verb

@@ -54,19 +54,21 @@ public class MMBuffer {
     }
 
     public func write<T: FixedWidthInteger>(_ value: T) {
-        var v = value
-        let bytes = withUnsafeBytes(of: &v) { Array($0) }
+        var bigEndian = value.bigEndian
+        let bytes = withUnsafeBytes(of: &bigEndian) { Array($0) }
         write(bytes)
     }
 
     public func writeFloat32(_ value: Float) {
-        var v = value
+        let bits = value.bitPattern.bigEndian
+        var v = bits
         let bytes = withUnsafeBytes(of: &v) { Array($0) }
         write(bytes)
     }
 
     public func writeFloat64(_ value: Double) {
-        var v = value
+        let bits = value.bitPattern.bigEndian
+        var v = bits
         let bytes = withUnsafeBytes(of: &v) { Array($0) }
         write(bytes)
     }

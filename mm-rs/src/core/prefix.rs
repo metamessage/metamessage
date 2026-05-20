@@ -1,5 +1,3 @@
-use crate::core::constants::*;
-
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Prefix {
     Simple,

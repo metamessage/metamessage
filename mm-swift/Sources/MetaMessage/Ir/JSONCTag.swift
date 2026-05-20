@@ -252,7 +252,7 @@ public func parseMMTag(_ tagStr: String) -> JSONCTag? {
             result.example = true
 
         case "desc":
-            result.desc = value
+            result.desc = value.trimmingCharacters(in: CharacterSet(charactersIn: "\""))
 
         case "type":
             if let t = ValueType.parse(value) {
@@ -306,7 +306,7 @@ public func parseMMTag(_ tagStr: String) -> JSONCTag? {
             result.mime = value
 
         case "child_desc":
-            result.childDesc = value
+            result.childDesc = value.trimmingCharacters(in: CharacterSet(charactersIn: "\""))
 
         case "child_type":
             if let t = ValueType.parse(value) {

@@ -10,58 +10,58 @@ import (
 
 var javaTypeMap = map[ir.ValueType]string{
 	ir.ValueTypeUnknown:  "Object",
-	ir.ValueTypeString:   "String",
+	ir.ValueTypeStr:      "String",
 	ir.ValueTypeBytes:    "byte[]",
 	ir.ValueTypeBool:     "boolean",
-	ir.ValueTypeArray:    "List<Object>",
-	ir.ValueTypeSlice:    "List<Object>",
+	ir.ValueTypeArr:      "List<Object>",
+	ir.ValueTypeVec:      "List<Object>",
 	ir.ValueTypeMap:      "Map<String, Object>",
-	ir.ValueTypeInt:      "int",
-	ir.ValueTypeInt8:     "byte",
-	ir.ValueTypeInt16:    "short",
-	ir.ValueTypeInt32:    "int",
-	ir.ValueTypeInt64:    "long",
-	ir.ValueTypeUint:     "long",
-	ir.ValueTypeUint8:    "short",
-	ir.ValueTypeUint16:   "int",
-	ir.ValueTypeUint32:   "long",
-	ir.ValueTypeUint64:   "long",
-	ir.ValueTypeFloat32:  "float",
-	ir.ValueTypeFloat64:  "double",
-	ir.ValueTypeBigInt:   "BigInteger",
-	ir.ValueTypeDateTime: "LocalDateTime",
+	ir.ValueTypeI:        "int",
+	ir.ValueTypeI8:       "byte",
+	ir.ValueTypeI16:      "short",
+	ir.ValueTypeI32:      "int",
+	ir.ValueTypeI64:      "long",
+	ir.ValueTypeU:        "long",
+	ir.ValueTypeU8:       "short",
+	ir.ValueTypeU16:      "int",
+	ir.ValueTypeU32:      "long",
+	ir.ValueTypeU64:      "long",
+	ir.ValueTypeF32:      "float",
+	ir.ValueTypeF64:      "double",
+	ir.ValueTypeBigint:   "BigInteger",
+	ir.ValueTypeDatetime: "LocalDateTime",
 	ir.ValueTypeDate:     "LocalDate",
 	ir.ValueTypeTime:     "LocalTime",
-	ir.ValueTypeUUID:     "String",
+	ir.ValueTypeUuid:     "String",
 	ir.ValueTypeDecimal:  "String",
 	ir.ValueTypeEmail:    "String",
-	ir.ValueTypeIP:       "String",
-	ir.ValueTypeURL:      "String",
+	ir.ValueTypeIp:       "String",
+	ir.ValueTypeUrl:      "String",
 	ir.ValueTypeEnum:     "String",
 	ir.ValueTypeImage:    "String",
 }
 
 var javaWrapperTypeMap = map[ir.ValueType]string{
 	ir.ValueTypeBool:    "Boolean",
-	ir.ValueTypeInt:     "Integer",
-	ir.ValueTypeInt8:    "Byte",
-	ir.ValueTypeInt16:   "Short",
-	ir.ValueTypeInt32:   "Integer",
-	ir.ValueTypeInt64:   "Long",
-	ir.ValueTypeUint:    "Long",
-	ir.ValueTypeUint8:   "Short",
-	ir.ValueTypeUint16:  "Integer",
-	ir.ValueTypeUint32:  "Long",
-	ir.ValueTypeUint64:  "Long",
-	ir.ValueTypeFloat32: "Float",
-	ir.ValueTypeFloat64: "Double",
-	ir.ValueTypeBigInt:  "BigInteger",
-	ir.ValueTypeString:  "String",
-	ir.ValueTypeUUID:    "String",
+	ir.ValueTypeI:       "Integer",
+	ir.ValueTypeI8:      "Byte",
+	ir.ValueTypeI16:     "Short",
+	ir.ValueTypeI32:     "Integer",
+	ir.ValueTypeI64:     "Long",
+	ir.ValueTypeU:       "Long",
+	ir.ValueTypeU8:      "Short",
+	ir.ValueTypeU16:     "Integer",
+	ir.ValueTypeU32:     "Long",
+	ir.ValueTypeU64:     "Long",
+	ir.ValueTypeF32:     "Float",
+	ir.ValueTypeF64:     "Double",
+	ir.ValueTypeBigint:  "BigInteger",
+	ir.ValueTypeStr:     "String",
+	ir.ValueTypeUuid:    "String",
 	ir.ValueTypeDecimal: "String",
 	ir.ValueTypeEmail:   "String",
-	ir.ValueTypeIP:      "String",
-	ir.ValueTypeURL:     "String",
+	ir.ValueTypeIp:      "String",
+	ir.ValueTypeUrl:     "String",
 	ir.ValueTypeEnum:    "String",
 	ir.ValueTypeImage:   "String",
 }
@@ -182,9 +182,9 @@ func collectJavaImportsRec(n ir.Node, imports map[string]struct{}) {
 
 func addJavaImportForType(typ ir.ValueType, imports map[string]struct{}) {
 	switch typ {
-	case ir.ValueTypeBigInt:
+	case ir.ValueTypeBigint:
 		imports["java.math.BigInteger"] = struct{}{}
-	case ir.ValueTypeDateTime:
+	case ir.ValueTypeDatetime:
 		imports["java.time.LocalDateTime"] = struct{}{}
 	case ir.ValueTypeDate:
 		imports["java.time.LocalDate"] = struct{}{}
@@ -316,17 +316,7 @@ func genJavaNestedClasses(b *strings.Builder, n ir.Node, indent int) {
 	}
 }
 
-func findFirstObjectInArray(a *ir.Array) *ir.Object {
-	if a == nil {
-		return nil
-	}
-	for _, item := range a.Items {
-		if obj, ok := item.(*ir.Object); ok {
-			return obj
-		}
-	}
-	return nil
-}
+
 
 func exportJavaClassName(s string) string {
 	name := ExportName(s)

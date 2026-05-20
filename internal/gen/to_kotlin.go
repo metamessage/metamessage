@@ -10,33 +10,33 @@ import (
 
 var kotlinTypeMap = map[ir.ValueType]string{
 	ir.ValueTypeUnknown:  "Any",
-	ir.ValueTypeString:   "String",
+	ir.ValueTypeStr:      "String",
 	ir.ValueTypeBytes:    "ByteArray",
 	ir.ValueTypeBool:     "Boolean",
-	ir.ValueTypeArray:    "List<Any>",
-	ir.ValueTypeSlice:    "List<Any>",
+	ir.ValueTypeArr:      "List<Any>",
+	ir.ValueTypeVec:      "List<Any>",
 	ir.ValueTypeMap:      "Map<String, Any>",
-	ir.ValueTypeInt:      "Int",
-	ir.ValueTypeInt8:     "Byte",
-	ir.ValueTypeInt16:    "Short",
-	ir.ValueTypeInt32:    "Int",
-	ir.ValueTypeInt64:    "Long",
-	ir.ValueTypeUint:     "Long",
-	ir.ValueTypeUint8:    "Short",
-	ir.ValueTypeUint16:   "Int",
-	ir.ValueTypeUint32:   "Long",
-	ir.ValueTypeUint64:   "Long",
-	ir.ValueTypeFloat32:  "Float",
-	ir.ValueTypeFloat64:  "Double",
-	ir.ValueTypeBigInt:   "BigInteger",
-	ir.ValueTypeDateTime: "LocalDateTime",
+	ir.ValueTypeI:        "Int",
+	ir.ValueTypeI8:       "Byte",
+	ir.ValueTypeI16:      "Short",
+	ir.ValueTypeI32:      "Int",
+	ir.ValueTypeI64:      "Long",
+	ir.ValueTypeU:        "Long",
+	ir.ValueTypeU8:       "Short",
+	ir.ValueTypeU16:      "Int",
+	ir.ValueTypeU32:      "Long",
+	ir.ValueTypeU64:      "Long",
+	ir.ValueTypeF32:      "Float",
+	ir.ValueTypeF64:      "Double",
+	ir.ValueTypeBigint:   "BigInteger",
+	ir.ValueTypeDatetime: "LocalDateTime",
 	ir.ValueTypeDate:     "LocalDate",
 	ir.ValueTypeTime:     "LocalTime",
-	ir.ValueTypeUUID:     "String",
+	ir.ValueTypeUuid:     "String",
 	ir.ValueTypeDecimal:  "String",
 	ir.ValueTypeEmail:    "String",
-	ir.ValueTypeIP:       "String",
-	ir.ValueTypeURL:      "String",
+	ir.ValueTypeIp:       "String",
+	ir.ValueTypeUrl:      "String",
 	ir.ValueTypeEnum:     "String",
 	ir.ValueTypeImage:    "String",
 }
@@ -66,7 +66,7 @@ func ToKotlin(n ir.Node) string {
 
 	sb.WriteString("class ")
 	sb.WriteString(topName)
-	sb.WriteString(" {\\n")
+	sb.WriteString(" {\n")
 
 	genKotlinFields(&sb, n, 1)
 	genKotlinNestedClasses(&sb, n, 1)
@@ -127,9 +127,9 @@ func collectKotlinImportsRec(n ir.Node, imports map[string]struct{}) {
 
 func addKotlinImportForType(typ ir.ValueType, imports map[string]struct{}) {
 	switch typ {
-	case ir.ValueTypeBigInt:
+	case ir.ValueTypeBigint:
 		imports["java.math.BigInteger"] = struct{}{}
-	case ir.ValueTypeDateTime:
+	case ir.ValueTypeDatetime:
 		imports["java.time.LocalDateTime"] = struct{}{}
 	case ir.ValueTypeDate:
 		imports["java.time.LocalDate"] = struct{}{}
@@ -201,16 +201,16 @@ func getKotlinDefaultValue(node ir.Node) string {
 			switch v.Tag.Type {
 			case ir.ValueTypeBool:
 				return "false"
-			case ir.ValueTypeString, ir.ValueTypeBytes, ir.ValueTypeDecimal,
-				ir.ValueTypeDateTime, ir.ValueTypeDate, ir.ValueTypeTime,
-				ir.ValueTypeUUID, ir.ValueTypeEmail, ir.ValueTypeIP,
-				ir.ValueTypeURL, ir.ValueTypeEnum, ir.ValueTypeImage:
+			case ir.ValueTypeStr, ir.ValueTypeBytes, ir.ValueTypeDecimal,
+				ir.ValueTypeDatetime, ir.ValueTypeDate, ir.ValueTypeTime,
+				ir.ValueTypeUuid, ir.ValueTypeEmail, ir.ValueTypeIp,
+				ir.ValueTypeUrl, ir.ValueTypeEnum, ir.ValueTypeImage:
 				return "\"\""
-			case ir.ValueTypeInt, ir.ValueTypeInt8, ir.ValueTypeInt16, ir.ValueTypeInt32, ir.ValueTypeInt64,
-				ir.ValueTypeUint, ir.ValueTypeUint8, ir.ValueTypeUint16, ir.ValueTypeUint32, ir.ValueTypeUint64,
-				ir.ValueTypeFloat32, ir.ValueTypeFloat64:
+			case ir.ValueTypeI, ir.ValueTypeI8, ir.ValueTypeI16, ir.ValueTypeI32, ir.ValueTypeI64,
+				ir.ValueTypeU, ir.ValueTypeU8, ir.ValueTypeU16, ir.ValueTypeU32, ir.ValueTypeU64,
+				ir.ValueTypeF32, ir.ValueTypeF64:
 				return "0"
-			case ir.ValueTypeBigInt:
+			case ir.ValueTypeBigint:
 				return "BigInteger.ZERO"
 			default:
 				return "null"
@@ -276,19 +276,19 @@ func genKotlinNestedClasses(b *strings.Builder, n ir.Node, indent int) {
 			WriteIndent(b, indent)
 			b.WriteString("class ")
 			b.WriteString(className)
-			b.WriteString(" {\\n")
+			b.WriteString(" {\n")
 			genKotlinFields(b, v, indent+1)
 			genKotlinNestedClasses(b, v, indent+1)
 			WriteIndent(b, indent)
 			b.WriteString("}\n")
 		case *ir.Array:
-			if nestedObj := findFirstObjectInArrayKotlin(v); nestedObj != nil {
+			if nestedObj := findFirstObjectInArray(v); nestedObj != nil {
 				className := getKotlinObjectType(f.Key, nestedObj)
 				b.WriteString("\n")
 				WriteIndent(b, indent)
 				b.WriteString("class ")
 				b.WriteString(className)
-				b.WriteString(" {\\n")
+				b.WriteString(" {\n")
 				genKotlinFields(b, nestedObj, indent+1)
 				genKotlinNestedClasses(b, nestedObj, indent+1)
 				WriteIndent(b, indent)
@@ -296,18 +296,6 @@ func genKotlinNestedClasses(b *strings.Builder, n ir.Node, indent int) {
 			}
 		}
 	}
-}
-
-func findFirstObjectInArrayKotlin(a *ir.Array) *ir.Object {
-	if a == nil {
-		return nil
-	}
-	for _, item := range a.Items {
-		if obj, ok := item.(*ir.Object); ok {
-			return obj
-		}
-	}
-	return nil
 }
 
 func exportKotlinClassName(s string) string {
