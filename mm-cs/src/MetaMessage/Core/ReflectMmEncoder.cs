@@ -25,7 +25,7 @@ public static class ReflectMmEncoder
 
         if (tag.Type == ValueType.UNKNOWN)
         {
-            tag.Type = ValueType.STRUCT;
+            tag.Type = ValueType.OBJ;
         }
         if (string.IsNullOrEmpty(tag.Name))
         {
@@ -44,7 +44,7 @@ public static class ReflectMmEncoder
                 throw new Exception("Null for non-nullable");
             }
             workTag.IsNull = true;
-            if (workTag.Type == ValueType.STRUCT || workTag.Type == ValueType.SLICE || workTag.Type == ValueType.ARRAY)
+            if (workTag.Type == ValueType.OBJ || workTag.Type == ValueType.VEC || workTag.Type == ValueType.ARRAY)
             {
                 var inner = new WireEncoder();
                 inner.EncodeSimple(SimpleValue.NULL_STRING);
@@ -53,7 +53,7 @@ public static class ReflectMmEncoder
             }
         }
 
-        if (workTag.Type == ValueType.STRUCT)
+        if (workTag.Type == ValueType.OBJ)
         {
             if (value == null)
             {
@@ -63,7 +63,7 @@ public static class ReflectMmEncoder
             return;
         }
 
-        if (workTag.Type == ValueType.SLICE || workTag.Type == ValueType.ARRAY)
+        if (workTag.Type == ValueType.VEC || workTag.Type == ValueType.ARRAY)
         {
             EncodeList(encoder, value, workTag);
             return;
@@ -181,9 +181,9 @@ public static class ReflectMmEncoder
         dst.Unique |= src.Unique;
         if (!string.IsNullOrEmpty(src.DefaultValue))
             dst.DefaultValue = src.DefaultValue;
-        if (src.EnumValues.Count > 0)
+        if (!string.IsNullOrEmpty(src.Enum))
         {
-            dst.EnumValues = src.EnumValues;
+            dst.Enum = src.Enum;
             dst.Type = ValueType.ENUM;
         }
         dst.LocationHours = src.LocationHours;
@@ -194,7 +194,7 @@ public static class ReflectMmEncoder
         if (src.ChildType != ValueType.UNKNOWN)
             dst.ChildType = src.ChildType;
         dst.ChildNullable |= src.ChildNullable;
-        if (src.ChildEnum.Count > 0)
+        if (!string.IsNullOrEmpty(src.ChildEnum))
         {
             dst.ChildEnum = src.ChildEnum;
             dst.ChildType = ValueType.ENUM;
@@ -346,7 +346,7 @@ public static class ReflectMmEncoder
                     itemTag.Type = InferTypeFromValue(item);
                     if (itemTag.Type == ValueType.UNKNOWN)
                     {
-                        itemTag.Type = ValueType.STRUCT;
+                        itemTag.Type = ValueType.OBJ;
                     }
                 }
                 EncodeValue(elementEncoder, item, itemTag);

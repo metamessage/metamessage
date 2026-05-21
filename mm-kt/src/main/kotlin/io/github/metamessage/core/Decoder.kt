@@ -116,15 +116,14 @@ class Decoder() {
                 Value(d, d.toString(), tag)
             }
             ValueType.TIME -> Value(LocalTime.MIDNIGHT, LocalTime.MIDNIGHT.toString(), tag)
-            ValueType.INT8 -> Value(0.toByte(), "0", tag)
-            ValueType.INT16 -> Value(0.toShort(), "0", tag)
-            ValueType.INT32 -> Value(0, "0", tag)
-            ValueType.INT64 -> Value(0L, "0", tag)
-            ValueType.UINT, ValueType.UINT8, ValueType.UINT16, ValueType.UINT32 ->
-                    Value(0, "0", tag)
-            ValueType.UINT64 -> Value(0L, "0", tag)
-            ValueType.FLOAT32 -> Value(0f, "0.0", tag)
-            ValueType.FLOAT64 -> Value(0.0, "0.0", tag)
+            ValueType.I8 -> Value(0.toByte(), "0", tag)
+            ValueType.I16 -> Value(0.toShort(), "0", tag)
+            ValueType.I32 -> Value(0, "0", tag)
+            ValueType.I64 -> Value(0L, "0", tag)
+            ValueType.U, ValueType.U8, ValueType.U16, ValueType.U32 -> Value(0, "0", tag)
+            ValueType.U64 -> Value(0L, "0", tag)
+            ValueType.F32 -> Value(0f, "0.0", tag)
+            ValueType.F64 -> Value(0.0, "0.0", tag)
             ValueType.EMAIL, ValueType.UUID, ValueType.DECIMAL -> Value("", "", tag)
             ValueType.BIGINT -> Value(BigInteger.ZERO, "0", tag)
             ValueType.URL -> Value("", "", tag)
@@ -194,17 +193,17 @@ class Decoder() {
     }
 
     private fun nullInt(tag: Tag): Node {
-        if (tag.type == ValueType.UNKNOWN) tag.type = ValueType.INT
-        if (tag.type != ValueType.INT) throw MmDecodeException("null_int type mismatch")
+        if (tag.type == ValueType.UNKNOWN) tag.type = ValueType.I
+        if (tag.type != ValueType.I) throw MmDecodeException("null_int type mismatch")
         return Value(0, "0", tag)
     }
 
     private fun nullFloat(tag: Tag): Node {
-        if (tag.type == ValueType.UNKNOWN) tag.type = ValueType.FLOAT64
-        if (tag.type != ValueType.FLOAT32 && tag.type != ValueType.FLOAT64) {
+        if (tag.type == ValueType.UNKNOWN) tag.type = ValueType.F64
+        if (tag.type != ValueType.F32 && tag.type != ValueType.F64) {
             throw MmDecodeException("null_float type mismatch")
         }
-        return if (tag.type == ValueType.FLOAT32) {
+        return if (tag.type == ValueType.F32) {
             Value(0f, "0.0", tag)
         } else {
             Value(0.0, "0.0", tag)
@@ -212,8 +211,8 @@ class Decoder() {
     }
 
     private fun nullString(tag: Tag): Node {
-        if (tag.type == ValueType.UNKNOWN) tag.type = ValueType.STRING
-        if (tag.type != ValueType.STRING) throw MmDecodeException("null_string type mismatch")
+        if (tag.type == ValueType.UNKNOWN) tag.type = ValueType.STR
+        if (tag.type != ValueType.STR) throw MmDecodeException("null_string type mismatch")
         return Value("", "", tag)
     }
 
@@ -226,14 +225,14 @@ class Decoder() {
     private fun decodePositiveInt(first: Int, inherited: Tag?, start: Int): Decoded {
         val v = readUintBody(first)
         val tag = inherited?.copy() ?: Tag.empty()
-        if (tag.type == ValueType.UNKNOWN) tag.type = ValueType.INT
+        if (tag.type == ValueType.UNKNOWN) tag.type = ValueType.I
         return Decoded(mapUintToTree(tag, v), offset - start)
     }
 
     private fun decodeNegativeInt(first: Int, inherited: Tag?, start: Int): Decoded {
         val v = readUintBody(first)
         val tag = inherited?.copy() ?: Tag.empty()
-        if (tag.type == ValueType.UNKNOWN) tag.type = ValueType.INT
+        if (tag.type == ValueType.UNKNOWN) tag.type = ValueType.I
         return Decoded(mapNegativeInt(tag, v), offset - start)
     }
 
@@ -260,16 +259,16 @@ class Decoder() {
 
     private fun mapUintToTree(tag: Tag, v: Long): Node {
         return when (tag.type) {
-            ValueType.INT -> Value(v.toInt(), v.toString(), tag)
-            ValueType.INT8 -> Value(v.toByte(), v.toString(), tag)
-            ValueType.INT16 -> Value(v.toShort(), v.toString(), tag)
-            ValueType.INT32 -> Value(v.toInt(), v.toString(), tag)
-            ValueType.INT64 -> Value(v, v.toString(), tag)
-            ValueType.UINT -> Value(v.toInt(), v.toString(), tag)
-            ValueType.UINT8 -> Value(v.toShort(), v.toString(), tag)
-            ValueType.UINT16 -> Value(v.toInt(), v.toString(), tag)
-            ValueType.UINT32 -> Value(v.toInt(), v.toString(), tag)
-            ValueType.UINT64 -> Value(v, v.toString(), tag)
+            ValueType.I -> Value(v.toInt(), v.toString(), tag)
+            ValueType.I8 -> Value(v.toByte(), v.toString(), tag)
+            ValueType.I16 -> Value(v.toShort(), v.toString(), tag)
+            ValueType.I32 -> Value(v.toInt(), v.toString(), tag)
+            ValueType.I64 -> Value(v, v.toString(), tag)
+            ValueType.U -> Value(v.toInt(), v.toString(), tag)
+            ValueType.U8 -> Value(v.toShort(), v.toString(), tag)
+            ValueType.U16 -> Value(v.toInt(), v.toString(), tag)
+            ValueType.U32 -> Value(v.toInt(), v.toString(), tag)
+            ValueType.U64 -> Value(v, v.toString(), tag)
             ValueType.DATETIME -> decodeDateTime(tag, v)
             ValueType.DATE -> decodeDate(tag, v)
             ValueType.TIME -> decodeTime(tag, v)
@@ -280,11 +279,11 @@ class Decoder() {
 
     private fun mapNegativeInt(tag: Tag, v: Long): Node {
         return when (tag.type) {
-            ValueType.INT -> Value((-v).toInt(), "-$v", tag)
-            ValueType.INT8 -> Value((-v).toByte(), "-$v", tag)
-            ValueType.INT16 -> Value((-v).toShort(), "-$v", tag)
-            ValueType.INT32 -> Value((-v).toInt(), "-$v", tag)
-            ValueType.INT64 -> Value(-v, "-$v", tag)
+            ValueType.I -> Value((-v).toInt(), "-$v", tag)
+            ValueType.I8 -> Value((-v).toByte(), "-$v", tag)
+            ValueType.I16 -> Value((-v).toShort(), "-$v", tag)
+            ValueType.I32 -> Value((-v).toInt(), "-$v", tag)
+            ValueType.I64 -> Value(-v, "-$v", tag)
             else -> throw MmDecodeException("unsupported neg int type: ${tag.type}")
         }
     }
@@ -322,7 +321,7 @@ class Decoder() {
 
     private fun decodeFloat(first: Int, inherited: Tag?, start: Int): Decoded {
         val tag = inherited?.copy() ?: Tag.empty()
-        if (tag.type == ValueType.UNKNOWN) tag.type = ValueType.FLOAT64
+        if (tag.type == ValueType.UNKNOWN) tag.type = ValueType.F64
         val l = first and WireConstants.FLOAT_LEN_MASK
         val `val`: Double =
                 if (l < WireConstants.FLOAT_LEN_1) {
@@ -349,8 +348,8 @@ class Decoder() {
                 }
         val node =
                 when (tag.type) {
-                    ValueType.FLOAT32 -> Value(`val`.toFloat(), `val`.toString(), tag)
-                    ValueType.FLOAT64, ValueType.DECIMAL -> Value(`val`, `val`.toString(), tag)
+                    ValueType.F32 -> Value(`val`.toFloat(), `val`.toString(), tag)
+                    ValueType.F64, ValueType.DECIMAL -> Value(`val`, `val`.toString(), tag)
                     else -> throw MmDecodeException("bad float tag ${tag.type}")
                 }
         return Decoded(node, offset - start)
@@ -376,10 +375,10 @@ class Decoder() {
         val bs = if (l2 > 0) readBytes(l2) else ByteArray(0)
         val text = String(bs, StandardCharsets.UTF_8)
         val tag = inherited?.copy() ?: Tag.empty()
-        if (tag.type == ValueType.UNKNOWN) tag.type = ValueType.STRING
+        if (tag.type == ValueType.UNKNOWN) tag.type = ValueType.STR
         val node =
                 when (tag.type) {
-                    ValueType.STRING, ValueType.EMAIL -> Value(text, text, tag)
+                    ValueType.STR, ValueType.EMAIL -> Value(text, text, tag)
                     ValueType.URL -> Value(text, text, tag)
                     ValueType.IP -> Value(text, text, tag)
                     else -> throw MmDecodeException("unsupported string type: ${tag.type}")
@@ -463,15 +462,15 @@ class Decoder() {
         val isArray = (first and WireConstants.CONTAINER_MASK) == WireConstants.CONTAINER_ARRAY
         val isMap = (first and WireConstants.CONTAINER_MASK) == WireConstants.CONTAINER_MAP
         return if (isArray) {
-            decodeArray(first, inherited, start)
+            decodeArr(first, inherited, start)
         } else if (isMap) {
-            decodeObject(first, inherited, start)
+            decodeObj(first, inherited, start)
         } else {
-            decodeObject(first, inherited, start)
+            decodeObj(first, inherited, start)
         }
     }
 
-    private fun decodeArray(first: Int, inherited: Tag?, start: Int): Decoded {
+    private fun decodeArr(first: Int, inherited: Tag?, start: Int): Decoded {
         val cl = containerLen(first)
         var l2 = cl[1]
         if (cl[0] == 1) {
@@ -486,7 +485,7 @@ class Decoder() {
         }
         val tag = inherited?.copy() ?: Tag.empty()
         if (tag.type == ValueType.UNKNOWN) {
-            tag.type = if (tag.size > 0) ValueType.ARRAY else ValueType.SLICE
+            tag.type = if (tag.size > 0) ValueType.ARRAY else ValueType.VEC
         }
         val items = mutableListOf<Node>()
         while (offset < bodyEnd) {
@@ -501,7 +500,7 @@ class Decoder() {
         return Decoded(Array(items, tag = tag), offset - start)
     }
 
-    private fun decodeObject(first: Int, inherited: Tag?, start: Int): Decoded {
+    private fun decodeObj(first: Int, inherited: Tag?, start: Int): Decoded {
         val cl = containerLen(first)
         var l2 = cl[1]
         if (cl[0] == 1) {
@@ -515,10 +514,10 @@ class Decoder() {
             throw MmDecodeException("object past eof")
         }
         val tag = inherited?.copy() ?: Tag.empty()
-        if (tag.type == ValueType.UNKNOWN) tag.type = ValueType.STRUCT
+        if (tag.type == ValueType.UNKNOWN) tag.type = ValueType.OBJ
         val keyPrefixPos = offset
         val keyPrefix = data[offset++].toInt() and 0xFF
-        val keysDec = decodeArray(keyPrefix, null, keyPrefixPos)
+        val keysDec = decodeArr(keyPrefix, null, keyPrefixPos)
         val keys = keysDec.node as Array
         val fields = mutableListOf<Field>()
         var i = 0

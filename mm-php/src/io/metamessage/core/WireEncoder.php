@@ -158,7 +158,7 @@ class WireEncoder
                 }
                 break;
 
-            case ValueType::INT:
+            case ValueType::I:
                 if ($tag->isNull) {
                     $n = $this->encodeSimple(SimpleValue::NULL_INT);
                 } else {
@@ -166,7 +166,7 @@ class WireEncoder
                 }
                 break;
 
-            case ValueType::INT8:
+            case ValueType::I8:
                 if ($tag->isNull) {
                     $n = $this->encodeSimple(SimpleValue::NULL_STRING);
                 } else {
@@ -174,7 +174,7 @@ class WireEncoder
                 }
                 break;
 
-            case ValueType::INT16:
+            case ValueType::I16:
                 if ($tag->isNull) {
                     $n = $this->encodeSimple(SimpleValue::NULL_STRING);
                 } else {
@@ -182,7 +182,7 @@ class WireEncoder
                 }
                 break;
 
-            case ValueType::INT32:
+            case ValueType::I32:
                 if ($tag->isNull) {
                     $n = $this->encodeSimple(SimpleValue::NULL_STRING);
                 } else {
@@ -190,7 +190,7 @@ class WireEncoder
                 }
                 break;
 
-            case ValueType::INT64:
+            case ValueType::I64:
                 if ($tag->isNull) {
                     $n = $this->encodeSimple(SimpleValue::NULL_STRING);
                 } else {
@@ -198,7 +198,7 @@ class WireEncoder
                 }
                 break;
 
-            case ValueType::UINT:
+            case ValueType::U:
                 if ($tag->isNull) {
                     $n = $this->encodeSimple(SimpleValue::NULL_STRING);
                 } else {
@@ -206,7 +206,7 @@ class WireEncoder
                 }
                 break;
 
-            case ValueType::UINT8:
+            case ValueType::U8:
                 if ($tag->isNull) {
                     $n = $this->encodeSimple(SimpleValue::NULL_STRING);
                 } else {
@@ -214,7 +214,7 @@ class WireEncoder
                 }
                 break;
 
-            case ValueType::UINT16:
+            case ValueType::U16:
                 if ($tag->isNull) {
                     $n = $this->encodeSimple(SimpleValue::NULL_STRING);
                 } else {
@@ -222,7 +222,7 @@ class WireEncoder
                 }
                 break;
 
-            case ValueType::UINT32:
+            case ValueType::U32:
                 if ($tag->isNull) {
                     $n = $this->encodeSimple(SimpleValue::NULL_STRING);
                 } else {
@@ -230,7 +230,7 @@ class WireEncoder
                 }
                 break;
 
-            case ValueType::UINT64:
+            case ValueType::U64:
                 if ($tag->isNull) {
                     $n = $this->encodeSimple(SimpleValue::NULL_STRING);
                 } else {
@@ -238,7 +238,7 @@ class WireEncoder
                 }
                 break;
 
-            case ValueType::FLOAT32:
+            case ValueType::F32:
                 if ($tag->isNull) {
                     $n = $this->encodeSimple(SimpleValue::NULL_STRING);
                 } else {
@@ -246,7 +246,7 @@ class WireEncoder
                 }
                 break;
 
-            case ValueType::FLOAT64:
+            case ValueType::F64:
                 if ($tag->isNull) {
                     $n = $this->encodeSimple(SimpleValue::NULL_FLOAT);
                 } else {
@@ -254,7 +254,7 @@ class WireEncoder
                 }
                 break;
 
-            case ValueType::STRING:
+            case ValueType::STR:
                 if ($tag->isNull) {
                     $n = $this->encodeSimple(SimpleValue::NULL_STRING);
                 } else {

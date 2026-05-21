@@ -1,7 +1,7 @@
 package io.github.metamessage.core
 
-import io.github.metamessage.ir.Array as AstArray
 import io.github.metamessage.ir.*
+import io.github.metamessage.ir.Array as AstArray
 import java.math.BigInteger
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
@@ -55,7 +55,7 @@ class WireTest {
 
     @Test
     fun encodeDecodeIntMax() {
-        val tag = Tag.empty().apply { type = ValueType.INT64 }
+        val tag = Tag.empty().apply { type = ValueType.I64 }
         val node = Value(data = Long.MAX_VALUE, text = Long.MAX_VALUE.toString(), tag = tag)
         val encoded = Encoder.encodeNode(node)
         val decoded = Decoder().decode(encoded)
@@ -65,7 +65,7 @@ class WireTest {
 
     @Test
     fun encodeDecodeIntMin() {
-        val tag = Tag.empty().apply { type = ValueType.INT64 }
+        val tag = Tag.empty().apply { type = ValueType.I64 }
         val node = Value(data = Long.MIN_VALUE, text = Long.MIN_VALUE.toString(), tag = tag)
         val encoded = Encoder.encodeNode(node)
         val decoded = Decoder().decode(encoded)
@@ -75,7 +75,7 @@ class WireTest {
 
     @Test
     fun encodeDecodeUintLarge() {
-        val tag = Tag.empty().apply { type = ValueType.UINT64 }
+        val tag = Tag.empty().apply { type = ValueType.U64 }
         val node = Value(data = 1L shl 50, text = (1L shl 50).toString(), tag = tag)
         val encoded = Encoder.encodeNode(node)
         val decoded = Decoder().decode(encoded)
@@ -170,10 +170,29 @@ class WireTest {
 
     @Test
     fun encodeDecodeObjectWithFields() {
-        val obj = Object().apply {
-            fields.add(Field("name", Value(data = "Alice", text = "\"Alice\"", tag = Tag.empty().apply { type = ValueType.STRING })))
-            fields.add(Field("age", Value(data = 30L, text = "30", tag = Tag.empty().apply { type = ValueType.INT })))
-        }
+        val obj =
+                Object().apply {
+                    fields.add(
+                            Field(
+                                    "name",
+                                    Value(
+                                            data = "Alice",
+                                            text = "\"Alice\"",
+                                            tag = Tag.empty().apply { type = ValueType.STR }
+                                    )
+                            )
+                    )
+                    fields.add(
+                            Field(
+                                    "age",
+                                    Value(
+                                            data = 30L,
+                                            text = "30",
+                                            tag = Tag.empty().apply { type = ValueType.I }
+                                    )
+                            )
+                    )
+                }
         val encoded = Encoder.encodeNode(obj)
         val node = Decoder().decode(encoded)
         assertTrue(node is Object)
@@ -191,11 +210,30 @@ class WireTest {
 
     @Test
     fun encodeDecodeArrayWithItems() {
-        val arr = AstArray().apply {
-            items.add(Value(data = 1L, text = "1", tag = Tag.empty().apply { type = ValueType.INT }))
-            items.add(Value(data = 2L, text = "2", tag = Tag.empty().apply { type = ValueType.INT }))
-            items.add(Value(data = 3L, text = "3", tag = Tag.empty().apply { type = ValueType.INT }))
-        }
+        val arr =
+                AstArray().apply {
+                    items.add(
+                            Value(
+                                    data = 1L,
+                                    text = "1",
+                                    tag = Tag.empty().apply { type = ValueType.I }
+                            )
+                    )
+                    items.add(
+                            Value(
+                                    data = 2L,
+                                    text = "2",
+                                    tag = Tag.empty().apply { type = ValueType.I }
+                            )
+                    )
+                    items.add(
+                            Value(
+                                    data = 3L,
+                                    text = "3",
+                                    tag = Tag.empty().apply { type = ValueType.I }
+                            )
+                    )
+                }
         val encoded = Encoder.encodeNode(arr)
         val node = Decoder().decode(encoded)
         assertTrue(node is AstArray)
@@ -239,12 +277,8 @@ class WireTest {
 
     @Test
     fun encodeDecodeNestedObject() {
-        val inner = Object().apply {
-            fields.add(Field("x", Value(data = 1L, text = "1")))
-        }
-        val outer = Object().apply {
-            fields.add(Field("inner", inner))
-        }
+        val inner = Object().apply { fields.add(Field("x", Value(data = 1L, text = "1"))) }
+        val outer = Object().apply { fields.add(Field("inner", inner)) }
         val encoded = Encoder.encodeNode(outer)
         val decoded = Decoder().decode(encoded)
         assertTrue(decoded is Object)

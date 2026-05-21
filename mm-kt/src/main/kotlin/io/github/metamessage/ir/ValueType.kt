@@ -3,9 +3,9 @@ package io.github.metamessage.ir
 enum class ValueType {
     UNKNOWN,
     DOC,
-    SLICE,
+    VEC,
     ARRAY,
-    STRUCT,
+    OBJ,
     MAP,
     STRING,
     BYTES,
@@ -41,9 +41,9 @@ enum class ValueType {
             when (this) {
                 UNKNOWN -> "unknown"
                 DOC -> "doc"
-                SLICE -> "vec"
+                VEC -> "vec"
                 ARRAY -> "arr"
-                STRUCT -> "obj"
+                OBJ -> "obj"
                 MAP -> "map"
                 STRING -> "str"
                 BYTES -> "bytes"

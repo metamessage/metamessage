@@ -156,17 +156,17 @@ class JsoncParser
                     }
 
                     if ($tag->type === ValueType::UNKNOWN) {
-                        $tag->type = ValueType::STRING;
+                        $tag->type = ValueType::STR;
                     }
 
                     if (isset(self::SIMPLE_STRINGS[$text])) {
-                        $tag->type = ValueType::STRING;
+                        $tag->type = ValueType::STR;
                         $result = $this->validateStr($tag, $text);
                         $data = $result[0];
                         $text = $result[1];
                     } else {
                         switch ($tag->type) {
-                            case ValueType::STRING:
+                            case ValueType::STR:
                                 if ($tag->isNull) {
                                     if ($text !== '') {
                                         throw new \Exception(sprintf('invalid string: %s, valid: ""', json_encode($text)));
@@ -215,7 +215,7 @@ class JsoncParser
                                     if ($d === false || $d->getLastErrors() !== false && !empty($d->getLastErrors()['warnings'])) {
                                         throw new \Exception(sprintf('invalid datetime %s', json_encode($text)));
                                     }
-                                    $result = $this->validateDateTime($tag, $d);
+                                    $result = $this->validateDatetime($tag, $d);
                                     $data = $result[0];
                                     $text = $result[1];
                                 }
@@ -398,11 +398,11 @@ class JsoncParser
 
                     if (str_contains($text, '.')) {
                         if ($tag->type === ValueType::UNKNOWN) {
-                            $tag->type = ValueType::FLOAT64;
+                            $tag->type = ValueType::F64;
                         }
 
                         switch ($tag->type) {
-                            case ValueType::FLOAT32:
+                            case ValueType::F32:
                                 if ($tag->isNull) {
                                     if ($text !== '0.0') {
                                         throw new \Exception(sprintf('invalid float32: %s, valid: "0.0"', $text));
@@ -416,7 +416,7 @@ class JsoncParser
                                 }
                                 break;
 
-                            case ValueType::FLOAT64:
+                            case ValueType::F64:
                                 if ($tag->isNull) {
                                     if ($text !== '0.0') {
                                         throw new \Exception(sprintf('invalid float64: %s, valid: "0.0"', $text));
@@ -435,11 +435,11 @@ class JsoncParser
                         }
                     } elseif (str_starts_with($text, '-')) {
                         if ($tag->type === ValueType::UNKNOWN) {
-                            $tag->type = ValueType::INT;
+                            $tag->type = ValueType::I;
                         }
 
                         switch ($tag->type) {
-                            case ValueType::INT:
+                            case ValueType::I:
                                 if ($tag->isNull) {
                                     if ($text !== '0') {
                                         throw new \Exception(sprintf('invalid int: %s, valid: "0"', $text));
@@ -453,7 +453,7 @@ class JsoncParser
                                 }
                                 break;
 
-                            case ValueType::INT8:
+                            case ValueType::I8:
                                 if ($tag->isNull) {
                                     if ($text !== '0') {
                                         throw new \Exception(sprintf('invalid int8: %s, valid: "0"', $text));
@@ -470,7 +470,7 @@ class JsoncParser
                                 }
                                 break;
 
-                            case ValueType::INT16:
+                            case ValueType::I16:
                                 if ($tag->isNull) {
                                     if ($text !== '0') {
                                         throw new \Exception(sprintf('invalid int16: %s, valid: "0"', $text));
@@ -487,7 +487,7 @@ class JsoncParser
                                 }
                                 break;
 
-                            case ValueType::INT32:
+                            case ValueType::I32:
                                 if ($tag->isNull) {
                                     if ($text !== '0') {
                                         throw new \Exception(sprintf('invalid int32: %s, valid: "0"', $text));
@@ -501,7 +501,7 @@ class JsoncParser
                                 }
                                 break;
 
-                            case ValueType::INT64:
+                            case ValueType::I64:
                                 if ($tag->isNull) {
                                     if ($text !== '0') {
                                         throw new \Exception(sprintf('invalid int64: %s, valid: "0"', $text));
@@ -536,11 +536,11 @@ class JsoncParser
                         }
                     } else {
                         if ($tag->type === ValueType::UNKNOWN) {
-                            $tag->type = ValueType::INT;
+                            $tag->type = ValueType::I;
                         }
 
                         switch ($tag->type) {
-                            case ValueType::INT:
+                            case ValueType::I:
                                 if ($tag->isNull) {
                                     if ($text !== '0') {
                                         throw new \Exception(sprintf('invalid int: %s, valid: "0"', $text));
@@ -554,7 +554,7 @@ class JsoncParser
                                 }
                                 break;
 
-                            case ValueType::INT8:
+                            case ValueType::I8:
                                 if ($tag->isNull) {
                                     if ($text !== '0') {
                                         throw new \Exception(sprintf('invalid int8: %s, valid: "0"', $text));
@@ -571,7 +571,7 @@ class JsoncParser
                                 }
                                 break;
 
-                            case ValueType::INT16:
+                            case ValueType::I16:
                                 if ($tag->isNull) {
                                     if ($text !== '0') {
                                         throw new \Exception(sprintf('invalid int16: %s, valid: "0"', $text));
@@ -588,7 +588,7 @@ class JsoncParser
                                 }
                                 break;
 
-                            case ValueType::INT32:
+                            case ValueType::I32:
                                 if ($tag->isNull) {
                                     if ($text !== '0') {
                                         throw new \Exception(sprintf('invalid int32: %s, valid: "0"', $text));
@@ -602,7 +602,7 @@ class JsoncParser
                                 }
                                 break;
 
-                            case ValueType::INT64:
+                            case ValueType::I64:
                                 if ($tag->isNull) {
                                     if ($text !== '0') {
                                         throw new \Exception(sprintf('invalid int64: %s, valid: "0"', $text));
@@ -616,7 +616,7 @@ class JsoncParser
                                 }
                                 break;
 
-                            case ValueType::UINT:
+                            case ValueType::U:
                                 if ($tag->isNull) {
                                     if ($text !== '0') {
                                         throw new \Exception(sprintf('invalid uint: %s, valid: "0"', $text));
@@ -633,7 +633,7 @@ class JsoncParser
                                 }
                                 break;
 
-                            case ValueType::UINT8:
+                            case ValueType::U8:
                                 if ($tag->isNull) {
                                     if ($text !== '0') {
                                         throw new \Exception(sprintf('invalid uint8: %s, valid: "0"', $text));
@@ -650,7 +650,7 @@ class JsoncParser
                                 }
                                 break;
 
-                            case ValueType::UINT16:
+                            case ValueType::U16:
                                 if ($tag->isNull) {
                                     if ($text !== '0') {
                                         throw new \Exception(sprintf('invalid uint16: %s, valid: "0"', $text));
@@ -667,7 +667,7 @@ class JsoncParser
                                 }
                                 break;
 
-                            case ValueType::UINT32:
+                            case ValueType::U32:
                                 if ($tag->isNull) {
                                     if ($text !== '0') {
                                         throw new \Exception(sprintf('invalid uint32: %s, valid: "0"', $text));
@@ -684,7 +684,7 @@ class JsoncParser
                                 }
                                 break;
 
-                            case ValueType::UINT64:
+                            case ValueType::U64:
                                 if ($tag->isNull) {
                                     if ($text !== '0') {
                                         throw new \Exception(sprintf('invalid uint64: %s, valid: "0"', $text));
@@ -917,9 +917,9 @@ class JsoncParser
         }
         if ($tag->type === ValueType::UNKNOWN) {
             if ($tag->size > 0) {
-                $tag->type = ValueType::ARRAY;
+                $tag->type = ValueType::ARR;
             } else {
-                $tag->type = ValueType::SLICE;
+                $tag->type = ValueType::VEC;
             }
         }
 
@@ -985,11 +985,11 @@ class JsoncParser
         }
 
         switch ($tag->type) {
-            case ValueType::ARRAY:
+            case ValueType::ARR:
                 $this->validateArr($tag, $arr->Items);
                 break;
 
-            case ValueType::SLICE:
+            case ValueType::VEC:
                 $this->validateVec($tag, $arr->Items);
                 break;
         }
@@ -1602,7 +1602,7 @@ class JsoncParser
         return [$val, $val];
     }
 
-    private function validateDateTime(Tag $tag, \DateTime $val): array
+    private function validateDatetime(Tag $tag, \DateTime $val): array
     {
         if ($tag->isNull) {
             return [null, $val->format('Y-m-d H:i:s')];

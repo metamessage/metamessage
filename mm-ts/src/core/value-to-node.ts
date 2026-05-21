@@ -368,7 +368,7 @@ function valueToNode(v: any, tag: Tag, depth: number, path: string): Node {
         }
         switch (tag.type) {
           case ValueType.DateTime: {
-            const result = tag.validateDateTime(v);
+            const result = tag.validateDatetime(v);
             if (!result.valid) {
               throw new Error(`validate failed: ${result.error}`);
             }

@@ -1108,7 +1108,7 @@ func (t *Tag) ValidateTime(val time.Time) (data any, text string, err error) {
 	return
 }
 
-func (t *Tag) ValidateUUID(val string) (data any, text string, err error) {
+func (t *Tag) ValidateUuid(val string) (data any, text string, err error) {
 	if val == "" {
 		if t.AllowEmpty {
 			data = [16]byte{}
@@ -1186,7 +1186,7 @@ func (t *Tag) ValidateDecimal(val string) (data any, text string, err error) {
 	return
 }
 
-func (t *Tag) ValidateIP(val net.IP) (data any, text string, err error) {
+func (t *Tag) ValidateIp(val net.IP) (data any, text string, err error) {
 	if val.String() == "<nil>" {
 		if t.AllowEmpty {
 			data = val
@@ -1228,7 +1228,7 @@ func (t *Tag) ValidateIP(val net.IP) (data any, text string, err error) {
 	return
 }
 
-func (t *Tag) ValidateURL(val url.URL) (data any, text string, err error) {
+func (t *Tag) ValidateUrl(val url.URL) (data any, text string, err error) {
 	if val.String() == "" {
 		if t.AllowEmpty {
 			data = val

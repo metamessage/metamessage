@@ -40,7 +40,7 @@ class JsoncPrinter
         }
 
         switch ($v->getTag()->type) {
-            case ValueType::STRING:
+            case ValueType::STR:
             case ValueType::BYTES:
             case ValueType::DATETIME:
             case ValueType::DATE:
@@ -52,21 +52,21 @@ class JsoncPrinter
             case ValueType::ENUM:
                 return '"' . $v->Text . '"';
 
-            case ValueType::INT:
-            case ValueType::INT8:
-            case ValueType::INT16:
-            case ValueType::INT32:
-            case ValueType::INT64:
-            case ValueType::UINT:
-            case ValueType::UINT8:
-            case ValueType::UINT16:
-            case ValueType::UINT32:
-            case ValueType::UINT64:
+            case ValueType::I:
+            case ValueType::I8:
+            case ValueType::I16:
+            case ValueType::I32:
+            case ValueType::I64:
+            case ValueType::U:
+            case ValueType::U8:
+            case ValueType::U16:
+            case ValueType::U32:
+            case ValueType::U64:
             case ValueType::BIGINT:
             case ValueType::DECIMAL:
             case ValueType::BOOL:
-            case ValueType::FLOAT32:
-            case ValueType::FLOAT64:
+            case ValueType::F32:
+            case ValueType::F64:
                 return $v->Text;
 
             default:

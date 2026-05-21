@@ -118,71 +118,71 @@ object Encoder {
                     tmp.encodeInt64(TimeUtil.secondsOfDay(timeValue).toLong())
                 }
             }
-            ValueType.INT -> {
+            ValueType.I -> {
                 if (tag.isNull) {
                     tmp.encodeSimple(SimpleValue.NULL_INT)
                 } else {
                     tmp.encodeInt64((value.data as Number).toLong())
                 }
             }
-            ValueType.INT8 -> {
+            ValueType.I8 -> {
                 if (!tag.isNull) {
                     tmp.encodeInt64((value.data as Number).toLong())
                 }
             }
-            ValueType.INT16 -> {
+            ValueType.I16 -> {
                 if (!tag.isNull) {
                     tmp.encodeInt64((value.data as Number).toLong())
                 }
             }
-            ValueType.INT32 -> {
+            ValueType.I32 -> {
                 if (!tag.isNull) {
                     tmp.encodeInt64((value.data as Number).toLong())
                 }
             }
-            ValueType.INT64 -> {
+            ValueType.I64 -> {
                 if (!tag.isNull) {
                     tmp.encodeInt64((value.data as Number).toLong())
                 }
             }
-            ValueType.UINT -> {
+            ValueType.U -> {
                 if (!tag.isNull) {
                     tmp.encodeU64((value.data as Number).toLong())
                 }
             }
-            ValueType.UINT8 -> {
+            ValueType.U8 -> {
                 if (!tag.isNull) {
                     tmp.encodeU64((value.data as Number).toLong())
                 }
             }
-            ValueType.UINT16 -> {
+            ValueType.U16 -> {
                 if (!tag.isNull) {
                     tmp.encodeU64((value.data as Number).toLong())
                 }
             }
-            ValueType.UINT32 -> {
+            ValueType.U32 -> {
                 if (!tag.isNull) {
                     tmp.encodeU64((value.data as Number).toLong())
                 }
             }
-            ValueType.UINT64 -> {
+            ValueType.U64 -> {
                 if (!tag.isNull) {
                     tmp.encodeU64(value.data as Long)
                 }
             }
-            ValueType.FLOAT32 -> {
+            ValueType.F32 -> {
                 if (!tag.isNull) {
                     tmp.encodeFloatString(value.text)
                 }
             }
-            ValueType.FLOAT64 -> {
+            ValueType.F64 -> {
                 if (tag.isNull) {
                     tmp.encodeSimple(SimpleValue.NULL_FLOAT)
                 } else {
                     tmp.encodeFloatString(value.text)
                 }
             }
-            ValueType.STRING -> {
+            ValueType.STR -> {
                 if (tag.isNull) {
                     tmp.encodeSimple(SimpleValue.NULL_STRING)
                 } else {
@@ -271,7 +271,7 @@ object Encoder {
     fun rootTagForClass(c: Class<*>): Tag {
         val ann = c.getAnnotation(MM::class.java)
         val t = if (ann != null) Tag.fromAnnotation(ann) else Tag.empty()
-        if (t.type == ValueType.UNKNOWN) t.type = ValueType.STRUCT
+        if (t.type == ValueType.UNKNOWN) t.type = ValueType.OBJ
         if (t.name.isEmpty()) t.name = CamelToSnake.convert(c.simpleName)
         return t
     }

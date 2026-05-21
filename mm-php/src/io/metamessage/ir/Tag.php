@@ -356,15 +356,19 @@ class Tag
         };
 
         if ($this->type !== ValueType::UNKNOWN && !$this->isInherit) {
-            if ($this->type === ValueType::STRING ||
-                $this->type === ValueType::INT ||
-                $this->type === ValueType::FLOAT64 ||
+            if (
+                $this->type === ValueType::STR ||
+                $this->type === ValueType::I ||
+                $this->type === ValueType::F64 ||
                 $this->type === ValueType::BOOL ||
-                $this->type === ValueType::STRUCT ||
-                $this->type === ValueType::SLICE) {
+                $this->type === ValueType::OBJ ||
+                $this->type === ValueType::VEC
+            ) {
             } else {
-                if ($this->type === ValueType::ARRAY && $this->size > 0 ||
-                    $this->type === ValueType::ENUM && $this->enumValues !== '') {
+                if (
+                    $this->type === ValueType::ARR && $this->size > 0 ||
+                    $this->type === ValueType::ENUM && $this->enumValues !== ''
+                ) {
                 } else {
                     $add(self::T_TYPE . '=' . $this->type->wireName());
                 }
@@ -442,15 +446,19 @@ class Tag
         }
 
         if ($this->childType !== ValueType::UNKNOWN) {
-            if ($this->childType === ValueType::STRING ||
-                $this->childType === ValueType::INT ||
-                $this->childType === ValueType::FLOAT64 ||
+            if (
+                $this->childType === ValueType::STR ||
+                $this->childType === ValueType::I ||
+                $this->childType === ValueType::F64 ||
                 $this->childType === ValueType::BOOL ||
-                $this->childType === ValueType::STRUCT ||
-                $this->childType === ValueType::SLICE) {
+                $this->childType === ValueType::OBJ ||
+                $this->childType === ValueType::VEC
+            ) {
             } else {
-                if ($this->childType === ValueType::ARRAY && $this->childSize > 0 ||
-                    $this->childType === ValueType::ENUM && $this->childEnum !== '') {
+                if (
+                    $this->childType === ValueType::ARR && $this->childSize > 0 ||
+                    $this->childType === ValueType::ENUM && $this->childEnum !== ''
+                ) {
                 } else {
                     $add(self::T_CHILD_TYPE . '=' . $this->childType->wireName());
                 }
@@ -548,16 +556,20 @@ class Tag
         }
 
         if ($this->type !== ValueType::UNKNOWN && !$this->isInherit) {
-            if ($this->type === ValueType::STRING ||
+            if (
+                $this->type === ValueType::STR ||
                 $this->type === ValueType::BYTES ||
-                $this->type === ValueType::INT ||
-                $this->type === ValueType::FLOAT64 ||
+                $this->type === ValueType::I ||
+                $this->type === ValueType::F64 ||
                 $this->type === ValueType::BOOL ||
-                $this->type === ValueType::STRUCT ||
-                $this->type === ValueType::SLICE) {
+                $this->type === ValueType::OBJ ||
+                $this->type === ValueType::VEC
+            ) {
             } else {
-                if ($this->type === ValueType::ARRAY && $this->size > 0 ||
-                    $this->type === ValueType::ENUM && $this->enumValues !== '') {
+                if (
+                    $this->type === ValueType::ARR && $this->size > 0 ||
+                    $this->type === ValueType::ENUM && $this->enumValues !== ''
+                ) {
                 } else {
                     $w->writeByte(self::K_TYPE);
                     $w->writeByte($this->type->code());
@@ -684,15 +696,19 @@ class Tag
         }
 
         if ($this->childType !== ValueType::UNKNOWN) {
-            if ($this->childType === ValueType::STRING ||
-                $this->childType === ValueType::INT ||
-                $this->childType === ValueType::FLOAT64 ||
+            if (
+                $this->childType === ValueType::STR ||
+                $this->childType === ValueType::I ||
+                $this->childType === ValueType::F64 ||
                 $this->childType === ValueType::BOOL ||
-                $this->childType === ValueType::STRUCT ||
-                $this->childType === ValueType::SLICE) {
+                $this->childType === ValueType::OBJ ||
+                $this->childType === ValueType::VEC
+            ) {
             } else {
-                if ($this->childType === ValueType::ARRAY && $this->childSize > 0 ||
-                    $this->childType === ValueType::ENUM && $this->childEnum !== '') {
+                if (
+                    $this->childType === ValueType::ARR && $this->childSize > 0 ||
+                    $this->childType === ValueType::ENUM && $this->childEnum !== ''
+                ) {
                 } else {
                     $w->writeByte(self::K_CHILD_TYPE);
                     $w->writeByte($this->childType->code());

@@ -16,7 +16,7 @@ class MetaMessageTest {
     @MM
     class Team(
             var teamName: String = "core",
-            @MM(childType = ValueType.STRING) var members: List<String> = listOf("a", "b")
+            @MM(childType = ValueType.STR) var members: List<String> = listOf("a", "b")
     )
 
     @MM
@@ -102,14 +102,14 @@ class MetaMessageTest {
 
     @MM
     class AllIntegerTypes(
-            @MM(type = ValueType.INT8) var int8: Byte = 10,
-            @MM(type = ValueType.INT16) var int16: Short = 100,
-            @MM(type = ValueType.INT32) var int32: Int = 1000,
-            @MM(type = ValueType.INT64) var int64: Long = 10000L,
-            @MM(type = ValueType.UINT8) var uint8: Byte = 10,
-            @MM(type = ValueType.UINT16) var uint16: Short = 100,
-            @MM(type = ValueType.UINT32) var uint32: Int = 1000,
-            @MM(type = ValueType.UINT64) var uint64: Long = 10000L
+            @MM(type = ValueType.I8) var int8: Byte = 10,
+            @MM(type = ValueType.I16) var int16: Short = 100,
+            @MM(type = ValueType.I32) var int32: Int = 1000,
+            @MM(type = ValueType.I64) var int64: Long = 10000L,
+            @MM(type = ValueType.U8) var uint8: Byte = 10,
+            @MM(type = ValueType.U16) var uint16: Short = 100,
+            @MM(type = ValueType.U32) var uint32: Int = 1000,
+            @MM(type = ValueType.U64) var uint64: Long = 10000L
     )
 
     @Test
@@ -129,8 +129,8 @@ class MetaMessageTest {
 
     @MM
     class FloatTypes(
-            @MM(type = ValueType.FLOAT32) var float32: Float = 3.14f,
-            @MM(type = ValueType.FLOAT64) var float64: Double = 3.141592653589793
+            @MM(type = ValueType.F32) var float32: Float = 3.14f,
+            @MM(type = ValueType.F64) var float64: Double = 3.141592653589793
     )
 
     @Test
@@ -144,7 +144,7 @@ class MetaMessageTest {
 
     @MM
     class StringTypes(
-            @MM(type = ValueType.STRING) var str: String = "test",
+            @MM(type = ValueType.STR) var str: String = "test",
             @MM(type = ValueType.URL) var url: String = "https://example.com",
             @MM(type = ValueType.EMAIL) var email: String = "test@example.com",
             @MM(type = ValueType.IP) var ip: String = "192.168.1.1",
@@ -218,9 +218,9 @@ class MetaMessageTest {
 
     @MM
     class SliceTypes(
-            @MM(type = ValueType.SLICE, childType = ValueType.INT)
+            @MM(type = ValueType.VEC, childType = ValueType.I)
             var intSlice: List<Int> = listOf(1, 2, 3),
-            @MM(type = ValueType.SLICE, childType = ValueType.STRING)
+            @MM(type = ValueType.VEC, childType = ValueType.STR)
             var strSlice: List<String> = listOf("a", "b", "c")
     )
 

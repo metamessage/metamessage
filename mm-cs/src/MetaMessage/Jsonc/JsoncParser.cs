@@ -414,29 +414,98 @@ public class JsoncParser
             case ValueType.String:
                 mmTag.Type = MmVT.STRING;
                 break;
-            case ValueType.Int:
-            case ValueType.Int8:
-            case ValueType.Int16:
-            case ValueType.Int32:
-            case ValueType.Int64:
-                mmTag.Type = MmVT.INT;
-                break;
-            case ValueType.Float32:
-            case ValueType.Float64:
-            case ValueType.Decimal:
-                mmTag.Type = MmVT.FLOAT64;
+            case ValueType.Bytes:
+                mmTag.Type = MmVT.BYTES;
                 break;
             case ValueType.Bool:
                 mmTag.Type = MmVT.BOOL;
                 break;
+            case ValueType.Int:
+                mmTag.Type = MmVT.INT;
+                break;
+            case ValueType.Int8:
+                mmTag.Type = MmVT.INT8;
+                break;
+            case ValueType.Int16:
+                mmTag.Type = MmVT.INT16;
+                break;
+            case ValueType.Int32:
+                mmTag.Type = MmVT.INT32;
+                break;
+            case ValueType.Int64:
+                mmTag.Type = MmVT.INT64;
+                break;
+            case ValueType.Uint:
+                mmTag.Type = MmVT.UINT;
+                break;
+            case ValueType.Uint8:
+                mmTag.Type = MmVT.UINT8;
+                break;
+            case ValueType.Uint16:
+                mmTag.Type = MmVT.UINT16;
+                break;
+            case ValueType.Uint32:
+                mmTag.Type = MmVT.UINT32;
+                break;
+            case ValueType.Uint64:
+                mmTag.Type = MmVT.UINT64;
+                break;
+            case ValueType.Float32:
+                mmTag.Type = MmVT.FLOAT32;
+                break;
+            case ValueType.Float64:
+                mmTag.Type = MmVT.FLOAT64;
+                break;
+            case ValueType.Decimal:
+                mmTag.Type = MmVT.DECIMAL;
+                break;
+            case ValueType.BigInt:
+                mmTag.Type = MmVT.BIGINT;
+                break;
+            case ValueType.DateTime:
+                mmTag.Type = MmVT.DATETIME;
+                break;
+            case ValueType.Date:
+                mmTag.Type = MmVT.DATE;
+                break;
+            case ValueType.Time:
+                mmTag.Type = MmVT.TIME;
+                break;
+            case ValueType.UUID:
+                mmTag.Type = MmVT.UUID;
+                break;
+            case ValueType.IP:
+                mmTag.Type = MmVT.IP;
+                break;
+            case ValueType.URL:
+                mmTag.Type = MmVT.URL;
+                break;
+            case ValueType.Email:
+                mmTag.Type = MmVT.EMAIL;
+                break;
+            case ValueType.Enum:
+                mmTag.Type = MmVT.ENUM;
+                break;
+            case ValueType.Image:
+                mmTag.Type = MmVT.IMAGE;
+                break;
+            case ValueType.Video:
+                mmTag.Type = MmVT.VIDEO;
+                break;
+            case ValueType.Doc:
+                mmTag.Type = MmVT.DOC;
+                break;
             case ValueType.Struct:
-                mmTag.Type = MmVT.STRUCT;
+                mmTag.Type = MmVT.OBJ;
                 break;
             case ValueType.Array:
                 mmTag.Type = MmVT.ARRAY;
                 break;
             case ValueType.Slice:
-                mmTag.Type = MmVT.SLICE;
+                mmTag.Type = MmVT.VEC;
+                break;
+            case ValueType.Map:
+                mmTag.Type = MmVT.MAP;
                 break;
             default:
                 mmTag.Type = MmVT.UNKNOWN;
@@ -447,7 +516,7 @@ public class JsoncParser
         mmTag.IsNull = jsoncTag.IsNull;
         mmTag.Min = jsoncTag.MinValue ?? string.Empty;
         mmTag.Max = jsoncTag.MaxValue ?? string.Empty;
-        mmTag.EnumValues = jsoncTag.EnumValues ?? new List<string>();
+        mmTag.Enum = jsoncTag.EnumValues != null ? string.Join("|", jsoncTag.EnumValues) : string.Empty;
         mmTag.DefaultValue = jsoncTag.DefaultValue ?? string.Empty;
 
         return mmTag;

@@ -250,7 +250,7 @@ public class ComprehensiveTests
     {
         var enc = new WireEncoder();
         var tag = MmTag.Empty();
-        tag.Type = MmVT.INT;
+        tag.Type = MmVT.I;
         tag.Name = "count";
         enc.EncodeTaggedPayload(new WireEncoder().ToByteArray(), tag.ToBytes());
 
@@ -285,11 +285,11 @@ public class ComprehensiveTests
     {
         var children = new List<IMmTree>
         {
-            new MmScalar(1L, "1", new MmTag { Type = MmVT.INT }),
-            new MmScalar(2L, "2", new MmTag { Type = MmVT.INT }),
-            new MmScalar(3L, "3", new MmTag { Type = MmVT.INT }),
+            new MmScalar(1L, "1", new MmTag { Type = MmVT.I }),
+            new MmScalar(2L, "2", new MmTag { Type = MmVT.I }),
+            new MmScalar(3L, "3", new MmTag { Type = MmVT.I }),
         };
-        var array = new MmArray(children, new MmTag { Type = MmVT.SLICE });
+        var array = new MmArray(children, new MmTag { Type = MmVT.VEC });
         byte[] encoded = EncodeTree(array);
         var decoded = DecodeToTree(encoded);
         var resultArray = Assert.IsType<MmArray>(decoded);
@@ -314,7 +314,7 @@ public class ComprehensiveTests
     [Fact]
     public void TestEncodeTree_DecodeToTree_NullValues()
     {
-        var scalar = new MmScalar(null, "null", new MmTag { Type = MmVT.INT, IsNull = true });
+        var scalar = new MmScalar(null, "null", new MmTag { Type = MmVT.I, IsNull = true });
         byte[] encoded = EncodeTree(scalar);
         var decoded = DecodeToTree(encoded);
         var resultScalar = Assert.IsType<MmScalar>(decoded);

@@ -61,6 +61,9 @@ public class MmValidator
             case ValueType.UINT:
                 ValidateU(value, tag, result);
                 break;
+            case ValueType.UINT8:
+                ValidateU8(value, tag, result);
+                break;
             case ValueType.UINT16:
                 ValidateU16(value, tag, result);
                 break;
@@ -97,6 +100,15 @@ public class MmValidator
             case ValueType.UUID:
                 ValidateUuid(value, tag, result);
                 break;
+            case ValueType.IP:
+                ValidateIp(value, tag, result);
+                break;
+            case ValueType.IMAGE:
+                ValidateImage(value, tag, result);
+                break;
+            case ValueType.VIDEO:
+                ValidateVideo(value, tag, result);
+                break;
             case ValueType.DATETIME:
             case ValueType.DATE:
             case ValueType.TIME:
@@ -106,10 +118,10 @@ public class MmValidator
                 ValidateEnum(value, tag, result);
                 break;
             case ValueType.ARRAY:
-            case ValueType.SLICE:
+            case ValueType.VEC:
                 ValidateArr(value, tag, result);
                 break;
-            case ValueType.STRUCT:
+            case ValueType.OBJ:
                 ValidateObj(value, tag, result);
                 break;
         }
@@ -484,6 +496,66 @@ public class MmValidator
             else
             {
                 result.AddError($"failed to parse tag.max as uint: {tag.Max}");
+            }
+        }
+    }
+
+    private void ValidateU8(dynamic value, MmTag tag, ValidationResult result)
+    {
+        ulong ulongValue;
+        if (!TryGetUInt64Value(value, out ulongValue))
+        {
+            result.AddError("value must be a number");
+            return;
+        }
+
+        if (ulongValue == 0)
+        {
+            if (tag.AllowEmpty)
+            {
+                return;
+            }
+            result.AddError("type uint8 not allow empty value 0");
+            return;
+        }
+
+        if (ulongValue > byte.MaxValue)
+        {
+            result.AddError($"value {ulongValue} out of range for uint8 (0 to {byte.MaxValue})");
+            return;
+        }
+
+        if (!string.IsNullOrEmpty(tag.Min))
+        {
+            if (ulong.TryParse(tag.Min, out ulong minVal))
+            {
+                if (ulongValue < minVal)
+                {
+                    result.AddError($"value {ulongValue} is less than the minimum limit {minVal}");
+                }
+            }
+            else
+            {
+                result.AddError($"failed to parse tag.min as uint8: {tag.Min}");
+            }
+        }
+
+        if (!string.IsNullOrEmpty(tag.Max))
+        {
+            if (ulong.TryParse(tag.Max, out ulong maxVal))
+            {
+                if (maxVal > byte.MaxValue)
+                {
+                    result.AddError($"tag.max {maxVal} is out of uint8 range [0, {byte.MaxValue}]");
+                }
+                else if (ulongValue > maxVal)
+                {
+                    result.AddError($"value {ulongValue} exceeds the maximum limit {maxVal}");
+                }
+            }
+            else
+            {
+                result.AddError($"failed to parse tag.max as uint8: {tag.Max}");
             }
         }
     }
@@ -988,6 +1060,23 @@ public class MmValidator
         if (string.IsNullOrEmpty(strValue) && !tag.AllowEmpty)
         {
             result.AddError("value is empty");
+            return;
+        }
+
+        // Pattern validation
+        if (!string.IsNullOrEmpty(tag.Pattern) && !string.IsNullOrEmpty(strValue))
+        {
+            try
+            {
+                if (!Regex.IsMatch(strValue, tag.Pattern))
+                {
+                    result.AddError($"value \"{strValue}\" does not match pattern {tag.Pattern}");
+                }
+            }
+            catch (Exception)
+            {
+                result.AddError($"invalid pattern {tag.Pattern}");
+            }
         }
     }
 
@@ -1076,10 +1165,144 @@ public class MmValidator
 
         if (!string.IsNullOrEmpty(uuid))
         {
-            if (!Guid.TryParse(uuid, out _))
+            if (!Guid.TryParse(uuid, out var guid))
             {
                 result.AddError("value is not a valid uuid");
+                return;
             }
+
+            // Version check
+            if (tag.Version != 0)
+            {
+                var bytes = guid.ToByteArray();
+                int uuidVersion = (bytes[7] >> 4) & 0x0F;
+                if (tag.Version != uuidVersion)
+                {
+                    result.AddError($"invalid uuid version: expected {tag.Version}, got {uuidVersion}");
+                }
+            }
+        }
+    }
+
+    private void ValidateIp(dynamic value, MmTag tag, ValidationResult result)
+    {
+        if (!(value is string))
+        {
+            result.AddError("value must be a string");
+            return;
+        }
+
+        string ip = value;
+
+        if (string.IsNullOrEmpty(ip))
+        {
+            if (tag.AllowEmpty)
+            {
+                return;
+            }
+            result.AddError("type ip not allow empty value");
+            return;
+        }
+
+        if (!System.Net.IPAddress.TryParse(ip, out var parsedIp))
+        {
+            result.AddError("value is not a valid IP address");
+            return;
+        }
+
+        // IP version check using tag.Version (4 or 6)
+        if (tag.Version != 0)
+        {
+            if (tag.Version == 4 && parsedIp.AddressFamily != System.Net.Sockets.AddressFamily.InterNetwork)
+            {
+                result.AddError("expected IPv4 address");
+            }
+            else if (tag.Version == 6 && parsedIp.AddressFamily != System.Net.Sockets.AddressFamily.InterNetworkV6)
+            {
+                result.AddError("expected IPv6 address");
+            }
+        }
+    }
+
+    private void ValidateImage(dynamic value, MmTag tag, ValidationResult result)
+    {
+        byte[] bytes = value is byte[] b ? b : null;
+        if (bytes == null)
+        {
+            result.AddError("value must be a byte array");
+            return;
+        }
+
+        if (bytes.Length == 0)
+        {
+            if (tag.AllowEmpty)
+            {
+                return;
+            }
+            result.AddError("type image not allow empty value");
+            return;
+        }
+
+        if (!string.IsNullOrEmpty(tag.Min))
+        {
+            if (int.TryParse(tag.Min, out int minVal) && bytes.Length < minVal)
+            {
+                result.AddError($"image byte length {bytes.Length} < min {minVal}");
+            }
+        }
+
+        if (!string.IsNullOrEmpty(tag.Max))
+        {
+            if (int.TryParse(tag.Max, out int maxVal) && bytes.Length > maxVal)
+            {
+                result.AddError($"image byte length {bytes.Length} > max {maxVal}");
+            }
+        }
+
+        if (tag.Size != 0 && bytes.Length != tag.Size)
+        {
+            result.AddError($"image byte length {bytes.Length} != size {tag.Size}");
+        }
+    }
+
+    private void ValidateVideo(dynamic value, MmTag tag, ValidationResult result)
+    {
+        byte[] bytes = value is byte[] b ? b : null;
+        if (bytes == null)
+        {
+            result.AddError("value must be a byte array");
+            return;
+        }
+
+        if (bytes.Length == 0)
+        {
+            if (tag.AllowEmpty)
+            {
+                return;
+            }
+            result.AddError("type video not allow empty value");
+            return;
+        }
+
+        if (!string.IsNullOrEmpty(tag.Min))
+        {
+            if (int.TryParse(tag.Min, out int minVal) && bytes.Length < minVal)
+            {
+                result.AddError($"video byte length {bytes.Length} < min {minVal}");
+            }
+        }
+
+        if (!string.IsNullOrEmpty(tag.Max))
+        {
+            if (int.TryParse(tag.Max, out int maxVal) && bytes.Length > maxVal)
+            {
+                result.AddError($"video byte length {bytes.Length} > max {maxVal}");
+            }
+        }
+
+        if (tag.Size != 0 && bytes.Length != tag.Size)
+        {
+            result.AddError($"video byte length {bytes.Length} != size {tag.Size}");
         }
     }
 
@@ -1108,9 +1331,10 @@ public class MmValidator
             return;
         }
 
-        if (!string.IsNullOrEmpty(enumValue) && tag.EnumValues.Count > 0)
+        if (!string.IsNullOrEmpty(enumValue) && !string.IsNullOrEmpty(tag.Enum))
         {
-            if (!tag.EnumValues.Contains(enumValue))
+            var enumValues = tag.Enum.Split('|');
+            if (!enumValues.Contains(enumValue))
             {
                 result.AddError("value is not in enum");
             }
@@ -1137,7 +1361,7 @@ public class MmValidator
             {
                 foreach (var error in itemResult.Errors)
                 {
-                    result.AddError($"item {count-1}: {error}");
+                    result.AddError($"item {count - 1}: {error}");
                 }
             }
         }

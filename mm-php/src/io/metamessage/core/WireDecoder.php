@@ -108,34 +108,34 @@ class WireDecoder
                     $dt = new \DateTime('1970-01-01 00:00:00', new \DateTimeZone('UTC'));
                     $node = new Value($dt, $dt->format('H:i:s'), $tag, $path);
                     break;
-                case ValueType::INT8:
+                case ValueType::I8:
                     $node = new Value(0, '0', $tag, $path);
                     break;
-                case ValueType::INT16:
+                case ValueType::I16:
                     $node = new Value(0, '0', $tag, $path);
                     break;
-                case ValueType::INT32:
+                case ValueType::I32:
                     $node = new Value(0, '0', $tag, $path);
                     break;
-                case ValueType::INT64:
+                case ValueType::I64:
                     $node = new Value(0, '0', $tag, $path);
                     break;
-                case ValueType::UINT:
+                case ValueType::U:
                     $node = new Value(0, '0', $tag, $path);
                     break;
-                case ValueType::UINT8:
+                case ValueType::U8:
                     $node = new Value(0, '0', $tag, $path);
                     break;
-                case ValueType::UINT16:
+                case ValueType::U16:
                     $node = new Value(0, '0', $tag, $path);
                     break;
-                case ValueType::UINT32:
+                case ValueType::U32:
                     $node = new Value(0, '0', $tag, $path);
                     break;
-                case ValueType::UINT64:
+                case ValueType::U64:
                     $node = new Value(0, '0', $tag, $path);
                     break;
-                case ValueType::FLOAT32:
+                case ValueType::F32:
                     $node = new Value(0.0, '0.0', $tag, $path);
                     break;
                 case ValueType::EMAIL:
@@ -644,7 +644,7 @@ class WireDecoder
         }
 
         if ($tag->type === ValueType::UNKNOWN) {
-            $tag->type = ValueType::STRING;
+            $tag->type = ValueType::STR;
         }
 
         switch ($tag->type) {
@@ -657,7 +657,7 @@ class WireDecoder
             case ValueType::IP:
                 $data = $text;
                 break;
-            case ValueType::STRING:
+            case ValueType::STR:
                 $data = $text;
                 break;
             default:
@@ -737,39 +737,39 @@ class WireDecoder
         }
 
         if ($tag->type === ValueType::UNKNOWN) {
-            $tag->type = ValueType::INT;
+            $tag->type = ValueType::I;
         }
 
         $text = (string)$v;
         switch ($tag->type) {
-            case ValueType::INT:
+            case ValueType::I:
                 $data = (int)$v;
                 break;
-            case ValueType::INT8:
+            case ValueType::I8:
                 $data = (int)$v;
                 break;
-            case ValueType::INT16:
+            case ValueType::I16:
                 $data = (int)$v;
                 break;
-            case ValueType::INT32:
+            case ValueType::I32:
                 $data = (int)$v;
                 break;
-            case ValueType::INT64:
+            case ValueType::I64:
                 $data = (int)$v;
                 break;
-            case ValueType::UINT:
+            case ValueType::U:
                 $data = (int)$v;
                 break;
-            case ValueType::UINT8:
+            case ValueType::U8:
                 $data = (int)$v;
                 break;
-            case ValueType::UINT16:
+            case ValueType::U16:
                 $data = (int)$v;
                 break;
-            case ValueType::UINT32:
+            case ValueType::U32:
                 $data = (int)$v;
                 break;
-            case ValueType::UINT64:
+            case ValueType::U64:
                 $data = (int)$v;
                 break;
             case ValueType::DATETIME:
@@ -851,25 +851,25 @@ class WireDecoder
         }
 
         if ($tag->type === ValueType::UNKNOWN) {
-            $tag->type = ValueType::INT;
+            $tag->type = ValueType::I;
         }
 
         $text = '-' . $v;
 
         switch ($tag->type) {
-            case ValueType::INT:
+            case ValueType::I:
                 $data = -(int)$v;
                 break;
-            case ValueType::INT8:
+            case ValueType::I8:
                 $data = -(int)$v;
                 break;
-            case ValueType::INT16:
+            case ValueType::I16:
                 $data = -(int)$v;
                 break;
-            case ValueType::INT32:
+            case ValueType::I32:
                 $data = -(int)$v;
                 break;
-            case ValueType::INT64:
+            case ValueType::I64:
                 $data = -(int)$v;
                 break;
             case ValueType::DATETIME:
@@ -937,15 +937,15 @@ class WireDecoder
         }
 
         if ($tag->type === ValueType::UNKNOWN) {
-            $tag->type = ValueType::FLOAT64;
+            $tag->type = ValueType::F64;
         }
 
         switch ($tag->type) {
-            case ValueType::FLOAT32:
+            case ValueType::F32:
                 $data = (float)$v;
                 $text = (string)$v;
                 break;
-            case ValueType::FLOAT64:
+            case ValueType::F64:
                 $data = $v;
                 $text = (string)$v;
                 break;
@@ -988,24 +988,24 @@ class WireDecoder
                 break;
             case SimpleValue::NULL_INT:
                 if ($tag->type === ValueType::UNKNOWN) {
-                    $tag->type = ValueType::INT;
-                } elseif ($tag->type !== ValueType::INT) {
+                    $tag->type = ValueType::I;
+                } elseif ($tag->type !== ValueType::I) {
                     throw new MmDecodeException('unsupported value types: ' . $tag->type->name);
                 }
                 $node = new Value(0, '0', $tag, $path);
                 break;
             case SimpleValue::NULL_FLOAT:
                 if ($tag->type === ValueType::UNKNOWN) {
-                    $tag->type = ValueType::FLOAT64;
-                } elseif ($tag->type !== ValueType::FLOAT64 && $tag->type !== ValueType::FLOAT32) {
+                    $tag->type = ValueType::F64;
+                } elseif ($tag->type !== ValueType::F64 && $tag->type !== ValueType::F32) {
                     throw new MmDecodeException('unsupported value types: ' . $tag->type->name);
                 }
                 $node = new Value(0.0, '0.0', $tag, $path);
                 break;
             case SimpleValue::NULL_STRING:
                 if ($tag->type === ValueType::UNKNOWN) {
-                    $tag->type = ValueType::STRING;
-                } elseif ($tag->type !== ValueType::STRING) {
+                    $tag->type = ValueType::STR;
+                } elseif ($tag->type !== ValueType::STR) {
                     throw new MmDecodeException('unsupported value types: ' . $tag->type->name);
                 }
                 $node = new Value('', '', $tag, $path);
@@ -1019,103 +1019,103 @@ class WireDecoder
                 $node = new Value([], '', $tag, $path);
                 break;
             case SimpleValue::CODE:
-                $tag->type = ValueType::STRING;
+                $tag->type = ValueType::STR;
                 $node = new Value(null, Constants::SIMPLE_CODE_STR, $tag, $path);
                 break;
             case SimpleValue::MESSAGE:
-                $tag->type = ValueType::STRING;
+                $tag->type = ValueType::STR;
                 $node = new Value(null, Constants::SIMPLE_MESSAGE_STR, $tag, $path);
                 break;
             case SimpleValue::DATA:
-                $tag->type = ValueType::STRING;
+                $tag->type = ValueType::STR;
                 $node = new Value(null, Constants::SIMPLE_DATA_STR, $tag, $path);
                 break;
             case SimpleValue::SUCCESS:
-                $tag->type = ValueType::STRING;
+                $tag->type = ValueType::STR;
                 $node = new Value(null, Constants::SIMPLE_SUCCESS_STR, $tag, $path);
                 break;
             case SimpleValue::ERROR:
-                $tag->type = ValueType::STRING;
+                $tag->type = ValueType::STR;
                 $node = new Value(null, Constants::SIMPLE_ERROR_STR, $tag, $path);
                 break;
             case SimpleValue::UNKNOWN:
-                $tag->type = ValueType::STRING;
+                $tag->type = ValueType::STR;
                 $node = new Value(null, Constants::SIMPLE_UNKNOWN_STR, $tag, $path);
                 break;
             case SimpleValue::PAGE:
-                $tag->type = ValueType::STRING;
+                $tag->type = ValueType::STR;
                 $node = new Value(null, Constants::SIMPLE_PAGE_STR, $tag, $path);
                 break;
             case SimpleValue::LIMIT:
-                $tag->type = ValueType::STRING;
+                $tag->type = ValueType::STR;
                 $node = new Value(null, Constants::SIMPLE_LIMIT_STR, $tag, $path);
                 break;
             case SimpleValue::OFFSET:
-                $tag->type = ValueType::STRING;
+                $tag->type = ValueType::STR;
                 $node = new Value(null, Constants::SIMPLE_OFFSET_STR, $tag, $path);
                 break;
             case SimpleValue::TOTAL:
-                $tag->type = ValueType::STRING;
+                $tag->type = ValueType::STR;
                 $node = new Value(null, Constants::SIMPLE_TOTAL_STR, $tag, $path);
                 break;
             case SimpleValue::ID:
-                $tag->type = ValueType::STRING;
+                $tag->type = ValueType::STR;
                 $node = new Value(null, Constants::SIMPLE_ID_STR, $tag, $path);
                 break;
             case SimpleValue::NAME:
-                $tag->type = ValueType::STRING;
+                $tag->type = ValueType::STR;
                 $node = new Value(null, Constants::SIMPLE_NAME_STR, $tag, $path);
                 break;
             case SimpleValue::DESCRIPTION:
-                $tag->type = ValueType::STRING;
+                $tag->type = ValueType::STR;
                 $node = new Value(null, Constants::SIMPLE_DESCRIPTION_STR, $tag, $path);
                 break;
             case SimpleValue::TYPE:
-                $tag->type = ValueType::STRING;
+                $tag->type = ValueType::STR;
                 $node = new Value(null, Constants::SIMPLE_TYPE_STR, $tag, $path);
                 break;
             case SimpleValue::VERSION:
-                $tag->type = ValueType::STRING;
+                $tag->type = ValueType::STR;
                 $node = new Value(null, Constants::SIMPLE_VERSION_STR, $tag, $path);
                 break;
             case SimpleValue::STATUS:
-                $tag->type = ValueType::STRING;
+                $tag->type = ValueType::STR;
                 $node = new Value(null, Constants::SIMPLE_STATUS_STR, $tag, $path);
                 break;
             case SimpleValue::URL:
-                $tag->type = ValueType::STRING;
+                $tag->type = ValueType::STR;
                 $node = new Value(null, Constants::SIMPLE_URL_STR, $tag, $path);
                 break;
             case SimpleValue::CREATE_TIME:
-                $tag->type = ValueType::STRING;
+                $tag->type = ValueType::STR;
                 $node = new Value(null, Constants::SIMPLE_CREATE_TIME_STR, $tag, $path);
                 break;
             case SimpleValue::UPDATE_TIME:
-                $tag->type = ValueType::STRING;
+                $tag->type = ValueType::STR;
                 $node = new Value(null, Constants::SIMPLE_UPDATE_TIME_STR, $tag, $path);
                 break;
             case SimpleValue::DELETE_TIME:
-                $tag->type = ValueType::STRING;
+                $tag->type = ValueType::STR;
                 $node = new Value(null, Constants::SIMPLE_DELETE_TIME_STR, $tag, $path);
                 break;
             case SimpleValue::ACCOUNT:
-                $tag->type = ValueType::STRING;
+                $tag->type = ValueType::STR;
                 $node = new Value(null, Constants::SIMPLE_ACCOUNT_STR, $tag, $path);
                 break;
             case SimpleValue::TOKEN:
-                $tag->type = ValueType::STRING;
+                $tag->type = ValueType::STR;
                 $node = new Value(null, Constants::SIMPLE_TOKEN_STR, $tag, $path);
                 break;
             case SimpleValue::EXPIRE_TIME:
-                $tag->type = ValueType::STRING;
+                $tag->type = ValueType::STR;
                 $node = new Value(null, Constants::SIMPLE_EXPIRE_TIME_STR, $tag, $path);
                 break;
             case SimpleValue::KEY:
-                $tag->type = ValueType::STRING;
+                $tag->type = ValueType::STR;
                 $node = new Value(null, Constants::SIMPLE_KEY_STR, $tag, $path);
                 break;
             case SimpleValue::VAL:
-                $tag->type = ValueType::STRING;
+                $tag->type = ValueType::STR;
                 $node = new Value(null, Constants::SIMPLE_VAL_STR, $tag, $path);
                 break;
             default:
@@ -1128,22 +1128,22 @@ class WireDecoder
     private function decodeContainer(int $prefix, ?Tag $tag, string $path): array
     {
         if (($prefix & WireConstants::CONTAINER_MASK) === WireConstants::CONTAINER_ARRAY) {
-            return $this->decodeArray($prefix, $tag, $path);
+            return $this->decodeArr($prefix, $tag, $path);
         }
-        return $this->decodeObject($prefix, $tag, $path);
+        return $this->decodeObj($prefix, $tag, $path);
     }
 
-    private function decodeArray(int $prefix, ?Tag $tag, string $path): array
+    private function decodeArr(int $prefix, ?Tag $tag, string $path): array
     {
         if ($tag === null) {
             $tag = Tag::newTag();
-            $tag->type = ValueType::SLICE;
+            $tag->type = ValueType::VEC;
         }
         if ($tag->type === ValueType::UNKNOWN) {
             if ($tag->size > 0) {
-                $tag->type = ValueType::ARRAY;
+                $tag->type = ValueType::ARR;
             } else {
-                $tag->type = ValueType::SLICE;
+                $tag->type = ValueType::VEC;
             }
         }
 
@@ -1185,14 +1185,14 @@ class WireDecoder
         return [$node, $length];
     }
 
-    private function decodeObject(int $prefix, ?Tag $tag, string $path): array
+    private function decodeObj(int $prefix, ?Tag $tag, string $path): array
     {
         if ($tag === null) {
             $tag = Tag::newTag();
-            $tag->type = ValueType::STRUCT;
+            $tag->type = ValueType::OBJ;
         }
         if ($tag->type === ValueType::UNKNOWN) {
-            $tag->type = ValueType::STRUCT;
+            $tag->type = ValueType::OBJ;
         }
 
         list($l1, $l2) = $this->containerLen($prefix);
@@ -1215,7 +1215,7 @@ class WireDecoder
         $node->Path = $path;
 
         $lArray = $this->readByte();
-        list($nKeys, $lKeys) = $this->decodeArray($lArray, $tag, $path);
+        list($nKeys, $lKeys) = $this->decodeArr($lArray, $tag, $path);
 
         $index = $lKeys;
         $i = 0;

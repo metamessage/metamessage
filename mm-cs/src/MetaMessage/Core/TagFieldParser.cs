@@ -74,28 +74,25 @@ public static class TagFieldParser
                     offset += defaultValueLen;
                     break;
 
-                case 10: // EnumValues
+                case 10: // Enum
                     if (offset >= data.Length)
                         throw new MmDecodeException("Unexpected end of tag data");
-                    int enumCount = data[offset++];
-                    tag.EnumValues = new List<string>();
-                    for (int i = 0; i < enumCount; i++)
-                    {
-                        if (offset >= data.Length)
-                            throw new MmDecodeException("Unexpected end of tag data");
-                        int enumValueLen = data[offset++];
-                        if (offset + enumValueLen > data.Length)
-                            throw new MmDecodeException("Tag enum value data overflow");
-                        tag.EnumValues.Add(System.Text.Encoding.UTF8.GetString(data, offset, enumValueLen));
-                        offset += enumValueLen;
-                    }
+                    int enumLen = data[offset++];
+                    if (offset + enumLen > data.Length)
+                        throw new MmDecodeException("Tag enum data overflow");
+                    tag.Enum = System.Text.Encoding.UTF8.GetString(data, offset, enumLen);
+                    offset += enumLen;
                     break;
 
                 case 11: // LocationHours
-                    if (offset + 3 >= data.Length)
+                    if (offset >= data.Length)
                         throw new MmDecodeException("Unexpected end of tag data");
-                    tag.LocationHours = (data[offset] << 24) | (data[offset + 1] << 16) | (data[offset + 2] << 8) | data[offset + 3];
-                    offset += 4;
+                    var locationLen = data[offset++];
+                    if (offset + locationLen > data.Length)
+                        throw new MmDecodeException("Tag location data overflow");
+                    var locationStr = System.Text.Encoding.UTF8.GetString(data, offset, locationLen);
+                    tag.LocationHours = int.Parse(locationStr);
+                    offset += locationLen;
                     break;
 
                 case 12: // Version
@@ -131,18 +128,105 @@ public static class TagFieldParser
                 case 16: // ChildEnum
                     if (offset >= data.Length)
                         throw new MmDecodeException("Unexpected end of tag data");
-                    int childEnumCount = data[offset++];
-                    tag.ChildEnum = new List<string>();
-                    for (int i = 0; i < childEnumCount; i++)
-                    {
-                        if (offset >= data.Length)
-                            throw new MmDecodeException("Unexpected end of tag data");
-                        int childEnumValueLen = data[offset++];
-                        if (offset + childEnumValueLen > data.Length)
-                            throw new MmDecodeException("Tag child enum value data overflow");
-                        tag.ChildEnum.Add(System.Text.Encoding.UTF8.GetString(data, offset, childEnumValueLen));
-                        offset += childEnumValueLen;
-                    }
+                    int childEnumLen = data[offset++];
+                    if (offset + childEnumLen > data.Length)
+                        throw new MmDecodeException("Tag child enum data overflow");
+                    tag.ChildEnum = System.Text.Encoding.UTF8.GetString(data, offset, childEnumLen);
+                    offset += childEnumLen;
+                    break;
+
+                case 17: // Size
+                    if (offset >= data.Length)
+                        throw new MmDecodeException("Unexpected end of tag data");
+                    tag.Size = data[offset++];
+                    break;
+
+                case 18: // Pattern
+                    if (offset >= data.Length)
+                        throw new MmDecodeException("Unexpected end of tag data");
+                    int patternLen = data[offset++];
+                    if (offset + patternLen > data.Length)
+                        throw new MmDecodeException("Tag pattern data overflow");
+                    tag.Pattern = System.Text.Encoding.UTF8.GetString(data, offset, patternLen);
+                    offset += patternLen;
+                    break;
+
+                case 19: // ChildPattern
+                    if (offset >= data.Length)
+                        throw new MmDecodeException("Unexpected end of tag data");
+                    int childPatternLen = data[offset++];
+                    if (offset + childPatternLen > data.Length)
+                        throw new MmDecodeException("Tag child pattern data overflow");
+                    tag.ChildPattern = System.Text.Encoding.UTF8.GetString(data, offset, childPatternLen);
+                    offset += childPatternLen;
+                    break;
+
+                case 20: // ChildSize
+                    if (offset >= data.Length)
+                        throw new MmDecodeException("Unexpected end of tag data");
+                    tag.ChildSize = data[offset++];
+                    break;
+
+                case 21: // Min
+                    if (offset >= data.Length)
+                        throw new MmDecodeException("Unexpected end of tag data");
+                    int minLen = data[offset++];
+                    if (offset + minLen > data.Length)
+                        throw new MmDecodeException("Tag min data overflow");
+                    tag.Min = System.Text.Encoding.UTF8.GetString(data, offset, minLen);
+                    offset += minLen;
+                    break;
+
+                case 22: // Max
+                    if (offset >= data.Length)
+                        throw new MmDecodeException("Unexpected end of tag data");
+                    int maxLen = data[offset++];
+                    if (offset + maxLen > data.Length)
+                        throw new MmDecodeException("Tag max data overflow");
+                    tag.Max = System.Text.Encoding.UTF8.GetString(data, offset, maxLen);
+                    offset += maxLen;
+                    break;
+
+                case 23: // ChildMin
+                    if (offset >= data.Length)
+                        throw new MmDecodeException("Unexpected end of tag data");
+                    int childMinLen = data[offset++];
+                    if (offset + childMinLen > data.Length)
+                        throw new MmDecodeException("Tag child min data overflow");
+                    tag.ChildMin = System.Text.Encoding.UTF8.GetString(data, offset, childMinLen);
+                    offset += childMinLen;
+                    break;
+
+                case 24: // ChildMax
+                    if (offset >= data.Length)
+                        throw new MmDecodeException("Unexpected end of tag data");
+                    int childMaxLen = data[offset++];
+                    if (offset + childMaxLen > data.Length)
+                        throw new MmDecodeException("Tag child max data overflow");
+                    tag.ChildMax = System.Text.Encoding.UTF8.GetString(data, offset, childMaxLen);
+                    offset += childMaxLen;
+                    break;
+
+                case 25: // ChildLocation
+                    if (offset >= data.Length)
+                        throw new MmDecodeException("Unexpected end of tag data");
+                    tag.ChildLocation = data[offset++];
+                    break;
+
+                case 26: // ChildVersion
+                    if (offset >= data.Length)
+                        throw new MmDecodeException("Unexpected end of tag data");
+                    tag.ChildVersion = data[offset++];
+                    break;
+
+                case 27: // ChildMime
+                    if (offset >= data.Length)
+                        throw new MmDecodeException("Unexpected end of tag data");
+                    int childMimeLen = data[offset++];
+                    if (offset + childMimeLen > data.Length)
+                        throw new MmDecodeException("Tag child mime data overflow");
+                    tag.ChildMime = System.Text.Encoding.UTF8.GetString(data, offset, childMimeLen);
+                    offset += childMimeLen;
                     break;
 
                 default:

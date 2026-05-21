@@ -621,7 +621,7 @@ func valueToNode(v any, tag *ir.Tag, depth int, path string) (node ir.Node, err 
 			data, text, err = tag.ValidateEnum(val)
 
 		case ir.ValueTypeUuid:
-			data, text, err = tag.ValidateUUID(val)
+			data, text, err = tag.ValidateUuid(val)
 
 		default:
 			return nil, fmt.Errorf("%s unsupported type: %T", tag.Type.String(), val)
@@ -701,7 +701,7 @@ func valueToNode(v any, tag *ir.Tag, depth int, path string) (node ir.Node, err 
 				data = [16]byte{}
 				text = ""
 			} else {
-				data, text, err = tag.ValidateUUID(*val)
+				data, text, err = tag.ValidateUuid(*val)
 			}
 
 		default:
@@ -752,7 +752,7 @@ func valueToNode(v any, tag *ir.Tag, depth int, path string) (node ir.Node, err 
 
 		switch tag.Type {
 		case ir.ValueTypeUrl:
-			data, text, err = tag.ValidateURL(val)
+			data, text, err = tag.ValidateUrl(val)
 
 		default:
 			return nil, fmt.Errorf("%s unsupported type: %T", tag.Type.String(), val)
@@ -775,7 +775,7 @@ func valueToNode(v any, tag *ir.Tag, depth int, path string) (node ir.Node, err 
 				data = url.URL{}
 				text = ""
 			} else {
-				data, text, err = tag.ValidateURL(*val)
+				data, text, err = tag.ValidateUrl(*val)
 			}
 
 		default:
@@ -789,7 +789,7 @@ func valueToNode(v any, tag *ir.Tag, depth int, path string) (node ir.Node, err 
 
 		switch tag.Type {
 		case ir.ValueTypeIp:
-			data, text, err = tag.ValidateIP(val)
+			data, text, err = tag.ValidateIp(val)
 
 		default:
 			return nil, fmt.Errorf("%s unsupported type: %T", tag.Type.String(), val)
@@ -812,7 +812,7 @@ func valueToNode(v any, tag *ir.Tag, depth int, path string) (node ir.Node, err 
 				data = net.IP{}
 				text = ""
 			} else {
-				data, text, err = tag.ValidateIP(*val)
+				data, text, err = tag.ValidateIp(*val)
 			}
 
 		default:

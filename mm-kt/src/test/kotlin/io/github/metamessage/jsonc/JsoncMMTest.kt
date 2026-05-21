@@ -1,19 +1,19 @@
 package io.github.metamessage.jsonc
 
+import io.github.metamessage.ir.Field
 import io.github.metamessage.ir.Object
+import io.github.metamessage.ir.Tag
 import io.github.metamessage.ir.Value
 import io.github.metamessage.ir.ValueType
-import io.github.metamessage.ir.Tag
-import io.github.metamessage.ir.Field
-
-import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.Assertions.*
+import org.junit.jupiter.api.Test
 
 class JsoncMMTest {
 
     @Test
     fun parseMmTagInComment() {
-        val source = """
+        val source =
+                """
             {
                 // mm: type=str; desc=用戶名
                 "name": "張三"
@@ -25,12 +25,13 @@ class JsoncMMTest {
         assertEquals("name", obj.fields[0].key)
         assertEquals("張三", obj.fields[0].value.let { it as? Value }?.data)
         assertEquals("用戶名", obj.fields[0].value.let { it as? Value }?.tag?.desc)
-        assertEquals(ValueType.STRING, obj.fields[0].value.let { it as? Value }?.tag?.type)
+        assertEquals(ValueType.STR, obj.fields[0].value.let { it as? Value }?.tag?.type)
     }
 
     @Test
     fun parseMmTagBlockComment() {
-        val source = """
+        val source =
+                """
             {
                 /* mm: type=i; desc=年齡 */
                 "age": 25
@@ -42,12 +43,13 @@ class JsoncMMTest {
         assertEquals("age", obj.fields[0].key)
         assertEquals(25L, obj.fields[0].value.let { it as? Value }?.data)
         assertEquals("年齡", obj.fields[0].value.let { it as? Value }?.tag?.desc)
-        assertEquals(ValueType.INT, obj.fields[0].value.let { it as? Value }?.tag?.type)
+        assertEquals(ValueType.I, obj.fields[0].value.let { it as? Value }?.tag?.type)
     }
 
     @Test
     fun parseNonMmCommentIgnored() {
-        val source = """
+        val source =
+                """
             {
                 // 這是普通註釋，不是 tag
                 "name": "李四"
@@ -60,7 +62,7 @@ class JsoncMMTest {
         val valueTag = obj.fields[0].value.let { it as? Value }?.tag
         assertNotNull(valueTag)
         assertEquals("", valueTag!!.desc)
-        assertEquals(ValueType.STRING, valueTag.type)
+        assertEquals(ValueType.STR, valueTag.type)
     }
 
     @Test
@@ -69,7 +71,12 @@ class JsoncMMTest {
         val tag = Tag()
         tag.type = ValueType.UUID
         tag.desc = "user id"
-        val value = Value(data = "550e8400-e29b-41d4-a716-446655440000", text = "\"550e8400-e29b-41d4-a716-446655440000\"", tag = tag)
+        val value =
+                Value(
+                        data = "550e8400-e29b-41d4-a716-446655440000",
+                        text = "\"550e8400-e29b-41d4-a716-446655440000\"",
+                        tag = tag
+                )
         obj.fields.add(Field("userId", value))
 
         val output = JsoncPrinter.toString(obj)
@@ -83,7 +90,7 @@ class JsoncMMTest {
     fun printNumberWithoutQuotes() {
         val obj = Object()
         val tag = Tag()
-        tag.type = ValueType.INT
+        tag.type = ValueType.I
         tag.desc = "年齡"
         val value = Value(data = 25L, text = "25", tag = tag)
         obj.fields.add(Field("age", value))
@@ -97,7 +104,7 @@ class JsoncMMTest {
     fun printFloatWithoutQuotes() {
         val obj = Object()
         val tag = Tag()
-        tag.type = ValueType.FLOAT64
+        tag.type = ValueType.F64
         tag.desc = "價格"
         val value = Value(data = 3.14, text = "3.14", tag = tag)
         obj.fields.add(Field("price", value))
