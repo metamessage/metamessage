@@ -74,7 +74,7 @@ public static class TypeInference
         }
         else if (type.IsGenericType && type.GetGenericTypeDefinition() == typeof(List<>))
         {
-            return ValueType.SLICE;
+            return ValueType.VEC;
         }
         else if (type.IsGenericType && type.GetGenericTypeDefinition() == typeof(Dictionary<,>))
         {
@@ -82,7 +82,7 @@ public static class TypeInference
         }
         else
         {
-            return ValueType.STRUCT;
+            return ValueType.OBJ;
         }
     }
 

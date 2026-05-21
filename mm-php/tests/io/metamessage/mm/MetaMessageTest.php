@@ -16,7 +16,7 @@ class Person
 class Team
 {
     public string $teamName = 'core';
-    #[MM(childType: ValueType::STRING)]
+    #[MM(childType: ValueType::STR)]
     public array $members = ['a', 'b'];
 }
 

@@ -160,12 +160,12 @@ class Tag(
         val parts = mutableListOf<String>()
 
         if (type != ValueType.UNKNOWN && !isInherit) {
-            if (!(type == ValueType.STRING ||
-                            type == ValueType.INT ||
-                            type == ValueType.FLOAT64 ||
+            if (!(type == ValueType.STR ||
+                            type == ValueType.I ||
+                            type == ValueType.F64 ||
                             type == ValueType.BOOL ||
-                            type == ValueType.STRUCT ||
-                            type == ValueType.SLICE)
+                            type == ValueType.OBJ ||
+                            type == ValueType.VEC)
             ) {
                 if (!((type == ValueType.ARRAY && size > 0) ||
                                 (type == ValueType.ENUM && enum.isNotEmpty()))
@@ -246,12 +246,12 @@ class Tag(
         }
 
         if (childType != ValueType.UNKNOWN) {
-            if (!(childType == ValueType.STRING ||
-                            childType == ValueType.INT ||
-                            childType == ValueType.FLOAT64 ||
+            if (!(childType == ValueType.STR ||
+                            childType == ValueType.I ||
+                            childType == ValueType.F64 ||
                             childType == ValueType.BOOL ||
-                            childType == ValueType.STRUCT ||
-                            childType == ValueType.SLICE)
+                            childType == ValueType.OBJ ||
+                            childType == ValueType.VEC)
             ) {
                 if (!((childType == ValueType.ARRAY && childSize > 0) ||
                                 (childType == ValueType.ENUM && childEnum.isNotEmpty()))
@@ -401,13 +401,13 @@ class Tag(
 
     private fun shouldEmitExplicitType(): Boolean {
         return when (type) {
-            ValueType.STRING,
+            ValueType.STR,
             ValueType.BYTES,
-            ValueType.INT,
-            ValueType.FLOAT64,
+            ValueType.I,
+            ValueType.F64,
             ValueType.BOOL,
-            ValueType.STRUCT,
-            ValueType.SLICE -> false
+            ValueType.OBJ,
+            ValueType.VEC -> false
             ValueType.ARRAY -> if (size > 0) false else true
             ValueType.ENUM -> if (enum.isNotEmpty()) false else true
             else -> true
@@ -416,12 +416,12 @@ class Tag(
 
     private fun shouldEmitChildType(): Boolean {
         return when (childType) {
-            ValueType.STRING,
-            ValueType.INT,
-            ValueType.FLOAT64,
+            ValueType.STR,
+            ValueType.I,
+            ValueType.F64,
             ValueType.BOOL,
-            ValueType.STRUCT,
-            ValueType.SLICE -> false
+            ValueType.OBJ,
+            ValueType.VEC -> false
             ValueType.ARRAY -> if (childSize > 0) false else true
             ValueType.ENUM -> if (childEnum.isNotEmpty()) false else true
             else -> true
@@ -1757,7 +1757,7 @@ class Tag(
         return ValidationResult(true, data = value, text = value.toString())
     }
 
-    fun validateDateTime(value: LocalDateTime): ValidationResult {
+    fun validateDatetime(value: LocalDateTime): ValidationResult {
         val epoch = LocalDateTime.of(1970, 1, 1, 0, 0, 0)
 
         val format = value.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))

@@ -153,7 +153,7 @@ func TestTagValidate_TypeSpecificWrappers(t *testing.T) {
 
 	urlTag := &Tag{Type: ValueTypeUrl, AllowEmpty: true}
 	u, _ := url.Parse("https://example.com")
-	_, _, err = urlTag.ValidateURL(*u)
+	_, _, err = urlTag.ValidateUrl(*u)
 	if err != nil {
 		t.Fatalf("expected valid url value, got %v", err)
 	}
@@ -166,7 +166,7 @@ func TestTagValidate_TypeSpecificWrappers(t *testing.T) {
 
 	ipTag := &Tag{Type: ValueTypeIp, Version: 4}
 	ip := net.ParseIP("127.0.0.1")
-	_, _, err = ipTag.ValidateIP(ip)
+	_, _, err = ipTag.ValidateIp(ip)
 	if err != nil {
 		t.Fatalf("expected valid ipv4 value, got %v", err)
 	}

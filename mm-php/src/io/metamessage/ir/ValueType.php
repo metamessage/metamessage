@@ -6,9 +6,9 @@ enum ValueType
 {
     case UNKNOWN;
     case DOC;
-    case SLICE;
+    case VEC;
     case ARRAY;
-    case STRUCT;
+    case OBJ;
     case MAP;
     case STRING;
     case BYTES;
@@ -54,9 +54,9 @@ enum ValueType
         return match ($this) {
             self::UNKNOWN => 'unknown',
             self::DOC => 'doc',
-            self::SLICE => 'vec',
+            self::VEC => 'vec',
             self::ARRAY => 'arr',
-            self::STRUCT => 'obj',
+            self::OBJ => 'obj',
             self::MAP => 'map',
             self::STRING => 'str',
             self::BYTES => 'bytes',
@@ -95,7 +95,7 @@ enum ValueType
         }
         $key = strtolower(trim($s));
         if ($key === 'struct') {
-            return self::STRUCT;
+            return self::OBJ;
         }
         $wireNameMap = array_reduce(self::cases(), function ($map, $case) {
             $map[strtolower($case->wireName())] = $case;

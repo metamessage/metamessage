@@ -168,11 +168,11 @@ class MetaMessage
     private static function phpTypeToValueType(string $typeName): ValueType
     {
         return match ($typeName) {
-            'string' => ValueType::STRING,
-            'int' => ValueType::INT,
-            'float' => ValueType::FLOAT64,
+            'string' => ValueType::STR,
+            'int' => ValueType::I,
+            'float' => ValueType::F64,
             'bool' => ValueType::BOOL,
-            'array' => ValueType::SLICE,
+            'array' => ValueType::VEC,
             default => ValueType::UNKNOWN,
         };
     }
@@ -220,7 +220,7 @@ class MetaMessage
             $path = $path . '.' . $tag->name;
         }
 
-        $tag->type = ValueType::STRUCT;
+        $tag->type = ValueType::OBJ;
 
         $objNode = new Object_();
         $objNode->Tag = $tag;
@@ -281,7 +281,7 @@ class MetaMessage
     {
         $depth++;
         if (array_is_list($v)) {
-            $tag->type = ValueType::SLICE;
+            $tag->type = ValueType::VEC;
             $node = new Array_();
             $node->Tag = $tag;
             $node->Path = $path;
@@ -333,21 +333,21 @@ class MetaMessage
 
         if (is_int($v)) {
             if ($tag->type === ValueType::UNKNOWN) {
-                $tag->type = ValueType::INT;
+                $tag->type = ValueType::I;
             }
             return new Value($v, (string)$v, $tag, $path);
         }
 
         if (is_float($v)) {
             if ($tag->type === ValueType::UNKNOWN) {
-                $tag->type = ValueType::FLOAT64;
+                $tag->type = ValueType::F64;
             }
             return new Value($v, (string)$v, $tag, $path);
         }
 
         if (is_string($v)) {
             if ($tag->type === ValueType::UNKNOWN) {
-                $tag->type = ValueType::STRING;
+                $tag->type = ValueType::STR;
             }
             if ($tag->type === ValueType::ENUM) {
                 return new Value((int)$v, $v, $tag, $path);
@@ -361,7 +361,7 @@ class MetaMessage
     private static function bind(Node $node, mixed &$out): void
     {
         if ($node instanceof Object_) {
-            if ($node->Tag !== null && $node->Tag->type === ValueType::STRUCT) {
+            if ($node->Tag !== null && $node->Tag->type === ValueType::OBJ) {
                 self::bindStruct($node, $out);
             } else {
                 self::bindMap($node, $out);
@@ -480,7 +480,7 @@ class MetaMessage
                 }
                 break;
 
-            case ValueType::STRING:
+            case ValueType::STR:
             case ValueType::EMAIL:
             case ValueType::URL:
             case ValueType::UUID:
@@ -502,21 +502,21 @@ class MetaMessage
                 $out = (bool)$data;
                 break;
 
-            case ValueType::INT:
-            case ValueType::INT8:
-            case ValueType::INT16:
-            case ValueType::INT32:
-            case ValueType::INT64:
-            case ValueType::UINT:
-            case ValueType::UINT8:
-            case ValueType::UINT16:
-            case ValueType::UINT32:
-            case ValueType::UINT64:
+            case ValueType::I:
+            case ValueType::I8:
+            case ValueType::I16:
+            case ValueType::I32:
+            case ValueType::I64:
+            case ValueType::U:
+            case ValueType::U8:
+            case ValueType::U16:
+            case ValueType::U32:
+            case ValueType::U64:
                 $out = (int)$data;
                 break;
 
-            case ValueType::FLOAT32:
-            case ValueType::FLOAT64:
+            case ValueType::F32:
+            case ValueType::F64:
                 $out = (float)$data;
                 break;
 

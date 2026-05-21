@@ -1,16 +1,16 @@
 package io.github.metamessage.jsonc
 
-import io.github.metamessage.ir.Node 
-import io.github.metamessage.ir.Object as AstObject
+import io.github.metamessage.core.CamelToSnake
 import io.github.metamessage.ir.Array as AstArray
 import io.github.metamessage.ir.Field
-import io.github.metamessage.ir.Value
+import io.github.metamessage.ir.Node
+import io.github.metamessage.ir.Object as AstObject
 import io.github.metamessage.ir.Tag
+import io.github.metamessage.ir.Value
 import io.github.metamessage.ir.ValueType
-import io.github.metamessage.core.CamelToSnake
 import java.math.BigInteger
-import java.time.LocalDateTime
 import java.time.LocalDate
+import java.time.LocalDateTime
 import java.time.LocalTime
 import java.time.format.DateTimeFormatter
 import java.util.Base64
@@ -98,42 +98,53 @@ class JsoncParser(private val tokens: List<JsoncToken>) {
                     val text = tok.literal
 
                     if (tag.type == ValueType.UNKNOWN) {
-                        tag.type = ValueType.STRING
+                        tag.type = ValueType.STR
                     }
 
-                    val result = when (tag.type) {
-                        ValueType.STRING -> parseStringValue(text, tag)
-                        ValueType.BYTES -> parseBytesValue(text, tag)
-                        ValueType.DATETIME -> parseDateTimeValue(text, tag)
-                        ValueType.DATE -> parseDateValue(text, tag)
-                        ValueType.TIME -> parseTimeValue(text, tag)
-                        ValueType.UUID -> parseUUIDValue(text, tag)
-                        ValueType.DECIMAL -> parseDecimalValue(text, tag)
-                        ValueType.IP -> parseIPValue(text, tag)
-                        ValueType.URL -> parseURLValue(text, tag)
-                        ValueType.EMAIL -> parseEmailValue(text, tag)
-                        ValueType.ENUM -> parseEnumValue(text, tag)
-                        ValueType.IMAGE -> parseImageValue(text, tag)
-                        else -> throw JsoncException("unsupported type ${tag.type} for string literal")
-                    }
+                    val result =
+                            when (tag.type) {
+                                ValueType.STR -> parseStringValue(text, tag)
+                                ValueType.BYTES -> parseBytesValue(text, tag)
+                                ValueType.DATETIME -> parseDateTimeValue(text, tag)
+                                ValueType.DATE -> parseDateValue(text, tag)
+                                ValueType.TIME -> parseTimeValue(text, tag)
+                                ValueType.UUID -> parseUUIDValue(text, tag)
+                                ValueType.DECIMAL -> parseDecimalValue(text, tag)
+                                ValueType.IP -> parseIPValue(text, tag)
+                                ValueType.URL -> parseURLValue(text, tag)
+                                ValueType.EMAIL -> parseEmailValue(text, tag)
+                                ValueType.ENUM -> parseEnumValue(text, tag)
+                                ValueType.IMAGE -> parseImageValue(text, tag)
+                                else ->
+                                        throw JsoncException(
+                                                "unsupported type ${tag.type} for string literal"
+                                        )
+                            }
 
-                    return Value(data = result.first, text = result.second ?: "", tag = tag, path = path)
+                    return Value(
+                            data = result.first,
+                            text = result.second ?: "",
+                            tag = tag,
+                            path = path
+                    )
                 }
                 JsoncTokenType.Number -> {
                     val tag = consumeCommentsFor(tok.line) ?: Tag()
                     val text = tok.literal
 
-                    val result = when {
-                        text.contains(".") -> parseFloatValue(text, tag)
-                        text.startsWith("-") -> parseNegativeValue(text, tag)
-                        else -> parsePositiveValue(text, tag)
-                    }
+                    val result =
+                            when {
+                                text.contains(".") -> parseFloatValue(text, tag)
+                                text.startsWith("-") -> parseNegativeValue(text, tag)
+                                else -> parsePositiveValue(text, tag)
+                            }
 
-                    val data = if (result.first is Int) {
-                        (result.first as Int).toLong()
-                    } else {
-                        result.first
-                    }
+                    val data =
+                            if (result.first is Int) {
+                                (result.first as Int).toLong()
+                            } else {
+                                result.first
+                            }
                     return Value(data = data, text = result.second ?: "", tag = tag, path = path)
                 }
                 JsoncTokenType.True -> {
@@ -218,10 +229,12 @@ class JsoncParser(private val tokens: List<JsoncToken>) {
             if (text != defaultText) {
                 throw JsoncException("invalid datetime: \"$text\", valid: \"$defaultText\"")
             }
-            LocalDateTime.parse(defaultText, DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")) to defaultText
+            LocalDateTime.parse(defaultText, DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")) to
+                    defaultText
         } else {
-            val dateTime = LocalDateTime.parse(text, DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))
-            val result = tag.validateDateTime(dateTime)
+            val dateTime =
+                    LocalDateTime.parse(text, DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))
+            val result = tag.validateDatetime(dateTime)
             if (!result.valid) {
                 throw JsoncException(result.error ?: "DateTime validation failed")
             }
@@ -375,11 +388,11 @@ class JsoncParser(private val tokens: List<JsoncToken>) {
 
     private fun parseFloatValue(text: String, tag: Tag): Pair<Any?, String?> {
         if (tag.type == ValueType.UNKNOWN) {
-            tag.type = ValueType.FLOAT64
+            tag.type = ValueType.F64
         }
 
         return when (tag.type) {
-            ValueType.FLOAT32 -> {
+            ValueType.F32 -> {
                 if (tag.isNull) {
                     if (text != "0.0") {
                         throw JsoncException("invalid float32: $text, valid: 0.0")
@@ -394,7 +407,7 @@ class JsoncParser(private val tokens: List<JsoncToken>) {
                     result.data to result.text
                 }
             }
-            ValueType.FLOAT64 -> {
+            ValueType.F64 -> {
                 if (tag.isNull) {
                     if (text != "0.0") {
                         throw JsoncException("invalid float64: $text, valid: 0.0")
@@ -415,11 +428,11 @@ class JsoncParser(private val tokens: List<JsoncToken>) {
 
     private fun parseNegativeValue(text: String, tag: Tag): Pair<Any?, String?> {
         if (tag.type == ValueType.UNKNOWN) {
-            tag.type = ValueType.INT
+            tag.type = ValueType.I
         }
 
         return when (tag.type) {
-            ValueType.INT -> {
+            ValueType.I -> {
                 if (tag.isNull) {
                     if (text != "0") throw JsoncException("invalid int: $text, valid: 0")
                     0 to "0"
@@ -430,47 +443,51 @@ class JsoncParser(private val tokens: List<JsoncToken>) {
                     result.data to result.text
                 }
             }
-            ValueType.INT8 -> {
+            ValueType.I8 -> {
                 if (tag.isNull) {
                     if (text != "0") throw JsoncException("invalid int8: $text, valid: 0")
                     0.toByte() to "0"
                 } else {
                     val value = text.toByte()
                     val result = tag.validateI8(value)
-                    if (!result.valid) throw JsoncException(result.error ?: "Int8 validation failed")
+                    if (!result.valid)
+                            throw JsoncException(result.error ?: "Int8 validation failed")
                     result.data to result.text
                 }
             }
-            ValueType.INT16 -> {
+            ValueType.I16 -> {
                 if (tag.isNull) {
                     if (text != "0") throw JsoncException("invalid int16: $text, valid: 0")
                     0.toShort() to "0"
                 } else {
                     val value = text.toShort()
                     val result = tag.validateI16(value)
-                    if (!result.valid) throw JsoncException(result.error ?: "Int16 validation failed")
+                    if (!result.valid)
+                            throw JsoncException(result.error ?: "Int16 validation failed")
                     result.data to result.text
                 }
             }
-            ValueType.INT32 -> {
+            ValueType.I32 -> {
                 if (tag.isNull) {
                     if (text != "0") throw JsoncException("invalid int32: $text, valid: 0")
                     0 to "0"
                 } else {
                     val value = text.toInt()
                     val result = tag.validateI32(value)
-                    if (!result.valid) throw JsoncException(result.error ?: "Int32 validation failed")
+                    if (!result.valid)
+                            throw JsoncException(result.error ?: "Int32 validation failed")
                     result.data to result.text
                 }
             }
-            ValueType.INT64 -> {
+            ValueType.I64 -> {
                 if (tag.isNull) {
                     if (text != "0") throw JsoncException("invalid int64: $text, valid: 0")
                     0L to "0"
                 } else {
                     val value = text.toLong()
                     val result = tag.validateI64(value)
-                    if (!result.valid) throw JsoncException(result.error ?: "Int64 validation failed")
+                    if (!result.valid)
+                            throw JsoncException(result.error ?: "Int64 validation failed")
                     result.data to result.text
                 }
             }
@@ -481,21 +498,25 @@ class JsoncParser(private val tokens: List<JsoncToken>) {
                 } else {
                     val value = BigInteger(text)
                     val result = tag.validateBigint(value)
-                    if (!result.valid) throw JsoncException(result.error ?: "BigInt validation failed")
+                    if (!result.valid)
+                            throw JsoncException(result.error ?: "BigInt validation failed")
                     result.data to result.text
                 }
             }
-            else -> throw JsoncException("unsupported numeric type ${tag.type} for negative literal")
+            else ->
+                    throw JsoncException(
+                            "unsupported numeric type ${tag.type} for negative literal"
+                    )
         }
     }
 
     private fun parsePositiveValue(text: String, tag: Tag): Pair<Any?, String?> {
         if (tag.type == ValueType.UNKNOWN) {
-            tag.type = ValueType.INT
+            tag.type = ValueType.I
         }
 
         return when (tag.type) {
-            ValueType.INT -> {
+            ValueType.I -> {
                 if (tag.isNull) {
                     if (text != "0") throw JsoncException("invalid int: $text, valid: 0")
                     0 to "0"
@@ -506,102 +527,111 @@ class JsoncParser(private val tokens: List<JsoncToken>) {
                     result.data to result.text
                 }
             }
-            ValueType.INT8 -> {
+            ValueType.I8 -> {
                 if (tag.isNull) {
                     if (text != "0") throw JsoncException("invalid int8: $text, valid: 0")
                     0.toByte() to "0"
                 } else {
                     val value = text.toByte()
                     val result = tag.validateI8(value)
-                    if (!result.valid) throw JsoncException(result.error ?: "Int8 validation failed")
+                    if (!result.valid)
+                            throw JsoncException(result.error ?: "Int8 validation failed")
                     result.data to result.text
                 }
             }
-            ValueType.INT16 -> {
+            ValueType.I16 -> {
                 if (tag.isNull) {
                     if (text != "0") throw JsoncException("invalid int16: $text, valid: 0")
                     0.toShort() to "0"
                 } else {
                     val value = text.toShort()
                     val result = tag.validateI16(value)
-                    if (!result.valid) throw JsoncException(result.error ?: "Int16 validation failed")
+                    if (!result.valid)
+                            throw JsoncException(result.error ?: "Int16 validation failed")
                     result.data to result.text
                 }
             }
-            ValueType.INT32 -> {
+            ValueType.I32 -> {
                 if (tag.isNull) {
                     if (text != "0") throw JsoncException("invalid int32: $text, valid: 0")
                     0 to "0"
                 } else {
                     val value = text.toInt()
                     val result = tag.validateI32(value)
-                    if (!result.valid) throw JsoncException(result.error ?: "Int32 validation failed")
+                    if (!result.valid)
+                            throw JsoncException(result.error ?: "Int32 validation failed")
                     result.data to result.text
                 }
             }
-            ValueType.INT64 -> {
+            ValueType.I64 -> {
                 if (tag.isNull) {
                     if (text != "0") throw JsoncException("invalid int64: $text, valid: 0")
                     0L to "0"
                 } else {
                     val value = text.toLong()
                     val result = tag.validateI64(value)
-                    if (!result.valid) throw JsoncException(result.error ?: "Int64 validation failed")
+                    if (!result.valid)
+                            throw JsoncException(result.error ?: "Int64 validation failed")
                     result.data to result.text
                 }
             }
-            ValueType.UINT -> {
+            ValueType.U -> {
                 if (tag.isNull) {
                     if (text != "0") throw JsoncException("invalid uint: $text, valid: 0")
                     0L to "0"
                 } else {
                     val value = text.toLong()
                     val result = tag.validateU(value)
-                    if (!result.valid) throw JsoncException(result.error ?: "Uint validation failed")
+                    if (!result.valid)
+                            throw JsoncException(result.error ?: "Uint validation failed")
                     result.data to result.text
                 }
             }
-            ValueType.UINT8 -> {
+            ValueType.U8 -> {
                 if (tag.isNull) {
                     if (text != "0") throw JsoncException("invalid uint8: $text, valid: 0")
                     0.toShort() to "0"
                 } else {
                     val value = text.toShort()
                     val result = tag.validateU8(value)
-                    if (!result.valid) throw JsoncException(result.error ?: "Uint8 validation failed")
+                    if (!result.valid)
+                            throw JsoncException(result.error ?: "Uint8 validation failed")
                     result.data to result.text
                 }
             }
-            ValueType.UINT16 -> {
+            ValueType.U16 -> {
                 if (tag.isNull) {
                     if (text != "0") throw JsoncException("invalid uint16: $text, valid: 0")
                     0 to "0"
                 } else {
                     val value = text.toInt()
                     val result = tag.validateU16(value)
-                    if (!result.valid) throw JsoncException(result.error ?: "Uint16 validation failed")
+                    if (!result.valid)
+                            throw JsoncException(result.error ?: "Uint16 validation failed")
                     result.data to result.text
                 }
             }
-            ValueType.UINT32 -> {
+            ValueType.U32 -> {
                 if (tag.isNull) {
                     if (text != "0") throw JsoncException("invalid uint32: $text, valid: 0")
                     0L to "0"
                 } else {
                     val value = text.toLong()
                     val result = tag.validateU32(value)
-                    if (!result.valid) throw JsoncException(result.error ?: "Uint32 validation failed")
+                    if (!result.valid)
+                            throw JsoncException(result.error ?: "Uint32 validation failed")
                     result.data to result.text
                 }
             }
-            ValueType.UINT64 -> {
+            ValueType.U64 -> {
                 if (tag.isNull) {
                     if (text != "0") throw JsoncException("invalid uint64: $text, valid: 0")
                     BigInteger.ZERO to "0"
                 } else {
                     val value = BigInteger(text)
                     val result = tag.validateU64(value)
-                    if (!result.valid) throw JsoncException(result.error ?: "Uint64 validation failed")
+                    if (!result.valid)
+                            throw JsoncException(result.error ?: "Uint64 validation failed")
                     result.data to result.text
                 }
             }
@@ -612,7 +642,8 @@ class JsoncParser(private val tokens: List<JsoncToken>) {
                 } else {
                     val value = BigInteger(text)
                     val result = tag.validateBigint(value)
-                    if (!result.valid) throw JsoncException(result.error ?: "BigInt validation failed")
+                    if (!result.valid)
+                            throw JsoncException(result.error ?: "BigInt validation failed")
                     result.data to result.text
                 }
             }
@@ -628,7 +659,7 @@ class JsoncParser(private val tokens: List<JsoncToken>) {
 
         var tag = consumeCommentsFor(openLine) ?: Tag()
         if (tag.type == ValueType.UNKNOWN) {
-            tag.type = ValueType.STRUCT
+            tag.type = ValueType.OBJ
         }
 
         var currentPath = path
@@ -698,7 +729,7 @@ class JsoncParser(private val tokens: List<JsoncToken>) {
                     throw JsoncException(result.error ?: "Map validation failed")
                 }
             }
-            ValueType.STRUCT -> {
+            ValueType.OBJ -> {
                 val result = tag.validateObj()
                 if (!result.valid) {
                     throw JsoncException(result.error ?: "Struct validation failed")
@@ -719,7 +750,7 @@ class JsoncParser(private val tokens: List<JsoncToken>) {
 
         var tag = consumeCommentsFor(openLine) ?: Tag()
         if (tag.type == ValueType.UNKNOWN) {
-            tag.type = if (tag.size > 0) ValueType.ARRAY else ValueType.SLICE
+            tag.type = if (tag.size > 0) ValueType.ARRAY else ValueType.VEC
         }
 
         var currentPath = path
@@ -784,7 +815,7 @@ class JsoncParser(private val tokens: List<JsoncToken>) {
                     throw JsoncException(result.error ?: "Array validation failed")
                 }
             }
-            ValueType.SLICE -> {
+            ValueType.VEC -> {
                 val result = tag.validateVec(arr.items)
                 if (!result.valid) {
                     throw JsoncException(result.error ?: "Slice validation failed")
@@ -823,38 +854,39 @@ class JsoncParser(private val tokens: List<JsoncToken>) {
                 "example" -> {}
                 "desc" -> tag.desc = value
                 "type" -> {
-                    tag.type = when (value) {
-                        "str" -> ValueType.STRING
-                        "i" -> ValueType.INT
-                        "i8" -> ValueType.INT8
-                        "i16" -> ValueType.INT16
-                        "i32" -> ValueType.INT32
-                        "i64" -> ValueType.INT64
-                        "u" -> ValueType.UINT
-                        "u8" -> ValueType.UINT8
-                        "u16" -> ValueType.UINT16
-                        "u32" -> ValueType.UINT32
-                        "u64" -> ValueType.UINT64
-                        "f32" -> ValueType.FLOAT32
-                        "f64" -> ValueType.FLOAT64
-                        "bool" -> ValueType.BOOL
-                        "bytes" -> ValueType.BYTES
-                        "bigint" -> ValueType.BIGINT
-                        "datetime" -> ValueType.DATETIME
-                        "date" -> ValueType.DATE
-                        "time" -> ValueType.TIME
-                        "uuid" -> ValueType.UUID
-                        "decimal" -> ValueType.DECIMAL
-                        "ip" -> ValueType.IP
-                        "url" -> ValueType.URL
-                        "email" -> ValueType.EMAIL
-                        "enum" -> ValueType.ENUM
-                        "arr" -> ValueType.ARRAY
-                        "vec" -> ValueType.SLICE
-                        "obj" -> ValueType.STRUCT
-                        "map" -> ValueType.MAP
-                        else -> ValueType.UNKNOWN
-                    }
+                    tag.type =
+                            when (value) {
+                                "str" -> ValueType.STR
+                                "i" -> ValueType.I
+                                "i8" -> ValueType.I8
+                                "i16" -> ValueType.I16
+                                "i32" -> ValueType.I32
+                                "i64" -> ValueType.I64
+                                "u" -> ValueType.U
+                                "u8" -> ValueType.U8
+                                "u16" -> ValueType.U16
+                                "u32" -> ValueType.U32
+                                "u64" -> ValueType.U64
+                                "f32" -> ValueType.F32
+                                "f64" -> ValueType.F64
+                                "bool" -> ValueType.BOOL
+                                "bytes" -> ValueType.BYTES
+                                "bigint" -> ValueType.BIGINT
+                                "datetime" -> ValueType.DATETIME
+                                "date" -> ValueType.DATE
+                                "time" -> ValueType.TIME
+                                "uuid" -> ValueType.UUID
+                                "decimal" -> ValueType.DECIMAL
+                                "ip" -> ValueType.IP
+                                "url" -> ValueType.URL
+                                "email" -> ValueType.EMAIL
+                                "enum" -> ValueType.ENUM
+                                "arr" -> ValueType.ARRAY
+                                "vec" -> ValueType.VEC
+                                "obj" -> ValueType.OBJ
+                                "map" -> ValueType.MAP
+                                else -> ValueType.UNKNOWN
+                            }
                 }
                 "nullable" -> tag.nullable = true
                 "raw" -> tag.raw = true

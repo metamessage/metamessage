@@ -1101,12 +1101,12 @@ export class MMDecoder {
 
   private decodeContainer(prefix: number, tag: Tag | null, path: string): Node {
     if (isArray(prefix)) {
-      return this.decodeArray(prefix, tag, path);
+      return this.decodeArr(prefix, tag, path);
     }
-    return this.decodeObject(prefix, tag, path);
+    return this.decodeObj(prefix, tag, path);
   }
 
-  private decodeArray(prefix: number, tag: Tag | null, path: string): MMArray {
+  private decodeArr(prefix: number, tag: Tag | null, path: string): MMArray {
     if (!tag) {
       tag = new Tag();
     }
@@ -1150,11 +1150,7 @@ export class MMDecoder {
     return arr;
   }
 
-  private decodeObject(
-    prefix: number,
-    tag: Tag | null,
-    path: string,
-  ): MMObject {
+  private decodeObj(prefix: number, tag: Tag | null, path: string): MMObject {
     if (!tag) {
       tag = new Tag();
     }
@@ -1173,7 +1169,7 @@ export class MMDecoder {
     }
 
     const lArray = this.readByte();
-    const keysNode = this.decodeArray(lArray, null, path);
+    const keysNode = this.decodeArr(lArray, null, path);
 
     const obj = new MMObject();
     obj.setTag(tag);

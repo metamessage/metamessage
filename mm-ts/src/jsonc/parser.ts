@@ -171,7 +171,7 @@ export class JSONCParser {
                   } else if (strTag.type === ValueType.Time) {
                     result = strTag.validateTime(dateValue);
                   } else {
-                    result = strTag.validateDateTime(dateValue);
+                    result = strTag.validateDatetime(dateValue);
                   }
                   if (!result.valid) {
                     throw new Error(
@@ -351,9 +351,7 @@ export class JSONCParser {
                 break;
 
               default:
-                const floatDefaultResult = numTag.validateF64(
-                  parseFloat(text),
-                );
+                const floatDefaultResult = numTag.validateF64(parseFloat(text));
                 if (!floatDefaultResult.valid) {
                   throw new Error(
                     floatDefaultResult.error ||
@@ -437,25 +435,13 @@ export class JSONCParser {
                 data = this.parseAndValidateU(text, numTag, 'validateU8');
                 break;
               case ValueType.Uint16:
-                data = this.parseAndValidateU(
-                  text,
-                  numTag,
-                  'validateU16',
-                );
+                data = this.parseAndValidateU(text, numTag, 'validateU16');
                 break;
               case ValueType.Uint32:
-                data = this.parseAndValidateU(
-                  text,
-                  numTag,
-                  'validateU32',
-                );
+                data = this.parseAndValidateU(text, numTag, 'validateU32');
                 break;
               case ValueType.Uint64:
-                data = this.parseAndValidateU(
-                  text,
-                  numTag,
-                  'validateU64',
-                );
+                data = this.parseAndValidateU(text, numTag, 'validateU64');
                 break;
               case ValueType.BigInt:
                 if (numTag.isNull) {

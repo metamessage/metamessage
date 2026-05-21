@@ -11,15 +11,30 @@ public class MmTag
     public bool AllowEmpty { get; set; } = false;
     public bool Unique { get; set; } = false;
     public string DefaultValue { get; set; } = string.Empty;
-    public List<string> EnumValues { get; set; } = new List<string>();
+    public string Enum { get; set; } = string.Empty;
     public int LocationHours { get; set; } = 0;
     public int Version { get; set; } = 0;
     public string Mime { get; set; } = string.Empty;
     public string Min { get; set; } = string.Empty;
     public string Max { get; set; } = string.Empty;
+    public bool Example { get; set; } = false;
+    public int Size { get; set; } = 0;
+    public string Pattern { get; set; } = string.Empty;
     public string ChildDesc { get; set; } = string.Empty;
     public bool ChildNullable { get; set; } = false;
-    public List<string> ChildEnum { get; set; } = new List<string>();
+    public string ChildEnum { get; set; } = string.Empty;
+    public bool ChildRaw { get; set; } = false;
+    public bool ChildAllowEmpty { get; set; } = false;
+    public bool ChildUnique { get; set; } = false;
+    public string ChildDefault { get; set; } = string.Empty;
+    public string ChildMin { get; set; } = string.Empty;
+    public string ChildMax { get; set; } = string.Empty;
+    public int ChildSize { get; set; } = 0;
+    public string ChildPattern { get; set; } = string.Empty;
+    public int ChildLocation { get; set; } = 0;
+    public int ChildVersion { get; set; } = 0;
+    public string ChildMime { get; set; } = string.Empty;
+    public bool IsInherit { get; set; } = false;
     public bool IsNull { get; set; } = false;
 
     public static MmTag Empty()
@@ -40,34 +55,112 @@ public class MmTag
             AllowEmpty = AllowEmpty,
             Unique = Unique,
             DefaultValue = DefaultValue,
-            EnumValues = new List<string>(EnumValues),
+            Enum = Enum,
             LocationHours = LocationHours,
             Version = Version,
             Mime = Mime,
             Min = Min,
             Max = Max,
+            Example = Example,
+            Size = Size,
+            Pattern = Pattern,
             ChildDesc = ChildDesc,
             ChildNullable = ChildNullable,
-            ChildEnum = new List<string>(ChildEnum),
+            ChildEnum = ChildEnum,
+            ChildRaw = ChildRaw,
+            ChildAllowEmpty = ChildAllowEmpty,
+            ChildUnique = ChildUnique,
+            ChildDefault = ChildDefault,
+            ChildMin = ChildMin,
+            ChildMax = ChildMax,
+            ChildSize = ChildSize,
+            ChildPattern = ChildPattern,
+            ChildLocation = ChildLocation,
+            ChildVersion = ChildVersion,
+            ChildMime = ChildMime,
+            IsInherit = IsInherit,
             IsNull = IsNull
         };
     }
 
     public void InheritFromArrayParent(MmTag parent)
     {
-        if (Type == ValueType.UNKNOWN)
-        {
-            Type = parent.ChildType;
-        }
-        if (ChildType == ValueType.UNKNOWN)
-        {
-            ChildType = parent.ChildType;
-        }
-        if (string.IsNullOrEmpty(Desc))
+        IsInherit = true;
+
+        if (!string.IsNullOrEmpty(parent.ChildDesc))
         {
             Desc = parent.ChildDesc;
         }
-        Nullable |= parent.ChildNullable;
+
+        if (parent.ChildType != ValueType.UNKNOWN)
+        {
+            Type = parent.ChildType;
+        }
+
+        if (parent.ChildRaw)
+        {
+            Raw = parent.ChildRaw;
+        }
+
+        if (parent.ChildNullable)
+        {
+            Nullable = parent.ChildNullable;
+        }
+
+        if (parent.ChildAllowEmpty)
+        {
+            AllowEmpty = parent.ChildAllowEmpty;
+        }
+
+        if (parent.ChildUnique)
+        {
+            Unique = parent.ChildUnique;
+        }
+
+        if (!string.IsNullOrEmpty(parent.ChildDefault))
+        {
+            DefaultValue = parent.ChildDefault;
+        }
+
+        if (!string.IsNullOrEmpty(parent.ChildMin))
+        {
+            Min = parent.ChildMin;
+        }
+
+        if (!string.IsNullOrEmpty(parent.ChildMax))
+        {
+            Max = parent.ChildMax;
+        }
+
+        if (parent.ChildSize != 0)
+        {
+            Size = parent.ChildSize;
+        }
+
+        if (!string.IsNullOrEmpty(parent.ChildEnum))
+        {
+            Enum = parent.ChildEnum;
+        }
+
+        if (!string.IsNullOrEmpty(parent.ChildPattern))
+        {
+            Pattern = parent.ChildPattern;
+        }
+
+        if (parent.ChildLocation != 0)
+        {
+            LocationHours = parent.ChildLocation;
+        }
+
+        if (parent.ChildVersion != 0)
+        {
+            Version = parent.ChildVersion;
+        }
+
+        if (!string.IsNullOrEmpty(parent.ChildMime))
+        {
+            Mime = parent.ChildMime;
+        }
     }
 
     public byte[] ToBytes()
@@ -130,22 +223,20 @@ public class MmTag
             result.AddRange(defaultValueBytes);
         }
 
-        if (EnumValues.Count > 0)
+        if (!string.IsNullOrEmpty(Enum))
         {
             result.Add(10);
-            result.Add((byte)EnumValues.Count);
-            foreach (var enumValue in EnumValues)
-            {
-                var enumValueBytes = System.Text.Encoding.UTF8.GetBytes(enumValue);
-                result.Add((byte)enumValueBytes.Length);
-                result.AddRange(enumValueBytes);
-            }
+            var enumBytes = System.Text.Encoding.UTF8.GetBytes(Enum);
+            result.Add((byte)enumBytes.Length);
+            result.AddRange(enumBytes);
         }
 
         if (LocationHours != 0)
         {
             result.Add(11);
-            result.AddRange(BitConverter.GetBytes(LocationHours));
+            var locationStr = System.Text.Encoding.UTF8.GetBytes(LocationHours.ToString());
+            result.Add((byte)locationStr.Length);
+            result.AddRange(locationStr);
         }
 
         if (Version != 0)
@@ -175,16 +266,92 @@ public class MmTag
             result.Add(15);
         }
 
-        if (ChildEnum.Count > 0)
+        if (!string.IsNullOrEmpty(ChildEnum))
         {
             result.Add(16);
-            result.Add((byte)ChildEnum.Count);
-            foreach (var childEnumValue in ChildEnum)
-            {
-                var childEnumValueBytes = System.Text.Encoding.UTF8.GetBytes(childEnumValue);
-                result.Add((byte)childEnumValueBytes.Length);
-                result.AddRange(childEnumValueBytes);
-            }
+            var childEnumBytes = System.Text.Encoding.UTF8.GetBytes(ChildEnum);
+            result.Add((byte)childEnumBytes.Length);
+            result.AddRange(childEnumBytes);
+        }
+
+        if (Size != 0)
+        {
+            result.Add(17);
+            result.Add((byte)Size);
+        }
+
+        if (!string.IsNullOrEmpty(Pattern))
+        {
+            result.Add(18);
+            var patternBytes = System.Text.Encoding.UTF8.GetBytes(Pattern);
+            result.Add((byte)patternBytes.Length);
+            result.AddRange(patternBytes);
+        }
+
+        if (!string.IsNullOrEmpty(ChildPattern))
+        {
+            result.Add(19);
+            var childPatternBytes = System.Text.Encoding.UTF8.GetBytes(ChildPattern);
+            result.Add((byte)childPatternBytes.Length);
+            result.AddRange(childPatternBytes);
+        }
+
+        if (ChildSize != 0)
+        {
+            result.Add(20);
+            result.Add((byte)ChildSize);
+        }
+
+        if (!string.IsNullOrEmpty(Min))
+        {
+            result.Add(21);
+            var minBytes = System.Text.Encoding.UTF8.GetBytes(Min);
+            result.Add((byte)minBytes.Length);
+            result.AddRange(minBytes);
+        }
+
+        if (!string.IsNullOrEmpty(Max))
+        {
+            result.Add(22);
+            var maxBytes = System.Text.Encoding.UTF8.GetBytes(Max);
+            result.Add((byte)maxBytes.Length);
+            result.AddRange(maxBytes);
+        }
+
+        if (!string.IsNullOrEmpty(ChildMin))
+        {
+            result.Add(23);
+            var childMinBytes = System.Text.Encoding.UTF8.GetBytes(ChildMin);
+            result.Add((byte)childMinBytes.Length);
+            result.AddRange(childMinBytes);
+        }
+
+        if (!string.IsNullOrEmpty(ChildMax))
+        {
+            result.Add(24);
+            var childMaxBytes = System.Text.Encoding.UTF8.GetBytes(ChildMax);
+            result.Add((byte)childMaxBytes.Length);
+            result.AddRange(childMaxBytes);
+        }
+
+        if (ChildLocation != 0)
+        {
+            result.Add(25);
+            result.Add((byte)ChildLocation);
+        }
+
+        if (ChildVersion != 0)
+        {
+            result.Add(26);
+            result.Add((byte)ChildVersion);
+        }
+
+        if (!string.IsNullOrEmpty(ChildMime))
+        {
+            result.Add(27);
+            var childMimeBytes = System.Text.Encoding.UTF8.GetBytes(ChildMime);
+            result.Add((byte)childMimeBytes.Length);
+            result.AddRange(childMimeBytes);
         }
 
         return result.ToArray();

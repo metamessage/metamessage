@@ -1384,7 +1384,7 @@ export class Tag {
     return { valid: true, data: val, text: val.toString() };
   }
 
-  validateDateTime(val: Date): ValidationResult {
+  validateDatetime(val: Date): ValidationResult {
     val = new Date(Math.floor(val.getTime() / 1000) * 1000);
     const format = val.toISOString().replace('T', ' ').substring(0, 19);
 

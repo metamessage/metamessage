@@ -18,7 +18,7 @@ class TagTest {
 
     @Test
     fun copyCreatesIndependentTag() {
-        val t = Tag(name = "test", type = ValueType.INT, desc = "a number")
+        val t = Tag(name = "test", type = ValueType.I, desc = "a number")
         val copy = t.copy()
         assertEquals(t.name, copy.name)
         assertEquals(t.type, copy.type)
@@ -32,7 +32,7 @@ class TagTest {
     @Test
     fun parseMMTagBasicType() {
         val t = Tag.parseMMTag("mm: type=str")
-        assertEquals(ValueType.STRING, t.type)
+        assertEquals(ValueType.STR, t.type)
     }
 
     @Test
@@ -142,7 +142,7 @@ class TagTest {
     @Test
     fun parseMMTagWithChildType() {
         val t = Tag.parseMMTag("mm: child_type=i32")
-        assertEquals(ValueType.INT32, t.childType)
+        assertEquals(ValueType.I32, t.childType)
     }
 
     @Test
@@ -166,7 +166,7 @@ class TagTest {
     @Test
     fun parseMMTagMultipleFields() {
         val t = Tag.parseMMTag("mm: type=str; desc=用户名; nullable; min=1; max=100")
-        assertEquals(ValueType.STRING, t.type)
+        assertEquals(ValueType.STR, t.type)
         assertEquals("用户名", t.desc)
         assertTrue(t.nullable)
         assertEquals("1", t.min)
@@ -176,7 +176,7 @@ class TagTest {
     @Test
     fun parseMMTagFromComment() {
         val t = Tag.parseMMTag("// mm: type=i; desc=年龄")
-        assertEquals(ValueType.INT, t.type)
+        assertEquals(ValueType.I, t.type)
         assertEquals("年龄", t.desc)
     }
 
@@ -190,9 +190,9 @@ class TagTest {
     @Test
     fun mergeTagCopiesType() {
         val dst = Tag()
-        val src = Tag().apply { type = ValueType.INT32 }
+        val src = Tag().apply { type = ValueType.I32 }
         Tag.mergeTag(dst, src)
-        assertEquals(ValueType.INT32, dst.type)
+        assertEquals(ValueType.I32, dst.type)
     }
 
     @Test
@@ -213,47 +213,49 @@ class TagTest {
 
     @Test
     fun mergeTagNullSourceDoesNothing() {
-        val dst = Tag().apply { type = ValueType.INT }
+        val dst = Tag().apply { type = ValueType.I }
         Tag.mergeTag(dst, null)
-        assertEquals(ValueType.INT, dst.type)
+        assertEquals(ValueType.I, dst.type)
     }
 
     @Test
     fun mergeTagDoesNotOverwriteExisting() {
         val dst = Tag().apply { desc = "original" }
-        val src = Tag().apply { type = ValueType.INT32 }
+        val src = Tag().apply { type = ValueType.I32 }
         Tag.mergeTag(dst, src)
         assertEquals("original", dst.desc)
-        assertEquals(ValueType.INT32, dst.type)
+        assertEquals(ValueType.I32, dst.type)
     }
 
     @Test
     fun mergeTagCopiesChildFields() {
         val dst = Tag()
-        val src = Tag().apply {
-            childDesc = "child desc"
-            childType = ValueType.INT32
-            childAllowEmpty = true
-        }
+        val src =
+                Tag().apply {
+                    childDesc = "child desc"
+                    childType = ValueType.I32
+                    childAllowEmpty = true
+                }
         Tag.mergeTag(dst, src)
         assertEquals("child desc", dst.childDesc)
-        assertEquals(ValueType.INT32, dst.childType)
+        assertEquals(ValueType.I32, dst.childType)
         assertTrue(dst.childAllowEmpty)
     }
 
     @Test
     fun inheritFromArrayParentCopiesChildFields() {
-        val parent = Tag().apply {
-            childDesc = "element description"
-            childType = ValueType.INT32
-            childMin = "1"
-            childMax = "100"
-        }
+        val parent =
+                Tag().apply {
+                    childDesc = "element description"
+                    childType = ValueType.I32
+                    childMin = "1"
+                    childMax = "100"
+                }
         val child = Tag()
         child.inheritFromArrayParent(parent)
 
         assertEquals("element description", child.desc)
-        assertEquals(ValueType.INT32, child.type)
+        assertEquals(ValueType.I32, child.type)
         assertEquals("1", child.min)
         assertEquals("100", child.max)
         assertTrue(child.isInherit)
@@ -261,9 +263,9 @@ class TagTest {
 
     @Test
     fun inheritFromArrayParentNullDoesNothing() {
-        val child = Tag().apply { type = ValueType.STRING }
+        val child = Tag().apply { type = ValueType.STR }
         child.inheritFromArrayParent(null)
-        assertEquals(ValueType.STRING, child.type)
+        assertEquals(ValueType.STR, child.type)
         assertFalse(child.isInherit)
     }
 
@@ -291,13 +293,14 @@ class TagTest {
 
     @Test
     fun toStringWithMultipleFields() {
-        val t = Tag().apply {
-            type = ValueType.INT
-            desc = "a number"
-            min = "1"
-            max = "100"
-            nullable = true
-        }
+        val t =
+                Tag().apply {
+                    type = ValueType.I
+                    desc = "a number"
+                    min = "1"
+                    max = "100"
+                    nullable = true
+                }
         val s = t.toString()
         assertTrue(s.contains("desc="))
         assertTrue(s.contains("min=1"))
@@ -313,11 +316,12 @@ class TagTest {
 
     @Test
     fun toStringWithChildFields() {
-        val t = Tag().apply {
-            type = ValueType.SLICE
-            childType = ValueType.INT32
-            childDesc = "elements"
-        }
+        val t =
+                Tag().apply {
+                    type = ValueType.VEC
+                    childType = ValueType.I32
+                    childDesc = "elements"
+                }
         val s = t.toString()
         assertTrue(s.contains("child_type=i32"))
         assertTrue(s.contains("child_desc=\"elements\""))
@@ -345,10 +349,11 @@ class TagTest {
 
     @Test
     fun toBytesWithChildFields() {
-        val t = Tag().apply {
-            childType = ValueType.INT32
-            childDesc = "child"
-        }
+        val t =
+                Tag().apply {
+                    childType = ValueType.I32
+                    childDesc = "child"
+                }
         val bytes = t.toBytes()
         assertTrue(bytes.isNotEmpty())
     }

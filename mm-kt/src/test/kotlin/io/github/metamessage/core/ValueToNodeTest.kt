@@ -1,8 +1,8 @@
 package io.github.metamessage.core
 
 import io.github.metamessage.MM
-import io.github.metamessage.ir.Array as AstArray
 import io.github.metamessage.ir.*
+import io.github.metamessage.ir.Array as AstArray
 import java.math.BigInteger
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -33,28 +33,28 @@ class ValueToNodeTest {
 
     @Test
     fun nullToNode() {
-        val node = valueToNode(null, Tag.empty().apply { type = ValueType.INT }, "")
+        val node = valueToNode(null, Tag.empty().apply { type = ValueType.I }, "")
         assertTrue(node is Value)
         assertNull((node as Value).data)
     }
 
     @Test
     fun stringToNode() {
-        val node = valueToNode("hello", Tag.empty().apply { type = ValueType.STRING }, "")
+        val node = valueToNode("hello", Tag.empty().apply { type = ValueType.STR }, "")
         assertTrue(node is Value)
         assertEquals("hello", (node as Value).data)
     }
 
     @Test
     fun intToNode() {
-        val node = valueToNode(42, Tag.empty().apply { type = ValueType.INT }, "")
+        val node = valueToNode(42, Tag.empty().apply { type = ValueType.I }, "")
         assertTrue(node is Value)
         assertEquals(42L, ((node as Value).data as Number).toLong())
     }
 
     @Test
     fun longToNode() {
-        val node = valueToNode(1234567890L, Tag.empty().apply { type = ValueType.INT64 }, "")
+        val node = valueToNode(1234567890L, Tag.empty().apply { type = ValueType.I64 }, "")
         assertTrue(node is Value)
         assertEquals(1234567890L, (node as Value).data)
     }
@@ -75,14 +75,14 @@ class ValueToNodeTest {
 
     @Test
     fun floatToNode() {
-        val node = valueToNode(3.14f, Tag.empty().apply { type = ValueType.FLOAT32 }, "")
+        val node = valueToNode(3.14f, Tag.empty().apply { type = ValueType.F32 }, "")
         assertTrue(node is Value)
         assertTrue((node as Value).data is Float)
     }
 
     @Test
     fun doubleToNode() {
-        val node = valueToNode(3.141592653589793, Tag.empty().apply { type = ValueType.FLOAT64 }, "")
+        val node = valueToNode(3.141592653589793, Tag.empty().apply { type = ValueType.F64 }, "")
         assertTrue(node is Value)
         assertTrue((node as Value).data is Double)
         assertEquals(3.141592653589793, (node as Value).data as Double, 0.0000001)
@@ -138,14 +138,14 @@ class ValueToNodeTest {
 
     @Test
     fun byteToNode() {
-        val node = valueToNode(42.toByte(), Tag.empty().apply { type = ValueType.INT8 }, "")
+        val node = valueToNode(42.toByte(), Tag.empty().apply { type = ValueType.I8 }, "")
         assertTrue(node is Value)
         assertEquals(42L, ((node as Value).data as Number).toLong())
     }
 
     @Test
     fun shortToNode() {
-        val node = valueToNode(1234.toShort(), Tag.empty().apply { type = ValueType.INT16 }, "")
+        val node = valueToNode(1234.toShort(), Tag.empty().apply { type = ValueType.I16 }, "")
         assertTrue(node is Value)
         assertEquals(1234L, ((node as Value).data as Number).toLong())
     }
@@ -153,10 +153,11 @@ class ValueToNodeTest {
     @Test
     fun listToNode() {
         val list = listOf(1, 2, 3)
-        val tag = Tag.empty().apply {
-            type = ValueType.SLICE
-            childType = ValueType.INT
-        }
+        val tag =
+                Tag.empty().apply {
+                    type = ValueType.VEC
+                    childType = ValueType.I
+                }
         val node = valueToNode(list, tag, "")
         assertTrue(node is AstArray)
         assertEquals(3, (node as AstArray).items.size)
@@ -165,10 +166,11 @@ class ValueToNodeTest {
     @Test
     fun emptyListToNode() {
         val list = emptyList<Int>()
-        val tag = Tag.empty().apply {
-            type = ValueType.SLICE
-            childType = ValueType.INT
-        }
+        val tag =
+                Tag.empty().apply {
+                    type = ValueType.VEC
+                    childType = ValueType.I
+                }
         val node = valueToNode(list, tag, "")
         assertTrue(node is AstArray)
         assertEquals(1, (node as AstArray).items.size)
@@ -195,8 +197,10 @@ class ValueToNodeTest {
 
     @Test
     fun structWithDateTimeToNode() {
-        @MM class Event(
-            @MM(type = ValueType.DATETIME) var when_: LocalDateTime = LocalDateTime.of(2024, 6, 1, 12, 0, 0)
+        @MM
+        class Event(
+                @MM(type = ValueType.DATETIME)
+                var when_: LocalDateTime = LocalDateTime.of(2024, 6, 1, 12, 0, 0)
         )
         val event = Event()
         val encoded = Encoder.encode(event)
@@ -208,14 +212,15 @@ class ValueToNodeTest {
 
     @Test
     fun nilToNodeReturnsCorrectValue() {
-        val values = listOf(
-            ValueType.INT to null,
-            ValueType.INT8 to null,
-            ValueType.STRING to null,
-            ValueType.BOOL to null,
-            ValueType.FLOAT64 to null,
-            ValueType.BYTES to null
-        )
+        val values =
+                listOf(
+                        ValueType.I to null,
+                        ValueType.I8 to null,
+                        ValueType.STR to null,
+                        ValueType.BOOL to null,
+                        ValueType.F64 to null,
+                        ValueType.BYTES to null
+                )
         for ((vt, _) in values) {
             val node = nilToNode(vt)
             assertTrue(node is Value)

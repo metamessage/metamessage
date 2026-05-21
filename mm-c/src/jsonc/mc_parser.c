@@ -67,21 +67,21 @@ static MMC_Node* parse_primitive(MMC_Parser* parser, MMC_Token* token) {
         case MMC_TOKEN_STRING:
             node->data.value.data_type = MMC_DATA_STRING;
             node->data.value.data.string_value = token->literal ? strdup(token->literal) : NULL;
-            node->data.value.tag.type = MMC_VALUE_TYPE_STRING;
+            node->data.value.tag.type = MMC_VALUE_TYPE_STR;
             break;
         case MMC_TOKEN_NUMBER:
             if (strchr(token->literal, '.') != NULL) {
                 node->data.value.data_type = MMC_DATA_FLOAT;
                 node->data.value.data.float_value = atof(token->literal);
-                node->data.value.tag.type = MMC_VALUE_TYPE_FLOAT64;
+                node->data.value.tag.type = MMC_VALUE_TYPE_F64;
             } else if (token->literal[0] == '-') {
                 node->data.value.data_type = MMC_DATA_INT;
                 node->data.value.data.int_value = atoll(token->literal);
-                node->data.value.tag.type = MMC_VALUE_TYPE_INT64;
+                node->data.value.tag.type = MMC_VALUE_TYPE_I64;
             } else {
                 node->data.value.data_type = MMC_DATA_UINT;
                 node->data.value.data.uint_value = strtoull(token->literal, NULL, 10);
-                node->data.value.tag.type = MMC_VALUE_TYPE_UINT64;
+                node->data.value.tag.type = MMC_VALUE_TYPE_U64;
             }
             break;
         case MMC_TOKEN_TRUE:
@@ -112,7 +112,7 @@ static MMC_Node* parse_object(MMC_Parser* parser) {
     MMC_Node* node = mmc_node_new_object();
     if (node == NULL) return NULL;
 
-    node->data.object.tag.type = MMC_VALUE_TYPE_OBJECT;
+    node->data.object.tag.type = MMC_VALUE_TYPE_OBJ;
 
     next_token(parser);
 
@@ -179,7 +179,7 @@ static MMC_Node* parse_array(MMC_Parser* parser) {
     MMC_Node* node = mmc_node_new_array();
     if (node == NULL) return NULL;
 
-    node->data.array.tag.type = MMC_VALUE_TYPE_ARRAY;
+    node->data.array.tag.type = MMC_VALUE_TYPE_ARR;
 
     next_token(parser);
 

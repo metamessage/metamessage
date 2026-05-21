@@ -29,7 +29,7 @@ class MmValidator
         $result = new ValidationResult();
 
         switch ($tag->type) {
-            case ValueType::STRING:
+            case ValueType::STR:
                 $this->validateStr($value, $tag, $result);
                 break;
             case ValueType::BYTES:
@@ -38,47 +38,47 @@ class MmValidator
             case ValueType::BOOL:
                 $this->validateBool($value, $tag, $result);
                 break;
-            case ValueType::INT:
+            case ValueType::I:
                 $this->validateI($value, $tag, $result);
                 break;
-            case ValueType::INT8:
+            case ValueType::I8:
                 $this->validateI8($value, $tag, $result);
                 break;
-            case ValueType::INT16:
+            case ValueType::I16:
                 $this->validateI16($value, $tag, $result);
                 break;
-            case ValueType::INT32:
+            case ValueType::I32:
                 $this->validateI32($value, $tag, $result);
                 break;
-            case ValueType::INT64:
+            case ValueType::I64:
                 $this->validateI64($value, $tag, $result);
                 break;
-            case ValueType::UINT:
+            case ValueType::U:
                 $this->validateU($value, $tag, $result);
                 break;
-            case ValueType::UINT8:
+            case ValueType::U8:
                 $this->validateU8($value, $tag, $result);
                 break;
-            case ValueType::UINT16:
+            case ValueType::U16:
                 $this->validateU16($value, $tag, $result);
                 break;
-            case ValueType::UINT32:
+            case ValueType::U32:
                 $this->validateU32($value, $tag, $result);
                 break;
-            case ValueType::UINT64:
+            case ValueType::U64:
                 $this->validateU64($value, $tag, $result);
                 break;
-            case ValueType::FLOAT32:
+            case ValueType::F32:
                 $this->validateF32($value, $tag, $result);
                 break;
-            case ValueType::FLOAT64:
+            case ValueType::F64:
                 $this->validateF64($value, $tag, $result);
                 break;
             case ValueType::BIGINT:
                 $this->validateBigint($value, $tag, $result);
                 break;
             case ValueType::DATETIME:
-                $this->validateDateTime($value, $tag, $result);
+                $this->validateDatetime($value, $tag, $result);
                 break;
             case ValueType::DATE:
                 $this->validateDate($value, $tag, $result);
@@ -107,13 +107,13 @@ class MmValidator
             case ValueType::IMAGE:
                 $this->validateImage($value, $tag, $result);
                 break;
-            case ValueType::ARRAY:
+            case ValueType::ARR:
                 $this->validateArr($value, $tag, $result);
                 break;
-            case ValueType::SLICE:
+            case ValueType::VEC:
                 $this->validateVec($value, $tag, $result);
                 break;
-            case ValueType::STRUCT:
+            case ValueType::OBJ:
                 $this->validateObj($tag, $result);
                 break;
             case ValueType::MAP:
@@ -915,7 +915,7 @@ class MmValidator
         $this->checkDescAndLocation($tag, $result, 'big.Int');
     }
 
-    private function validateDateTime(mixed $value, Tag $tag, ValidationResult $result): void
+    private function validateDatetime(mixed $value, Tag $tag, ValidationResult $result): void
     {
         if ($tag->isNull) {
             return;

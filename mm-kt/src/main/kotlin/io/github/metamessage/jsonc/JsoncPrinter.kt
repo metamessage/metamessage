@@ -1,12 +1,12 @@
 package io.github.metamessage.jsonc
 
-import io.github.metamessage.ir.Node
 import io.github.metamessage.ir.Array
-import io.github.metamessage.ir.Value
-import io.github.metamessage.ir.Object as AstObject
-import io.github.metamessage.ir.ValueType
-import io.github.metamessage.ir.Tag
 import io.github.metamessage.ir.Doc
+import io.github.metamessage.ir.Node
+import io.github.metamessage.ir.Object as AstObject
+import io.github.metamessage.ir.Tag
+import io.github.metamessage.ir.Value
+import io.github.metamessage.ir.ValueType
 
 class JsoncPrinter {
     companion object {
@@ -82,19 +82,20 @@ class JsoncPrinter {
             val tag = value.tag
             val type = tag?.type ?: ValueType.UNKNOWN
 
-            val needsQuotes = when (type) {
-                ValueType.STRING,
-                ValueType.BYTES,
-                ValueType.DATETIME,
-                ValueType.DATE,
-                ValueType.TIME,
-                ValueType.UUID,
-                ValueType.IP,
-                ValueType.URL,
-                ValueType.EMAIL,
-                ValueType.ENUM -> true
-                else -> false
-            }
+            val needsQuotes =
+                    when (type) {
+                        ValueType.STR,
+                        ValueType.BYTES,
+                        ValueType.DATETIME,
+                        ValueType.DATE,
+                        ValueType.TIME,
+                        ValueType.UUID,
+                        ValueType.IP,
+                        ValueType.URL,
+                        ValueType.EMAIL,
+                        ValueType.ENUM -> true
+                        else -> false
+                    }
 
             return if (needsQuotes) {
                 "\"${value.text}\""

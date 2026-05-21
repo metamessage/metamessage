@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"log"
 
 	mm "github.com/metamessage/metamessage"
@@ -17,6 +18,12 @@ func main() {
 		IsActive bool   `mm:"desc=是否激活"`
 	}
 
+	type APIResponse struct {
+		Code    int    `mm:"desc=狀態碼; allow_empty"`
+		Message string `mm:"desc=消息; allow_empty"`
+		Data    User   `mm:"desc=數據; allow_empty"`
+	}
+
 	var users = []User{
 		{ID: 1, Name: "Alice", Email: "alice@example.com", Age: 25, IsActive: true},
 		// {ID: 2, Name: "Bob", Email: "bob@example.com", Age: 30, IsActive: true},
@@ -28,15 +35,16 @@ func main() {
 		Users []User `mm:"desc=用戶列表"`
 	}
 
-	data := ListUsersResponse{
-		Total: int64(len(users)),
-		Users: users,
-	}
+	data := APIResponse{Code: 0, Message: "success", Data: users[0]}
 
 	encoded, err := mm.EncodeFromValue(data, "")
 	if err != nil {
 		log.Fatalf("error: %v\n", err)
 	}
+	fmt.Printf("Encoded: %v\n", encoded)
+
+	json, err := mm.DecodeToJsonc(encoded)
+	fmt.Println("json", json)
 
 	// decode to JSONC
 	resultJsonc, err := mm.DecodeToJsonc(encoded)

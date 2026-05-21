@@ -109,7 +109,7 @@ public class WireDecoder
             case SimpleValue.VAL:
                 {
                     string name = SimpleValue.NameOf(val);
-                    tag.Type = ValueType.STRING;
+                    tag.Type = ValueType.STR;
                     return new MmScalar(name, name, tag);
                 }
             default:
@@ -135,9 +135,9 @@ public class WireDecoder
     {
         if (tag.Type == ValueType.UNKNOWN)
         {
-            tag.Type = ValueType.INT;
+            tag.Type = ValueType.I;
         }
-        if (tag.Type != ValueType.INT && tag.Type != ValueType.INT8 && tag.Type != ValueType.INT16 && tag.Type != ValueType.INT32 && tag.Type != ValueType.INT64 && tag.Type != ValueType.UINT && tag.Type != ValueType.UINT16 && tag.Type != ValueType.UINT32 && tag.Type != ValueType.UINT64)
+        if (tag.Type != ValueType.I && tag.Type != ValueType.I8 && tag.Type != ValueType.I16 && tag.Type != ValueType.I32 && tag.Type != ValueType.I64 && tag.Type != ValueType.U && tag.Type != ValueType.U16 && tag.Type != ValueType.U32 && tag.Type != ValueType.U64)
         {
             throw new MmDecodeException("null_int type mismatch");
         }
@@ -149,9 +149,9 @@ public class WireDecoder
     {
         if (tag.Type == ValueType.UNKNOWN)
         {
-            tag.Type = ValueType.FLOAT64;
+            tag.Type = ValueType.F64;
         }
-        if (tag.Type != ValueType.FLOAT32 && tag.Type != ValueType.FLOAT64 && tag.Type != ValueType.DECIMAL)
+        if (tag.Type != ValueType.F32 && tag.Type != ValueType.F64 && tag.Type != ValueType.DECIMAL)
         {
             throw new MmDecodeException("null_float type mismatch");
         }
@@ -163,7 +163,7 @@ public class WireDecoder
     {
         if (tag.Type == ValueType.UNKNOWN)
         {
-            tag.Type = ValueType.STRING;
+            tag.Type = ValueType.STR;
         }
         tag.IsNull = true;
         return new MmScalar("", "", tag);
@@ -187,16 +187,87 @@ public class WireDecoder
     {
         long v = ReadUintBody(first);
         MmTag tag = inherited?.Copy() ?? MmTag.Empty();
-        tag.Type = ValueType.INT;
-        return new MmScalar(v, v.ToString(), tag);
+        if (tag.Type == ValueType.UNKNOWN)
+        {
+            tag.Type = ValueType.I;
+        }
+
+        (object data, string text) = ConvertIntValue(v, tag);
+        return new MmScalar(data, text, tag);
     }
 
     private IMmTree DecodeNegativeInt(int first, MmTag? inherited)
     {
         long v = ReadUintBody(first);
         MmTag tag = inherited?.Copy() ?? MmTag.Empty();
-        tag.Type = ValueType.INT;
-        return new MmScalar(-v, (-v).ToString(), tag);
+        if (tag.Type == ValueType.UNKNOWN)
+        {
+            tag.Type = ValueType.I;
+        }
+
+        (object data, string text) = ConvertIntValue(-v, tag);
+        return new MmScalar(data, text, tag);
+    }
+
+    private static (object data, string text) ConvertIntValue(long v, MmTag tag)
+    {
+        return tag.Type switch
+        {
+            ValueType.DATETIME => DateTimeFromInt(v, tag),
+            ValueType.DATE => DateFromInt(v, tag),
+            ValueType.TIME => TimeFromInt(v, tag),
+            ValueType.ENUM => EnumFromInt((int)v, tag),
+            ValueType.I8 => ((sbyte)v, v.ToString()),
+            ValueType.I16 => ((short)v, v.ToString()),
+            ValueType.I32 => ((int)v, v.ToString()),
+            ValueType.I64 => (v, v.ToString()),
+            ValueType.U => ((uint)v, v.ToString()),
+            ValueType.U8 => ((byte)v, v.ToString()),
+            ValueType.U16 => ((ushort)v, v.ToString()),
+            ValueType.U32 => ((uint)v, v.ToString()),
+            ValueType.U64 => ((ulong)v, v.ToString()),
+            _ => (v, v.ToString())
+        };
+    }
+
+    private static (object data, string text) DateTimeFromInt(long v, MmTag tag)
+    {
+        if (v < 0)
+        {
+            return (TimeUtil.FromEpochSeconds(0), TimeUtil.FromEpochSeconds(0).ToString("yyyy-MM-dd HH:mm:ss"));
+        }
+        var dt = TimeUtil.FromEpochSeconds(v);
+        return (dt, dt.ToString("yyyy-MM-dd HH:mm:ss"));
+    }
+
+    private static (object data, string text) DateFromInt(long v, MmTag tag)
+    {
+        var dt = TimeUtil.FromDaysSinceEpoch(v);
+        return (dt, dt.ToString("yyyy-MM-dd"));
+    }
+
+    private static (object data, string text) TimeFromInt(long v, MmTag tag)
+    {
+        if (v < 0 || v > 86399)
+        {
+            throw new MmDecodeException("Time value out of range (0-86399)");
+        }
+        var dt = TimeUtil.FromSecondsOfDay(v);
+        return (dt, dt.ToString("HH:mm:ss"));
+    }
+
+    private static (object data, string text) EnumFromInt(int v, MmTag tag)
+    {
+        if (!string.IsNullOrEmpty(tag.Enum))
+        {
+            var enumValues = tag.Enum.Split('|');
+            if (v >= 0 && v < enumValues.Length)
+            {
+                return (v, enumValues[v].Trim());
+            }
+            throw new MmDecodeException($"Enum index {v} out of range for values: {tag.Enum}");
+        }
+        return (v, v.ToString());
     }
 
     private IMmTree DecodeFloat(int first, MmTag? inherited)
@@ -204,7 +275,7 @@ public class WireDecoder
         MmTag tag = inherited?.Copy() ?? MmTag.Empty();
         if (tag.Type == ValueType.UNKNOWN)
         {
-            tag.Type = ValueType.FLOAT64;
+            tag.Type = ValueType.F64;
         }
 
         double val;
@@ -283,8 +354,18 @@ public class WireDecoder
         _offset += l2;
 
         MmTag tag = inherited?.Copy() ?? MmTag.Empty();
-        tag.Type = ValueType.STRING;
-        return new MmScalar(s, s, tag);
+        if (tag.Type == ValueType.UNKNOWN)
+        {
+            tag.Type = ValueType.STR;
+        }
+
+        // Type-specific string handling
+        return tag.Type switch
+        {
+            ValueType.EMAIL or ValueType.URL or ValueType.IP or ValueType.ENUM =>
+                new MmScalar(s, s, tag),
+            _ => new MmScalar(s, s, tag)
+        };
     }
 
     private IMmTree DecodeBytes(int first, MmTag? inherited)
@@ -318,8 +399,29 @@ public class WireDecoder
         _offset += l2;
 
         MmTag tag = inherited?.Copy() ?? MmTag.Empty();
-        tag.Type = ValueType.BYTES;
-        return new MmScalar(bytes, Convert.ToBase64String(bytes), tag);
+        if (tag.Type == ValueType.UNKNOWN)
+        {
+            tag.Type = ValueType.BYTES;
+        }
+
+        // Type-specific bytes handling
+        return tag.Type switch
+        {
+            ValueType.UUID => BytesToUuidResult(bytes, tag),
+            ValueType.IMAGE or ValueType.VIDEO =>
+                new MmScalar(bytes, Convert.ToBase64String(bytes), tag),
+            _ => new MmScalar(bytes, Convert.ToBase64String(bytes), tag)
+        };
+    }
+
+    private static MmScalar BytesToUuidResult(byte[] bytes, MmTag tag)
+    {
+        if (bytes.Length != 16)
+        {
+            throw new MmDecodeException($"UUID bytes must be 16 bytes, got {bytes.Length}");
+        }
+        var guid = new Guid(bytes);
+        return new MmScalar(bytes, guid.ToString(), tag);
     }
 
     private IMmTree DecodeContainer(int first, MmTag? inherited)
@@ -355,7 +457,7 @@ public class WireDecoder
 
         if (containerType == WireConstants.CONTAINER_ARRAY)
         {
-            tag.Type = ValueType.SLICE;
+            tag.Type = ValueType.VEC;
             var children = new List<IMmTree>();
             while (_offset < end)
             {

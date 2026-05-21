@@ -15,7 +15,7 @@ object Binder {
         when (node) {
             is Object -> {
                 val tag = node.tag
-                if (tag != null && tag.type == ValueType.STRUCT) {
+                if (tag != null && tag.type == ValueType.OBJ) {
                     val inst = clazz.getDeclaredConstructor().newInstance()
                     convertObj(node, inst as Any)
                     return inst
@@ -156,43 +156,43 @@ object Binder {
             ValueType.ENUM -> {
                 text as T
             }
-            ValueType.INT -> {
+            ValueType.I -> {
                 ((data as? Number)?.toInt() ?: text.toInt()) as T
             }
-            ValueType.INT8 -> {
+            ValueType.I8 -> {
                 ((data as? Number)?.toByte() ?: text.toByte()) as T
             }
-            ValueType.INT16 -> {
+            ValueType.I16 -> {
                 ((data as? Number)?.toShort() ?: text.toShort()) as T
             }
-            ValueType.INT32 -> {
+            ValueType.I32 -> {
                 ((data as? Number)?.toInt() ?: text.toInt()) as T
             }
-            ValueType.INT64 -> {
+            ValueType.I64 -> {
                 ((data as? Number)?.toLong() ?: text.toLong()) as T
             }
-            ValueType.UINT -> {
+            ValueType.U -> {
                 ((data as? Number)?.toInt() ?: text.toInt()) as T
             }
-            ValueType.UINT8 -> {
+            ValueType.U8 -> {
                 ((data as? Number)?.toShort() ?: text.toShort()) as T
             }
-            ValueType.UINT16 -> {
+            ValueType.U16 -> {
                 ((data as? Number)?.toInt() ?: text.toInt()) as T
             }
-            ValueType.UINT32 -> {
+            ValueType.U32 -> {
                 ((data as? Number)?.toInt() ?: text.toInt()) as T
             }
-            ValueType.UINT64 -> {
+            ValueType.U64 -> {
                 ((data as? Number)?.toLong() ?: text.toLong()) as T
             }
-            ValueType.FLOAT32 -> {
+            ValueType.F32 -> {
                 ((data as? Number)?.toFloat() ?: text.toFloat()) as T
             }
-            ValueType.FLOAT64 -> {
+            ValueType.F64 -> {
                 ((data as? Number)?.toDouble() ?: text.toDouble()) as T
             }
-            ValueType.STRING -> {
+            ValueType.STR -> {
                 (data as? String ?: text) as T
             }
             ValueType.BOOL -> {

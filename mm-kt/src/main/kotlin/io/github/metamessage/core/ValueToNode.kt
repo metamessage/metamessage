@@ -55,7 +55,7 @@ private fun valueToNode(v: Any?, tag: Tag?, depth: Int, path: String): Node {
         }
         is ByteArray -> {
             if (workTag.type == ValueType.UNKNOWN) {
-                workTag.type = ValueType.SLICE
+                workTag.type = ValueType.VEC
             }
             when (workTag.type) {
                 ValueType.BYTES -> {
@@ -68,7 +68,7 @@ private fun valueToNode(v: Any?, tag: Tag?, depth: Int, path: String): Node {
                     data = result.data
                     text = result.text ?: Null
                 }
-                ValueType.SLICE -> {
+                ValueType.VEC -> {
                     return anyToJSONC(v, workTag, depth, path)
                 }
                 else ->
@@ -95,10 +95,10 @@ private fun valueToNode(v: Any?, tag: Tag?, depth: Int, path: String): Node {
         }
         is Byte -> {
             if (workTag.type == ValueType.UNKNOWN) {
-                workTag.type = ValueType.INT8
+                workTag.type = ValueType.I8
             }
             when (workTag.type) {
-                ValueType.INT8 -> {
+                ValueType.I8 -> {
                     val result = workTag.validateI8(v)
                     data = result.data
                     text = result.text ?: Null
@@ -111,10 +111,10 @@ private fun valueToNode(v: Any?, tag: Tag?, depth: Int, path: String): Node {
         }
         is Short -> {
             if (workTag.type == ValueType.UNKNOWN) {
-                workTag.type = ValueType.INT16
+                workTag.type = ValueType.I16
             }
             when (workTag.type) {
-                ValueType.INT16 -> {
+                ValueType.I16 -> {
                     val result = workTag.validateI16(v)
                     data = result.data
                     text = result.text ?: Null
@@ -127,10 +127,10 @@ private fun valueToNode(v: Any?, tag: Tag?, depth: Int, path: String): Node {
         }
         is Int -> {
             if (workTag.type == ValueType.UNKNOWN) {
-                workTag.type = ValueType.INT32
+                workTag.type = ValueType.I32
             }
             when (workTag.type) {
-                ValueType.INT, ValueType.INT32 -> {
+                ValueType.I, ValueType.I32 -> {
                     val result = workTag.validateI32(v)
                     data = result.data
                     text = result.text ?: Null
@@ -143,15 +143,15 @@ private fun valueToNode(v: Any?, tag: Tag?, depth: Int, path: String): Node {
         }
         is Long -> {
             if (workTag.type == ValueType.UNKNOWN) {
-                workTag.type = ValueType.INT64
+                workTag.type = ValueType.I64
             }
             when (workTag.type) {
-                ValueType.INT64 -> {
+                ValueType.I64 -> {
                     val result = workTag.validateI64(v)
                     data = result.data
                     text = result.text ?: Null
                 }
-                ValueType.UINT64 -> {
+                ValueType.U64 -> {
                     val result = workTag.validateU64(BigInteger.valueOf(v))
                     data = result.data
                     text = result.text ?: Null
@@ -164,10 +164,10 @@ private fun valueToNode(v: Any?, tag: Tag?, depth: Int, path: String): Node {
         }
         is Float -> {
             if (workTag.type == ValueType.UNKNOWN) {
-                workTag.type = ValueType.FLOAT32
+                workTag.type = ValueType.F32
             }
             when (workTag.type) {
-                ValueType.FLOAT32 -> {
+                ValueType.F32 -> {
                     if (v.isInfinite() || v.isNaN()) {
                         val desc =
                                 when {
@@ -189,10 +189,10 @@ private fun valueToNode(v: Any?, tag: Tag?, depth: Int, path: String): Node {
         }
         is Double -> {
             if (workTag.type == ValueType.UNKNOWN) {
-                workTag.type = ValueType.FLOAT64
+                workTag.type = ValueType.F64
             }
             when (workTag.type) {
-                ValueType.FLOAT64 -> {
+                ValueType.F64 -> {
                     if (v.isInfinite() || v.isNaN()) {
                         val desc =
                                 when {
@@ -219,10 +219,10 @@ private fun valueToNode(v: Any?, tag: Tag?, depth: Int, path: String): Node {
         }
         is String -> {
             if (workTag.type == ValueType.UNKNOWN) {
-                workTag.type = ValueType.STRING
+                workTag.type = ValueType.STR
             }
             when (workTag.type) {
-                ValueType.STRING -> {
+                ValueType.STR -> {
                     val result = workTag.validateStr(v)
                     data = result.data
                     text = result.text ?: Null
@@ -333,7 +333,7 @@ private fun valueToNode(v: Any?, tag: Tag?, depth: Int, path: String): Node {
             }
             when (workTag.type) {
                 ValueType.DATETIME -> {
-                    val result = workTag.validateDateTime(v)
+                    val result = workTag.validateDatetime(v)
                     data = result.data
                     text = result.text ?: Null
                 }
@@ -392,7 +392,7 @@ private fun valueToNode(v: Any?, tag: Tag?, depth: Int, path: String): Node {
             val localDateTime = LocalDateTime.ofInstant(v, ZoneOffset.UTC)
             when (workTag.type) {
                 ValueType.DATETIME -> {
-                    val result = workTag.validateDateTime(localDateTime)
+                    val result = workTag.validateDatetime(localDateTime)
                     data = result.data
                     text = result.text ?: Null
                 }
@@ -437,7 +437,7 @@ private fun anyToJSONC(obj: Any, tag: Tag, depth: Int, path: String): Node {
         }
     }
 
-    workTag.type = ValueType.STRUCT
+    workTag.type = ValueType.OBJ
 
     var typeName = CamelToSnake.convert(kClass.simpleName ?: "")
     if (workTag.name.isNotEmpty()) {
@@ -454,7 +454,7 @@ private fun anyToJSONC(obj: Any, tag: Tag, depth: Int, path: String): Node {
 
     when {
         obj is List<*> -> {
-            workTag.type = ValueType.SLICE
+            workTag.type = ValueType.VEC
             return convertVec(obj, workTag, newDepth, objPath)
         }
         obj is Map<*, *> -> {
@@ -462,11 +462,11 @@ private fun anyToJSONC(obj: Any, tag: Tag, depth: Int, path: String): Node {
             return convertMap(obj, workTag, newDepth, objPath)
         }
         obj is Array<*> -> {
-            workTag.type = ValueType.SLICE
+            workTag.type = ValueType.VEC
             return convertVec(obj.toList(), workTag, newDepth, objPath)
         }
         else -> {
-            workTag.type = ValueType.STRUCT
+            workTag.type = ValueType.OBJ
             return convertObj(obj, workTag, newDepth, objPath)
         }
     }
@@ -819,15 +819,15 @@ private fun mergeTag(dst: Tag, src: Tag) {
 
 private fun createExampleValue(type: ValueType): Any? {
     return when (type) {
-        ValueType.INT8 -> 0.toByte()
-        ValueType.INT16 -> 0.toShort()
-        ValueType.INT, ValueType.INT32 -> 0
-        ValueType.INT64 -> 0L
-        ValueType.UINT, ValueType.UINT8, ValueType.UINT16, ValueType.UINT32 -> 0
-        ValueType.UINT64 -> BigInteger.ZERO
-        ValueType.FLOAT32 -> 0.0f
-        ValueType.FLOAT64 -> 0.0
-        ValueType.STRING, ValueType.DECIMAL, ValueType.EMAIL, ValueType.URL, ValueType.IP -> ""
+        ValueType.I8 -> 0.toByte()
+        ValueType.I16 -> 0.toShort()
+        ValueType.I, ValueType.I32 -> 0
+        ValueType.I64 -> 0L
+        ValueType.U, ValueType.U8, ValueType.U16, ValueType.U32 -> 0
+        ValueType.U64 -> BigInteger.ZERO
+        ValueType.F32 -> 0.0f
+        ValueType.F64 -> 0.0
+        ValueType.STR, ValueType.DECIMAL, ValueType.EMAIL, ValueType.URL, ValueType.IP -> ""
         ValueType.BOOL -> false
         ValueType.BYTES, ValueType.IMAGE -> ByteArray(0)
         ValueType.BIGINT -> BigInteger.ZERO
@@ -836,9 +836,9 @@ private fun createExampleValue(type: ValueType): Any? {
         ValueType.DATE -> LocalDate.of(1970, 1, 1)
         ValueType.TIME -> LocalTime.of(0, 0, 0)
         ValueType.ENUM -> 0
-        ValueType.SLICE -> emptyList<Any>()
+        ValueType.VEC -> emptyList<Any>()
         ValueType.MAP -> emptyMap<String, Any>()
-        ValueType.STRUCT -> emptyMap<String, Any>()
+        ValueType.OBJ -> emptyMap<String, Any>()
         else -> null
     }
 }

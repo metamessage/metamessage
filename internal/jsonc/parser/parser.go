@@ -276,7 +276,7 @@ func (p *Parser) parse(path string) (val ir.Node, err error) {
 
 						data = [16]byte{}
 					} else {
-						data, text, err = tag.ValidateUUID(text)
+						data, text, err = tag.ValidateUuid(text)
 					}
 
 				case ir.ValueTypeDecimal:
@@ -300,7 +300,7 @@ func (p *Parser) parse(path string) (val ir.Node, err error) {
 					} else {
 						ip := net.ParseIP(text)
 
-						data, text, err = tag.ValidateIP(ip)
+						data, text, err = tag.ValidateIp(ip)
 					}
 
 				case ir.ValueTypeUrl:
@@ -317,7 +317,7 @@ func (p *Parser) parse(path string) (val ir.Node, err error) {
 							return nil, fmt.Errorf("invalid url %q: %w", text, err)
 						}
 
-						data, text, err = tag.ValidateURL(*u)
+						data, text, err = tag.ValidateUrl(*u)
 					}
 
 				case ir.ValueTypeEmail:
