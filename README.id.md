@@ -248,6 +248,38 @@ go get github.com/metamessage/metamessage
 
 #### Contoh
 
+Logika yang sama berlaku untuk bahasa lain
+
+```go
+// Pendekatan yang salah
+// ID sudah bertipe int64, tidak perlu menentukan type=i64
+// Dalam mm, jangan gunakan tag json bersamaan. mm menangani penamaan secara otomatis; gunakan name= dalam mm jika perlu
+// Age sebaiknya gunakan tipe asli uint8, sehingga type=u8 dapat dihilangkan
+type User struct {
+	ID       int64  `mm:"type=i64;desc=User ID" json:"id"`
+	Name     string `mm:"type=str;desc=User Name;min=1;max=50" json:"name"`
+	Email    string `mm:"type=email;desc=Email" json:"email"`
+	Age      int    `mm:"type=u8;desc=Age;min=0;max=150" json:"age"`
+	IsActive bool   `mm:"type=bool;desc=Is Active" json:"is_active"`
+}
+
+// Pendekatan yang benar
+// Email tidak memiliki tipe asli, sehingga type=email diperlukan
+type User struct {
+	ID       int64  `mm:"desc=User ID"`
+	Name     string `mm:"desc=User Name;min=1;max=50"`
+	Email    string `mm:"type=email;desc=Email"`
+	Age      uint8  `mm:"desc=Age;min=0;max=150"`
+	IsActive bool   `mm:"desc=Is Active"`
+}
+
+user := User{}
+
+// Tag tingkat root dapat ditentukan di sini
+tag := "desc=User"
+_, _ = EncodeFromValue(user, tag)
+```
+
 ```go
 package main
 

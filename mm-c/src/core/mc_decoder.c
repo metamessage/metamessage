@@ -510,10 +510,10 @@ static bool dec_parse_one_tag_entry(mm_decoder_t* d, mm_tag_t* tag)
             }
             const uint8_t* raw = dec_read_bytes(d, str_len);
             if (raw) {
-                free(tag->enum_val);
-                tag->enum_val = (char*)malloc(str_len + 1);
-                memcpy(tag->enum_val, raw, str_len);
-                tag->enum_val[str_len] = '\0';
+                free(tag->enums);
+                tag->enums = (char*)malloc(str_len + 1);
+                memcpy(tag->enums, raw, str_len);
+                tag->enums[str_len] = '\0';
             }
             return true;
         }

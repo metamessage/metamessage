@@ -248,6 +248,38 @@ go get github.com/metamessage/metamessage
 
 #### Ví dụ
 
+Logic tương tự áp dụng cho các ngôn ngữ khác
+
+```go
+// Cách viết sai
+// ID đã có kiểu int64, không cần chỉ định type=i64
+// Trong mm, không sử dụng thẻ json cùng lúc. mm tự động xử lý tên; nếu cần chỉ định tên, hãy dùng name= trong mm
+// Age nên dùng kiểu uint8 nguyên bản, có thể bỏ qua type=u8
+type User struct {
+	ID       int64  `mm:"type=i64;desc=User ID" json:"id"`
+	Name     string `mm:"type=str;desc=User Name;min=1;max=50" json:"name"`
+	Email    string `mm:"type=email;desc=Email" json:"email"`
+	Age      int    `mm:"type=u8;desc=Age;min=0;max=150" json:"age"`
+	IsActive bool   `mm:"type=bool;desc=Is Active" json:"is_active"`
+}
+
+// Cách viết đúng
+// Email không có kiểu nguyên bản, nên cần chỉ định type=email
+type User struct {
+	ID       int64  `mm:"desc=User ID"`
+	Name     string `mm:"desc=User Name;min=1;max=50"`
+	Email    string `mm:"type=email;desc=Email"`
+	Age      uint8  `mm:"desc=Age;min=0;max=150"`
+	IsActive bool   `mm:"desc=Is Active"`
+}
+
+user := User{}
+
+// Có thể chỉ định tag cấp gốc tại đây
+tag := "desc=User"
+_, _ = EncodeFromValue(user, tag)
+```
+
 ```go
 package main
 

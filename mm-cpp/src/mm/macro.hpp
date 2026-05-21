@@ -30,7 +30,7 @@
             int min = -1; \
             int max = -1; \
             int size = 0; \
-            const char* enum_val = ""; \
+            const char* enum = ""; \
             const char* pattern = ""; \
             int version = 0; \
             const char* mime = ""; \
@@ -56,7 +56,7 @@
         if (fd.tag.min >= 0) tag.min = std::to_string(fd.tag.min); \
         if (fd.tag.max >= 0) tag.max = std::to_string(fd.tag.max); \
         if (fd.tag.size > 0) tag.size = fd.tag.size; \
-        if (fd.tag.enum_val[0]) tag.enumVal = fd.tag.enum_val; \
+        if (fd.tag.enum[0]) tag.enumVal = fd.tag.enum; \
         if (fd.tag.pattern[0]) tag.pattern = fd.tag.pattern; \
         if (fd.tag.version > 0) tag.version = fd.tag.version; \
         if (fd.tag.mime[0]) tag.mime = fd.tag.mime; \

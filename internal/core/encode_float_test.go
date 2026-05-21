@@ -443,9 +443,9 @@ func TestEncodeFloat32Precision(t *testing.T) {
 // go test ./internal/core -v -run TestEncodeFloatNegativeRoundtrip
 func TestEncodeFloatNegativeRoundtrip(t *testing.T) {
 	type testCase struct {
-		name       string
-		input      float64
-		wantBytes  []byte
+		name      string
+		input     float64
+		wantBytes []byte
 	}
 
 	testCases := []testCase{

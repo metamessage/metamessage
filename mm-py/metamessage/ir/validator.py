@@ -925,8 +925,8 @@ class MmValidator:
 
         enums = tag.enum.split('|')
         idx = -1
-        for i, enum_val in enumerate(enums):
-            if enum_val.strip() == value:
+        for i, val in enumerate(enums):
+            if val.strip() == value:
                 idx = i
                 break
 

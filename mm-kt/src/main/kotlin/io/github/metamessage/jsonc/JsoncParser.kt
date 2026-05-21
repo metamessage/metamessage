@@ -750,7 +750,7 @@ class JsoncParser(private val tokens: List<JsoncToken>) {
 
         var tag = consumeCommentsFor(openLine) ?: Tag()
         if (tag.type == ValueType.UNKNOWN) {
-            tag.type = if (tag.size > 0) ValueType.ARRAY else ValueType.VEC
+            tag.type = if (tag.size > 0) ValueType.ARR else ValueType.VEC
         }
 
         var currentPath = path
@@ -809,7 +809,7 @@ class JsoncParser(private val tokens: List<JsoncToken>) {
         }
 
         when (tag.type) {
-            ValueType.ARRAY -> {
+            ValueType.ARR -> {
                 val result = tag.validateArr(arr.items)
                 if (!result.valid) {
                     throw JsoncException(result.error ?: "Array validation failed")
@@ -881,7 +881,7 @@ class JsoncParser(private val tokens: List<JsoncToken>) {
                                 "url" -> ValueType.URL
                                 "email" -> ValueType.EMAIL
                                 "enum" -> ValueType.ENUM
-                                "arr" -> ValueType.ARRAY
+                                "arr" -> ValueType.ARR
                                 "vec" -> ValueType.VEC
                                 "obj" -> ValueType.OBJ
                                 "map" -> ValueType.MAP

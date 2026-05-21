@@ -42,12 +42,16 @@ mm_node_t* mm_value_create_str(const char* text, mm_value_type_t type, mm_field_
         node->data.value.tag.size = attr.size;
     }
 
-    if (attr.enum_val && strlen(attr.enum_val) > 0) {
-        node->data.value.tag.enum_val = strdup(attr.enum_val);
+    if (attr.enums && strlen(attr.enums) > 0) {
+        node->data.value.tag.enums = strdup(attr.enums);
     }
 
     if (attr.pattern && strlen(attr.pattern) > 0) {
         node->data.value.tag.pattern = strdup(attr.pattern);
+    }
+
+    if (attr.location != INT_MIN) {
+        node->data.value.tag.location_offset = attr.location;
     }
 
     node->data.value.tag.nullable = attr.nullable;
@@ -94,6 +98,26 @@ mm_node_t* mm_value_create_str(const char* text, mm_value_type_t type, mm_field_
 
     if (attr.child_mime && strlen(attr.child_mime) > 0) {
         node->data.value.tag.child_mime = strdup(attr.child_mime);
+    }
+
+    if (attr.child_type && strlen(attr.child_type) > 0) {
+        node->data.value.tag.child_type = mm_value_type_parse(attr.child_type);
+    }
+
+    if (attr.child_default && strlen(attr.child_default) > 0) {
+        node->data.value.tag.child_default = strdup(attr.child_default);
+    }
+
+    if (attr.child_enum && strlen(attr.child_enum) > 0) {
+        node->data.value.tag.child_enum = strdup(attr.child_enum);
+    }
+
+    if (attr.child_pattern && strlen(attr.child_pattern) > 0) {
+        node->data.value.tag.child_pattern = strdup(attr.child_pattern);
+    }
+
+    if (attr.child_location != INT_MIN) {
+        node->data.value.tag.child_location_offset = attr.child_location;
     }
 
     return node;

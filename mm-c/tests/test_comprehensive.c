@@ -388,11 +388,11 @@ static void test_tag_attributes_roundtrip(void) {
 
     printf("  enum: ");
     {
-        mm_node_t* v = mm_int(0, .enum_val="a|b|c");
+        mm_node_t* v = mm_int(0, .enums="a|b|c");
         mm_buffer_t* enc = mm_encode(v);
         mm_node_t* dec = mm_decode(enc);
         if (dec) {
-            TEST("enum preserved", dec->data.value.tag.enum_val && strcmp(dec->data.value.tag.enum_val, "a|b|c") == 0);
+            TEST("enum preserved", dec->data.value.tag.enums && strcmp(dec->data.value.tag.enums, "a|b|c") == 0);
         }
         mm_node_free(v);
         if (dec) mm_node_free(dec);

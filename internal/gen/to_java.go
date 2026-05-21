@@ -316,8 +316,6 @@ func genJavaNestedClasses(b *strings.Builder, n ir.Node, indent int) {
 	}
 }
 
-
-
 func exportJavaClassName(s string) string {
 	name := ExportName(s)
 	if len(name) == 0 {

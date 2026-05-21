@@ -485,7 +485,7 @@ class Decoder() {
         }
         val tag = inherited?.copy() ?: Tag.empty()
         if (tag.type == ValueType.UNKNOWN) {
-            tag.type = if (tag.size > 0) ValueType.ARRAY else ValueType.VEC
+            tag.type = if (tag.size > 0) ValueType.ARR else ValueType.VEC
         }
         val items = mutableListOf<Node>()
         while (offset < bodyEnd) {

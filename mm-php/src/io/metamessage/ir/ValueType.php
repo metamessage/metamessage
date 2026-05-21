@@ -7,24 +7,24 @@ enum ValueType
     case UNKNOWN;
     case DOC;
     case VEC;
-    case ARRAY;
+    case ARR;
     case OBJ;
     case MAP;
-    case STRING;
+    case STR;
     case BYTES;
     case BOOL;
-    case INT;
-    case INT8;
-    case INT16;
-    case INT32;
-    case INT64;
-    case UINT;
-    case UINT8;
-    case UINT16;
-    case UINT32;
-    case UINT64;
-    case FLOAT32;
-    case FLOAT64;
+    case I;
+    case I8;
+    case I16;
+    case I32;
+    case I64;
+    case U;
+    case U8;
+    case U16;
+    case U32;
+    case U64;
+    case F32;
+    case F64;
     case BIGINT;
     case DATETIME;
     case DATE;
@@ -55,24 +55,24 @@ enum ValueType
             self::UNKNOWN => 'unknown',
             self::DOC => 'doc',
             self::VEC => 'vec',
-            self::ARRAY => 'arr',
+            self::ARR => 'arr',
             self::OBJ => 'obj',
             self::MAP => 'map',
-            self::STRING => 'str',
+            self::STR => 'str',
             self::BYTES => 'bytes',
             self::BOOL => 'bool',
-            self::INT => 'i',
-            self::INT8 => 'i8',
-            self::INT16 => 'i16',
-            self::INT32 => 'i32',
-            self::INT64 => 'i64',
-            self::UINT => 'u',
-            self::UINT8 => 'u8',
-            self::UINT16 => 'u16',
-            self::UINT32 => 'u32',
-            self::UINT64 => 'u64',
-            self::FLOAT32 => 'f32',
-            self::FLOAT64 => 'f64',
+            self::I => 'i',
+            self::I8 => 'i8',
+            self::I16 => 'i16',
+            self::I32 => 'i32',
+            self::I64 => 'i64',
+            self::U => 'u',
+            self::U8 => 'u8',
+            self::U16 => 'u16',
+            self::U32 => 'u32',
+            self::U64 => 'u64',
+            self::F32 => 'f32',
+            self::F64 => 'f64',
             self::BIGINT => 'bigint',
             self::DATETIME => 'datetime',
             self::DATE => 'date',

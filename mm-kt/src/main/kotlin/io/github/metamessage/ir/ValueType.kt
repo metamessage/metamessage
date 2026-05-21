@@ -4,24 +4,24 @@ enum class ValueType {
     UNKNOWN,
     DOC,
     VEC,
-    ARRAY,
+    ARR,
     OBJ,
     MAP,
-    STRING,
+    STR,
     BYTES,
     BOOL,
-    INT,
-    INT8,
-    INT16,
-    INT32,
-    INT64,
-    UINT,
-    UINT8,
-    UINT16,
-    UINT32,
-    UINT64,
-    FLOAT32,
-    FLOAT64,
+    I,
+    I8,
+    I16,
+    I32,
+    I64,
+    U,
+    U8,
+    U16,
+    U32,
+    U64,
+    F32,
+    F64,
     BIGINT,
     DATETIME,
     DATE,
@@ -42,24 +42,24 @@ enum class ValueType {
                 UNKNOWN -> "unknown"
                 DOC -> "doc"
                 VEC -> "vec"
-                ARRAY -> "arr"
+                ARR -> "arr"
                 OBJ -> "obj"
                 MAP -> "map"
-                STRING -> "str"
+                STR -> "str"
                 BYTES -> "bytes"
                 BOOL -> "bool"
-                INT -> "i"
-                INT8 -> "i8"
-                INT16 -> "i16"
-                INT32 -> "i32"
-                INT64 -> "i64"
-                UINT -> "u"
-                UINT8 -> "u8"
-                UINT16 -> "u16"
-                UINT32 -> "u32"
-                UINT64 -> "u64"
-                FLOAT32 -> "f32"
-                FLOAT64 -> "f64"
+                I -> "i"
+                I8 -> "i8"
+                I16 -> "i16"
+                I32 -> "i32"
+                I64 -> "i64"
+                U -> "u"
+                U8 -> "u8"
+                U16 -> "u16"
+                U32 -> "u32"
+                U64 -> "u64"
+                F32 -> "f32"
+                F64 -> "f64"
                 BIGINT -> "bigint"
                 DATETIME -> "datetime"
                 DATE -> "date"

@@ -117,7 +117,7 @@ public class MmValidator
             case ValueType.ENUM:
                 ValidateEnum(value, tag, result);
                 break;
-            case ValueType.ARRAY:
+            case ValueType.ARR:
             case ValueType.VEC:
                 ValidateArr(value, tag, result);
                 break;

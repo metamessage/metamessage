@@ -2,11 +2,19 @@
 
 MetaMessage 的 C# 实现，提供高性能的二进制序列化、JSONC 解析和对象绑定功能。
 
+[NuGet](https://www.nuget.org/packages/MetaMessage)
+
 ## 1. 安装
 
 ### 1.1 项目引用
 
 将 MetaMessage 添加到您的项目中：
+
+```
+dotnet add package MetaMessage
+```
+
+or
 
 ```bash
 # 使用 .NET CLI

@@ -44,7 +44,7 @@ public static class ReflectMmEncoder
                 throw new Exception("Null for non-nullable");
             }
             workTag.IsNull = true;
-            if (workTag.Type == ValueType.OBJ || workTag.Type == ValueType.VEC || workTag.Type == ValueType.ARRAY)
+            if (workTag.Type == ValueType.OBJ || workTag.Type == ValueType.VEC || workTag.Type == ValueType.ARR)
             {
                 var inner = new WireEncoder();
                 inner.EncodeSimple(SimpleValue.NULL_STRING);
@@ -63,7 +63,7 @@ public static class ReflectMmEncoder
             return;
         }
 
-        if (workTag.Type == ValueType.VEC || workTag.Type == ValueType.ARRAY)
+        if (workTag.Type == ValueType.VEC || workTag.Type == ValueType.ARR)
         {
             EncodeList(encoder, value, workTag);
             return;

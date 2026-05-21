@@ -248,6 +248,38 @@ go get github.com/metamessage/metamessage
 
 #### Exemple
 
+La même logique s'applique aux autres langages
+
+```go
+// Mauvaise approche
+// ID est déjà de type int64, pas besoin de spécifier type=i64
+// Dans mm, ne pas utiliser les tags json ensemble. mm gère le nommage automatiquement ; utiliser name= dans mm si nécessaire
+// Age devrait utiliser le type natif uint8, donc type=u8 peut être omis
+type User struct {
+	ID       int64  `mm:"type=i64;desc=User ID" json:"id"`
+	Name     string `mm:"type=str;desc=User Name;min=1;max=50" json:"name"`
+	Email    string `mm:"type=email;desc=Email" json:"email"`
+	Age      int    `mm:"type=u8;desc=Age;min=0;max=150" json:"age"`
+	IsActive bool   `mm:"type=bool;desc=Is Active" json:"is_active"`
+}
+
+// Bonne approche
+// Email n'a pas de type natif, donc type=email est requis
+type User struct {
+	ID       int64  `mm:"desc=User ID"`
+	Name     string `mm:"desc=User Name;min=1;max=50"`
+	Email    string `mm:"type=email;desc=Email"`
+	Age      uint8  `mm:"desc=Age;min=0;max=150"`
+	IsActive bool   `mm:"desc=Is Active"`
+}
+
+user := User{}
+
+// Le tag de niveau racine peut être spécifié ici
+tag := "desc=User"
+_, _ = EncodeFromValue(user, tag)
+```
+
 ```go
 package main
 

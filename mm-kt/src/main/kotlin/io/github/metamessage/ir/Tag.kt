@@ -167,7 +167,7 @@ class Tag(
                             type == ValueType.OBJ ||
                             type == ValueType.VEC)
             ) {
-                if (!((type == ValueType.ARRAY && size > 0) ||
+                if (!((type == ValueType.ARR && size > 0) ||
                                 (type == ValueType.ENUM && enum.isNotEmpty()))
                 ) {
                     parts.add("${T_TYPE}=${type.toString()}")
@@ -253,7 +253,7 @@ class Tag(
                             childType == ValueType.OBJ ||
                             childType == ValueType.VEC)
             ) {
-                if (!((childType == ValueType.ARRAY && childSize > 0) ||
+                if (!((childType == ValueType.ARR && childSize > 0) ||
                                 (childType == ValueType.ENUM && childEnum.isNotEmpty()))
                 ) {
                     parts.add("${T_CHILD_TYPE}=${childType.toString()}")
@@ -408,7 +408,7 @@ class Tag(
             ValueType.BOOL,
             ValueType.OBJ,
             ValueType.VEC -> false
-            ValueType.ARRAY -> if (size > 0) false else true
+            ValueType.ARR -> if (size > 0) false else true
             ValueType.ENUM -> if (enum.isNotEmpty()) false else true
             else -> true
         }
@@ -422,7 +422,7 @@ class Tag(
             ValueType.BOOL,
             ValueType.OBJ,
             ValueType.VEC -> false
-            ValueType.ARRAY -> if (childSize > 0) false else true
+            ValueType.ARR -> if (childSize > 0) false else true
             ValueType.ENUM -> if (childEnum.isNotEmpty()) false else true
             else -> true
         }

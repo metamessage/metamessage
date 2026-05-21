@@ -70,7 +70,7 @@ public static class TypeInference
         }
         else if (type.IsArray)
         {
-            return ValueType.ARRAY;
+            return ValueType.ARR;
         }
         else if (type.IsGenericType && type.GetGenericTypeDefinition() == typeof(List<>))
         {

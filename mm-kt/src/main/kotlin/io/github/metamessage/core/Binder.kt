@@ -27,7 +27,7 @@ object Binder {
             }
             is Array -> {
                 val tag = node.tag
-                if (tag != null && tag.size > 0 && tag.type == ValueType.ARRAY) {
+                if (tag != null && tag.size > 0 && tag.type == ValueType.ARR) {
                     @Suppress("UNCHECKED_CAST") return convertArr(node, clazz) as T
                 } else {
                     return convertVec(node, clazz)

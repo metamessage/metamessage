@@ -345,7 +345,7 @@ func exportJSFieldName(s string) string {
 
 	name := parts[0]
 	for _, p := range parts[1:] {
-			name += toTitle(p)
+		name += toTitle(p)
 	}
 	if unicode.IsDigit(rune(name[0])) {
 		name = "f_" + name

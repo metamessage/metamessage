@@ -209,6 +209,38 @@ go get github.com/metamessage/metamessage
 
 #### ตัวอย่าง
 
+ตรรกะเดียวกันนี้ใช้กับภาษาอื่นด้วย
+
+```go
+// วิธีที่ผิด
+// ID เป็นประเภท int64 อยู่แล้ว ไม่จำเป็นต้องระบุ type=i64
+// ใน mm ไม่ควรใช้ json tag ร่วมกัน mm จัดการการตั้งชื่อโดยอัตโนมัติ หากต้องการระบุชื่อให้ใช้ name= ใน mm
+// Age ควรใช้ประเภท uint8 ดั้งเดิม จึงสามารถละ type=u8 ได้
+type User struct {
+	ID       int64  `mm:"type=i64;desc=User ID" json:"id"`
+	Name     string `mm:"type=str;desc=User Name;min=1;max=50" json:"name"`
+	Email    string `mm:"type=email;desc=Email" json:"email"`
+	Age      int    `mm:"type=u8;desc=Age;min=0;max=150" json:"age"`
+	IsActive bool   `mm:"type=bool;desc=Is Active" json:"is_active"`
+}
+
+// วิธีที่ถูกต้อง
+// Email ไม่มีประเภทดั้งเดิม จึงต้องใช้ type=email
+type User struct {
+	ID       int64  `mm:"desc=User ID"`
+	Name     string `mm:"desc=User Name;min=1;max=50"`
+	Email    string `mm:"type=email;desc=Email"`
+	Age      uint8  `mm:"desc=Age;min=0;max=150"`
+	IsActive bool   `mm:"desc=Is Active"`
+}
+
+user := User{}
+
+// สามารถระบุ tag ระดับ root ได้ที่นี่
+tag := "desc=User"
+_, _ = EncodeFromValue(user, tag)
+```
+
 ```go
 package main
 

@@ -342,7 +342,7 @@ void mm_tag_cleanup(mm_tag_t* tag)
     free(tag->default_val);
     free(tag->min);
     free(tag->max);
-    free(tag->enum_val);
+    free(tag->enums);
     free(tag->pattern);
     free(tag->mime);
     free(tag->child_desc);
@@ -405,8 +405,8 @@ void mm_tag_inherit(mm_tag_t* tag, const mm_tag_t* parent)
     }
 
     if (parent->child_enum) {
-        free(tag->enum_val);
-        tag->enum_val = strdup(parent->child_enum);
+        free(tag->enums);
+        tag->enums = strdup(parent->child_enum);
     }
 
     if (parent->child_pattern) {
@@ -441,7 +441,7 @@ char* mm_tag_to_string(const mm_tag_t* tag)
         if (is_simple_type(tag->type)) {
         } else {
             if ((tag->type == MM_VALUE_ARR && tag->size > 0) ||
-                (tag->type == MM_VALUE_ENUM && tag->enum_val)) {
+                (tag->type == MM_VALUE_ENUM && tag->enums)) {
             } else {
                 if (!first) append_str(&buf, &cap, &len, "; ");
                 append_str(&buf, &cap, &len, "type=");
@@ -527,10 +527,10 @@ char* mm_tag_to_string(const mm_tag_t* tag)
         first = false;
     }
 
-    if (tag->enum_val && !tag->is_inherit) {
+    if (tag->enums && !tag->is_inherit) {
         if (!first) append_str(&buf, &cap, &len, "; ");
         append_str(&buf, &cap, &len, "enum=");
-        append_str(&buf, &cap, &len, tag->enum_val);
+        append_str(&buf, &cap, &len, tag->enums);
         first = false;
     }
 
@@ -819,8 +819,8 @@ mm_tag_t mm_tag_parse(const char* tag_str)
             }
         } else if (strcmp(k, "enum") == 0) {
             r.type = MM_VALUE_ENUM;
-            free(r.enum_val);
-            r.enum_val = strdup(val);
+            free(r.enums);
+            r.enums = strdup(val);
         } else if (strcmp(k, "pattern") == 0) {
             free(r.pattern);
             r.pattern = strdup(val);
@@ -940,7 +940,7 @@ uint8_t* mm_tag_bytes(const mm_tag_t* tag, size_t* out_len)
         if (is_bytes_simple_type(tag->type)) {
         } else {
             if ((tag->type == MM_VALUE_ARR && tag->size > 0) ||
-                (tag->type == MM_VALUE_ENUM && tag->enum_val)) {
+                (tag->type == MM_VALUE_ENUM && tag->enums)) {
             } else {
                 if (len + 2 > cap) {
                     cap = cap ? cap * 2 : 128;
@@ -992,8 +992,8 @@ uint8_t* mm_tag_bytes(const mm_tag_t* tag, size_t* out_len)
         encode_u64(&buf, &cap, &len, MM_TAG_KSIZE, (uint64_t)tag->size);
     }
 
-    if (tag->enum_val && !tag->is_inherit) {
-        encode_string(&buf, &cap, &len, MM_TAG_KENUM, tag->enum_val);
+    if (tag->enums && !tag->is_inherit) {
+        encode_string(&buf, &cap, &len, MM_TAG_KENUM, tag->enums);
     }
 
     if (tag->pattern && !tag->is_inherit) {
@@ -1194,9 +1194,9 @@ void mm_tag_merge(mm_tag_t* dst, const mm_tag_t* src)
         dst->size = src->size;
     }
 
-    if (src->enum_val) {
-        free(dst->enum_val);
-        dst->enum_val = strdup(src->enum_val);
+    if (src->enums) {
+        free(dst->enums);
+        dst->enums = strdup(src->enums);
     }
 
     if (src->pattern) {

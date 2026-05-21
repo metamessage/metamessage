@@ -248,6 +248,38 @@ go get github.com/metamessage/metamessage
 
 #### Пример
 
+Та же логика применима и к другим языкам
+
+```go
+// Неправильный подход
+// ID уже имеет тип int64, не нужно указывать type=i64
+// В mm не используйте json теги вместе. mm автоматически обрабатывает именование; при необходимости используйте name= в mm
+// Age должен использовать нативный тип uint8, поэтому type=u8 можно опустить
+type User struct {
+	ID       int64  `mm:"type=i64;desc=User ID" json:"id"`
+	Name     string `mm:"type=str;desc=User Name;min=1;max=50" json:"name"`
+	Email    string `mm:"type=email;desc=Email" json:"email"`
+	Age      int    `mm:"type=u8;desc=Age;min=0;max=150" json:"age"`
+	IsActive bool   `mm:"type=bool;desc=Is Active" json:"is_active"`
+}
+
+// Правильный подход
+// Email не имеет нативного типа, поэтому требуется type=email
+type User struct {
+	ID       int64  `mm:"desc=User ID"`
+	Name     string `mm:"desc=User Name;min=1;max=50"`
+	Email    string `mm:"type=email;desc=Email"`
+	Age      uint8  `mm:"desc=Age;min=0;max=150"`
+	IsActive bool   `mm:"desc=Is Active"`
+}
+
+user := User{}
+
+// Тег корневого уровня можно указать здесь
+tag := "desc=User"
+_, _ = EncodeFromValue(user, tag)
+```
+
 ```go
 package main
 

@@ -22,12 +22,13 @@ typedef struct {
     int64_t min;
     int64_t max;
     int size;
-    const char* enum_val;
+    const char* enums;
     const char* pattern;
     bool nullable;
     bool raw;
     bool allow_empty;
     bool unique;
+    int location;
     int version;
     const char* mime;
     const char* child_desc;
@@ -38,8 +39,13 @@ typedef struct {
     bool child_raw;
     bool child_allow_empty;
     bool child_unique;
+    const char* child_default;
+    const char* child_enum;
+    const char* child_pattern;
+    int child_location;
     int child_version;
     const char* child_mime;
+    const char* child_type;
 } mm_field_attr_t;
 
 mm_node_t* mm_value_create_str(const char* text, mm_value_type_t type, mm_field_attr_t attr);
@@ -49,10 +55,10 @@ mm_node_t* mm_str_create(const char* val, mm_field_attr_t attr);
 mm_node_t* mm_bool_create(bool val, mm_field_attr_t attr);
 mm_node_t* mm_float_create(double val, mm_field_attr_t attr);
 
-#define mm_int(val, ...) mm_int_create((int64_t)(val), (mm_field_attr_t){ .min = INT64_MIN, .max = INT64_MIN, .size = -1, .version = -1, __VA_ARGS__ })
-#define mm_str(val, ...) mm_str_create((const char*)(val), (mm_field_attr_t){ .min = INT64_MIN, .max = INT64_MIN, .size = -1, .version = -1, __VA_ARGS__ })
-#define mm_bool(val, ...) mm_bool_create((bool)(val), (mm_field_attr_t){ .min = INT64_MIN, .max = INT64_MIN, .size = -1, .version = -1, __VA_ARGS__ })
-#define mm_float(val, ...) mm_float_create((double)(val), (mm_field_attr_t){ .min = INT64_MIN, .max = INT64_MIN, .size = -1, .version = -1, __VA_ARGS__ })
+#define mm_int(val, ...)   mm_int_create((int64_t)(val),   (mm_field_attr_t){ .min = INT64_MIN, .max = INT64_MIN, .size = -1, .version = -1, .location = INT_MIN, .child_location = INT_MIN, __VA_ARGS__ })
+#define mm_str(val, ...)   mm_str_create((const char*)(val),  (mm_field_attr_t){ .min = INT64_MIN, .max = INT64_MIN, .size = -1, .version = -1, .location = INT_MIN, .child_location = INT_MIN, __VA_ARGS__ })
+#define mm_bool(val, ...)  mm_bool_create((bool)(val),     (mm_field_attr_t){ .min = INT64_MIN, .max = INT64_MIN, .size = -1, .version = -1, .location = INT_MIN, .child_location = INT_MIN, __VA_ARGS__ })
+#define mm_float(val, ...) mm_float_create((double)(val),  (mm_field_attr_t){ .min = INT64_MIN, .max = INT64_MIN, .size = -1, .version = -1, .location = INT_MIN, .child_location = INT_MIN, __VA_ARGS__ })
 
 mm_obj_t* mm_obj_new(void);
 void mm_obj_set(mm_obj_t* obj, const char* key, mm_node_t* value);

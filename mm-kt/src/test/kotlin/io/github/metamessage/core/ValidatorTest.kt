@@ -327,7 +327,7 @@ class ValidatorTest {
 
     @Test
     fun validateArr_ValidValue() {
-        val tag = Tag().apply { type = ValueType.ARRAY }
+        val tag = Tag().apply { type = ValueType.ARR }
         val result = tag.validateArr(listOf(1, 2, 3))
         assertTrue(result.valid)
     }
@@ -336,7 +336,7 @@ class ValidatorTest {
     fun validateArr_ChildUnique() {
         val tag =
                 Tag().apply {
-                    type = ValueType.ARRAY
+                    type = ValueType.ARR
                     childUnique = true
                 }
         val result = tag.validateArr(listOf(1, 2, 3))
@@ -347,7 +347,7 @@ class ValidatorTest {
     fun validateArr_DuplicateValues() {
         val tag =
                 Tag().apply {
-                    type = ValueType.ARRAY
+                    type = ValueType.ARR
                     childUnique = true
                 }
         val result = tag.validateArr(listOf(1, 2, 2, 3))

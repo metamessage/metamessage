@@ -248,6 +248,38 @@ go get github.com/metamessage/metamessage
 
 #### 예시 코드
 
+다른 언어에도 동일한 로직이 적용됩니다
+
+```go
+// 잘못된 접근법
+// ID는 이미 int64 타입이므로 type=i64를 지정할 필요가 없습니다
+// mm에서는 json 태그를 함께 사용하지 마세요. mm이 자동으로 이름을 처리합니다. 필요한 경우 mm에서 name=을 사용하세요
+// Age는 네이티브 uint8 타입을 사용해야 하므로 type=u8을 생략할 수 있습니다
+type User struct {
+	ID       int64  `mm:"type=i64;desc=User ID" json:"id"`
+	Name     string `mm:"type=str;desc=User Name;min=1;max=50" json:"name"`
+	Email    string `mm:"type=email;desc=Email" json:"email"`
+	Age      int    `mm:"type=u8;desc=Age;min=0;max=150" json:"age"`
+	IsActive bool   `mm:"type=bool;desc=Is Active" json:"is_active"`
+}
+
+// 올바른 접근법
+// Email은 네이티브 타입이 없으므로 type=email 태그가 필요합니다
+type User struct {
+	ID       int64  `mm:"desc=User ID"`
+	Name     string `mm:"desc=User Name;min=1;max=50"`
+	Email    string `mm:"type=email;desc=Email"`
+	Age      uint8  `mm:"desc=Age;min=0;max=150"`
+	IsActive bool   `mm:"desc=Is Active"`
+}
+
+user := User{}
+
+// 루트 레벨 태그는 여기서 지정할 수 있습니다
+tag := "desc=User"
+_, _ = EncodeFromValue(user, tag)
+```
+
 ```go
 package main
 

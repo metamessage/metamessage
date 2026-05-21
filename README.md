@@ -226,6 +226,8 @@ go get github.com/metamessage/metamessage
 
 #### 示例代碼
 
+其他語言相同邏輯
+
 ```go
 // 錯誤寫法
 // ID 已經有int64類型，不需要再標注類型i64

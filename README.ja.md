@@ -248,6 +248,38 @@ go get github.com/metamessage/metamessage
 
 #### サンプルコード
 
+他の言語でも同じロジックが適用されます
+
+```go
+// 誤った書き方
+// ID はすでにint64型なので、type=i64 の指定は不要
+// mmではjsonタグを併用しないこと。mmが自動的に命名を処理します。名前を指定する必要がある場合は mm で name= を使用
+// Age はネイティブのuint8型を使用すれば type=u8 を省略可能
+type User struct {
+	ID       int64  `mm:"type=i64;desc=User ID" json:"id"`
+	Name     string `mm:"type=str;desc=User Name;min=1;max=50" json:"name"`
+	Email    string `mm:"type=email;desc=Email" json:"email"`
+	Age      int    `mm:"type=u8;desc=Age;min=0;max=150" json:"age"`
+	IsActive bool   `mm:"type=bool;desc=Is Active" json:"is_active"`
+}
+
+// 正しい書き方
+// Email にはネイティブ型がないため、type=email の指定が必要
+type User struct {
+	ID       int64  `mm:"desc=User ID"`
+	Name     string `mm:"desc=User Name;min=1;max=50"`
+	Email    string `mm:"type=email;desc=Email"`
+	Age      uint8  `mm:"desc=Age;min=0;max=150"`
+	IsActive bool   `mm:"desc=Is Active"`
+}
+
+user := User{}
+
+// ルートレベルのタグはここで指定可能
+tag := "desc=User"
+_, _ = EncodeFromValue(user, tag)
+```
+
 ```go
 package main
 
