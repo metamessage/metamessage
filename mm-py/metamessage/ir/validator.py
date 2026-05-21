@@ -1001,7 +1001,7 @@ class MmValidator:
                 return MmValidator.validate_vec(value, tag)
             else:
                 return ValidationResult(False, "expected slice, got %s" % type(value).__name__)
-        elif tag.type == ValueType.Object:
+        elif tag.type == ValueType.Obj:
             return MmValidator.validate_obj(tag)
         elif tag.type == ValueType.Map:
             return MmValidator.validate_map(tag)
@@ -1020,7 +1020,7 @@ class MmValidator:
                 return MmValidator.validate_bool(value, tag)
             else:
                 return ValidationResult(False, "expected bool, got %s" % type(value).__name__)
-        elif tag.type == ValueType.Int:
+        elif tag.type == ValueType.I:
             if isinstance(value, int):
                 return MmValidator.validate_i(value, tag)
             else:
@@ -1045,7 +1045,7 @@ class MmValidator:
                 return MmValidator.validate_i64(value, tag)
             else:
                 return ValidationResult(False, "expected int64, got %s" % type(value).__name__)
-        elif tag.type == ValueType.Uint:
+        elif tag.type == ValueType.U:
             if isinstance(value, int):
                 return MmValidator.validate_u(value, tag)
             else:
@@ -1070,28 +1070,28 @@ class MmValidator:
                 return MmValidator.validate_u64(value, tag)
             else:
                 return ValidationResult(False, "expected uint64, got %s" % type(value).__name__)
-        elif tag.type == ValueType.Float32:
+        elif tag.type == ValueType.F32:
             if isinstance(value, (int, float)):
                 return MmValidator.validate_f32(float(value), tag)
             else:
                 return ValidationResult(False, "expected float32, got %s" % type(value).__name__)
-        elif tag.type == ValueType.Float64:
+        elif tag.type == ValueType.F64:
             if isinstance(value, (int, float)):
                 return MmValidator.validate_f64(float(value), tag)
             else:
                 return ValidationResult(False, "expected float64, got %s" % type(value).__name__)
-        elif tag.type == ValueType.BigInt:
+        elif tag.type == ValueType.Bigint:
             if isinstance(value, str):
                 return MmValidator.validate_bigint(value, tag)
             else:
                 return ValidationResult(False, "expected string for big.Int, got %s" % type(value).__name__)
-        elif tag.type == ValueType.DateTime:
+        elif tag.type == ValueType.Datetime:
             return MmValidator.validate_datetime(value, tag)
         elif tag.type == ValueType.Date:
             return MmValidator.validate_date(value, tag)
         elif tag.type == ValueType.Time:
             return MmValidator.validate_time(value, tag)
-        elif tag.type == ValueType.UUID:
+        elif tag.type == ValueType.Uuid:
             if isinstance(value, str):
                 return MmValidator.validate_uuid(value, tag)
             else:
@@ -1101,12 +1101,12 @@ class MmValidator:
                 return MmValidator.validate_decimal(value, tag)
             else:
                 return ValidationResult(False, "expected string, got %s" % type(value).__name__)
-        elif tag.type == ValueType.IP:
+        elif tag.type == ValueType.Ip:
             if isinstance(value, str):
                 return MmValidator.validate_ip(value, tag)
             else:
                 return ValidationResult(False, "expected string, got %s" % type(value).__name__)
-        elif tag.type == ValueType.URL:
+        elif tag.type == ValueType.Url:
             if isinstance(value, str):
                 return MmValidator.validate_url(value, tag)
             else:

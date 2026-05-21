@@ -1,0 +1,7 @@
+{
+    // mm: desc=root object
+    // regular comment
+    "key1": "value1",
+    /* block comment */
+    "key2": 42
+}

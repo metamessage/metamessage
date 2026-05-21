@@ -1,0 +1,6 @@
+{
+    // mm: desc=user name field
+    "name": "Alice",
+    // mm: desc=user age; min=0; max=150
+    "age": 30
+}

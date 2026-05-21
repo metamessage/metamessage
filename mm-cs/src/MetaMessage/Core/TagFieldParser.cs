@@ -125,6 +125,14 @@ public static class TagFieldParser
                     tag.ChildNullable = true;
                     break;
 
+                case 28: // ChildAllowEmpty
+                    tag.ChildAllowEmpty = true;
+                    break;
+
+                case 29: // ChildUnique
+                    tag.ChildUnique = true;
+                    break;
+
                 case 16: // ChildEnum
                     if (offset >= data.Length)
                         throw new MmDecodeException("Unexpected end of tag data");

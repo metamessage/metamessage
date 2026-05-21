@@ -105,74 +105,74 @@ class TestEncoderValueTypes(unittest.TestCase):
         self.assertIsInstance(result, bytes)
 
     def test_encode_int(self):
-        t = Tag(type=ValueType.Int)
+        t = Tag(type=ValueType.I)
         v = Val(data=42, text="42", tag=t)
         result = self.encoder.encode(v)
         self.assertIsInstance(result, bytes)
         self.assertGreater(len(result), 0)
 
     def test_encode_int8(self):
-        t = Tag(type=ValueType.Int8)
+        t = Tag(type=ValueType.I8)
         v = Val(data=10, text="10", tag=t)
         result = self.encoder.encode(v)
         self.assertIsInstance(result, bytes)
 
     def test_encode_int16(self):
-        t = Tag(type=ValueType.Int16)
+        t = Tag(type=ValueType.I16)
         v = Val(data=100, text="100", tag=t)
         result = self.encoder.encode(v)
         self.assertIsInstance(result, bytes)
 
     def test_encode_int32(self):
-        t = Tag(type=ValueType.Int32)
+        t = Tag(type=ValueType.I32)
         v = Val(data=1000, text="1000", tag=t)
         result = self.encoder.encode(v)
         self.assertIsInstance(result, bytes)
 
     def test_encode_int64(self):
-        t = Tag(type=ValueType.Int64)
+        t = Tag(type=ValueType.I64)
         v = Val(data=100000, text="100000", tag=t)
         result = self.encoder.encode(v)
         self.assertIsInstance(result, bytes)
 
     def test_encode_uint(self):
-        t = Tag(type=ValueType.Uint)
+        t = Tag(type=ValueType.U)
         v = Val(data=42, text="42", tag=t)
         result = self.encoder.encode(v)
         self.assertIsInstance(result, bytes)
 
     def test_encode_uint8(self):
-        t = Tag(type=ValueType.Uint8)
+        t = Tag(type=ValueType.U8)
         v = Val(data=10, text="10", tag=t)
         result = self.encoder.encode(v)
         self.assertIsInstance(result, bytes)
 
     def test_encode_uint16(self):
-        t = Tag(type=ValueType.Uint16)
+        t = Tag(type=ValueType.U16)
         v = Val(data=100, text="100", tag=t)
         result = self.encoder.encode(v)
         self.assertIsInstance(result, bytes)
 
     def test_encode_uint32(self):
-        t = Tag(type=ValueType.Uint32)
+        t = Tag(type=ValueType.U32)
         v = Val(data=1000, text="1000", tag=t)
         result = self.encoder.encode(v)
         self.assertIsInstance(result, bytes)
 
     def test_encode_uint64(self):
-        t = Tag(type=ValueType.Uint64)
+        t = Tag(type=ValueType.U64)
         v = Val(data=100000, text="100000", tag=t)
         result = self.encoder.encode(v)
         self.assertIsInstance(result, bytes)
 
     def test_encode_float32(self):
-        t = Tag(type=ValueType.Float32)
+        t = Tag(type=ValueType.F32)
         v = Val(data=3.14, text="3.14", tag=t)
         result = self.encoder.encode(v)
         self.assertIsInstance(result, bytes)
 
     def test_encode_float64(self):
-        t = Tag(type=ValueType.Float64)
+        t = Tag(type=ValueType.F64)
         v = Val(data=3.14, text="3.14", tag=t)
         result = self.encoder.encode(v)
         self.assertIsInstance(result, bytes)
@@ -199,14 +199,14 @@ class TestEncoderValueTypes(unittest.TestCase):
         self.assertGreater(len(result), 0)
 
     def test_encode_bigint(self):
-        t = Tag(type=ValueType.BigInt)
+        t = Tag(type=ValueType.Bigint)
         v = Val(data="12345678901234567890", text="12345678901234567890", tag=t)
         result = self.encoder.encode(v)
         self.assertIsInstance(result, bytes)
         self.assertGreater(len(result), 0)
 
     def test_encode_datetime(self):
-        t = Tag(type=ValueType.DateTime)
+        t = Tag(type=ValueType.Datetime)
         v = Val(data=datetime.now(), text="2024-01-01T00:00:00Z", tag=t)
         result = self.encoder.encode(v)
         self.assertIsInstance(result, bytes)
@@ -224,7 +224,7 @@ class TestEncoderValueTypes(unittest.TestCase):
         self.assertIsInstance(result, bytes)
 
     def test_encode_uuid(self):
-        t = Tag(type=ValueType.UUID)
+        t = Tag(type=ValueType.Uuid)
         v = Val(data="0123456789abcdef", text="0123456789abcdef0123456789abcdef", tag=t)
         result = self.encoder.encode(v)
         self.assertIsInstance(result, bytes)
@@ -236,7 +236,7 @@ class TestEncoderValueTypes(unittest.TestCase):
         self.assertIsInstance(result, bytes)
 
     def test_encode_url(self):
-        t = Tag(type=ValueType.URL)
+        t = Tag(type=ValueType.Url)
         v = Val(data="https://example.com", text="https://example.com", tag=t)
         result = self.encoder.encode(v)
         self.assertIsInstance(result, bytes)
@@ -248,13 +248,13 @@ class TestEncoderValueTypes(unittest.TestCase):
         self.assertIsInstance(result, bytes)
 
     def test_encode_ip_v4(self):
-        t = Tag(type=ValueType.IP, version=4)
+        t = Tag(type=ValueType.Ip, version=4)
         v = Val(data="127.0.0.1", text="127.0.0.1", tag=t)
         result = self.encoder.encode(v)
         self.assertIsInstance(result, bytes)
 
     def test_encode_ip_v6(self):
-        t = Tag(type=ValueType.IP, version=6)
+        t = Tag(type=ValueType.Ip, version=6)
         v = Val(data="::1", text="::1", tag=t)
         result = self.encoder.encode(v)
         self.assertIsInstance(result, bytes)
@@ -290,10 +290,10 @@ class TestEncoderComplexTypes(unittest.TestCase):
     def test_encode_array_with_ints(self):
         arr = Arr(
             items=[
-                Val(data=1, text="1", tag=Tag(type=ValueType.Int)),
-                Val(data=2, text="2", tag=Tag(type=ValueType.Int)),
+                Val(data=1, text="1", tag=Tag(type=ValueType.I)),
+                Val(data=2, text="2", tag=Tag(type=ValueType.I)),
             ],
-            tag=Tag(type=ValueType.Arr, child_type=ValueType.Int)
+            tag=Tag(type=ValueType.Arr, child_type=ValueType.I)
         )
         result = self.encoder.encode(arr)
         self.assertIsInstance(result, bytes)
@@ -312,7 +312,7 @@ class TestEncoderComplexTypes(unittest.TestCase):
                 ),
                 Field(
                     key="age",
-                    value=Val(data=30, text="30", tag=Tag(type=ValueType.Int))
+                    value=Val(data=30, text="30", tag=Tag(type=ValueType.I))
                 ),
             ],
             tag=Tag(name="person")
@@ -353,25 +353,25 @@ class TestEncoderEdgeCases(unittest.TestCase):
         self.encoder = Encoder()
 
     def test_encode_negative_int(self):
-        t = Tag(type=ValueType.Int)
+        t = Tag(type=ValueType.I)
         v = Val(data=-42, text="-42", tag=t)
         result = self.encoder.encode(v)
         self.assertIsInstance(result, bytes)
 
     def test_encode_large_int(self):
-        t = Tag(type=ValueType.Int64)
+        t = Tag(type=ValueType.I64)
         v = Val(data=9223372036854775807, text="9223372036854775807", tag=t)
         result = self.encoder.encode(v)
         self.assertIsInstance(result, bytes)
 
     def test_encode_negative_float(self):
-        t = Tag(type=ValueType.Float64)
+        t = Tag(type=ValueType.F64)
         v = Val(data=-3.14, text="-3.14", tag=t)
         result = self.encoder.encode(v)
         self.assertIsInstance(result, bytes)
 
     def test_encode_zero_values(self):
-        t = Tag(type=ValueType.Int)
+        t = Tag(type=ValueType.I)
         v = Val(data=0, text="0", tag=t)
         result = self.encoder.encode(v)
         self.assertIsInstance(result, bytes)
@@ -395,10 +395,10 @@ class TestTag(unittest.TestCase):
         self.assertIsInstance(b, bytes)
 
     def test_tag_inherit(self):
-        parent = Tag(child_type=ValueType.Int)
+        parent = Tag(child_type=ValueType.I)
         child = Tag()
         child.inherit(parent)
-        self.assertEqual(child.type, ValueType.Int)
+        self.assertEqual(child.type, ValueType.I)
 
 
 class TestToJSONC(unittest.TestCase):
@@ -408,12 +408,12 @@ class TestToJSONC(unittest.TestCase):
         self.assertEqual(result, '"hello"')
 
     def test_to_jsonc_value_int(self):
-        v = Val(data=42, text="42", tag=Tag(type=ValueType.Int))
+        v = Val(data=42, text="42", tag=Tag(type=ValueType.I))
         result = to_jsonc(v)
         self.assertEqual(result, "42")
 
     def test_to_jsonc_value_float(self):
-        v = Val(data=3.14, text="3.14", tag=Tag(type=ValueType.Float64))
+        v = Val(data=3.14, text="3.14", tag=Tag(type=ValueType.F64))
         result = to_jsonc(v)
         self.assertEqual(result, "3.14")
 
@@ -426,7 +426,7 @@ class TestToJSONC(unittest.TestCase):
         obj = Obj(
             fields=[
                 Field(key="name", value=Val(data="John", text="John", tag=Tag(type=ValueType.Str))),
-                Field(key="age", value=Val(data=30, text="30", tag=Tag(type=ValueType.Int))),
+                Field(key="age", value=Val(data=30, text="30", tag=Tag(type=ValueType.I))),
             ],
             tag=Tag(name="person")
         )
@@ -473,7 +473,7 @@ class TestEncoderDecoder(unittest.TestCase):
         self.assertEqual(decoded, "hello")
 
     def test_encode_decode_int(self):
-        t = Tag(type=ValueType.Int)
+        t = Tag(type=ValueType.I)
         v = Val(data=42, text="42", tag=t)
         encoded = self.encoder.encode(v)
         decoder = Decoder(encoded)
@@ -481,7 +481,7 @@ class TestEncoderDecoder(unittest.TestCase):
         self.assertEqual(decoded, 42)
 
     def test_encode_decode_int_negative(self):
-        t = Tag(type=ValueType.Int)
+        t = Tag(type=ValueType.I)
         v = Val(data=-42, text="-42", tag=t)
         encoded = self.encoder.encode(v)
         decoder = Decoder(encoded)
@@ -489,7 +489,7 @@ class TestEncoderDecoder(unittest.TestCase):
         self.assertEqual(decoded, -42)
 
     def test_encode_decode_float(self):
-        t = Tag(type=ValueType.Float64)
+        t = Tag(type=ValueType.F64)
         v = Val(data=3.14, text="3.14", tag=t)
         encoded = self.encoder.encode(v)
         decoder = Decoder(encoded)
@@ -543,7 +543,7 @@ class TestEncoderDecoder(unittest.TestCase):
                 ),
                 Field(
                     key="age",
-                    value=Val(data=30, text="30", tag=Tag(type=ValueType.Int))
+                    value=Val(data=30, text="30", tag=Tag(type=ValueType.I))
                 ),
             ],
             tag=Tag(name="person")

@@ -5,12 +5,12 @@ public enum ValueType
     Unknown,
 
     Doc,
-    Slice,
-    Array,
-    Struct,
+    Vec,
+    Arr,
+    Obj,
     Map,
 
-    String,
+    Str,
     Bytes,
     Bool,
 

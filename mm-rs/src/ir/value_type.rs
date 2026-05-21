@@ -129,4 +129,43 @@ impl ValueType {
                 | ValueType::Enum
         )
     }
+
+    pub fn from_code(code: u8) -> Self {
+        match code {
+            0 => ValueType::Unknown,
+            1 => ValueType::Doc,
+            2 => ValueType::Slice,
+            3 => ValueType::Array,
+            4 => ValueType::Struct,
+            5 => ValueType::Map,
+            6 => ValueType::String,
+            7 => ValueType::Bytes,
+            8 => ValueType::Bool,
+            9 => ValueType::Int,
+            10 => ValueType::Int8,
+            11 => ValueType::Int16,
+            12 => ValueType::Int32,
+            13 => ValueType::Int64,
+            14 => ValueType::Uint,
+            15 => ValueType::Uint8,
+            16 => ValueType::Uint16,
+            17 => ValueType::Uint32,
+            18 => ValueType::Uint64,
+            19 => ValueType::Float32,
+            20 => ValueType::Float64,
+            21 => ValueType::BigInt,
+            22 => ValueType::DateTime,
+            23 => ValueType::Date,
+            24 => ValueType::Time,
+            25 => ValueType::UUID,
+            26 => ValueType::Decimal,
+            27 => ValueType::IP,
+            28 => ValueType::URL,
+            29 => ValueType::Email,
+            30 => ValueType::Enum,
+            31 => ValueType::Image,
+            32 => ValueType::Video,
+            _ => ValueType::Unknown,
+        }
+    }
 }

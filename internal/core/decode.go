@@ -241,7 +241,7 @@ func (d *decoder) decodeTag(prefix byte, path string) (node ir.Node, length int,
 		l -= n
 	}
 
-	// fmt.Println("decode tag", tag.String())
+	// fmt.Println("decode tag", tag.ToString())
 	if tag.IsNull {
 		switch tag.Type {
 		case ir.ValueTypeDatetime:
@@ -1496,7 +1496,7 @@ func (d *decoder) decodeObj(prefix byte, tag *ir.Tag, path string) (node *ir.Obj
 		}
 		var l byte
 		if l, err = d.ReadByte(); err != nil {
-			err = fmt.Errorf("%s: decodeObj %w", path, err)
+			err = fmt.Errorf("%s: decodeObj1 %w", path, err)
 			return
 		}
 		l2 = int(l)
@@ -1507,7 +1507,7 @@ func (d *decoder) decodeObj(prefix byte, tag *ir.Tag, path string) (node *ir.Obj
 		}
 		var l []byte
 		if l, err = d.ReadBytes(2); err != nil {
-			err = fmt.Errorf("%s: decodeObj %w", path, err)
+			err = fmt.Errorf("%s: decodeObj2 %w", path, err)
 			return
 		}
 		l2 = int(l[0])<<8 | int(l[1])
@@ -1523,13 +1523,13 @@ func (d *decoder) decodeObj(prefix byte, tag *ir.Tag, path string) (node *ir.Obj
 
 	var lArray byte
 	if lArray, err = d.ReadByte(); err != nil {
-		err = fmt.Errorf("%s: decodeObj %w", path, err)
+		err = fmt.Errorf("%s: decodeObj3 %w", path, err)
 		return
 	}
 
 	nKeys, lKeys, eKeys := d.decodeArr(lArray, tag, path)
 	if eKeys != nil {
-		err = fmt.Errorf("%s: decodeObj %w", path, eKeys)
+		err = fmt.Errorf("%s: decodeObj4 %w", path, eKeys)
 		return
 	}
 
@@ -1543,7 +1543,7 @@ func (d *decoder) decodeObj(prefix byte, tag *ir.Tag, path string) (node *ir.Obj
 		p := fmt.Sprintf("%s.%s", path, key)
 		n, l, e := d.decode(tagValue, p)
 		if e != nil || l <= 0 {
-			err = fmt.Errorf("%s: decodeObj %w", p, e)
+			err = fmt.Errorf("%s: decodeObj5 %w", p, e)
 			return
 		}
 

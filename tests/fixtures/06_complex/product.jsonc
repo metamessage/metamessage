@@ -1,0 +1,12 @@
+{
+    // mm: desc=product
+    "id": 1001,
+    "name": "Widget Pro",
+    "price": 29.99,
+    "in_stock": true,
+    "tags": ["electronics", "premium"],
+    "specs": {
+        "weight": 1.5,
+        "color": "black"
+    }
+}

@@ -14,11 +14,13 @@ export class MMValue implements Node {
   private value: any;
   private tag: Tag;
   private path: string;
+  private text: string;
 
   constructor(value: any, tag?: Tag) {
     this.value = value;
     this.tag = tag || new Tag();
     this.path = '';
+    this.text = '';
   }
 
   getType(): NodeType {
@@ -47,6 +49,14 @@ export class MMValue implements Node {
 
   setValue(value: any): void {
     this.value = value;
+  }
+
+  getText(): string {
+    return this.text;
+  }
+
+  setText(text: string): void {
+    this.text = text;
   }
 }
 

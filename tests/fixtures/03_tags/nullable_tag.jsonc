@@ -1,0 +1,5 @@
+{
+    // mm: nullable; allow_empty
+    "nullable_name": "",
+    "nullable_value": 42
+}

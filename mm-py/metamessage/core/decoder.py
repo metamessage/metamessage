@@ -323,7 +323,7 @@ class Decoder:
     def _decode_null_value(self, tag: Tag, path: str, prefix: int) -> Optional[Node]:
         v = ValueType
 
-        if tag.type == v.DateTime:
+        if tag.type == v.Datetime:
             text = DEFAULT_TIME.strftime('%Y-%m-%d %H:%M:%S')
             if tag.location is not None:
                 text = DEFAULT_TIME.strftime('%Y-%m-%d %H:%M:%S')
@@ -342,25 +342,25 @@ class Decoder:
             return Val(data=0, text='0', tag=tag, path=path), 0
         elif tag.type == v.Int64:
             return Val(data=0, text='0', tag=tag, path=path), 0
-        elif tag.type == v.Uint:
+        elif tag.type == v.U:
             return Val(data=0, text='0', tag=tag, path=path), 0
-        elif tag.type == v.Uint8:
+        elif tag.type == v.U8:
             return Val(data=0, text='0', tag=tag, path=path), 0
-        elif tag.type == v.Uint16:
+        elif tag.type == v.U16:
             return Val(data=0, text='0', tag=tag, path=path), 0
-        elif tag.type == v.Uint32:
+        elif tag.type == v.U32:
             return Val(data=0, text='0', tag=tag, path=path), 0
-        elif tag.type == v.Uint64:
+        elif tag.type == v.U64:
             return Val(data=0, text='0', tag=tag, path=path), 0
-        elif tag.type == v.Float32:
+        elif tag.type == v.F32:
             return Val(data=0.0, text='0.0', tag=tag, path=path), 0
-        elif tag.type in (v.Email, v.UUID, v.Decimal):
+        elif tag.type in (v.Email, v.Uuid, v.Decimal):
             return Val(data='', text='', tag=tag, path=path), 0
-        elif tag.type == v.BigInt:
+        elif tag.type == v.Bigint:
             return Val(data=0, text='0', tag=tag, path=path), 0
-        elif tag.type == v.URL:
+        elif tag.type == v.Url:
             return Val(data='', text='', tag=tag, path=path), 0
-        elif tag.type == v.IP:
+        elif tag.type == v.Ip:
             if tag.version == 4:
                 text = '0.0.0.0'
             elif tag.version == 6:
@@ -397,6 +397,12 @@ class Decoder:
             return 1
         elif p == TagKey.Nullable:
             tag.nullable = (l & 0x01) == 1
+            return 1
+        elif p == TagKey.AllowEmpty:
+            tag.allow_empty = (l & 0x01) == 1
+            return 1
+        elif p == TagKey.Unique:
+            tag.unique = (l & 0x01) == 1
             return 1
         elif p == TagKey.Default:
             n, s = self._read_length_str_small(l)
@@ -450,6 +456,12 @@ class Decoder:
             return 1
         elif p == TagKey.ChildNullable:
             tag.child_nullable = (l & 0x01) == 1
+            return 1
+        elif p == TagKey.ChildAllowEmpty:
+            tag.child_allow_empty = (l & 0x01) == 1
+            return 1
+        elif p == TagKey.ChildUnique:
+            tag.child_unique = (l & 0x01) == 1
             return 1
         elif p == TagKey.ChildDefault:
             n, s = self._read_length_str_small(l)
@@ -542,10 +554,10 @@ class Decoder:
             tag.type = ValueType.Bool
             return Val(data=False, text='false', tag=tag, path=path), 1
         elif suffix == SimpleNullInt:
-            tag.type = ValueType.Int
+            tag.type = ValueType.I
             return Val(data=0, text='0', tag=tag, path=path), 1
         elif suffix == SimpleNullFloat:
-            tag.type = ValueType.Float64
+            tag.type = ValueType.F64
             return Val(data=0.0, text='0.0', tag=tag, path=path), 1
         elif suffix == SimpleNullString:
             tag.type = ValueType.Str
@@ -646,16 +658,16 @@ class Decoder:
             tag = Tag()
 
         if tag.type == ValueType.Unknown:
-            tag.type = ValueType.Int
+            tag.type = ValueType.I
 
         data = None
         text = str(v)
 
-        if tag.type in (ValueType.Int, ValueType.Int8, ValueType.Int16, ValueType.Int32, ValueType.Int64):
+        if tag.type in (ValueType.I, ValueType.I8, ValueType.I16, ValueType.I32, ValueType.I64):
             data = v
-        elif tag.type in (ValueType.Uint, ValueType.Uint8, ValueType.Uint16, ValueType.Uint32, ValueType.Uint64):
+        elif tag.type in (ValueType.U, ValueType.U8, ValueType.U16, ValueType.U32, ValueType.U64):
             data = v
-        elif tag.type == ValueType.DateTime:
+        elif tag.type == ValueType.Datetime:
             if tag.is_null:
                 data = None
                 text = ""
@@ -717,14 +729,14 @@ class Decoder:
             tag = Tag()
 
         if tag.type == ValueType.Unknown:
-            tag.type = ValueType.Int
+            tag.type = ValueType.I
 
         data = None
         text = "-" + str(v)
 
-        if tag.type in (ValueType.Int, ValueType.Int8, ValueType.Int16, ValueType.Int32, ValueType.Int64):
+        if tag.type in (ValueType.I, ValueType.I8, ValueType.I16, ValueType.I32, ValueType.I64):
             data = -v
-        elif tag.type == ValueType.DateTime:
+        elif tag.type == ValueType.Datetime:
             if tag.is_null:
                 data = None
                 text = ""
@@ -779,11 +791,11 @@ class Decoder:
         if tag is None:
             tag = Tag()
         if tag.type == ValueType.Unknown:
-            tag.type = ValueType.Float64
+            tag.type = ValueType.F64
 
-        if tag.type == ValueType.Float32:
+        if tag.type == ValueType.F32:
             data = float(v)
-        elif tag.type == ValueType.Float64:
+        elif tag.type == ValueType.F64:
             data = v
         elif tag.type == ValueType.Decimal:
             data = _mantissa_to_decimal(mantissa, exp) if 'mantissa' in dir() else str(v)
@@ -819,9 +831,9 @@ class Decoder:
 
         if tag.type == ValueType.Email:
             data = text
-        elif tag.type == ValueType.URL:
+        elif tag.type == ValueType.Url:
             data = text
-        elif tag.type == ValueType.IP:
+        elif tag.type == ValueType.Ip:
             data = text
             try:
                 import ipaddress
@@ -858,7 +870,7 @@ class Decoder:
         if tag.type == ValueType.Unknown:
             tag.type = ValueType.Bytes
 
-        if tag.type == ValueType.BigInt:
+        if tag.type == ValueType.Bigint:
             text = _decode_bytes_bigint(bs[1:], bs[0])
             try:
                 data = int(text)
@@ -868,10 +880,10 @@ class Decoder:
             data = bs
             import base64
             text = base64.b64encode(bs).decode('utf-8')
-        elif tag.type == ValueType.UUID:
+        elif tag.type == ValueType.Uuid:
             data = bytes(bs[:16])
             text = '-'.join([bs[:4].hex(), bs[4:6].hex(), bs[6:8].hex(), bs[8:10].hex(), bs[10:16].hex()])
-        elif tag.type == ValueType.IP:
+        elif tag.type == ValueType.Ip:
             data = bytes(bs)
             try:
                 import ipaddress
@@ -929,9 +941,9 @@ class Decoder:
     def _decode_object(self, b: int, tag: Optional[Tag], path: str) -> Tuple[Node, int]:
         if tag is None:
             tag = Tag()
-            tag.type = ValueType.Object
+            tag.type = ValueType.Obj
         if tag.type == ValueType.Unknown:
-            tag.type = ValueType.Object
+            tag.type = ValueType.Obj
 
         l1, l2 = _container_len(b)
 

@@ -1,0 +1,11 @@
+[package]
+name = "mm-harness-rs"
+version = "0.1.0"
+edition = "2021"
+
+[[bin]]
+name = "mm-harness-rs"
+path = "main.rs"
+
+[dependencies]
+metamessage = { path = "../../../mm-rs" }

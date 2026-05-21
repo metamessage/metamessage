@@ -65,62 +65,70 @@ export class JSONCPrinter {
   private valueToStringOnly(value: MMValue): string {
     const tag = value.getTag();
     const type = tag.type;
+    const text = value.getText();
     const val = value.getValue();
+
+    if (text) {
+      switch (type) {
+        case ValueType.Str:
+        case ValueType.Bytes:
+        case ValueType.DateTime:
+        case ValueType.Date:
+        case ValueType.Time:
+        case ValueType.UUID:
+        case ValueType.IP:
+        case ValueType.URL:
+        case ValueType.Email:
+        case ValueType.Enum:
+          return `"${text}"`;
+        default:
+          return text;
+      }
+    }
+
     switch (type) {
       case ValueType.Unknown:
         return 'null';
-      case ValueType.BigInt:
-        return val.toString();
-
-      case ValueType.Bool:
-        return val ? 'true' : 'false';
       case ValueType.Str:
+      case ValueType.UUID:
+      case ValueType.Email:
         return `"${val}"`;
       case ValueType.Bytes:
         return `"${uint8ToBase64(val)}"`;
       case ValueType.DateTime:
-        return val.toString();
       case ValueType.Date:
-        return val.toString();
       case ValueType.Time:
-        return val.toString();
-      case ValueType.UUID:
-        return `"${val}"`;
+        return `"${this.dateToText(val)}"`;
       case ValueType.IP:
-        return val.toString();
       case ValueType.URL:
-        return val.toString();
-      case ValueType.Email:
-        return `"${val}"`;
       case ValueType.Enum:
-        return val.toString();
+        return `"${val}"`;
+      case ValueType.Bool:
+        return val ? 'true' : 'false';
+      case ValueType.BigInt:
       case ValueType.Int:
-        return val.toString();
       case ValueType.Int8:
-        return val.toString();
       case ValueType.Int16:
-        return val.toString();
       case ValueType.Int32:
-        return val.toString();
       case ValueType.Int64:
-        return val.toString();
       case ValueType.Uint:
-        return val.toString();
       case ValueType.Uint8:
-        return val.toString();
       case ValueType.Uint16:
-        return val.toString();
       case ValueType.Uint32:
-        return val.toString();
       case ValueType.Uint64:
-        return val.toString();
       case ValueType.Float32:
-        return val.toString();
       case ValueType.Float64:
-        return val.toString();
       default:
-        return val.toString();
+        return String(val);
     }
+  }
+
+  private dateToText(val: any): string {
+    if (val instanceof Date) {
+      const pad = (n: number) => String(n).padStart(2, '0');
+      return `${val.getFullYear()}-${pad(val.getMonth() + 1)}-${pad(val.getDate())} ${pad(val.getHours())}:${pad(val.getMinutes())}:${pad(val.getSeconds())}`;
+    }
+    return String(val);
   }
 
   private printObject(obj: MMObject): string {

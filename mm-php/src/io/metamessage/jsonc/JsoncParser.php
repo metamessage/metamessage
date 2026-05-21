@@ -792,7 +792,7 @@ class JsoncParser
                     throw new \Exception('null literal is not supported');
 
                 default:
-                    throw new \Exception(sprintf('unexpected token %s', $tok->type->name));
+                    throw new \Exception(sprintf('unexpected token %s', $tok->type));
             }
         }
     }
@@ -809,7 +809,7 @@ class JsoncParser
             $tag = Tag::newTag();
         }
         if ($tag->type === ValueType::UNKNOWN) {
-            $tag->type = ValueType::OBJECT;
+            $tag->type = ValueType::OBJ;
         }
 
         if ($tag->name !== '') {
@@ -896,7 +896,7 @@ class JsoncParser
                 $this->validateMap($tag);
                 break;
 
-            case ValueType::OBJECT:
+            case ValueType::OBJ:
                 $this->validateObj($tag);
                 break;
         }

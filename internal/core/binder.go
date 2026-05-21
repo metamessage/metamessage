@@ -78,7 +78,7 @@ func convertObj(obj *ir.Object, outVal reflect.Value) error {
 		fieldVal, found := fieldMap[fieldKey]
 
 		if !found {
-			return fmt.Errorf("struct has no field '%s'", fieldKey)
+			return fmt.Errorf("%s has no field '%s'", obj.Path, fieldKey)
 		}
 
 		if !fieldVal.CanSet() {

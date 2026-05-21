@@ -4,6 +4,10 @@
 releases/
 tmp/
 
+.lock
+*.diff
+/tests/results/
+
 # Language-specific files
 
 # Go
@@ -42,10 +46,13 @@ examples/**/[Bb]in/
 examples/**/[Oo]bj/
 mm-cs/**/[Bb]in/
 mm-cs/**/[Oo]bj/
+tests/**/[Bb]in/
+tests/**/[Oo]bj/
 *.lscache
 
 # Rust
 mm-rs/target/
+tests/**/target/
 
 # Swift
 mm-swift/.build/

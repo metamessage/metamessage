@@ -17,7 +17,7 @@ import (
 
 // go run ./cmd/mm -generate -lang go -in example.jsonc / cat example.jsonc | go run ./cmd/mm -generate -lang go
 func main() {
-	validLangs := []string{"go", "java", "ts", "kt", "py", "js", "cs", "rs", "swift", "php"}
+	validLangs := []string{"go", "java", "ts", "kt", "py", "js", "cs", "rs", "swift", "php", "c", "cpp"}
 
 	encode := flag.Bool("encode", false, "encode mode: jsonc -> MetaMessage")
 	flag.BoolVar(encode, "e", false, "shorthand for -encode")
@@ -51,7 +51,7 @@ func main() {
 		fmt.Fprintln(os.Stderr, "  -out, -o string    Output file path (empty = write to stdout)")
 		fmt.Fprintln(os.Stderr, "  -force, -f         Overwrite output file if it exists (default: false)")
 		fmt.Fprintln(os.Stderr, "\nGenerate Options (only for -gen):")
-		fmt.Fprintln(os.Stderr, "  -lang, -l string   Target language (default: , support: go, java, ts, kt, py, js, cs, rs, swift, php)")
+		fmt.Fprintln(os.Stderr, "  -lang, -l string   Target language (default: , support: go, java, ts, kt, py, js, cs, rs, swift, php, c, cpp)")
 		fmt.Fprintln(os.Stderr, "\nExamples:")
 		fmt.Fprintln(os.Stderr, "  # Encode JSONC to MetaMessage (stdin -> stdout)")
 		fmt.Fprintln(os.Stderr, "  ", os.Args[0], "-encode -in input.jsonc -out output.MetaMessage")
@@ -75,6 +75,10 @@ func main() {
 		fmt.Fprintln(os.Stderr, "  ", os.Args[0], "-gen -lang swift -in input.jsonc -out output.swift")
 		fmt.Fprintln(os.Stderr, "  # Generate PHP class from JSONC")
 		fmt.Fprintln(os.Stderr, "  ", os.Args[0], "-gen -lang php -in input.jsonc -out output.php")
+		fmt.Fprintln(os.Stderr, "  # Generate C struct from JSONC")
+		fmt.Fprintln(os.Stderr, "  ", os.Args[0], "-gen -lang c -in input.jsonc -out output.h")
+		fmt.Fprintln(os.Stderr, "  # Generate C++ struct from JSONC")
+		fmt.Fprintln(os.Stderr, "  ", os.Args[0], "-gen -lang cpp -in input.jsonc -out output.hpp")
 	}
 	flag.Parse()
 
@@ -225,6 +229,10 @@ func main() {
 			outputStr = gen.ToSwift(node)
 		case "php":
 			outputStr = gen.ToPHP(node)
+		case "c":
+			outputStr = gen.ToC(node)
+		case "cpp":
+			outputStr = gen.ToCpp(node)
 		default:
 			fmt.Fprintf(os.Stderr, "unsupported language: %s\n", *lang)
 			fmt.Fprintf(os.Stderr, "supported languages: %s\n", strings.Join(validLangs, ", "))

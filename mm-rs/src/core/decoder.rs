@@ -1,4 +1,13 @@
-use crate::core::constants::{CONTAINER_ARRAY, CONTAINER_LEN_MASK};
+use crate::core::constants::{
+    CONTAINER_ARRAY, CONTAINER_LEN_MASK,
+    TAG_ALLOW_EMPTY, TAG_CHILD_ALLOW_EMPTY, TAG_CHILD_DEFAULT, TAG_CHILD_DESC,
+    TAG_CHILD_ENUM, TAG_CHILD_LOCATION, TAG_CHILD_MAX, TAG_CHILD_MIME, TAG_CHILD_MIN,
+    TAG_CHILD_NULLABLE, TAG_CHILD_PATTERN, TAG_CHILD_RAW, TAG_CHILD_SIZE,
+    TAG_CHILD_TYPE, TAG_CHILD_UNIQUE, TAG_CHILD_VERSION,
+    TAG_DEFAULT, TAG_DESC, TAG_ENUM, TAG_EXAMPLE, TAG_IS_NULL, TAG_KEY_MASK,
+    TAG_LOCATION, TAG_MAX, TAG_MIME, TAG_MIN, TAG_NULLABLE, TAG_PAYLOAD_MASK,
+    TAG_PATTERN, TAG_RAW, TAG_SIZE, TAG_TYPE, TAG_UNIQUE, TAG_VERSION,
+};
 use crate::core::prefix::{Prefix, FLOAT_LEN_1, FLOAT_LEN_MASK, FLOAT_POSITIVE_NEGATIVE_MASK};
 use crate::core::simple_value::SimpleValue;
 use crate::ir::ast::{Array, Field, Node, Object, Value, ValueData};
@@ -94,8 +103,13 @@ impl Decoder {
             l = ((l3[0] as usize) << 8) | (l3[1] as usize);
         }
 
-        for _ in 0..l {
-            self.decode_tag_bytes(&mut tag)?;
+        let mut remaining = l;
+        while remaining > 0 {
+            let n = self.decode_tag_bytes(&mut tag)?;
+            if n == 0 || n > remaining {
+                break;
+            }
+            remaining -= n;
         }
 
         if tag.is_null {
@@ -119,8 +133,222 @@ impl Decoder {
         }
     }
 
-    fn decode_tag_bytes(&mut self, _tag: &mut Tag) -> Result<usize, std::io::Error> {
-        Ok(0)
+    fn decode_tag_bytes(&mut self, tag: &mut Tag) -> Result<usize, std::io::Error> {
+        let b = self.read_byte()?;
+        let key = b & TAG_KEY_MASK;
+        let payload = (b & TAG_PAYLOAD_MASK) as usize;
+
+        match key {
+            TAG_IS_NULL => {
+                tag.is_null = (payload & 1) == 1;
+                if tag.is_null {
+                    tag.nullable = true;
+                }
+                Ok(1)
+            }
+            TAG_EXAMPLE => {
+                tag.example = (payload & 1) == 1;
+                Ok(1)
+            }
+            TAG_DESC => {
+                let s = self.read_tag_str(payload)?;
+                tag.desc = Some(s);
+                Ok(1 + tag.desc.as_ref().map_or(0, |s| s.len()))
+            }
+            TAG_TYPE => {
+                let tb = self.read_byte()?;
+                tag.value_type = ValueType::from_code(tb);
+                Ok(2)
+            }
+            TAG_RAW => {
+                tag.raw = (payload & 1) == 1;
+                Ok(1)
+            }
+            TAG_NULLABLE => {
+                tag.nullable = (payload & 1) == 1;
+                Ok(1)
+            }
+            TAG_ALLOW_EMPTY => {
+                tag.allow_empty = (payload & 1) == 1;
+                Ok(1)
+            }
+            TAG_UNIQUE => {
+                tag.unique = (payload & 1) == 1;
+                Ok(1)
+            }
+            TAG_DEFAULT => {
+                let s = self.read_tag_short_str(payload)?;
+                tag.default = Some(s);
+                Ok(1 + tag.default.as_ref().map_or(0, |s| s.len()))
+            }
+            TAG_MIN => {
+                let s = self.read_tag_short_str(payload)?;
+                tag.min = Some(s);
+                Ok(1 + tag.min.as_ref().map_or(0, |s| s.len()))
+            }
+            TAG_MAX => {
+                let s = self.read_tag_short_str(payload)?;
+                tag.max = Some(s);
+                Ok(1 + tag.max.as_ref().map_or(0, |s| s.len()))
+            }
+            TAG_SIZE => {
+                let v = self.read_tag_uint(payload)?;
+                tag.size = Some(v);
+                Ok(2 + payload)
+            }
+            TAG_ENUM => {
+                tag.value_type = ValueType::Enum;
+                let s = self.read_tag_str(payload)?;
+                tag.enum_values = Some(s);
+                Ok(1 + tag.enum_values.as_ref().map_or(0, |s| s.len()))
+            }
+            TAG_PATTERN => {
+                let s = self.read_tag_short_str(payload)?;
+                tag.pattern = Some(s);
+                Ok(1 + tag.pattern.as_ref().map_or(0, |s| s.len()))
+            }
+            TAG_LOCATION => {
+                let s = self.read_tag_ascii(payload)?;
+                if let Ok(n) = s.parse::<i32>() {
+                    tag.location = Some(n);
+                }
+                Ok(1 + payload)
+            }
+            TAG_VERSION => {
+                let v = self.read_tag_uint(payload)?;
+                tag.version = Some(v as i32);
+                Ok(2 + payload)
+            }
+            TAG_MIME => {
+                let mime_id = if payload < 7 {
+                    payload as u8
+                } else {
+                    self.read_byte()?
+                };
+                tag.mime = Some(mime_id.to_string());
+                let extra = if payload < 7 { 0 } else { 1 };
+                Ok(1 + extra)
+            }
+            TAG_CHILD_DESC => {
+                let s = self.read_tag_str(payload)?;
+                tag.child_desc = Some(s);
+                Ok(1 + tag.child_desc.as_ref().map_or(0, |s| s.len()))
+            }
+            TAG_CHILD_TYPE => {
+                let tb = self.read_byte()?;
+                tag.child_type = ValueType::from_code(tb);
+                Ok(2)
+            }
+            TAG_CHILD_RAW => {
+                tag.child_raw = (payload & 1) == 1;
+                Ok(1)
+            }
+            TAG_CHILD_NULLABLE => {
+                tag.child_nullable = (payload & 1) == 1;
+                Ok(1)
+            }
+            TAG_CHILD_ALLOW_EMPTY => {
+                tag.child_allow_empty = (payload & 1) == 1;
+                Ok(1)
+            }
+            TAG_CHILD_UNIQUE => {
+                tag.child_unique = (payload & 1) == 1;
+                Ok(1)
+            }
+            TAG_CHILD_DEFAULT => {
+                let s = self.read_tag_short_str(payload)?;
+                tag.child_default = Some(s);
+                Ok(1 + tag.child_default.as_ref().map_or(0, |s| s.len()))
+            }
+            TAG_CHILD_MIN => {
+                let s = self.read_tag_short_str(payload)?;
+                tag.child_min = Some(s);
+                Ok(1 + tag.child_min.as_ref().map_or(0, |s| s.len()))
+            }
+            TAG_CHILD_MAX => {
+                let s = self.read_tag_short_str(payload)?;
+                tag.child_max = Some(s);
+                Ok(1 + tag.child_max.as_ref().map_or(0, |s| s.len()))
+            }
+            TAG_CHILD_SIZE => {
+                let v = self.read_tag_uint(payload)?;
+                tag.child_size = Some(v);
+                Ok(2 + payload)
+            }
+            TAG_CHILD_ENUM => {
+                tag.child_type = ValueType::Enum;
+                let s = self.read_tag_str(payload)?;
+                tag.child_enum = Some(s);
+                Ok(1 + tag.child_enum.as_ref().map_or(0, |s| s.len()))
+            }
+            TAG_CHILD_PATTERN => {
+                let s = self.read_tag_short_str(payload)?;
+                tag.child_pattern = Some(s);
+                Ok(1 + tag.child_pattern.as_ref().map_or(0, |s| s.len()))
+            }
+            TAG_CHILD_LOCATION => {
+                let s = self.read_tag_ascii(payload)?;
+                if let Ok(n) = s.parse::<i32>() {
+                    tag.child_location = Some(n);
+                }
+                Ok(1 + payload)
+            }
+            TAG_CHILD_VERSION => {
+                let v = self.read_tag_uint(payload)?;
+                tag.child_version = Some(v as i32);
+                Ok(2 + payload)
+            }
+            TAG_CHILD_MIME => {
+                let mime_id = if payload < 7 {
+                    payload as u8
+                } else {
+                    self.read_byte()?
+                };
+                tag.child_mime = Some(mime_id.to_string());
+                let extra = if payload < 7 { 0 } else { 1 };
+                Ok(1 + extra)
+            }
+            _ => Ok(1),
+        }
+    }
+
+    fn read_tag_str(&mut self, payload: usize) -> Result<String, std::io::Error> {
+        let len = if payload <= 5 {
+            payload
+        } else if payload == 6 {
+            self.read_byte()? as usize
+        } else {
+            let hi = self.read_byte()? as usize;
+            let lo = self.read_byte()? as usize;
+            (hi << 8) | lo
+        };
+        let bytes = self.read_bytes(len)?.to_vec();
+        Ok(String::from_utf8_lossy(&bytes).to_string())
+    }
+
+    fn read_tag_short_str(&mut self, payload: usize) -> Result<String, std::io::Error> {
+        let len = if payload < 7 {
+            payload
+        } else {
+            self.read_byte()? as usize
+        };
+        let bytes = self.read_bytes(len)?.to_vec();
+        Ok(String::from_utf8_lossy(&bytes).to_string())
+    }
+
+    fn read_tag_ascii(&mut self, payload: usize) -> Result<String, std::io::Error> {
+        let bytes = self.read_bytes(payload)?.to_vec();
+        Ok(String::from_utf8_lossy(&bytes).to_string())
+    }
+
+    fn read_tag_uint(&mut self, payload: usize) -> Result<u64, std::io::Error> {
+        let nbytes = payload + 1;
+        let mut v: u64 = 0;
+        for _ in 0..nbytes {
+            let b = self.read_byte()?;
+            v = (v << 8) | (b as u64);
+        }
+        Ok(v)
     }
 
     fn decode_simple(&mut self, prefix: u8, _tag: &Tag) -> Result<Node, std::io::Error> {

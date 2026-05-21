@@ -1,0 +1,5 @@
+{
+    // mm: allow_empty
+    "empty_str": "",
+    "non_empty": "text"
+}

@@ -35,9 +35,24 @@ public class JsoncPrinter
         }
     }
 
+    private void PrintTag(JsoncTag? tag, System.Text.StringBuilder sb)
+    {
+        if (tag == null) return;
+        var tagStr = tag.ToString();
+        if (string.IsNullOrEmpty(tagStr)) return;
+        sb.AppendLine();
+        AppendIndent(sb);
+        sb.Append(tagStr);
+        sb.AppendLine();
+    }
+
     private void PrintObject(JsoncObject obj, System.Text.StringBuilder sb)
     {
-        if (obj.LeadingComment != null)
+        if (obj.Tag != null)
+        {
+            PrintTag(obj.Tag, sb);
+        }
+        else if (obj.LeadingComment != null)
         {
             PrintComment(obj.LeadingComment, sb);
         }
@@ -60,18 +75,22 @@ public class JsoncPrinter
         int index = 0;
         foreach (var kvp in fields)
         {
-            if (_prettyPrint)
+            if (kvp.Value.Tag != null)
             {
-                AppendIndent(sb);
+                PrintTag(kvp.Value.Tag, sb);
             }
-
-            if (kvp.Value.LeadingComment != null)
+            else if (kvp.Value.LeadingComment != null)
             {
                 PrintComment(kvp.Value.LeadingComment, sb);
                 if (_prettyPrint)
                 {
                     AppendIndent(sb);
                 }
+            }
+
+            if (_prettyPrint)
+            {
+                AppendIndent(sb);
             }
 
             sb.Append('"');
@@ -110,7 +129,11 @@ public class JsoncPrinter
 
     private void PrintArray(JsoncArray array, System.Text.StringBuilder sb)
     {
-        if (array.LeadingComment != null)
+        if (array.Tag != null)
+        {
+            PrintTag(array.Tag, sb);
+        }
+        else if (array.LeadingComment != null)
         {
             PrintComment(array.LeadingComment, sb);
         }
@@ -131,19 +154,23 @@ public class JsoncPrinter
 
         for (int i = 0; i < array.Elements.Count; i++)
         {
-            if (_prettyPrint)
-            {
-                AppendIndent(sb);
-            }
-
             var element = array.Elements[i];
-            if (element.LeadingComment != null)
+            if (element.Tag != null)
+            {
+                PrintTag(element.Tag, sb);
+            }
+            else if (element.LeadingComment != null)
             {
                 PrintComment(element.LeadingComment, sb);
                 if (_prettyPrint)
                 {
                     AppendIndent(sb);
                 }
+            }
+
+            if (_prettyPrint)
+            {
+                AppendIndent(sb);
             }
 
             PrintNode(element, sb);
@@ -210,11 +237,6 @@ public class JsoncPrinter
 
     private void PrintComment(JsoncComment comment, System.Text.StringBuilder sb)
     {
-        if (_prettyPrint)
-        {
-            AppendIndent(sb);
-        }
-
         if (comment.IsBlock)
         {
             sb.Append("/*");

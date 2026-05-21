@@ -9,33 +9,33 @@ from .mime import ParseMIME
 class ValueType(IntEnum):
     Unknown = 0
     Doc = 1
-    Slice = 2
-    Array = 3
-    Object = 4
+    Vec = 2
+    Arr = 3
+    Obj = 4
     Map = 5
-    String = 6
+    Str = 6
     Bytes = 7
     Bool = 8
-    Int = 9
-    Int8 = 10
-    Int16 = 11
-    Int32 = 12
-    Int64 = 13
-    Uint = 14
-    Uint8 = 15
-    Uint16 = 16
-    Uint32 = 17
-    Uint64 = 18
-    Float32 = 19
-    Float64 = 20
-    BigInt = 21
-    DateTime = 22
+    I = 9
+    I8 = 10
+    I16 = 11
+    I32 = 12
+    I64 = 13
+    U = 14
+    U8 = 15
+    U16 = 16
+    U32 = 17
+    U64 = 18
+    F32 = 19
+    F64 = 20
+    Bigint = 21
+    Datetime = 22
     Date = 23
     Time = 24
-    UUID = 25
+    Uuid = 25
     Decimal = 26
-    IP = 27
-    URL = 28
+    Ip = 27
+    Url = 28
     Email = 29
     Enum = 30
     Image = 31
@@ -47,31 +47,31 @@ class ValueType(IntEnum):
             ValueType.Doc: "doc",
             ValueType.Arr: "arr",
             ValueType.Vec: "vec",
-            ValueType.Object: "obj",
+            ValueType.Obj: "obj",
             ValueType.Map: "map",
             ValueType.Str: "str",
             ValueType.Bytes: "bytes",
             ValueType.Bool: "bool",
-            ValueType.Int: "i",
-            ValueType.Int8: "i8",
-            ValueType.Int16: "i16",
-            ValueType.Int32: "i32",
-            ValueType.Int64: "i64",
-            ValueType.Uint: "u",
-            ValueType.Uint8: "u8",
-            ValueType.Uint16: "u16",
-            ValueType.Uint32: "u32",
-            ValueType.Uint64: "u64",
-            ValueType.Float32: "f32",
-            ValueType.Float64: "f64",
-            ValueType.BigInt: "bigint",
-            ValueType.DateTime: "datetime",
+            ValueType.I: "i",
+            ValueType.I8: "i8",
+            ValueType.I16: "i16",
+            ValueType.I32: "i32",
+            ValueType.I64: "i64",
+            ValueType.U: "u",
+            ValueType.U8: "u8",
+            ValueType.U16: "u16",
+            ValueType.U32: "u32",
+            ValueType.U64: "u64",
+            ValueType.F32: "f32",
+            ValueType.F64: "f64",
+            ValueType.Bigint: "bigint",
+            ValueType.Datetime: "datetime",
             ValueType.Date: "date",
             ValueType.Time: "time",
-            ValueType.UUID: "uuid",
+            ValueType.Uuid: "uuid",
             ValueType.Decimal: "decimal",
-            ValueType.IP: "ip",
-            ValueType.URL: "url",
+            ValueType.Ip: "ip",
+            ValueType.Url: "url",
             ValueType.Email: "email",
             ValueType.Enum: "enum",
             ValueType.Image: "image",
@@ -81,14 +81,14 @@ class ValueType(IntEnum):
 
 
 _str_to_value_type = {
-    "unknown": ValueType.Unknown, "doc": ValueType.Doc, "arr": ValueType.Arr,
-    "vec": ValueType.Vec, "obj": ValueType.Object, "map": ValueType.Map,
+    "unknown": ValueType.Unknown, "doc": ValueType.Doc, "vec": ValueType.Vec,
+    "arr": ValueType.Arr, "obj": ValueType.Obj, "map": ValueType.Map,
     "str": ValueType.Str, "bytes": ValueType.Bytes, "bool": ValueType.Bool,
-    "i": ValueType.Int, "i8": ValueType.Int8, "i16": ValueType.Int16, "i32": ValueType.Int32, "i64": ValueType.Int64,
-    "u": ValueType.Uint, "u8": ValueType.Uint8, "u16": ValueType.Uint16, "u32": ValueType.Uint32, "u64": ValueType.Uint64,
-    "f32": ValueType.Float32, "f64": ValueType.Float64,
-    "bigint": ValueType.BigInt, "datetime": ValueType.DateTime, "date": ValueType.Date, "time": ValueType.Time,
-    "uuid": ValueType.UUID, "decimal": ValueType.Decimal, "ip": ValueType.IP, "url": ValueType.URL,
+    "i": ValueType.I, "i8": ValueType.I8, "i16": ValueType.I16, "i32": ValueType.I32, "i64": ValueType.I64,
+    "u": ValueType.U, "u8": ValueType.U8, "u16": ValueType.U16, "u32": ValueType.U32, "u64": ValueType.U64,
+    "f32": ValueType.F32, "f64": ValueType.F64,
+    "bigint": ValueType.Bigint, "datetime": ValueType.Datetime, "date": ValueType.Date, "time": ValueType.Time,
+    "uuid": ValueType.Uuid, "decimal": ValueType.Decimal, "ip": ValueType.Ip, "url": ValueType.Url,
     "email": ValueType.Email, "enum": ValueType.Enum,
     "image": ValueType.Image, "video": ValueType.Video,
 }
@@ -282,8 +282,8 @@ class Tag:
                 buf.extend(desc_bytes)
 
         if self.type != ValueType.Unknown and not self.is_inherit:
-            if self.type not in (ValueType.Str, ValueType.Bytes, ValueType.Int, ValueType.Float64,
-                                 ValueType.Bool, ValueType.Object, ValueType.Vec):
+            if self.type not in (ValueType.Str, ValueType.Bytes, ValueType.I, ValueType.F64,
+                                 ValueType.Bool, ValueType.Obj, ValueType.Vec):
                 if not (self.type == ValueType.Arr and self.size > 0) and not (
                         self.type == ValueType.Enum and self.enum):
                     buf.append(TagKey.Type)
@@ -390,8 +390,8 @@ class Tag:
                 buf.extend(child_desc_bytes)
 
         if self.child_type != ValueType.Unknown:
-            if self.child_type not in (ValueType.Str, ValueType.Int, ValueType.Float64,
-                                       ValueType.Bool, ValueType.Object, ValueType.Vec):
+            if self.child_type not in (ValueType.Str, ValueType.I, ValueType.F64,
+                                       ValueType.Bool, ValueType.Obj, ValueType.Vec):
                 if not (self.child_type == ValueType.Arr and self.child_size > 0) and not (
                         self.child_type == ValueType.Enum and self.child_enum):
                     buf.append(TagKey.ChildType)
@@ -491,8 +491,8 @@ class Tag:
         parts = []
 
         if self.type != ValueType.Unknown and not self.is_inherit:
-            if self.type in (ValueType.Str, ValueType.Int, ValueType.Float64, ValueType.Bool,
-                             ValueType.Object, ValueType.Vec):
+            if self.type in (ValueType.Str, ValueType.I, ValueType.F64, ValueType.Bool,
+                             ValueType.Obj, ValueType.Vec):
                 pass
             else:
                 if not (self.type == ValueType.Arr and self.size > 0) and not (
@@ -558,8 +558,8 @@ class Tag:
             parts.append('child_desc="%s"' % self.child_desc)
 
         if self.child_type != ValueType.Unknown:
-            if self.child_type not in (ValueType.Str, ValueType.Int, ValueType.Float64,
-                                       ValueType.Bool, ValueType.Object, ValueType.Vec):
+            if self.child_type not in (ValueType.Str, ValueType.I, ValueType.F64,
+                                       ValueType.Bool, ValueType.Obj, ValueType.Vec):
                 if not (self.child_type == ValueType.Arr and self.child_size > 0) and not (
                         self.child_type == ValueType.Enum and self.child_enum):
                     parts.append("child_type=%s" % str(self.child_type))

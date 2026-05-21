@@ -235,11 +235,11 @@ def get_mm_tag_for_field(cls: Type, field_name: str) -> Optional[Tag]:
 
 _PYTHON_TYPE_TO_VALUETYPE: Dict[type, ValueType] = {
     str: ValueType.Str,
-    int: ValueType.Int,
-    float: ValueType.Float64,
+    int: ValueType.I,
+    float: ValueType.F64,
     bool: ValueType.Bool,
     bytes: ValueType.Bytes,
-    datetime: ValueType.DateTime,
+    datetime: ValueType.Datetime,
     date: ValueType.Date,
     dt_time: ValueType.Time,
 }
@@ -318,7 +318,7 @@ def value_to_node(value: Any, tag: Optional[Tag] = None, depth: int = 0, path: s
     # bool must be checked before int (bool is subclass of int in Python)
     if isinstance(value, bool):
         # Auto-detect type: override inherited/incorrect types
-        if tag.type in (ValueType(0), ValueType.Str, ValueType.Int, ValueType.Float64):
+        if tag.type in (ValueType(0), ValueType.Str, ValueType.I, ValueType.F64):
             tag.type = ValueType.Bool
         if tag.type == ValueType.Bool:
             _, text = _validate_bool(value, tag)
@@ -326,10 +326,10 @@ def value_to_node(value: Any, tag: Optional[Tag] = None, depth: int = 0, path: s
         raise ValueError(f"{tag.type} unsupported type: bool")
 
     elif isinstance(value, int):
-        if tag.type in (ValueType(0), ValueType.Str, ValueType.Float64, ValueType.Bool):
-            tag.type = ValueType.Int
-        if tag.type in (ValueType.Int, ValueType.Int8, ValueType.Int16, ValueType.Int32, ValueType.Int64,
-                        ValueType.Uint, ValueType.Uint8, ValueType.Uint16, ValueType.Uint32, ValueType.Uint64):
+        if tag.type in (ValueType(0), ValueType.Str, ValueType.F64, ValueType.Bool):
+            tag.type = ValueType.I
+        if tag.type in (ValueType.I, ValueType.I8, ValueType.I16, ValueType.I32, ValueType.I64,
+                        ValueType.U, ValueType.U8, ValueType.U16, ValueType.U32, ValueType.U64):
             val_int = _validate_i(value, tag)
             if val_int is not None:
                 data, text = val_int
@@ -337,9 +337,9 @@ def value_to_node(value: Any, tag: Optional[Tag] = None, depth: int = 0, path: s
         raise ValueError(f"{tag.type} unsupported type: int")
 
     elif isinstance(value, float):
-        if tag.type in (ValueType(0), ValueType.Str, ValueType.Int, ValueType.Bool):
-            tag.type = ValueType.Float64
-        if tag.type in (ValueType.Float32, ValueType.Float64):
+        if tag.type in (ValueType(0), ValueType.Str, ValueType.I, ValueType.Bool):
+            tag.type = ValueType.F64
+        if tag.type in (ValueType.F32, ValueType.F64):
             val_float = _validate_f(value, tag)
             if val_float is not None:
                 data, text = val_float
@@ -348,11 +348,11 @@ def value_to_node(value: Any, tag: Optional[Tag] = None, depth: int = 0, path: s
 
     elif isinstance(value, str):
         # Auto-detect: any non-string type that got inherited gets overridden
-        if tag.type == ValueType(0) or tag.type not in (ValueType.Str, ValueType.Email, ValueType.Enum, ValueType.Decimal, ValueType.UUID,
-                            ValueType.URL, ValueType.BigInt):
+        if tag.type == ValueType(0) or tag.type not in (ValueType.Str, ValueType.Email, ValueType.Enum, ValueType.Decimal, ValueType.Uuid,
+                            ValueType.Url, ValueType.Bigint):
             tag.type = ValueType.Str
-        if tag.type in (ValueType.Str, ValueType.Email, ValueType.Enum, ValueType.Decimal, ValueType.UUID,
-                        ValueType.URL, ValueType.BigInt):
+        if tag.type in (ValueType.Str, ValueType.Email, ValueType.Enum, ValueType.Decimal, ValueType.Uuid,
+                        ValueType.Url, ValueType.Bigint):
             val_str = _validate_str(value, tag)
             if val_str is not None:
                 data, text = val_str
@@ -370,7 +370,7 @@ def value_to_node(value: Any, tag: Optional[Tag] = None, depth: int = 0, path: s
 
     elif isinstance(value, datetime):
         if tag.type == ValueType(0):
-            tag.type = ValueType.DateTime
+            tag.type = ValueType.Datetime
         val_dt = _validate_datetime(value, tag)
         if val_dt is not None:
             data, text = val_dt
@@ -566,7 +566,7 @@ def _any_to_node_object(obj: Any, tag: Tag, depth: int, path: str) -> Obj:
     if depth > _MAX_DEPTH:
         raise ValueError(f"max depth: {_MAX_DEPTH}")
 
-    tag.type = ValueType.Object
+    tag.type = ValueType.Obj
     cls = obj.__class__
     tag.name = _camel_to_snake(cls.__name__)
     if tag.name and not path:

@@ -179,7 +179,7 @@ export class JSONCParser {
                     );
                   }
                   data = result.data;
-                  text = result.text || text;
+                  // Keep original text from JSONC input, not UTC-formatted result.text
                 } catch (e) {
                   throw new Error(
                     `invalid datetime "${text}": ${(e as Error).message}`,
@@ -289,6 +289,7 @@ export class JSONCParser {
 
           const strValue = new MMValue(data, strTag);
           strValue.setPath(path);
+          strValue.setText(text);
           this.depth--;
           return strValue;
 
@@ -467,6 +468,7 @@ export class JSONCParser {
 
           const numValue = new MMValue(data, numTag);
           numValue.setPath(path);
+          numValue.setText(text);
           this.depth--;
           return numValue;
 
@@ -496,6 +498,7 @@ export class JSONCParser {
 
           const trueValue = new MMValue(true, trueTag);
           trueValue.setPath(path);
+          trueValue.setText('true');
           this.depth--;
           return trueValue;
 
@@ -523,6 +526,7 @@ export class JSONCParser {
 
           const falseValue = new MMValue(false, falseTag);
           falseValue.setPath(path);
+          falseValue.setText('false');
           this.depth--;
           return falseValue;
 
@@ -734,7 +738,7 @@ export class JSONCParser {
     }
 
     if (tag.type === ValueType.Arr) {
-      const result = tag.validateArr([]);
+      const result = tag.validateArr(arr.getElements());
       if (!result.valid) {
         throw new Error(`validate failed: ${result.error}`);
       }

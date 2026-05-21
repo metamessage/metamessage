@@ -1,0 +1,8 @@
+{
+    // mm: desc=person object
+    "name": "Alice",
+    "age": 30,
+    "email": "alice@example.com",
+    "active": true,
+    "scores": [95, 87, 92]
+}

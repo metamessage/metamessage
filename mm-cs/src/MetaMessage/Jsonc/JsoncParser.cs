@@ -115,7 +115,9 @@ public class JsoncParser
         if (valueNode.Tag != null)
         {
             var mmTag = ConvertJsoncTagToMmTag(valueNode.Tag);
-            var result = Validator.Validate(valueNode.Value, mmTag);
+            // Convert string value to proper type for validation
+            var validationValue = ConvertForValidation(valueNode.Value, mmTag.Type);
+            var result = Validator.Validate(validationValue, mmTag);
             if (!result.IsValid)
             {
                 throw new Exception(string.Join(", ", result.Errors) ?? "Value validation failed");
@@ -154,7 +156,8 @@ public class JsoncParser
         {
             if (PeekToken().Type == JsoncTokenType.LeadingComment)
             {
-                var commentToken = NextToken();
+                var commentToken = PeekToken();
+                NextToken();
                 if (_pendingComments.Count > 0)
                 {
                     var lastPending = _pendingComments.Last();
@@ -268,7 +271,8 @@ public class JsoncParser
         {
             if (PeekToken().Type == JsoncTokenType.LeadingComment)
             {
-                var commentToken = NextToken();
+                var commentToken = PeekToken();
+                NextToken();
                 if (_pendingComments.Count > 0)
                 {
                     var lastPending = _pendingComments.Last();

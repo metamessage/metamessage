@@ -621,7 +621,7 @@ class Encoder:
 
         start = self.offset
 
-        if tag.type == ValueType.DateTime:
+        if tag.type == ValueType.Datetime:
             if not tag.is_null:
                 self._encode_datetime(val.data)
         elif tag.type == ValueType.Date:
@@ -630,7 +630,7 @@ class Encoder:
         elif tag.type == ValueType.Time:
             if not tag.is_null:
                 self._encode_time(val.data)
-        elif tag.type == ValueType.Int:
+        elif tag.type == ValueType.I:
             if tag.is_null:
                 self._encode_simple(SimpleNullInt)
             else:
@@ -638,13 +638,13 @@ class Encoder:
         elif tag.type in (ValueType.Int8, ValueType.Int16, ValueType.Int32, ValueType.Int64):
             if not tag.is_null:
                 self._encode_int64(int(val.data))
-        elif tag.type in (ValueType.Uint, ValueType.Uint8, ValueType.Uint16, ValueType.Uint32, ValueType.Uint64):
+        elif tag.type in (ValueType.U, ValueType.U8, ValueType.U16, ValueType.U32, ValueType.U64):
             if not tag.is_null:
                 self._encode_uint64(int(val.data))
-        elif tag.type == ValueType.Float32:
+        elif tag.type == ValueType.F32:
             if not tag.is_null:
                 self._encode_float(val.text)
-        elif tag.type == ValueType.Float64:
+        elif tag.type == ValueType.F64:
             if tag.is_null:
                 self._encode_simple(SimpleNullFloat)
             else:
@@ -657,7 +657,7 @@ class Encoder:
         elif tag.type == ValueType.Email:
             if not tag.is_null:
                 self._encode_string(val.text)
-        elif tag.type == ValueType.UUID:
+        elif tag.type == ValueType.Uuid:
             if not tag.is_null:
                 data = val.data
                 if isinstance(data, (bytes, bytearray)):
@@ -672,10 +672,10 @@ class Encoder:
         elif tag.type == ValueType.Decimal:
             if not tag.is_null:
                 self._encode_float(val.text)
-        elif tag.type == ValueType.URL:
+        elif tag.type == ValueType.Url:
             if not tag.is_null:
                 self._encode_string(val.text)
-        elif tag.type == ValueType.IP:
+        elif tag.type == ValueType.Ip:
             if not tag.is_null:
                 ip = val.data
                 ver = tag.version
@@ -703,7 +703,7 @@ class Encoder:
                 elif not isinstance(data, (bytes, bytearray)):
                     data = bytes(data)
                 self._encode_bytes(bytes(data))
-        elif tag.type == ValueType.BigInt:
+        elif tag.type == ValueType.Bigint:
             if not tag.is_null:
                 self._encode_big_int(val.text)
         elif tag.type == ValueType.Bool:
@@ -796,9 +796,9 @@ class Encoder:
         elif isinstance(data, bool):
             return Val(data=data, text="true" if data else "false", tag=Tag(type=ValueType.Bool), path=path)
         elif isinstance(data, int):
-            return Val(data=data, text=str(data), tag=Tag(type=ValueType.Int), path=path)
+            return Val(data=data, text=str(data), tag=Tag(type=ValueType.I), path=path)
         elif isinstance(data, float):
-            return Val(data=data, text=str(data), tag=Tag(type=ValueType.Float64), path=path)
+            return Val(data=data, text=str(data), tag=Tag(type=ValueType.F64), path=path)
         elif isinstance(data, str):
             return Val(data=data, text=data, tag=Tag(type=ValueType.Str), path=path)
         elif isinstance(data, bytes):

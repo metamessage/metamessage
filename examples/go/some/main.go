@@ -55,7 +55,7 @@ func main() {
 	log.Printf("decode result: %s", resultJsonc)
 
 	// decode to int
-	var v ListUsersResponse
+	var v APIResponse
 	err = mm.DecodeToValue(encoded, &v)
 	if err != nil {
 		log.Fatalf("error: %v\n", err)

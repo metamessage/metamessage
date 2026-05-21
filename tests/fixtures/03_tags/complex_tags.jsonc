@@ -1,0 +1,10 @@
+{
+    // mm: type=str; desc=product name; min=1; max=128; nullable
+    "name": "Widget",
+    // mm: type=i; desc=quantity; min=0; max=9999
+    "qty": 100,
+    // mm: type=f64; desc=price
+    "price": 9.99,
+    // mm: type=bool; desc=in stock
+    "in_stock": true
+}

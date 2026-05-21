@@ -1,0 +1,11 @@
+{
+    // mm: desc=application config
+    "app_name": "MyApp",
+    "version": "1.0.0",
+    "debug": false,
+    "server": {
+        "host": "localhost",
+        "port": 8080
+    },
+    "features": ["auth", "logging", "cache"]
+}

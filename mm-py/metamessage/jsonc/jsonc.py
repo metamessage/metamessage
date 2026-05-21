@@ -402,7 +402,7 @@ class Parser:
             return Val(data=tok.literal, text=str(tok.literal), tag=tag, path=path)
         elif tok.type == TOKEN_NUMBER:
             if tag.type == ValueType.Unknown:
-                tag.type = ValueType.Float64 if isinstance(tok.literal, float) else ValueType.Int
+                tag.type = ValueType.F64 if isinstance(tok.literal, float) else ValueType.I
             return Val(data=tok.literal, text=str(tok.literal), tag=tag, path=path)
         elif tok.type == TOKEN_TRUE:
             if tag.type == ValueType.Unknown:
@@ -434,12 +434,12 @@ def parse_jsonc(source: str) -> Node:
 
 # Types that can be inferred and don't need explicit tags
 _INFERRED_TYPES = {
-    ValueType.Object,
+    ValueType.Obj,
     ValueType.Vec,
     ValueType.Arr,
     ValueType.Str,
-    ValueType.Int,
-    ValueType.Float64,
+    ValueType.I,
+    ValueType.F64,
     ValueType.Bool,
 }
 
@@ -534,33 +534,33 @@ def write_value_jsonc(b: list, v) -> None:
     val_type = v.tag.type
 
     if v.tag.is_null:
-        if val_type in (ValueType.Str, ValueType.Bytes, ValueType.DateTime,
-                        ValueType.Date, ValueType.Time, ValueType.UUID,
-                        ValueType.IP, ValueType.URL, ValueType.Email,
+        if val_type in (ValueType.Str, ValueType.Bytes, ValueType.Datetime,
+                        ValueType.Date, ValueType.Time, ValueType.Uuid,
+                        ValueType.Ip, ValueType.Url, ValueType.Email,
                         ValueType.Enum, ValueType.Decimal):
             b.append('""')
-        elif val_type in (ValueType.Int, ValueType.Int8, ValueType.Int16, ValueType.Int32, ValueType.Int64,
-                          ValueType.Uint, ValueType.Uint8, ValueType.Uint16, ValueType.Uint32, ValueType.Uint64,
-                          ValueType.BigInt):
+        elif val_type in (ValueType.I, ValueType.I8, ValueType.I16, ValueType.I32, ValueType.I64,
+                          ValueType.U, ValueType.U8, ValueType.U16, ValueType.U32, ValueType.U64,
+                          ValueType.Bigint):
             b.append("0")
         elif val_type == ValueType.Bool:
             b.append("false")
-        elif val_type in (ValueType.Float32, ValueType.Float64):
+        elif val_type in (ValueType.F32, ValueType.F64):
             b.append("0.0")
         else:
             b.append("null")
         return
 
-    if val_type in (ValueType.Str, ValueType.Bytes, ValueType.DateTime,
-                    ValueType.Date, ValueType.Time, ValueType.UUID,
-                    ValueType.IP, ValueType.URL, ValueType.Email,
+    if val_type in (ValueType.Str, ValueType.Bytes, ValueType.Datetime,
+                    ValueType.Date, ValueType.Time, ValueType.Uuid,
+                    ValueType.Ip, ValueType.Url, ValueType.Email,
                     ValueType.Enum):
         b.append(json.dumps(v.text))
-    elif val_type in (ValueType.Int, ValueType.Int8, ValueType.Int16, ValueType.Int32, ValueType.Int64,
-                      ValueType.Uint, ValueType.Uint8, ValueType.Uint16, ValueType.Uint32, ValueType.Uint64,
-                      ValueType.BigInt, ValueType.Decimal, ValueType.Bool):
+    elif val_type in (ValueType.I, ValueType.I8, ValueType.I16, ValueType.I32, ValueType.I64,
+                      ValueType.U, ValueType.U8, ValueType.U16, ValueType.U32, ValueType.U64,
+                      ValueType.Bigint, ValueType.Decimal, ValueType.Bool):
         b.append(v.text)
-    elif val_type in (ValueType.Float32, ValueType.Float64):
+    elif val_type in (ValueType.F32, ValueType.F64):
         b.append(v.text)
     else:
         b.append(v.text)

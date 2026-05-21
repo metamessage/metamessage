@@ -1,7 +1,6 @@
 package core
 
 import (
-	"errors"
 	"fmt"
 	"strconv"
 
@@ -95,6 +94,14 @@ func (d *decoder) decodeTagBytes(tag *ir.Tag) (length int, err error) {
 
 	case ir.KNullable:
 		tag.Nullable = l&0x01 == 1
+		length = 1
+
+	case ir.KAllowEmpty:
+		tag.AllowEmpty = l&0x01 == 1
+		length = 1
+
+	case ir.KUnique:
+		tag.Unique = l&0x01 == 1
 		length = 1
 
 	case ir.KDefault:
@@ -364,6 +371,14 @@ func (d *decoder) decodeTagBytes(tag *ir.Tag) (length int, err error) {
 		tag.ChildNullable = l&0x01 == 1
 		length = 1
 
+	case ir.KChildAllowEmpty:
+		tag.ChildAllowEmpty = l&0x01 == 1
+		length = 1
+
+	case ir.KChildUnique:
+		tag.ChildUnique = l&0x01 == 1
+		length = 1
+
 	case ir.KChildDefault:
 		if l < 7 {
 			var bs []byte
@@ -563,7 +578,7 @@ func (d *decoder) decodeTagBytes(tag *ir.Tag) (length int, err error) {
 		}
 
 	default:
-		err = errors.New("invalid data")
+		err = fmt.Errorf("invalid tag %d", ir.TagKey(prefix))
 		return
 	}
 

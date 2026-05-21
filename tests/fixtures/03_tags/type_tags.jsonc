@@ -1,0 +1,8 @@
+{
+    // mm: type=datetime; desc=creation time
+    "created_at": "2024-01-01 00:00:00",
+    // mm: type=email
+    "email": "test@example.com",
+    // mm: type=uuid
+    "uid": "550e8400-e29b-41d4-a716-446655440000"
+}
