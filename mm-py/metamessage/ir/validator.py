@@ -1025,22 +1025,22 @@ class MmValidator:
                 return MmValidator.validate_i(value, tag)
             else:
                 return ValidationResult(False, "expected int, got %s" % type(value).__name__)
-        elif tag.type == ValueType.Int8:
+        elif tag.type == ValueType.I8:
             if isinstance(value, int):
                 return MmValidator.validate_i8(value, tag)
             else:
                 return ValidationResult(False, "expected int8, got %s" % type(value).__name__)
-        elif tag.type == ValueType.Int16:
+        elif tag.type == ValueType.I16:
             if isinstance(value, int):
                 return MmValidator.validate_i16(value, tag)
             else:
                 return ValidationResult(False, "expected int16, got %s" % type(value).__name__)
-        elif tag.type == ValueType.Int32:
+        elif tag.type == ValueType.I32:
             if isinstance(value, int):
                 return MmValidator.validate_i32(value, tag)
             else:
                 return ValidationResult(False, "expected int32, got %s" % type(value).__name__)
-        elif tag.type == ValueType.Int64:
+        elif tag.type == ValueType.I64:
             if isinstance(value, int):
                 return MmValidator.validate_i64(value, tag)
             else:
@@ -1050,22 +1050,22 @@ class MmValidator:
                 return MmValidator.validate_u(value, tag)
             else:
                 return ValidationResult(False, "expected uint, got %s" % type(value).__name__)
-        elif tag.type == ValueType.Uint8:
+        elif tag.type == ValueType.U8:
             if isinstance(value, int):
                 return MmValidator.validate_u8(value, tag)
             else:
                 return ValidationResult(False, "expected uint8, got %s" % type(value).__name__)
-        elif tag.type == ValueType.Uint16:
+        elif tag.type == ValueType.U16:
             if isinstance(value, int):
                 return MmValidator.validate_u16(value, tag)
             else:
                 return ValidationResult(False, "expected uint16, got %s" % type(value).__name__)
-        elif tag.type == ValueType.Uint32:
+        elif tag.type == ValueType.U32:
             if isinstance(value, int):
                 return MmValidator.validate_u32(value, tag)
             else:
                 return ValidationResult(False, "expected uint32, got %s" % type(value).__name__)
-        elif tag.type == ValueType.Uint64:
+        elif tag.type == ValueType.U64:
             if isinstance(value, int):
                 return MmValidator.validate_u64(value, tag)
             else:

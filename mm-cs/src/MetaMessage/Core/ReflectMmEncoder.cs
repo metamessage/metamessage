@@ -224,31 +224,18 @@ public static class ReflectMmEncoder
                     encoder.EncodeSimple(SimpleValue.NULL_BOOL);
                     return;
                 case ValueType.I:
-                case ValueType.I8:
-                case ValueType.I16:
-                case ValueType.I32:
-                case ValueType.I64:
-                case ValueType.U:
-                case ValueType.U16:
-                case ValueType.U32:
-                case ValueType.U64:
                     encoder.EncodeSimple(SimpleValue.NULL_INT);
                     return;
-                case ValueType.F32:
                 case ValueType.F64:
-                case ValueType.DECIMAL:
                     encoder.EncodeSimple(SimpleValue.NULL_FLOAT);
                     return;
                 case ValueType.STR:
-                case ValueType.EMAIL:
-                case ValueType.URL:
                     encoder.EncodeSimple(SimpleValue.NULL_STRING);
                     return;
                 case ValueType.BYTES:
                     encoder.EncodeSimple(SimpleValue.NULL_BYTES);
                     return;
                 default:
-                    encoder.EncodeSimple(SimpleValue.NULL_STRING);
                     return;
             }
         }

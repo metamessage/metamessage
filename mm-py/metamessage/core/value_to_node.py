@@ -3,7 +3,7 @@ ValueToNode: Convert Python values to MetaMessage Node tree.
 Supports decorator-based @mm() tagging like Go's struct tags and TS decorators.
 
 Usage:
-    @mm(type=ValueType.Int64, desc="用户ID")
+    @mm(type=ValueType.I64, desc="用户ID")
     class User:
         id: int
         name: str
@@ -11,7 +11,7 @@ Usage:
 
     # Or use field-level decorators:
     class User:
-        @mm(type=ValueType.Int64, desc="用户ID")
+        @mm(type=ValueType.I64, desc="用户ID")
         id: int
 
     # Encode/Decode:
@@ -28,7 +28,7 @@ from datetime import datetime, date, time as dt_time
 from enum import Enum
 
 from ..ir.tag import Tag, ValueType, NewTag, MergeTag, mm_tag
-from ..ir.types import Obj, Arr, Val, Field, Node
+from ..ir.ast import Obj, Arr, Val, Field, Node
 from .encoder import Encoder
 from .decoder import Decoder
 
@@ -74,7 +74,7 @@ class mm:
             id: int
             @mm(desc="User name")
             name: str
-            @mm(type=ValueType.Uint8, desc="User age")
+            @mm(type=ValueType.U8, desc="User age")
             age: int
 
     How it works:
@@ -96,7 +96,7 @@ class mm:
             instance._tag_str = args[0]
             instance._kwargs = {}
         else:
-            # mm(type=ValueType.Int64, desc="用户ID")
+            # mm(type=ValueType.I64, desc="用户ID")
             instance._tag_str = None
             instance._kwargs = kwargs
         return instance
@@ -268,6 +268,7 @@ def _is_union_type_with_none(py_type: Any) -> bool:
     
     # Check for Python 3.10+ union syntax (e.g., int | None)
     # In Python 3.10+, int | None creates a types.UnionType which has __args__
+    print("types location:", types.__file__)  # 临时调试
     if isinstance(py_type, types.UnionType):
         return type(None) in py_type.__args__
     

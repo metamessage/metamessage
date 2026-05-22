@@ -388,11 +388,11 @@ static void test_tag_attributes_roundtrip(void) {
 
     printf("  enum: ");
     {
-        mm_node_t* v = mm_int(0, .enums="a|b|c");
+        mm_node_t* v = mm_int(0, .enum_val="a|b|c");
         mm_buffer_t* enc = mm_encode(v);
         mm_node_t* dec = mm_decode(enc);
         if (dec) {
-            TEST("enum preserved", dec->data.value.tag.enums && strcmp(dec->data.value.tag.enums, "a|b|c") == 0);
+            TEST("enum preserved", dec->data.value.tag.enum_val && strcmp(dec->data.value.tag.enum_val, "a|b|c") == 0);
         }
         mm_node_free(v);
         if (dec) mm_node_free(dec);
@@ -508,8 +508,8 @@ static void test_value_type(void) {
     TEST("U8 to string", strcmp(mm_value_type_to_string(MM_VALUE_U8), "u8") == 0);
     TEST("Parse str", mm_value_type_parse("str") == MM_VALUE_STR);
     TEST("Parse u8", mm_value_type_parse("u8") == MM_VALUE_U8);
-    TEST("Parse int", mm_value_type_parse("int") == MM_VALUE_I);
-    TEST("Parse uint64", mm_value_type_parse("uint64") == MM_VALUE_U64);
+    TEST("Parse int", mm_value_type_parse("i") == MM_VALUE_I);
+    TEST("Parse uint64", mm_value_type_parse("u64") == MM_VALUE_U64);
     TEST("Parse I32", mm_value_type_parse("I32") == MM_VALUE_I32);
     TEST("Parse unknown", mm_value_type_parse("invalid") == MM_VALUE_UNKNOWN);
     TEST("Parse NULL", mm_value_type_parse(NULL) == MM_VALUE_UNKNOWN);

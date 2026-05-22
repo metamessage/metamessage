@@ -8,7 +8,7 @@ from typing import Any, List, Optional
 from dataclasses import dataclass
 
 from ..ir.tag import Tag, ValueType, mm_tag, MergeTag, NewTag
-from ..ir.types import Obj, Arr, Val, Field, Node
+from ..ir.ast import Obj, Arr, Val, Field, Node
 
 
 # ===== Tokenizer =====

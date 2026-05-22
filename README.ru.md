@@ -403,6 +403,8 @@ const decoded = decodeToValue(wire, Person);
 
 #### Python
 
+[pypi.org](https://pypi.org/project/metamessage/)
+
 ```python
 from metamessage import encode, decode
 
@@ -421,7 +423,9 @@ const wire = encode(person);
 const decoded = decode(wire);
 ```
 
-#### C\#
+#### C#
+
+[NuGet](https://www.nuget.org/packages/MetaMessage)
 
 ```csharp
 using MetaMessage;

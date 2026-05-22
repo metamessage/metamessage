@@ -69,7 +69,7 @@ class JsoncMMTest {
     fun printWithMmTag() {
         val obj = Object()
         val tag = Tag()
-        tag.type = ValueType.UUID
+        tag.type = ValueType.Uuid
         tag.desc = "user id"
         val value =
                 Value(

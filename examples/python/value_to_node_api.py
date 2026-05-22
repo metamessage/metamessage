@@ -46,8 +46,8 @@ def main():
     # Create a node manually
     obj = Obj(
         fields=[
-            Field(key="x", value=Val(data=10, text="10", tag=Tag(type=ValueType.Int))),
-            Field(key="y", value=Val(data=20, text="20", tag=Tag(type=ValueType.Int))),
+            Field(key="x", value=Val(data=10, text="10", tag=Tag(type=ValueType.I))),
+            Field(key="y", value=Val(data=20, text="20", tag=Tag(type=ValueType.I))),
         ],
         tag=Tag(name="point")
     )

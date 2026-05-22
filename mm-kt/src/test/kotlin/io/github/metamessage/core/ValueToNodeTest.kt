@@ -131,7 +131,7 @@ class ValueToNodeTest {
     @Test
     fun uuidToNode() {
         val uuid = UUID.randomUUID()
-        val node = valueToNode(uuid, Tag.empty().apply { type = ValueType.UUID }, "")
+        val node = valueToNode(uuid, Tag.empty().apply { type = ValueType.Uuid }, "")
         assertTrue(node is Value)
         assertTrue((node as Value).data is ByteArray)
     }

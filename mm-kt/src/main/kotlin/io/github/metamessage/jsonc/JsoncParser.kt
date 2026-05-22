@@ -108,10 +108,10 @@ class JsoncParser(private val tokens: List<JsoncToken>) {
                                 ValueType.DATETIME -> parseDateTimeValue(text, tag)
                                 ValueType.DATE -> parseDateValue(text, tag)
                                 ValueType.TIME -> parseTimeValue(text, tag)
-                                ValueType.UUID -> parseUUIDValue(text, tag)
+                                ValueType.Uuid -> parseUUIDValue(text, tag)
                                 ValueType.DECIMAL -> parseDecimalValue(text, tag)
-                                ValueType.IP -> parseIPValue(text, tag)
-                                ValueType.URL -> parseURLValue(text, tag)
+                                ValueType.Ip -> parseIPValue(text, tag)
+                                ValueType.Url -> parseURLValue(text, tag)
                                 ValueType.EMAIL -> parseEmailValue(text, tag)
                                 ValueType.ENUM -> parseEnumValue(text, tag)
                                 ValueType.IMAGE -> parseImageValue(text, tag)
@@ -875,10 +875,10 @@ class JsoncParser(private val tokens: List<JsoncToken>) {
                                 "datetime" -> ValueType.DATETIME
                                 "date" -> ValueType.DATE
                                 "time" -> ValueType.TIME
-                                "uuid" -> ValueType.UUID
+                                "uuid" -> ValueType.Uuid
                                 "decimal" -> ValueType.DECIMAL
-                                "ip" -> ValueType.IP
-                                "url" -> ValueType.URL
+                                "ip" -> ValueType.Ip
+                                "url" -> ValueType.Url
                                 "email" -> ValueType.EMAIL
                                 "enum" -> ValueType.ENUM
                                 "arr" -> ValueType.ARR

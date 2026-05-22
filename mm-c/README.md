@@ -132,7 +132,7 @@ mm_node_free(parsed);
 | `min`               | `int64_t` | Minimum value                           |
 | `max`               | `int64_t` | Maximum value                           |
 | `size`              | `int`     | Size constraint                         |
-| `enums`             | `char*`   | Enum values (pipe-separated)            |
+| `enum_val`          | `char*`   | Enum values (pipe-separated)            |
 | `pattern`           | `char*`   | Regex pattern                           |
 | `location`          | `int`     | Timezone offset hours [-12, +14]        |
 | `nullable`          | `bool`    | Whether null is allowed                 |
@@ -165,6 +165,8 @@ mm_node_free(parsed);
 cd mm-c/build
 cmake --build .    # build first
 ctest              # run all tests
+
+ctest --rerun-failed --output-on-failure
 ```
 
 ### Run a specific test suite
@@ -214,6 +216,6 @@ The comprehensive test suite covers:
 ## TODO
 
 - default_val
-- enums
-- is_nulls
+- enum_val
+- is_null
 - name

@@ -22,7 +22,7 @@ typedef struct {
     int64_t min;
     int64_t max;
     int size;
-    const char* enums;
+    const char* enum_val;
     const char* pattern;
     bool nullable;
     bool raw;

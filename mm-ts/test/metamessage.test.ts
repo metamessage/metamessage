@@ -260,13 +260,13 @@ describe('mm1', () => {
     test('', () => {
       @mm({ desc: '用户' })
       class User {
-        @mm({ type: ValueType.Int64, desc: '用户ID', nullable: false })
+        @mm({ type: ValueType.I64, desc: '用户ID', nullable: false })
         id: bigint = 0n;
 
         @mm({ desc: '昵称' })
         name: string = '';
 
-        @mm({ type: ValueType.Uint8 })
+        @mm({ type: ValueType.U8 })
         age: number = 0;
       }
 
@@ -286,13 +286,13 @@ describe('value to node', () => {
     test('', () => {
       @mm({ desc: '用户' })
       class User {
-        @mm({ type: ValueType.Int64, desc: '用户ID', nullable: false })
+        @mm({ type: ValueType.I64, desc: '用户ID', nullable: false })
         id: bigint = 0n;
 
         @mm({ desc: '昵称' })
         name: string = '';
 
-        @mm({ type: ValueType.Uint8 })
+        @mm({ type: ValueType.U8 })
         age: number = 0;
       }
 
@@ -312,11 +312,11 @@ describe('encode and decode', () => {
     test('', () => {
       @mm({ desc: '用户' })
       class User {
-        @mm({ type: ValueType.Int64, desc: '用户ID', nullable: false })
+        @mm({ type: ValueType.I64, desc: '用户ID', nullable: false })
         id: bigint = 0n;
         @mm({ desc: '昵称' })
         name: string = '';
-        @mm({ type: ValueType.Uint8 })
+        @mm({ type: ValueType.U8 })
         age: number = 0;
       }
 

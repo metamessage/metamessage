@@ -104,62 +104,62 @@ class TestEncoderValueTypes(unittest.TestCase):
         result = self.encoder.encode(v)
         self.assertIsInstance(result, bytes)
 
-    def test_encode_int(self):
+    def test_encode_i(self):
         t = Tag(type=ValueType.I)
         v = Val(data=42, text="42", tag=t)
         result = self.encoder.encode(v)
         self.assertIsInstance(result, bytes)
         self.assertGreater(len(result), 0)
 
-    def test_encode_int8(self):
+    def test_encode_i8(self):
         t = Tag(type=ValueType.I8)
         v = Val(data=10, text="10", tag=t)
         result = self.encoder.encode(v)
         self.assertIsInstance(result, bytes)
 
-    def test_encode_int16(self):
+    def test_encode_i16(self):
         t = Tag(type=ValueType.I16)
         v = Val(data=100, text="100", tag=t)
         result = self.encoder.encode(v)
         self.assertIsInstance(result, bytes)
 
-    def test_encode_int32(self):
+    def test_encode_i32(self):
         t = Tag(type=ValueType.I32)
         v = Val(data=1000, text="1000", tag=t)
         result = self.encoder.encode(v)
         self.assertIsInstance(result, bytes)
 
-    def test_encode_int64(self):
+    def test_encode_i64(self):
         t = Tag(type=ValueType.I64)
         v = Val(data=100000, text="100000", tag=t)
         result = self.encoder.encode(v)
         self.assertIsInstance(result, bytes)
 
-    def test_encode_uint(self):
+    def test_encode_u(self):
         t = Tag(type=ValueType.U)
         v = Val(data=42, text="42", tag=t)
         result = self.encoder.encode(v)
         self.assertIsInstance(result, bytes)
 
-    def test_encode_uint8(self):
+    def test_encode_u8(self):
         t = Tag(type=ValueType.U8)
         v = Val(data=10, text="10", tag=t)
         result = self.encoder.encode(v)
         self.assertIsInstance(result, bytes)
 
-    def test_encode_uint16(self):
+    def test_encode_u16(self):
         t = Tag(type=ValueType.U16)
         v = Val(data=100, text="100", tag=t)
         result = self.encoder.encode(v)
         self.assertIsInstance(result, bytes)
 
-    def test_encode_uint32(self):
+    def test_encode_u32(self):
         t = Tag(type=ValueType.U32)
         v = Val(data=1000, text="1000", tag=t)
         result = self.encoder.encode(v)
         self.assertIsInstance(result, bytes)
 
-    def test_encode_uint64(self):
+    def test_encode_u64(self):
         t = Tag(type=ValueType.U64)
         v = Val(data=100000, text="100000", tag=t)
         result = self.encoder.encode(v)

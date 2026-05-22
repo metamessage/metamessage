@@ -121,7 +121,7 @@ dotnet run
 
 ```bash
 cd mm-cs
-dotnet test
+dotnet test meta-message.sln 
 ```
 
 测试框架：xUnit + .NET Test SDK

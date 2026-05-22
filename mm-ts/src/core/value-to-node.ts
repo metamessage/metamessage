@@ -92,10 +92,10 @@ function valueToNode(v: any, tag: Tag, depth: number, path: string): Node {
 
     case 'number':
       if (tag.type === ValueType.Unknown) {
-        tag.type = Number.isInteger(v) ? ValueType.Int : ValueType.Float64;
+        tag.type = Number.isInteger(v) ? ValueType.I : ValueType.F64;
       }
       switch (tag.type) {
-        case ValueType.Int: {
+        case ValueType.I: {
           const result = tag.validateI8(v);
           if (!result.valid) {
             throw new Error(`validate failed: ${result.error}`);
@@ -105,7 +105,7 @@ function valueToNode(v: any, tag: Tag, depth: number, path: string): Node {
           break;
         }
 
-        case ValueType.Int8: {
+        case ValueType.I8: {
           const result = tag.validateI8(v);
           if (!result.valid) {
             throw new Error(`validate failed: ${result.error}`);
@@ -114,7 +114,7 @@ function valueToNode(v: any, tag: Tag, depth: number, path: string): Node {
           text = result.text || '';
           break;
         }
-        case ValueType.Int16: {
+        case ValueType.I16: {
           const result = tag.validateI16(v);
           if (!result.valid) {
             throw new Error(`validate failed: ${result.error}`);
@@ -123,7 +123,7 @@ function valueToNode(v: any, tag: Tag, depth: number, path: string): Node {
           text = result.text || '';
           break;
         }
-        case ValueType.Int32: {
+        case ValueType.I32: {
           const result = tag.validateI32(v);
           if (!result.valid) {
             throw new Error(`validate failed: ${result.error}`);
@@ -132,7 +132,7 @@ function valueToNode(v: any, tag: Tag, depth: number, path: string): Node {
           text = result.text || '';
           break;
         }
-        case ValueType.Int64: {
+        case ValueType.I64: {
           const result = tag.validateI64(v);
           if (!result.valid) {
             throw new Error(`validate failed: ${result.error}`);
@@ -141,7 +141,7 @@ function valueToNode(v: any, tag: Tag, depth: number, path: string): Node {
           text = result.text || '';
           break;
         }
-        case ValueType.Uint: {
+        case ValueType.U: {
           const result = tag.validateU(v);
           if (!result.valid) {
             throw new Error(`validate failed: ${result.error}`);
@@ -150,7 +150,7 @@ function valueToNode(v: any, tag: Tag, depth: number, path: string): Node {
           text = result.text || '';
           break;
         }
-        case ValueType.Uint8: {
+        case ValueType.U8: {
           const result = tag.validateU8(v);
           if (!result.valid) {
             throw new Error(`validate failed: ${result.error}`);
@@ -159,7 +159,7 @@ function valueToNode(v: any, tag: Tag, depth: number, path: string): Node {
           text = result.text || '';
           break;
         }
-        case ValueType.Uint16: {
+        case ValueType.U16: {
           const result = tag.validateU16(v);
           if (!result.valid) {
             throw new Error(`validate failed: ${result.error}`);
@@ -168,7 +168,7 @@ function valueToNode(v: any, tag: Tag, depth: number, path: string): Node {
           text = result.text || '';
           break;
         }
-        case ValueType.Uint32: {
+        case ValueType.U32: {
           const result = tag.validateU32(v);
           if (!result.valid) {
             throw new Error(`validate failed: ${result.error}`);
@@ -177,7 +177,7 @@ function valueToNode(v: any, tag: Tag, depth: number, path: string): Node {
           text = result.text || '';
           break;
         }
-        case ValueType.Uint64: {
+        case ValueType.U64: {
           const result = tag.validateU64(v);
           if (!result.valid) {
             throw new Error(`validate failed: ${result.error}`);
@@ -186,7 +186,7 @@ function valueToNode(v: any, tag: Tag, depth: number, path: string): Node {
           text = result.text || '';
           break;
         }
-        case ValueType.Float32: {
+        case ValueType.F32: {
           if (Number.isNaN(v)) {
             throw new Error(`${tag.type} unsupported value: NaN`);
           }
@@ -203,7 +203,7 @@ function valueToNode(v: any, tag: Tag, depth: number, path: string): Node {
           text = result.text || '';
           break;
         }
-        case ValueType.Float64: {
+        case ValueType.F64: {
           if (Number.isNaN(v)) {
             throw new Error(`${tag.type} unsupported value: NaN`);
           }
@@ -229,11 +229,11 @@ function valueToNode(v: any, tag: Tag, depth: number, path: string): Node {
 
     case 'bigint':
       if (tag.type === ValueType.Unknown) {
-        tag.type = ValueType.BigInt;
+        tag.type = ValueType.Bigint;
       }
       switch (tag.type) {
-        case ValueType.BigInt:
-        case ValueType.Int: {
+        case ValueType.Bigint:
+        case ValueType.I: {
           const result = tag.validateI(v);
           if (!result.valid) {
             throw new Error(`validate failed: ${result.error}`);
@@ -242,8 +242,8 @@ function valueToNode(v: any, tag: Tag, depth: number, path: string): Node {
           text = result.text || '';
           break;
         }
-        case ValueType.Int64:
-        case ValueType.Uint64: {
+        case ValueType.I64:
+        case ValueType.U64: {
           const result = tag.validateBigint(v);
           if (!result.valid) {
             throw new Error(`validate failed: ${result.error}`);
@@ -303,7 +303,7 @@ function valueToNode(v: any, tag: Tag, depth: number, path: string): Node {
           text = result.text || '';
           break;
         }
-        case ValueType.UUID: {
+        case ValueType.Uuid: {
           const result = tag.validateUUID(v);
           if (!result.valid) {
             throw new Error(`validate failed: ${result.error}`);
@@ -312,7 +312,7 @@ function valueToNode(v: any, tag: Tag, depth: number, path: string): Node {
           text = result.text || '';
           break;
         }
-        case ValueType.URL: {
+        case ValueType.Url: {
           const result = tag.validateURL(v);
           if (!result.valid) {
             throw new Error(`validate failed: ${result.error}`);
@@ -321,7 +321,7 @@ function valueToNode(v: any, tag: Tag, depth: number, path: string): Node {
           text = result.text || '';
           break;
         }
-        case ValueType.IP: {
+        case ValueType.Ip: {
           const result = tag.validateIP(v);
           if (!result.valid) {
             throw new Error(`validate failed: ${result.error}`);
@@ -364,10 +364,10 @@ function valueToNode(v: any, tag: Tag, depth: number, path: string): Node {
         }
       } else if (v instanceof Date) {
         if (tag.type === ValueType.Unknown) {
-          tag.type = ValueType.DateTime;
+          tag.type = ValueType.Datetime;
         }
         switch (tag.type) {
-          case ValueType.DateTime: {
+          case ValueType.Datetime: {
             const result = tag.validateDatetime(v);
             if (!result.valid) {
               throw new Error(`validate failed: ${result.error}`);
@@ -433,7 +433,7 @@ function anyToObject(
   }
 
   if (tag.type === ValueType.Unknown) {
-    tag.type = ValueType.Object;
+    tag.type = ValueType.Obj;
   }
 
   const objNode = new MMObject();

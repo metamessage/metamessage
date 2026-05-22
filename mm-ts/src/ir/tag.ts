@@ -145,10 +145,10 @@ export class Tag {
     if (this.type !== ValueType.Unknown) {
       if (
         this.type === ValueType.Str ||
-        this.type === ValueType.Int ||
-        this.type === ValueType.Float64 ||
+        this.type === ValueType.I ||
+        this.type === ValueType.F64 ||
         this.type === ValueType.Bool ||
-        this.type === ValueType.Object ||
+        this.type === ValueType.Obj ||
         this.type === ValueType.Vec
       ) {
       } else {
@@ -235,10 +235,10 @@ export class Tag {
     if (this.childType) {
       if (
         this.childType === ValueType.Str ||
-        this.childType === ValueType.Int ||
-        this.childType === ValueType.Float64 ||
+        this.childType === ValueType.I ||
+        this.childType === ValueType.F64 ||
         this.childType === ValueType.Bool ||
-        this.childType === ValueType.Object ||
+        this.childType === ValueType.Obj ||
         this.childType === ValueType.Vec
       ) {
       } else {
@@ -434,10 +434,10 @@ export class Tag {
       if (
         this.type === ValueType.Str ||
         this.type === ValueType.Bytes ||
-        this.type === ValueType.Int ||
-        this.type === ValueType.Float64 ||
+        this.type === ValueType.I ||
+        this.type === ValueType.F64 ||
         this.type === ValueType.Bool ||
-        this.type === ValueType.Object ||
+        this.type === ValueType.Obj ||
         this.type === ValueType.Vec
       ) {
       } else {
@@ -594,10 +594,10 @@ export class Tag {
     if (this.childType !== ValueType.Unknown) {
       if (
         this.childType === ValueType.Str ||
-        this.childType === ValueType.Int ||
-        this.childType === ValueType.Float64 ||
+        this.childType === ValueType.I ||
+        this.childType === ValueType.F64 ||
         this.childType === ValueType.Bool ||
-        this.childType === ValueType.Object ||
+        this.childType === ValueType.Obj ||
         this.childType === ValueType.Vec
       ) {
       } else {
@@ -1805,7 +1805,7 @@ export function parseMMTag(tagStr: string): Tag {
         break;
       case 'type':
         if (value === 'struct') {
-          tag.type = ValueType.Object;
+          tag.type = ValueType.Obj;
         } else {
           tag.type = stringToType(value);
         }

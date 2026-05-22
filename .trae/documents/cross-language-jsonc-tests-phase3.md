@@ -89,7 +89,7 @@ inline void printLeadingComment(std::ostringstream& os, const ir::Tag* tag, int 
 **修复方案**: 在 printer.ts 的 `valueToStringOnly()` 中，为 DateTime/Date/Time 类型添加日期格式化：
 
 ```typescript
-case ValueType.DateTime:
+case ValueType.Datetime:
 case ValueType.Date:
 case ValueType.Time:
     if (val instanceof Date) {

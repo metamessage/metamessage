@@ -9,7 +9,7 @@ from datetime import datetime, timezone, date, time as dt_time
 from typing import Any, Optional, Tuple
 
 from ..ir.tag import Tag, TagKey, ValueType
-from ..ir.types import Obj, Arr, Val, Field, Node, NodeType
+from ..ir.ast import Obj, Arr, Val, Field, Node, NodeType
 
 Simple       = 0b000 << 5
 PositiveInt  = 0b001 << 5
@@ -334,13 +334,13 @@ class Decoder:
         elif tag.type == v.Time:
             text = DEFAULT_TIME.strftime('%H:%M:%S')
             return Val(data=DEFAULT_TIME, text=text, tag=tag, path=path), 0
-        elif tag.type == v.Int8:
+        elif tag.type == v.I8:
             return Val(data=0, text='0', tag=tag, path=path), 0
-        elif tag.type == v.Int16:
+        elif tag.type == v.I16:
             return Val(data=0, text='0', tag=tag, path=path), 0
-        elif tag.type == v.Int32:
+        elif tag.type == v.I32:
             return Val(data=0, text='0', tag=tag, path=path), 0
-        elif tag.type == v.Int64:
+        elif tag.type == v.I64:
             return Val(data=0, text='0', tag=tag, path=path), 0
         elif tag.type == v.U:
             return Val(data=0, text='0', tag=tag, path=path), 0

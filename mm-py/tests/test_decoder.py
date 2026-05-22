@@ -8,7 +8,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 from metamessage.core.encoder import Encoder
 from metamessage.core.decoder import Decoder
 from metamessage.ir.tag import Tag, ValueType
-from metamessage.ir.types import Obj, Arr, Val, Field
+from metamessage.ir.ast import Obj, Arr, Val, Field
 
 
 def test_decode_bool():
@@ -86,9 +86,9 @@ def test_decode_array():
     
     # [1, 2, 3]
     arr = Arr(items=[
-        Val(1, '1', Tag(type=ValueType.Int)),
-        Val(2, '2', Tag(type=ValueType.Int)),
-        Val(3, '3', Tag(type=ValueType.Int)),
+        Val(1, '1', Tag(type=ValueType.I)),
+        Val(2, '2', Tag(type=ValueType.I)),
+        Val(3, '3', Tag(type=ValueType.I)),
     ])
     b = enc.encode(arr)
     result = dec(b).decode()
@@ -108,7 +108,7 @@ def test_decode_object():
     
     obj = Obj(fields=[
         Field(key='name', value=Val('Alice', 'Alice', Tag(type=ValueType.Str))),
-        Field(key='age', value=Val(30, '30', Tag(type=ValueType.Int))),
+        Field(key='age', value=Val(30, '30', Tag(type=ValueType.I))),
     ])
     b = enc.encode(obj)
     result = dec(b).decode()
@@ -130,8 +130,8 @@ def test_decode_nested():
         Field(key='user', value=Obj(fields=[
             Field(key='name', value=Val('Bob', 'Bob', Tag(type=ValueType.Str))),
             Field(key='scores', value=Arr(items=[
-                Val(10, '10', Tag(type=ValueType.Int)),
-                Val(20, '20', Tag(type=ValueType.Int)),
+                Val(10, '10', Tag(type=ValueType.I)),
+                Val(20, '20', Tag(type=ValueType.I)),
             ])),
         ])),
     ])
@@ -167,7 +167,7 @@ def test_empty_structures():
     # Single value
     for val, tag in [
         ('', Tag(type=ValueType.Str)),
-        (0, Tag(type=ValueType.Int)),
+        (0, Tag(type=ValueType.I)),
         (True, Tag(type=ValueType.Bool)),
     ]:
         v = Val(val, str(val), tag)

@@ -35,12 +35,12 @@ def test_value_to_node_basic():
     node = value_to_node(42)
     assert node.data == 42
     assert node.text == "42"
-    assert node.tag.type == ValueType.Int
+    assert node.tag.type == ValueType.I
 
     # Float
     node = value_to_node(3.14)
     assert node.data == 3.14
-    assert node.tag.type == ValueType.Float64
+    assert node.tag.type == ValueType.F64
 
     # Bool
     node = value_to_node(True)
@@ -226,7 +226,7 @@ def test_mm_field_decorator():
     class User:
         id: int = mm(desc="User ID")
         name: str = mm(desc="User name")
-        age: int = mm(desc="User age", type=ValueType.Uint8)
+        age: int = mm(desc="User age", type=ValueType.U8)
 
         def __init__(self, id: int = 0, name: str = "", age: int = 0):
             self.id = id
@@ -244,7 +244,7 @@ def test_mm_field_decorator():
     age_tag = get_mm_tag_for_field(User, "age")
     assert age_tag is not None
     assert age_tag.desc == "User age"
-    assert age_tag.type == ValueType.Uint8
+    assert age_tag.type == ValueType.U8
 
     user = User(id=42, name="Bob", age=25)
     binary = encode_from_value(user)

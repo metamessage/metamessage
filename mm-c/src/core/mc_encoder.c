@@ -35,7 +35,7 @@ static void enc_write_bytes(encoder_t* e, const uint8_t* data, size_t len) {
     e->size += len;
 }
 
-static void enc_encode_int(encoder_t* e, uint8_t sign, const char* text) {
+static void enc_encode_i(encoder_t* e, uint8_t sign, const char* text) {
     uint64_t uv;
     if (sign == MM_PREFIX_NEGATIVEINT) {
         int64_t sv = (int64_t)strtoll(text, NULL, 10);
@@ -268,9 +268,9 @@ static void enc_encode_node_value(encoder_t* e, mm_value_t* val) {
             } else {
                 int64_t sv = (int64_t)strtoll(val->text, NULL, 10);
                 if (sv < 0) {
-                    enc_encode_int(&tmp, MM_PREFIX_NEGATIVEINT, val->text);
+                    enc_encode_i(&tmp, MM_PREFIX_NEGATIVEINT, val->text);
                 } else {
-                    enc_encode_int(&tmp, MM_PREFIX_POSITIVEINT, val->text);
+                    enc_encode_i(&tmp, MM_PREFIX_POSITIVEINT, val->text);
                 }
             }
             break;
@@ -284,7 +284,7 @@ static void enc_encode_node_value(encoder_t* e, mm_value_t* val) {
             if (val->tag.is_null) {
                 enc_encode_simple(&tmp, MM_SIMPLE_NULLINT);
             } else {
-                enc_encode_int(&tmp, MM_PREFIX_POSITIVEINT, val->text);
+                enc_encode_i(&tmp, MM_PREFIX_POSITIVEINT, val->text);
             }
             break;
 
@@ -346,7 +346,7 @@ static void enc_encode_node_value(encoder_t* e, mm_value_t* val) {
             if (val->tag.is_null) {
                 enc_encode_simple(&tmp, MM_SIMPLE_NULLINT);
             } else {
-                enc_encode_int(&tmp, MM_PREFIX_POSITIVEINT, val->text);
+                enc_encode_i(&tmp, MM_PREFIX_POSITIVEINT, val->text);
             }
             break;
 

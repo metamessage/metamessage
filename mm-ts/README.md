@@ -60,13 +60,13 @@ console.log('wire', wire);
 ```ts
 @mm({ desc: '用户' })
 class User {
-  @mm({ type: ValueType.Int64, desc: '用户ID', nullable: false })
+  @mm({ type: ValueType.I64, desc: '用户ID', nullable: false })
   id: bigint = 0n;
 
   @mm({ desc: '昵称' })
   name: string = '';
 
-  @mm({ type: ValueType.Uint8, desc: '年龄' })
+  @mm({ type: ValueType.U8, desc: '年龄' })
   age: number = 0;
 }
 

@@ -145,10 +145,10 @@ class MetaMessageTest {
     @MM
     class StringTypes(
             @MM(type = ValueType.STR) var str: String = "test",
-            @MM(type = ValueType.URL) var url: String = "https://example.com",
+            @MM(type = ValueType.Url) var url: String = "https://example.com",
             @MM(type = ValueType.EMAIL) var email: String = "test@example.com",
-            @MM(type = ValueType.IP) var ip: String = "192.168.1.1",
-            @MM(type = ValueType.UUID) var uuid: String = "550e8400-e29b-41d4-a716-446655440000"
+            @MM(type = ValueType.Ip) var ip: String = "192.168.1.1",
+            @MM(type = ValueType.Uuid) var uuid: String = "550e8400-e29b-41d4-a716-446655440000"
     )
 
     @Test

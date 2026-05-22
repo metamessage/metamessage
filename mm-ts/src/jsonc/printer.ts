@@ -72,12 +72,12 @@ export class JSONCPrinter {
       switch (type) {
         case ValueType.Str:
         case ValueType.Bytes:
-        case ValueType.DateTime:
+        case ValueType.Datetime:
         case ValueType.Date:
         case ValueType.Time:
-        case ValueType.UUID:
-        case ValueType.IP:
-        case ValueType.URL:
+        case ValueType.Uuid:
+        case ValueType.Ip:
+        case ValueType.Url:
         case ValueType.Email:
         case ValueType.Enum:
           return `"${text}"`;
@@ -90,34 +90,34 @@ export class JSONCPrinter {
       case ValueType.Unknown:
         return 'null';
       case ValueType.Str:
-      case ValueType.UUID:
+      case ValueType.Uuid:
       case ValueType.Email:
         return `"${val}"`;
       case ValueType.Bytes:
         return `"${uint8ToBase64(val)}"`;
-      case ValueType.DateTime:
+      case ValueType.Datetime:
       case ValueType.Date:
       case ValueType.Time:
         return `"${this.dateToText(val)}"`;
-      case ValueType.IP:
-      case ValueType.URL:
+      case ValueType.Ip:
+      case ValueType.Url:
       case ValueType.Enum:
         return `"${val}"`;
       case ValueType.Bool:
         return val ? 'true' : 'false';
-      case ValueType.BigInt:
-      case ValueType.Int:
-      case ValueType.Int8:
-      case ValueType.Int16:
-      case ValueType.Int32:
-      case ValueType.Int64:
-      case ValueType.Uint:
-      case ValueType.Uint8:
-      case ValueType.Uint16:
-      case ValueType.Uint32:
-      case ValueType.Uint64:
-      case ValueType.Float32:
-      case ValueType.Float64:
+      case ValueType.Bigint:
+      case ValueType.I:
+      case ValueType.I8:
+      case ValueType.I16:
+      case ValueType.I32:
+      case ValueType.I64:
+      case ValueType.U:
+      case ValueType.U8:
+      case ValueType.U16:
+      case ValueType.U32:
+      case ValueType.U64:
+      case ValueType.F32:
+      case ValueType.F64:
       default:
         return String(val);
     }

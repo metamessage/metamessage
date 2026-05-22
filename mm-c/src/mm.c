@@ -42,8 +42,8 @@ mm_node_t* mm_value_create_str(const char* text, mm_value_type_t type, mm_field_
         node->data.value.tag.size = attr.size;
     }
 
-    if (attr.enums && strlen(attr.enums) > 0) {
-        node->data.value.tag.enums = strdup(attr.enums);
+    if (attr.enum_val && strlen(attr.enum_val) > 0) {
+        node->data.value.tag.enum_val = strdup(attr.enum_val);
     }
 
     if (attr.pattern && strlen(attr.pattern) > 0) {

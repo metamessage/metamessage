@@ -188,37 +188,37 @@ export class MMDecoder {
 
     if (tag.isNull) {
       switch (tag.type) {
-        case ValueType.DateTime:
+        case ValueType.Datetime:
         case ValueType.Date:
         case ValueType.Time:
           return new MMValue(new Date(0), tag);
-        case ValueType.Int8:
-        case ValueType.Int16:
-        case ValueType.Int32:
-        case ValueType.Int64:
-        case ValueType.Uint:
-        case ValueType.Uint8:
-        case ValueType.Uint16:
-        case ValueType.Uint32:
-        case ValueType.Uint64:
-        case ValueType.Int:
+        case ValueType.I8:
+        case ValueType.I16:
+        case ValueType.I32:
+        case ValueType.I64:
+        case ValueType.U:
+        case ValueType.U8:
+        case ValueType.U16:
+        case ValueType.U32:
+        case ValueType.U64:
+        case ValueType.I:
           return new MMValue(0, tag);
-        case ValueType.Float32:
-        case ValueType.Float64:
+        case ValueType.F32:
+        case ValueType.F64:
           return new MMValue(0.0, tag);
         case ValueType.Email:
-        case ValueType.UUID:
+        case ValueType.Uuid:
         case ValueType.Decimal:
-        case ValueType.URL:
+        case ValueType.Url:
         case ValueType.Str:
           return new MMValue('', tag);
-        case ValueType.BigInt:
+        case ValueType.Bigint:
           return new MMValue(BigInt(0), tag);
         case ValueType.Bool:
           return new MMValue(false, tag);
         case ValueType.Bytes:
           return new MMValue(new Uint8Array(0), tag);
-        case ValueType.IP:
+        case ValueType.Ip:
           return new MMValue(tag.version === 4 ? '0.0.0.0' : '::', tag);
         default:
           return this.decodeNode(tag, path).node;
@@ -673,14 +673,14 @@ export class MMDecoder {
         break;
       case SimpleValue.NullFloat:
         if (tag.type === ValueType.Unknown) {
-          tag.type = ValueType.Float64;
+          tag.type = ValueType.F64;
         }
         data = 0.0;
         text = '0.0';
         break;
       case SimpleValue.NullInt:
         if (tag.type === ValueType.Unknown) {
-          tag.type = ValueType.Int;
+          tag.type = ValueType.I;
         }
         data = 0;
         text = '0';
@@ -751,7 +751,7 @@ export class MMDecoder {
       tag = new Tag();
     }
     if (tag.type === ValueType.Unknown) {
-      tag.type = ValueType.Int;
+      tag.type = ValueType.I;
     }
 
     let data: any;
@@ -764,47 +764,47 @@ export class MMDecoder {
     }
 
     switch (tag.type) {
-      case ValueType.Int:
+      case ValueType.I:
         data = isNegative ? -v : v;
         break;
 
-      case ValueType.Int8:
+      case ValueType.I8:
         data = isNegative ? -Number(v) : Number(v);
         break;
 
-      case ValueType.Int16:
+      case ValueType.I16:
         data = isNegative ? -Number(v) : Number(v);
         break;
 
-      case ValueType.Int32:
+      case ValueType.I32:
         data = isNegative ? -Number(v) : Number(v);
         break;
 
-      case ValueType.Int64:
+      case ValueType.I64:
         data = isNegative ? -v : v;
         break;
 
-      case ValueType.Uint:
+      case ValueType.U:
         data = v;
         break;
 
-      case ValueType.Uint8:
+      case ValueType.U8:
         data = Number(v);
         break;
 
-      case ValueType.Uint16:
+      case ValueType.U16:
         data = Number(v);
         break;
 
-      case ValueType.Uint32:
+      case ValueType.U32:
         data = Number(v);
         break;
 
-      case ValueType.Uint64:
+      case ValueType.U64:
         data = v;
         break;
 
-      case ValueType.DateTime:
+      case ValueType.Datetime:
         const ts = isNegative ? -Number(v) : Number(v);
         data = new Date(ts * 1000);
         text = data.toISOString();
@@ -941,18 +941,18 @@ export class MMDecoder {
       tag = new Tag();
     }
     if (tag.type === ValueType.Unknown) {
-      tag.type = ValueType.Float64;
+      tag.type = ValueType.F64;
     }
 
     let data: any;
     let text: string;
 
     switch (tag.type) {
-      case ValueType.Float32:
+      case ValueType.F32:
         data = v;
         text = v.toString();
         break;
-      case ValueType.Float64:
+      case ValueType.F64:
         data = v;
         text = v.toString();
         break;
@@ -1013,10 +1013,10 @@ export class MMDecoder {
       case ValueType.Str:
         data = text;
         break;
-      case ValueType.URL:
+      case ValueType.Url:
         data = text;
         break;
-      case ValueType.IP:
+      case ValueType.Ip:
         data = text;
         break;
       default:
@@ -1050,7 +1050,7 @@ export class MMDecoder {
     let text = '';
 
     switch (tag.type) {
-      case ValueType.BigInt:
+      case ValueType.Bigint:
         const lenB = bs[0] || 0;
         text = this.decodeBigInt(bs.slice(1), lenB);
         data = BigInt(text);
@@ -1059,11 +1059,11 @@ export class MMDecoder {
         data = bs;
         text = uint8ToBase64(bs);
         break;
-      case ValueType.UUID:
+      case ValueType.Uuid:
         data = bs;
         text = this.bytesToUUIDString(bs);
         break;
-      case ValueType.IP:
+      case ValueType.Ip:
         data = bs;
         text = this.bytesToIPString(bs);
         break;
@@ -1155,7 +1155,7 @@ export class MMDecoder {
       tag = new Tag();
     }
     if (tag.type === ValueType.Unknown) {
-      tag.type = ValueType.Object;
+      tag.type = ValueType.Obj;
     }
 
     const [l1, l2] = containerLen(prefix & 0x1f);

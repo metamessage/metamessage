@@ -271,7 +271,7 @@ class TagTest {
 
     @Test
     fun toStringBasicType() {
-        val t = Tag().apply { type = ValueType.UUID }
+        val t = Tag().apply { type = ValueType.Uuid }
         val s = t.toString()
         assertTrue(s.contains("type=uuid"))
     }
@@ -335,7 +335,7 @@ class TagTest {
 
     @Test
     fun toBytesWithType() {
-        val t = Tag().apply { type = ValueType.UUID }
+        val t = Tag().apply { type = ValueType.Uuid }
         val bytes = t.toBytes()
         assertTrue(bytes.isNotEmpty())
     }

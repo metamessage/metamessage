@@ -368,6 +368,8 @@ fun main() {
 
 #### TypeScript
 
+[npmjs.com](https://www.npmjs.com/package/metamessage)
+
 ```typescript
 import { encodeFromValue, decodeToValue, mm, ValueType } from "metamessage";
 
@@ -385,6 +387,8 @@ const decoded = decodeToValue(wire, Person);
 
 #### Python
 
+[pypi.org](https://pypi.org/project/metamessage/)
+
 ```python
 from metamessage import encode, decode
 
@@ -395,6 +399,8 @@ decoded = decode(wire)
 
 #### JavaScript
 
+[npmjs.com](https://www.npmjs.com/package/metamessage)
+
 ```javascript
 const { encode, decode } = require("metamessage");
 
@@ -403,7 +409,9 @@ const wire = encode(person);
 const decoded = decode(wire);
 ```
 
-#### C\#
+#### C#
+
+[NuGet](https://www.nuget.org/packages/MetaMessage)
 
 ```csharp
 using MetaMessage;

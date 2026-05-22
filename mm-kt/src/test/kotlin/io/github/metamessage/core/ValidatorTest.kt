@@ -242,14 +242,14 @@ class ValidatorTest {
 
     @Test
     fun validateUUID_ValidValue() {
-        val tag = Tag().apply { type = ValueType.UUID }
+        val tag = Tag().apply { type = ValueType.Uuid }
         val result = tag.validateUUID("550e8400-e29b-41d4-a716-446655440000")
         assertTrue(result.valid)
     }
 
     @Test
     fun validateUUID_InvalidFormat() {
-        val tag = Tag().apply { type = ValueType.UUID }
+        val tag = Tag().apply { type = ValueType.Uuid }
         val result = tag.validateUUID("invalid-uuid")
         assertFalse(result.valid)
     }

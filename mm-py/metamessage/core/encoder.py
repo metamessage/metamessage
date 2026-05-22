@@ -10,7 +10,7 @@ from datetime import datetime, date, time as dt_time, timezone
 from typing import Any, Optional, Union
 
 from ..ir.tag import Tag, ValueType
-from ..ir.types import Obj, Arr, Val, Field, Node, NodeType
+from ..ir.ast import Obj, Arr, Val, Field, Node, NodeType
 
 # ===== Constants (matching Go internal/core/constants.go) =====
 
@@ -254,7 +254,7 @@ class Encoder:
 
     # ===== Integers =====
 
-    def _encode_int(self, sign: int, uv: int) -> int:
+    def _encode_i(self, sign: int, uv: int) -> int:
         if uv < IntLen1Byte:
             return self._write_byte(sign | uv)
         elif uv <= Max1Byte:
@@ -300,18 +300,18 @@ class Encoder:
         else:
             raise ValueError("integer value too large")
 
-    def _encode_uint64(self, uv: int) -> int:
-        return self._encode_int(PositiveInt, uv)
+    def _encode_u64(self, uv: int) -> int:
+        return self._encode_i(PositiveInt, uv)
 
-    def _encode_int64(self, v: int) -> int:
+    def _encode_i64(self, v: int) -> int:
         if v >= 0:
-            return self._encode_int(PositiveInt, v)
+            return self._encode_i(PositiveInt, v)
         else:
             if v == -9223372036854775808:
                 uv = 9223372036854775808
             else:
                 uv = -v
-            return self._encode_int(NegativeInt, uv)
+            return self._encode_i(NegativeInt, uv)
 
     def _encode_big_int(self, s: str) -> int:
         self._write_byte(len(s))
@@ -634,13 +634,13 @@ class Encoder:
             if tag.is_null:
                 self._encode_simple(SimpleNullInt)
             else:
-                self._encode_int64(int(val.data))
-        elif tag.type in (ValueType.Int8, ValueType.Int16, ValueType.Int32, ValueType.Int64):
+                self._encode_i64(int(val.data))
+        elif tag.type in (ValueType.I8, ValueType.I16, ValueType.I32, ValueType.I64):
             if not tag.is_null:
-                self._encode_int64(int(val.data))
+                self._encode_i64(int(val.data))
         elif tag.type in (ValueType.U, ValueType.U8, ValueType.U16, ValueType.U32, ValueType.U64):
             if not tag.is_null:
-                self._encode_uint64(int(val.data))
+                self._encode_u64(int(val.data))
         elif tag.type == ValueType.F32:
             if not tag.is_null:
                 self._encode_float(val.text)
@@ -713,7 +713,7 @@ class Encoder:
                 self._encode_bool(bool(val.data))
         elif tag.type == ValueType.Enum:
             if not tag.is_null:
-                self._encode_int64(int(val.data))
+                self._encode_i64(int(val.data))
         else:
             raise ValueError(f"unsupported value type: {tag.type}")
 
@@ -735,7 +735,7 @@ class Encoder:
             v = int(t.timestamp())
         else:
             v = int(t)
-        self._encode_int64(v)
+        self._encode_i64(v)
 
     def _encode_date(self, t):
         if isinstance(t, (datetime, date)):
@@ -746,7 +746,7 @@ class Encoder:
             days = int(t)
         sign = PositiveInt if days >= 0 else NegativeInt
         uv = abs(days)
-        self._encode_int(sign, uv)
+        self._encode_i(sign, uv)
 
     def _encode_time(self, t):
         if isinstance(t, dt_time):
@@ -756,7 +756,7 @@ class Encoder:
             v = utc.tm_hour * 3600 + utc.tm_min * 60 + utc.tm_sec
         else:
             v = int(t)
-        self._encode_uint64(v)
+        self._encode_u64(v)
 
     # ===== Public API =====
 

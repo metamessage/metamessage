@@ -144,7 +144,7 @@ export class MMEncoder {
 
     let n = 0;
     switch (tag.type) {
-      case ValueType.DateTime:
+      case ValueType.Datetime:
         if (!tag.isNull) {
           n = this.encodeDateTime(val.getValue() as Date);
         }
@@ -159,7 +159,7 @@ export class MMEncoder {
           n = this.encodeTime(val.getValue() as Date);
         }
         break;
-      case ValueType.Int:
+      case ValueType.I:
         if (tag.isNull) {
           n = this.encodeSimple(SimpleValue.NullInt);
         } else {
@@ -167,32 +167,32 @@ export class MMEncoder {
         }
         break;
 
-      case ValueType.Int8:
-      case ValueType.Int16:
-      case ValueType.Int32:
-      case ValueType.Int64:
+      case ValueType.I8:
+      case ValueType.I16:
+      case ValueType.I32:
+      case ValueType.I64:
         if (!tag.isNull) {
           n = this.encodeInt64(BigInt(val.getValue()));
         }
         break;
 
-      case ValueType.Uint:
-      case ValueType.Uint8:
-      case ValueType.Uint16:
-      case ValueType.Uint32:
-      case ValueType.Uint64:
+      case ValueType.U:
+      case ValueType.U8:
+      case ValueType.U16:
+      case ValueType.U32:
+      case ValueType.U64:
         if (!tag.isNull) {
           n = this.encodeU64(BigInt(val.getValue()));
         }
         break;
 
-      case ValueType.Float32:
+      case ValueType.F32:
         if (!tag.isNull) {
           n = this.encodeFloat(String(val.getValue()));
         }
         break;
 
-      case ValueType.Float64:
+      case ValueType.F64:
         if (tag.isNull) {
           n = this.encodeSimple(SimpleValue.NullFloat);
         } else {
@@ -212,7 +212,7 @@ export class MMEncoder {
           n = this.encodeString(String(val.getValue()));
         }
         break;
-      case ValueType.UUID:
+      case ValueType.Uuid:
         if (!tag.isNull) {
           const data = val.getValue();
           if (data instanceof Uint8Array) {
@@ -233,12 +233,12 @@ export class MMEncoder {
           n = this.encodeFloat(String(val.getValue()));
         }
         break;
-      case ValueType.URL:
+      case ValueType.Url:
         if (!tag.isNull) {
           n = this.encodeString(String(val.getValue()));
         }
         break;
-      case ValueType.IP:
+      case ValueType.Ip:
         if (!tag.isNull) {
           const data = val.getValue();
           if (data instanceof Uint8Array) {
@@ -258,7 +258,7 @@ export class MMEncoder {
           );
         }
         break;
-      case ValueType.BigInt:
+      case ValueType.Bigint:
         n = this.encodeBigInt(String(val.getValue()));
         break;
       case ValueType.Bool:

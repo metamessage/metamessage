@@ -156,7 +156,7 @@ _IntLen7Byte = _IntLenMask - 1
 _IntLen8Byte = _IntLenMask
 
 
-def _encode_uint64(buf: bytearray, key: int, uv: int):
+def _encode_u64(buf: bytearray, key: int, uv: int):
     if uv <= _MAX1BYTE:
         buf.extend([key, uv])
     elif uv <= _MAX2BYTE:
@@ -326,7 +326,7 @@ class Tag:
             buf.extend(self.max.encode('utf-8'))
 
         if self.size and not self.is_inherit:
-            _encode_uint64(buf, TagKey.Size, self.size)
+            _encode_u64(buf, TagKey.Size, self.size)
 
         if self.enum and not self.is_inherit:
             enum_bytes = self.enum.encode('utf-8')
@@ -364,7 +364,7 @@ class Tag:
             buf.extend(loc_str.encode('utf-8'))
 
         if self.version != DefaultVersion and not self.is_inherit:
-            _encode_uint64(buf, TagKey.Version, self.version)
+            _encode_u64(buf, TagKey.Version, self.version)
 
         if self.mime and not self.is_inherit:
             l = ParseMIME(self.mime)
@@ -437,7 +437,7 @@ class Tag:
             buf.extend(self.child_max.encode('utf-8'))
 
         if self.child_size:
-            _encode_uint64(buf, TagKey.ChildSize, self.child_size)
+            _encode_u64(buf, TagKey.ChildSize, self.child_size)
 
         if self.child_enum:
             child_enum_bytes = self.child_enum.encode('utf-8')
@@ -475,7 +475,7 @@ class Tag:
             buf.extend(loc_str.encode('utf-8'))
 
         if self.child_version != DefaultVersion:
-            _encode_uint64(buf, TagKey.ChildVersion, self.child_version)
+            _encode_u64(buf, TagKey.ChildVersion, self.child_version)
 
         if self.child_mime:
             l = ParseMIME(self.child_mime)

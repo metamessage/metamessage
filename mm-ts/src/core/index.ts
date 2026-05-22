@@ -40,7 +40,7 @@ function nodeToDecodedValue(node: Node): DecodedValue {
     for (const [key, valNode] of Object.entries(props)) {
       value[key] = nodeToDecodedValue(valNode).value;
     }
-    return { type: ValueType.Object, value };
+    return { type: ValueType.Obj, value };
   } else if (node instanceof MMArray) {
     const elements = node.getElements();
     const value = elements.map((e) => nodeToDecodedValue(e).value);

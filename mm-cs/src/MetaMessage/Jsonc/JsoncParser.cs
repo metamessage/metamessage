@@ -424,49 +424,49 @@ public class JsoncParser
             case ValueType.Bool:
                 mmTag.Type = MmVT.BOOL;
                 break;
-            case ValueType.Int:
+            case ValueType.I:
                 mmTag.Type = MmVT.I;
                 break;
-            case ValueType.Int8:
+            case ValueType.I8:
                 mmTag.Type = MmVT.I8;
                 break;
-            case ValueType.Int16:
+            case ValueType.I16:
                 mmTag.Type = MmVT.I16;
                 break;
-            case ValueType.Int32:
+            case ValueType.I32:
                 mmTag.Type = MmVT.I32;
                 break;
-            case ValueType.Int64:
+            case ValueType.I64:
                 mmTag.Type = MmVT.I64;
                 break;
-            case ValueType.Uint:
+            case ValueType.U:
                 mmTag.Type = MmVT.U;
                 break;
-            case ValueType.Uint8:
+            case ValueType.U8:
                 mmTag.Type = MmVT.U8;
                 break;
-            case ValueType.Uint16:
+            case ValueType.U16:
                 mmTag.Type = MmVT.U16;
                 break;
-            case ValueType.Uint32:
+            case ValueType.U32:
                 mmTag.Type = MmVT.U32;
                 break;
-            case ValueType.Uint64:
+            case ValueType.U64:
                 mmTag.Type = MmVT.U64;
                 break;
-            case ValueType.Float32:
+            case ValueType.F32:
                 mmTag.Type = MmVT.F32;
                 break;
-            case ValueType.Float64:
+            case ValueType.F64:
                 mmTag.Type = MmVT.F64;
                 break;
             case ValueType.Decimal:
                 mmTag.Type = MmVT.DECIMAL;
                 break;
-            case ValueType.BigInt:
+            case ValueType.Bigint:
                 mmTag.Type = MmVT.BIGINT;
                 break;
-            case ValueType.DateTime:
+            case ValueType.Datetime:
                 mmTag.Type = MmVT.DATETIME;
                 break;
             case ValueType.Date:
@@ -475,13 +475,13 @@ public class JsoncParser
             case ValueType.Time:
                 mmTag.Type = MmVT.TIME;
                 break;
-            case ValueType.UUID:
+            case ValueType.Uuid:
                 mmTag.Type = MmVT.UUID;
                 break;
-            case ValueType.IP:
+            case ValueType.Ip:
                 mmTag.Type = MmVT.IP;
                 break;
-            case ValueType.URL:
+            case ValueType.Url:
                 mmTag.Type = MmVT.URL;
                 break;
             case ValueType.Email:

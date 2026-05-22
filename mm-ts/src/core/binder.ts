@@ -23,7 +23,7 @@ export class Binder {
 
     if (node instanceof MMObject) {
       const tag = node.getTag();
-      if (tag?.type === ValueType.Object) {
+      if (tag?.type === ValueType.Obj) {
         return this.convertObj(node, target);
       } else {
         return this.convertMap(node, target);
@@ -163,30 +163,30 @@ export class Binder {
     if (!tag) return null;
 
     switch (tag.type) {
-      case ValueType.Int:
-      case ValueType.Uint:
-      case ValueType.Int64:
-      case ValueType.Uint64:
-      case ValueType.BigInt:
+      case ValueType.I:
+      case ValueType.U:
+      case ValueType.I64:
+      case ValueType.U64:
+      case ValueType.Bigint:
         return 0n;
 
-      case ValueType.Int8:
-      case ValueType.Int16:
-      case ValueType.Int32:
-      case ValueType.Uint8:
-      case ValueType.Uint16:
-      case ValueType.Uint32:
+      case ValueType.I8:
+      case ValueType.I16:
+      case ValueType.I32:
+      case ValueType.U8:
+      case ValueType.U16:
+      case ValueType.U32:
         return 0;
 
-      case ValueType.Float32:
-      case ValueType.Float64:
+      case ValueType.F32:
+      case ValueType.F64:
         return 0.0;
 
       case ValueType.Str:
       case ValueType.Email:
-      case ValueType.URL:
-      case ValueType.IP:
-      case ValueType.UUID:
+      case ValueType.Url:
+      case ValueType.Ip:
+      case ValueType.Uuid:
       case ValueType.Decimal:
       case ValueType.Enum:
         return '';
@@ -202,7 +202,7 @@ export class Binder {
       case ValueType.Video:
         return new Uint8Array();
 
-      case ValueType.DateTime:
+      case ValueType.Datetime:
       case ValueType.Date:
       case ValueType.Time:
         return new Date(0);

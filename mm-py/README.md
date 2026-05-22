@@ -84,7 +84,7 @@ binary = encode_from_value(user)
 ```python
 @mm(desc="Product")
 class Product:
-    id: int = mm(desc="Product ID", type=ValueType.Int64, min=1)
+    id: int = mm(desc="Product ID", type=ValueType.I64, min=1)
     name: str = mm(desc="Name", min=1, max=100)
     price: float = mm(desc="Price", min=0.0, max=999999.99)
 
@@ -157,7 +157,7 @@ obj = Obj(
         Field(key="name", value=Val(data="John", text="John",
                                      tag=Tag(type=ValueType.Str))),
         Field(key="age", value=Val(data=30, text="30",
-                                    tag=Tag(type=ValueType.Int))),
+                                    tag=Tag(type=ValueType.I))),
     ],
     tag=Tag(name="person")
 )

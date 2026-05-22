@@ -9,7 +9,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 from metamessage.core.encoder import Encoder
 from metamessage.core.decoder import Decoder
 from metamessage.ir.tag import Tag, ValueType
-from metamessage.ir.types import Obj, Arr, Val, Field
+from metamessage.ir.ast import Obj, Arr, Val, Field
 
 
 def test_encode_bool():
@@ -30,49 +30,49 @@ def test_encode_bool():
     assert dec(b).decode() == False
 
 
-def test_encode_int():
+def test_encode_i():
     """Test int encoding matches Go encode_int_test.go"""
     enc = Encoder()
     dec = Decoder
     
     # Small positive int (fits in 5 bits)
-    b = enc.encode(Val(0, '0', Tag(type=ValueType.Int)))
+    b = enc.encode(Val(0, '0', Tag(type=ValueType.I)))
     assert b[0] == 0x20  # PositiveInt | 0
     
-    b = enc.encode(Val(5, '5', Tag(type=ValueType.Int)))
+    b = enc.encode(Val(5, '5', Tag(type=ValueType.I)))
     assert b[0] == 0x25  # PositiveInt | 5
     
-    b = enc.encode(Val(23, '23', Tag(type=ValueType.Int)))
+    b = enc.encode(Val(23, '23', Tag(type=ValueType.I)))
     assert b[0] == 0x37  # PositiveInt | 23
     
     # Medium int (1 extra byte)
-    b = enc.encode(Val(24, '24', Tag(type=ValueType.Int)))
+    b = enc.encode(Val(24, '24', Tag(type=ValueType.I)))
     assert b[0] == 0x38  # PositiveInt | IntLen1Byte (24)
     assert b[1] == 24
     
-    b = enc.encode(Val(255, '255', Tag(type=ValueType.Int)))
+    b = enc.encode(Val(255, '255', Tag(type=ValueType.I)))
     assert b[0] == 0x38
     assert b[1] == 255
     
     # Large int (2 extra bytes)
-    b = enc.encode(Val(256, '256', Tag(type=ValueType.Int)))
+    b = enc.encode(Val(256, '256', Tag(type=ValueType.I)))
     assert b[0] == 0x39  # PositiveInt | IntLen2Byte (25)
     assert len(b) == 3
     
     # Negative int
-    b = enc.encode(Val(-1, '-1', Tag(type=ValueType.Int)))
+    b = enc.encode(Val(-1, '-1', Tag(type=ValueType.I)))
     assert b[0] & 0xE0 == 0x40  # NegativeInt
     assert dec(b).decode() == -1
     
-    b = enc.encode(Val(-24, '-24', Tag(type=ValueType.Int)))
+    b = enc.encode(Val(-24, '-24', Tag(type=ValueType.I)))
     assert b[0] & 0xE0 == 0x40
     assert dec(b).decode() == -24
     
     # Edge cases
-    b = enc.encode(Val(9223372036854775807, '9223372036854775807', Tag(type=ValueType.Int)))
+    b = enc.encode(Val(9223372036854775807, '9223372036854775807', Tag(type=ValueType.I)))
     assert dec(b).decode() == 9223372036854775807
     
-    b = enc.encode(Val(-9223372036854775808, '-9223372036854775808', Tag(type=ValueType.Int)))
+    b = enc.encode(Val(-9223372036854775808, '-9223372036854775808', Tag(type=ValueType.I)))
     assert dec(b).decode() == -9223372036854775808
 
 
@@ -113,7 +113,7 @@ def test_encode_float():
     # Simple short floats: 0.1 to 0.7
     for i in range(1, 8):
         val = i / 10
-        b = enc.encode(Val(val, str(val), Tag(type=ValueType.Float64)))
+        b = enc.encode(Val(val, str(val), Tag(type=ValueType.F64)))
         # PrefixFloat (0x60) | i (without negative flag)
         assert b[0] == 0x60 | i, f"0.{i} should encode as 0x{0x60|i:02x}, got 0x{b[0]:02x}"
         result = dec(b).decode()
@@ -122,7 +122,7 @@ def test_encode_float():
     # -0.1 to -0.7
     for i in range(1, 8):
         val = -i / 10
-        b = enc.encode(Val(val, str(val), Tag(type=ValueType.Float64)))
+        b = enc.encode(Val(val, str(val), Tag(type=ValueType.F64)))
         # PrefixFloat (0x60) | FloatPositiveNegativeMask (0x10) | i
         assert b[0] == 0x60 | 0x10 | i, f"-0.{i} should encode as 0x{0x60|0x10|i:02x}"
         result = dec(b).decode()
@@ -130,7 +130,7 @@ def test_encode_float():
     
     # Larger floats
     val = 3.14
-    b = enc.encode(Val(val, '3.14', Tag(type=ValueType.Float64)))
+    b = enc.encode(Val(val, '3.14', Tag(type=ValueType.F64)))
     result = dec(b).decode()
     assert abs(result - 3.14) < 1e-10
 
@@ -157,7 +157,7 @@ def test_encode_object():
     
     obj = Obj(fields=[
         Field(key='name', value=Val('Alice', 'Alice', Tag(type=ValueType.Str))),
-        Field(key='age', value=Val(30, '30', Tag(type=ValueType.Int))),
+        Field(key='age', value=Val(30, '30', Tag(type=ValueType.I))),
     ])
     b = enc.encode(obj)
     result = dec(b).decode()
@@ -172,7 +172,7 @@ def test_encode_object():
     # Nested object
     obj = Obj(fields=[
         Field(key='meta', value=Obj(fields=[
-            Field(key='count', value=Val(5, '5', Tag(type=ValueType.Int))),
+            Field(key='count', value=Val(5, '5', Tag(type=ValueType.I))),
         ])),
     ])
     b = enc.encode(obj)
@@ -186,9 +186,9 @@ def test_encode_array():
     dec = Decoder
     
     arr = Arr(items=[
-        Val(1, '1', Tag(type=ValueType.Int)),
-        Val(2, '2', Tag(type=ValueType.Int)),
-        Val(3, '3', Tag(type=ValueType.Int)),
+        Val(1, '1', Tag(type=ValueType.I)),
+        Val(2, '2', Tag(type=ValueType.I)),
+        Val(3, '3', Tag(type=ValueType.I)),
     ])
     b = enc.encode(arr)
     result = dec(b).decode()
@@ -202,8 +202,8 @@ def test_encode_array():
     
     # Nested array
     arr = Arr(items=[
-        Arr(items=[Val(1, '1', Tag(type=ValueType.Int))]),
-        Arr(items=[Val(2, '2', Tag(type=ValueType.Int))]),
+        Arr(items=[Val(1, '1', Tag(type=ValueType.I))]),
+        Arr(items=[Val(2, '2', Tag(type=ValueType.I))]),
     ])
     b = enc.encode(arr)
     result = dec(b).decode()
@@ -216,17 +216,17 @@ def test_roundtrip_complex():
     dec = Decoder
     
     obj = Obj(fields=[
-        Field(key='id', value=Val(42, '42', Tag(type=ValueType.Int))),
+        Field(key='id', value=Val(42, '42', Tag(type=ValueType.I))),
         Field(key='name', value=Val('Bob', 'Bob', Tag(type=ValueType.Str))),
         Field(key='active', value=Val(True, 'true', Tag(type=ValueType.Bool))),
-        Field(key='score', value=Val(98.5, '98.5', Tag(type=ValueType.Float64))),
+        Field(key='score', value=Val(98.5, '98.5', Tag(type=ValueType.F64))),
         Field(key='tags', value=Arr(items=[
             Val('admin', 'admin', Tag(type=ValueType.Str)),
             Val('user', 'user', Tag(type=ValueType.Str)),
         ])),
         Field(key='meta', value=Obj(fields=[
             Field(key='created', value=Val('2024-01-15', '2024-01-15', Tag(type=ValueType.Str))),
-            Field(key='count', value=Val(100, '100', Tag(type=ValueType.Int))),
+            Field(key='count', value=Val(100, '100', Tag(type=ValueType.I))),
         ])),
         Field(key='data', value=Val(None, 'null', Tag(type=ValueType.Str, is_null=True))),
     ])
@@ -256,8 +256,8 @@ def test_null_values():
     }
     for typ, tag in [
         ('bool', Tag(type=ValueType.Bool, is_null=True)),
-        ('int', Tag(type=ValueType.Int, is_null=True)),
-        ('float', Tag(type=ValueType.Float64, is_null=True)),
+        ('int', Tag(type=ValueType.I, is_null=True)),
+        ('float', Tag(type=ValueType.F64, is_null=True)),
         ('string', Tag(type=ValueType.Str, is_null=True)),
     ]:
         v = Val(None, 'null', tag)
@@ -268,7 +268,7 @@ def test_null_values():
 
 if __name__ == '__main__':
     test_encode_bool()
-    test_encode_int()
+    test_encode_i()
     test_encode_string()
     test_encode_float()
     test_encode_bytes()

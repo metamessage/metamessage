@@ -157,7 +157,7 @@ export class JSONCParser {
               }
               break;
 
-            case ValueType.DateTime:
+            case ValueType.Datetime:
             case ValueType.Date:
             case ValueType.Time:
               if (strTag.isNull) {
@@ -188,7 +188,7 @@ export class JSONCParser {
               }
               break;
 
-            case ValueType.UUID:
+            case ValueType.Uuid:
               if (strTag.isNull) {
                 if (text !== '') {
                   throw new Error(`invalid uuid: "${text}", valid: ""`);
@@ -262,14 +262,14 @@ export class JSONCParser {
               }
               break;
 
-            case ValueType.URL:
-            case ValueType.IP:
+            case ValueType.Url:
+            case ValueType.Ip:
             case ValueType.Decimal:
             default:
               let defaultResult: ValidationResult;
-              if (strTag.type === ValueType.URL) {
+              if (strTag.type === ValueType.Url) {
                 defaultResult = strTag.validateURL(text);
-              } else if (strTag.type === ValueType.IP) {
+              } else if (strTag.type === ValueType.Ip) {
                 defaultResult = strTag.validateIP(text);
               } else if (strTag.type === ValueType.Decimal) {
                 defaultResult = strTag.validateDecimal(text);
@@ -303,11 +303,11 @@ export class JSONCParser {
 
           if (text.includes('.')) {
             if (numTag.type === ValueType.Unknown) {
-              numTag.type = ValueType.Float64;
+              numTag.type = ValueType.F64;
             }
 
             switch (numTag.type) {
-              case ValueType.Float32:
+              case ValueType.F32:
                 if (numTag.isNull) {
                   if (text !== '0.0') {
                     throw new Error(`invalid float32: ${text}, valid: 0.0`);
@@ -329,7 +329,7 @@ export class JSONCParser {
                 }
                 break;
 
-              case ValueType.Float64:
+              case ValueType.F64:
                 if (numTag.isNull) {
                   if (text !== '0.0') {
                     throw new Error(`invalid float64: ${text}, valid: 0.0`);
@@ -365,23 +365,23 @@ export class JSONCParser {
             }
           } else if (text.startsWith('-')) {
             if (numTag.type === ValueType.Unknown) {
-              numTag.type = ValueType.Int64;
+              numTag.type = ValueType.I64;
             }
 
             switch (numTag.type) {
-              case ValueType.Int8:
+              case ValueType.I8:
                 data = this.parseAndValidateI(text, numTag, 'validateI8');
                 break;
-              case ValueType.Int16:
+              case ValueType.I16:
                 data = this.parseAndValidateI(text, numTag, 'validateI16');
                 break;
-              case ValueType.Int32:
+              case ValueType.I32:
                 data = this.parseAndValidateI(text, numTag, 'validateI32');
                 break;
-              case ValueType.Int64:
+              case ValueType.I64:
                 data = this.parseAndValidateI(text, numTag, 'validateI64');
                 break;
-              case ValueType.BigInt:
+              case ValueType.Bigint:
                 if (numTag.isNull) {
                   if (text !== '0') {
                     throw new Error(`invalid bigint: ${text}, valid: 0`);
@@ -410,41 +410,41 @@ export class JSONCParser {
             }
           } else {
             if (numTag.type === ValueType.Unknown) {
-              numTag.type = ValueType.Int;
+              numTag.type = ValueType.I;
             }
 
             switch (numTag.type) {
-              case ValueType.Int:
+              case ValueType.I:
                 data = this.parseAndValidateI(text, numTag, 'validateI');
                 break;
-              case ValueType.Int8:
+              case ValueType.I8:
                 data = this.parseAndValidateI(text, numTag, 'validateI8');
                 break;
-              case ValueType.Int16:
+              case ValueType.I16:
                 data = this.parseAndValidateI(text, numTag, 'validateI16');
                 break;
-              case ValueType.Int32:
+              case ValueType.I32:
                 data = this.parseAndValidateI(text, numTag, 'validateI32');
                 break;
-              case ValueType.Int64:
+              case ValueType.I64:
                 data = this.parseAndValidateI(text, numTag, 'validateI64');
                 break;
-              case ValueType.Uint:
+              case ValueType.U:
                 data = this.parseAndValidateU(text, numTag, 'validateU');
                 break;
-              case ValueType.Uint8:
+              case ValueType.U8:
                 data = this.parseAndValidateU(text, numTag, 'validateU8');
                 break;
-              case ValueType.Uint16:
+              case ValueType.U16:
                 data = this.parseAndValidateU(text, numTag, 'validateU16');
                 break;
-              case ValueType.Uint32:
+              case ValueType.U32:
                 data = this.parseAndValidateU(text, numTag, 'validateU32');
                 break;
-              case ValueType.Uint64:
+              case ValueType.U64:
                 data = this.parseAndValidateU(text, numTag, 'validateU64');
                 break;
-              case ValueType.BigInt:
+              case ValueType.Bigint:
                 if (numTag.isNull) {
                   if (text !== '0') {
                     throw new Error(`invalid bigint: ${text}, valid: 0`);
@@ -600,7 +600,7 @@ export class JSONCParser {
   private parseObject(openLine: number, path: string): MMObject {
     let tag = new Tag();
     if (tag.type === ValueType.Unknown) {
-      tag.type = ValueType.Object;
+      tag.type = ValueType.Obj;
     }
 
     if (tag.name) {
@@ -664,7 +664,7 @@ export class JSONCParser {
       }
     }
 
-    if (tag.type === ValueType.Map || tag.type === ValueType.Object) {
+    if (tag.type === ValueType.Map || tag.type === ValueType.Obj) {
       const result = tag.validateObj();
       if (!result.valid) {
         throw new Error(`validate failed: ${result.error}`);

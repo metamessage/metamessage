@@ -53,9 +53,9 @@ def main():
     
     @mm("desc=Product")
     class Product:
-        id: int = mm(desc="Product ID", type=ValueType.Int64)
+        id: int = mm(desc="Product ID", type=ValueType.I64)
         name: str = mm(desc="Product name")
-        price: float = mm(desc="Price", type=ValueType.Float64)
+        price: float = mm(desc="Price", type=ValueType.F64)
         
         def __init__(self, id: int = 0, name: str = "", price: float = 0.0):
             self.id = id

@@ -59,7 +59,7 @@ typedef struct {
     char* min;
     char* max;
     int size;
-    char* enums;
+    char* enum_val;
     char* pattern;
     int location_offset;
     int version;

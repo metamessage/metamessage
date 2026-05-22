@@ -23,10 +23,10 @@ describe('MM Encoder/Decoder', () => {
   describe('Null', () => {
     test('should encode and decode zero int without allowEmpty', () => {
       const tag = new Tag();
-      tag.type = ValueType.Int;
+      tag.type = ValueType.I;
       const encoded = encodeNode(mm.i(0n, tag));
       const decoded = decodeToValue(encoded);
-      expect(decoded.type).toBe(ValueType.Int);
+      expect(decoded.type).toBe(ValueType.I);
       expect(decoded.value).toBe(0n);
     });
   });
@@ -35,31 +35,31 @@ describe('MM Encoder/Decoder', () => {
     test('should encode and decode non-zero int', () => {
       const encoded = encodeNode(mm.i(42n));
       const decoded = decodeToValue(encoded);
-      expect(decoded.type).toBe(ValueType.Int);
+      expect(decoded.type).toBe(ValueType.I);
       expect(decoded.value).toBe(42n);
     });
 
     test('should encode and decode 0 with allowEmpty', () => {
       const tag = new Tag();
-      tag.type = ValueType.Int;
+      tag.type = ValueType.I;
       tag.allowEmpty = true;
       const encoded = encodeNode(mm.i(0n, tag));
       const decoded = decodeToValue(encoded);
-      expect(decoded.type).toBe(ValueType.Int);
+      expect(decoded.type).toBe(ValueType.I);
       expect(decoded.value).toBe(0n);
     });
 
     test('should encode and decode positive number', () => {
       const encoded = encodeNode(mm.i(42n));
       const decoded = decodeToValue(encoded);
-      expect(decoded.type).toBe(ValueType.Int);
+      expect(decoded.type).toBe(ValueType.I);
       expect(decoded.value).toBe(42n);
     });
 
     test('should encode and decode negative number', () => {
       const encoded = encodeNode(mm.i(-42n));
       const decoded = decodeToValue(encoded);
-      expect(decoded.type).toBe(ValueType.Int);
+      expect(decoded.type).toBe(ValueType.I);
       expect(decoded.value).toBe(-42n);
     });
 
@@ -67,7 +67,7 @@ describe('MM Encoder/Decoder', () => {
       const bigValue = 9007199254740991n;
       const encoded = encodeNode(mm.bigint(bigValue));
       const decoded = decodeToValue(encoded);
-      expect(decoded.type).toBe(ValueType.BigInt);
+      expect(decoded.type).toBe(ValueType.Bigint);
       expect(decoded.value).toBe(bigValue);
     });
 
@@ -75,63 +75,63 @@ describe('MM Encoder/Decoder', () => {
       const node = mm.i8(127);
       const encoded = encodeNode(node);
       const decoded = decodeToValue(encoded);
-      expect(decoded.type).toBe(ValueType.Int8);
+      expect(decoded.type).toBe(ValueType.I8);
       expect(decoded.value).toBe(127);
     });
 
     test('should encode and decode int16', () => {
       const encoded = encodeNode(mm.i16(32767));
       const decoded = decodeToValue(encoded);
-      expect(decoded.type).toBe(ValueType.Int16);
+      expect(decoded.type).toBe(ValueType.I16);
       expect(decoded.value).toBe(32767);
     });
 
     test('should encode and decode int32', () => {
       const encoded = encodeNode(mm.i32(2147483647));
       const decoded = decodeToValue(encoded);
-      expect(decoded.type).toBe(ValueType.Int32);
+      expect(decoded.type).toBe(ValueType.I32);
       expect(decoded.value).toBe(2147483647);
     });
 
     test('should encode and decode int64', () => {
       const encoded = encodeNode(mm.i64(9223372036854775807n));
       const decoded = decodeToValue(encoded);
-      expect(decoded.type).toBe(ValueType.Int64);
+      expect(decoded.type).toBe(ValueType.I64);
       expect(decoded.value).toBe(9223372036854775807n);
     });
 
     test('should encode and decode uint', () => {
       const encoded = encodeNode(mm.u(42n));
       const decoded = decodeToValue(encoded);
-      expect(decoded.type).toBe(ValueType.Uint);
+      expect(decoded.type).toBe(ValueType.U);
       expect(decoded.value).toBe(42n);
     });
 
     test('should encode and decode uint8', () => {
       const encoded = encodeNode(mm.u8(255));
       const decoded = decodeToValue(encoded);
-      expect(decoded.type).toBe(ValueType.Uint8);
+      expect(decoded.type).toBe(ValueType.U8);
       expect(decoded.value).toBe(255);
     });
 
     test('should encode and decode uint16', () => {
       const encoded = encodeNode(mm.u16(65535));
       const decoded = decodeToValue(encoded);
-      expect(decoded.type).toBe(ValueType.Uint16);
+      expect(decoded.type).toBe(ValueType.U16);
       expect(decoded.value).toBe(65535);
     });
 
     test('should encode and decode uint32', () => {
       const encoded = encodeNode(mm.u32(4294967295));
       const decoded = decodeToValue(encoded);
-      expect(decoded.type).toBe(ValueType.Uint32);
+      expect(decoded.type).toBe(ValueType.U32);
       expect(decoded.value).toBe(4294967295);
     });
 
     test('should encode and decode uint64', () => {
       const encoded = encodeNode(mm.u64(18446744073709551615n));
       const decoded = decodeToValue(encoded);
-      expect(decoded.type).toBe(ValueType.Uint64);
+      expect(decoded.type).toBe(ValueType.U64);
       expect(decoded.value).toBe(18446744073709551615n);
     });
   });
@@ -140,38 +140,38 @@ describe('MM Encoder/Decoder', () => {
     test('should encode and decode non-zero float', () => {
       const encoded = encodeNode(mm.f64(3.14));
       const decoded = decodeToValue(encoded);
-      expect(decoded.type).toBe(ValueType.Float64);
+      expect(decoded.type).toBe(ValueType.F64);
       expect(decoded.value).toBeCloseTo(3.14);
     });
 
     test('should encode and decode 0.0 with allowEmpty', () => {
       const tag = new Tag();
-      tag.type = ValueType.Float64;
+      tag.type = ValueType.F64;
       tag.allowEmpty = true;
       const encoded = encodeNode(mm.f64(0.0, tag));
       const decoded = decodeToValue(encoded);
-      expect(decoded.type).toBe(ValueType.Float64);
+      expect(decoded.type).toBe(ValueType.F64);
       expect(decoded.value).toBe(0.0);
     });
 
     test('should encode and decode positive float', () => {
       const encoded = encodeNode(mm.f64(3.14));
       const decoded = decodeToValue(encoded);
-      expect(decoded.type).toBe(ValueType.Float64);
+      expect(decoded.type).toBe(ValueType.F64);
       expect(decoded.value).toBeCloseTo(3.14);
     });
 
     test('should encode and decode negative float', () => {
       const encoded = encodeNode(mm.f64(-3.14));
       const decoded = decodeToValue(encoded);
-      expect(decoded.type).toBe(ValueType.Float64);
+      expect(decoded.type).toBe(ValueType.F64);
       expect(decoded.value).toBeCloseTo(-3.14);
     });
 
     test('should encode and decode float32', () => {
       const encoded = encodeNode(mm.f32(3.14));
       const decoded = decodeToValue(encoded);
-      expect(decoded.type).toBe(ValueType.Float32);
+      expect(decoded.type).toBe(ValueType.F32);
       expect(decoded.value).toBeCloseTo(3.14);
     });
   });
@@ -219,7 +219,7 @@ describe('MM Encoder/Decoder', () => {
     test('should encode and decode url', () => {
       const encoded = encodeNode(mm.url('https://example.com'));
       const decoded = decodeToValue(encoded);
-      expect(decoded.type).toBe(ValueType.URL);
+      expect(decoded.type).toBe(ValueType.Url);
       expect(decoded.value).toBe('https://example.com');
     });
 
@@ -228,7 +228,7 @@ describe('MM Encoder/Decoder', () => {
         mm.uuid('550e8400-e29b-41d4-a716-446655440000'),
       );
       const decoded = decodeToValue(encoded);
-      expect(decoded.type).toBe(ValueType.UUID);
+      expect(decoded.type).toBe(ValueType.Uuid);
       expect(Array.from(decoded.value)).toEqual([
         85, 14, 132, 0, 226, 155, 65, 212, 167, 22, 68, 102, 85, 68, 0, 0,
       ]);
@@ -244,7 +244,7 @@ describe('MM Encoder/Decoder', () => {
     test('should encode and decode ip', () => {
       const encoded = encodeNode(mm.ip('192.168.1.1'));
       const decoded = decodeToValue(encoded);
-      expect(decoded.type).toBe(ValueType.IP);
+      expect(decoded.type).toBe(ValueType.Ip);
       expect(decoded.value).toBe('192.168.1.1');
     });
   });
@@ -328,14 +328,14 @@ describe('MM Encoder/Decoder', () => {
       const obj = { name: mm.str('test'), age: mm.i(25n) };
       const encoded = encodeNode(mm.obj(obj));
       const decoded = decodeToValue(encoded);
-      expect(decoded.type).toBe(ValueType.Object);
+      expect(decoded.type).toBe(ValueType.Obj);
       expect(decoded.value.name).toBe('test');
     });
 
     test('should encode and decode empty object', () => {
       const encoded = encodeNode(mm.obj({}));
       const decoded = decodeToValue(encoded);
-      expect(decoded.type).toBe(ValueType.Object);
+      expect(decoded.type).toBe(ValueType.Obj);
       expect(Object.keys(decoded.value).length).toBe(0);
     });
 
@@ -347,7 +347,7 @@ describe('MM Encoder/Decoder', () => {
       };
       const encoded = encodeNode(mm.obj(obj));
       const decoded = decodeToValue(encoded);
-      expect(decoded.type).toBe(ValueType.Object);
+      expect(decoded.type).toBe(ValueType.Obj);
       expect(decoded.value.name).toBe('test');
       expect(decoded.value.age.toString()).toBe('25');
       expect(decoded.value.active).toBe(true);
@@ -357,7 +357,7 @@ describe('MM Encoder/Decoder', () => {
       const obj = { person: mm.obj({ name: mm.str('test'), age: mm.i(25n) }) };
       const encoded = encodeNode(mm.obj(obj));
       const decoded = decodeToValue(encoded);
-      expect(decoded.type).toBe(ValueType.Object);
+      expect(decoded.type).toBe(ValueType.Obj);
       expect(decoded.value.person.name).toBe('test');
       expect(decoded.value.person.age).toBe(25n);
     });
@@ -368,7 +368,7 @@ describe('MM Encoder/Decoder', () => {
       const date = new Date('2024-01-01T12:00:00Z');
       const encoded = encodeNode(mm.datetime(date));
       const decoded = decodeToValue(encoded);
-      expect(decoded.type).toBe(ValueType.DateTime);
+      expect(decoded.type).toBe(ValueType.Datetime);
     });
 
     test('should encode and decode date', () => {
@@ -389,14 +389,14 @@ describe('MM Encoder/Decoder', () => {
   describe('MM Value with Tag', () => {
     test('should encode and decode mm() wrapped value with custom tag', () => {
       const tag = new Tag();
-      tag.type = ValueType.Int;
+      tag.type = ValueType.I;
       tag.desc = 'test description';
       tag.min = '1';
       tag.max = '100';
       const wrapped = mm.i(42n, tag);
       const encoded = encodeNode(wrapped);
       const decoded = decodeToValue(encoded);
-      expect(decoded.type).toBe(ValueType.Int);
+      expect(decoded.type).toBe(ValueType.I);
       expect(decoded.value).toBe(42n);
     });
 
@@ -406,7 +406,7 @@ describe('MM Encoder/Decoder', () => {
       const wrapped = mm.i(123n, tag);
       const encoded = encodeNode(wrapped);
       const decoded = decodeToValue(encoded);
-      expect(decoded.type).toBe(ValueType.Int);
+      expect(decoded.type).toBe(ValueType.I);
       expect(decoded.value).toBe(123n);
     });
 

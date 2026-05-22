@@ -3,31 +3,31 @@ export enum ValueType {
   Doc,
   Arr,
   Vec,
-  Object,
+  Obj,
   Map,
   Str,
   Bytes,
   Bool,
-  Int,
-  Int8,
-  Int16,
-  Int32,
-  Int64,
-  Uint,
-  Uint8,
-  Uint16,
-  Uint32,
-  Uint64,
-  Float32,
-  Float64,
-  BigInt,
-  DateTime,
+  I,
+  I8,
+  I16,
+  I32,
+  I64,
+  U,
+  U8,
+  U16,
+  U32,
+  U64,
+  F32,
+  F64,
+  Bigint,
+  Datetime,
   Date,
   Time,
-  UUID,
+  Uuid,
   Decimal,
-  IP,
-  URL,
+  Ip,
+  Url,
   Email,
   Enum,
   Image,
@@ -84,7 +84,7 @@ export function stringToType(value: string): ValueType {
     case 'vec':
       return ValueType.Vec;
     case 'obj':
-      return ValueType.Object;
+      return ValueType.Obj;
     case 'map':
       return ValueType.Map;
     case 'str':
@@ -94,45 +94,45 @@ export function stringToType(value: string): ValueType {
     case 'bool':
       return ValueType.Bool;
     case 'i':
-      return ValueType.Int;
+      return ValueType.I;
     case 'i8':
-      return ValueType.Int8;
+      return ValueType.I8;
     case 'i16':
-      return ValueType.Int16;
+      return ValueType.I16;
     case 'i32':
-      return ValueType.Int32;
+      return ValueType.I32;
     case 'i64':
-      return ValueType.Int64;
+      return ValueType.I64;
     case 'u':
-      return ValueType.Uint;
+      return ValueType.U;
     case 'u8':
-      return ValueType.Uint8;
+      return ValueType.U8;
     case 'u16':
-      return ValueType.Uint16;
+      return ValueType.U16;
     case 'u32':
-      return ValueType.Uint32;
+      return ValueType.U32;
     case 'u64':
-      return ValueType.Uint64;
+      return ValueType.U64;
     case 'f32':
-      return ValueType.Float32;
+      return ValueType.F32;
     case 'f64':
-      return ValueType.Float64;
+      return ValueType.F64;
     case 'bigint':
-      return ValueType.BigInt;
+      return ValueType.Bigint;
     case 'datetime':
-      return ValueType.DateTime;
+      return ValueType.Datetime;
     case 'date':
       return ValueType.Date;
     case 'time':
       return ValueType.Time;
     case 'uuid':
-      return ValueType.UUID;
+      return ValueType.Uuid;
     case 'decimal':
       return ValueType.Decimal;
     case 'ip':
-      return ValueType.IP;
+      return ValueType.Ip;
     case 'url':
-      return ValueType.URL;
+      return ValueType.Url;
     case 'email':
       return ValueType.Email;
     case 'enum':

@@ -14,29 +14,29 @@ public enum ValueType
     Bytes,
     Bool,
 
-    Int,
-    Int8,
-    Int16,
-    Int32,
-    Int64,
-    Uint,
-    Uint8,
-    Uint16,
-    Uint32,
-    Uint64,
+    I,
+    I8,
+    I16,
+    I32,
+    I64,
+    U,
+    U8,
+    U16,
+    U32,
+    U64,
 
-    Float32,
-    Float64,
+    F32,
+    F64,
 
-    BigInt,
-    DateTime,
+    Bigint,
+    Datetime,
     Date,
     Time,
 
-    UUID,
+    Uuid,
     Decimal,
-    IP,
-    URL,
+    Ip,
+    Url,
     Email,
 
     Enum,
@@ -49,33 +49,33 @@ public static class ValueTypeConstants
 {
     public const string UnknownStr = "unknown";
     public const string DocStr = "doc";
-    public const string ArrayStr = "arr";
-    public const string SliceStr = "vec";
-    public const string ObjectStr = "obj";
+    public const string ArrStr = "arr";
+    public const string VecStr = "vec";
+    public const string ObjStr = "obj";
     public const string MapStr = "map";
-    public const string StringStr = "str";
+    public const string StrStr = "str";
     public const string BytesStr = "bytes";
     public const string BoolStr = "bool";
-    public const string IntStr = "i";
-    public const string Int8Str = "i8";
-    public const string Int16Str = "i16";
-    public const string Int32Str = "i32";
-    public const string Int64Str = "i64";
-    public const string UintStr = "u";
-    public const string Uint8Str = "u8";
-    public const string Uint16Str = "u16";
-    public const string Uint32Str = "u32";
-    public const string Uint64Str = "u64";
-    public const string Float32Str = "f32";
-    public const string Float64Str = "f64";
-    public const string BigIntStr = "bigint";
-    public const string DateTimeStr = "datetime";
+    public const string IStr = "i";
+    public const string I8Str = "i8";
+    public const string I16Str = "i16";
+    public const string I32Str = "i32";
+    public const string I64Str = "i64";
+    public const string UStr = "u";
+    public const string U8Str = "u8";
+    public const string U16Str = "u16";
+    public const string U32Str = "u32";
+    public const string U64Str = "u64";
+    public const string F32Str = "f32";
+    public const string F64Str = "f64";
+    public const string BigintStr = "bigint";
+    public const string DatetimeStr = "datetime";
     public const string DateStr = "date";
     public const string TimeStr = "time";
-    public const string UUIDStr = "uuid";
+    public const string UuidStr = "uuid";
     public const string DecimalStr = "decimal";
-    public const string IPStr = "ip";
-    public const string URLStr = "url";
+    public const string IpStr = "ip";
+    public const string UrlStr = "url";
     public const string EmailStr = "email";
     public const string EnumStr = "enum";
     public const string ImageStr = "image";
@@ -88,33 +88,33 @@ public static class ValueTypeExtensions
     {
         { ValueTypeConstants.UnknownStr, ValueType.Unknown },
         { ValueTypeConstants.DocStr, ValueType.Doc },
-        { ValueTypeConstants.ArrayStr, ValueType.Arr },
-        { ValueTypeConstants.SliceStr, ValueType.Vec },
-        { ValueTypeConstants.ObjectStr, ValueType.Obj },
+        { ValueTypeConstants.ArrStr, ValueType.Arr },
+        { ValueTypeConstants.VecStr, ValueType.Vec },
+        { ValueTypeConstants.ObjStr, ValueType.Obj },
         { ValueTypeConstants.MapStr, ValueType.Map },
-        { ValueTypeConstants.StringStr, ValueType.Str },
+        { ValueTypeConstants.StrStr, ValueType.Str },
         { ValueTypeConstants.BytesStr, ValueType.Bytes },
         { ValueTypeConstants.BoolStr, ValueType.Bool },
-        { ValueTypeConstants.IntStr, ValueType.Int },
-        { ValueTypeConstants.Int8Str, ValueType.Int8 },
-        { ValueTypeConstants.Int16Str, ValueType.Int16 },
-        { ValueTypeConstants.Int32Str, ValueType.Int32 },
-        { ValueTypeConstants.Int64Str, ValueType.Int64 },
-        { ValueTypeConstants.UintStr, ValueType.Uint },
-        { ValueTypeConstants.Uint8Str, ValueType.Uint8 },
-        { ValueTypeConstants.Uint16Str, ValueType.Uint16 },
-        { ValueTypeConstants.Uint32Str, ValueType.Uint32 },
-        { ValueTypeConstants.Uint64Str, ValueType.Uint64 },
-        { ValueTypeConstants.Float32Str, ValueType.Float32 },
-        { ValueTypeConstants.Float64Str, ValueType.Float64 },
-        { ValueTypeConstants.BigIntStr, ValueType.BigInt },
-        { ValueTypeConstants.DateTimeStr, ValueType.DateTime },
+        { ValueTypeConstants.IStr, ValueType.I },
+        { ValueTypeConstants.I8Str, ValueType.I8 },
+        { ValueTypeConstants.I16Str, ValueType.I16 },
+        { ValueTypeConstants.I32Str, ValueType.I32 },
+        { ValueTypeConstants.I64Str, ValueType.I64 },
+        { ValueTypeConstants.UStr, ValueType.U },
+        { ValueTypeConstants.U8Str, ValueType.U8 },
+        { ValueTypeConstants.U16Str, ValueType.U16 },
+        { ValueTypeConstants.U32Str, ValueType.U32 },
+        { ValueTypeConstants.U64Str, ValueType.U64 },
+        { ValueTypeConstants.F32Str, ValueType.F32 },
+        { ValueTypeConstants.F64Str, ValueType.F64 },
+        { ValueTypeConstants.BigintStr, ValueType.Bigint },
+        { ValueTypeConstants.DatetimeStr, ValueType.Datetime },
         { ValueTypeConstants.DateStr, ValueType.Date },
         { ValueTypeConstants.TimeStr, ValueType.Time },
-        { ValueTypeConstants.UUIDStr, ValueType.UUID },
+        { ValueTypeConstants.UuidStr, ValueType.Uuid },
         { ValueTypeConstants.DecimalStr, ValueType.Decimal },
-        { ValueTypeConstants.IPStr, ValueType.IP },
-        { ValueTypeConstants.URLStr, ValueType.URL },
+        { ValueTypeConstants.IpStr, ValueType.Ip },
+        { ValueTypeConstants.UrlStr, ValueType.Url },
         { ValueTypeConstants.EmailStr, ValueType.Email },
         { ValueTypeConstants.EnumStr, ValueType.Enum },
         { ValueTypeConstants.ImageStr, ValueType.Image },
@@ -127,33 +127,33 @@ public static class ValueTypeExtensions
         {
             ValueType.Unknown => ValueTypeConstants.UnknownStr,
             ValueType.Doc => ValueTypeConstants.DocStr,
-            ValueType.Arr => ValueTypeConstants.ArrayStr,
-            ValueType.Vec => ValueTypeConstants.SliceStr,
-            ValueType.Obj => ValueTypeConstants.ObjectStr,
+            ValueType.Arr => ValueTypeConstants.ArrStr,
+            ValueType.Vec => ValueTypeConstants.VecStr,
+            ValueType.Obj => ValueTypeConstants.ObjStr,
             ValueType.Map => ValueTypeConstants.MapStr,
-            ValueType.Str => ValueTypeConstants.StringStr,
+            ValueType.Str => ValueTypeConstants.StrStr,
             ValueType.Bytes => ValueTypeConstants.BytesStr,
             ValueType.Bool => ValueTypeConstants.BoolStr,
-            ValueType.Int => ValueTypeConstants.IntStr,
-            ValueType.Int8 => ValueTypeConstants.Int8Str,
-            ValueType.Int16 => ValueTypeConstants.Int16Str,
-            ValueType.Int32 => ValueTypeConstants.Int32Str,
-            ValueType.Int64 => ValueTypeConstants.Int64Str,
-            ValueType.Uint => ValueTypeConstants.UintStr,
-            ValueType.Uint8 => ValueTypeConstants.Uint8Str,
-            ValueType.Uint16 => ValueTypeConstants.Uint16Str,
-            ValueType.Uint32 => ValueTypeConstants.Uint32Str,
-            ValueType.Uint64 => ValueTypeConstants.Uint64Str,
-            ValueType.Float32 => ValueTypeConstants.Float32Str,
-            ValueType.Float64 => ValueTypeConstants.Float64Str,
-            ValueType.BigInt => ValueTypeConstants.BigIntStr,
-            ValueType.DateTime => ValueTypeConstants.DateTimeStr,
+            ValueType.I => ValueTypeConstants.IStr,
+            ValueType.I8 => ValueTypeConstants.I8Str,
+            ValueType.I16 => ValueTypeConstants.I16Str,
+            ValueType.I32 => ValueTypeConstants.I32Str,
+            ValueType.I64 => ValueTypeConstants.I64Str,
+            ValueType.U => ValueTypeConstants.UStr,
+            ValueType.U8 => ValueTypeConstants.U8Str,
+            ValueType.U16 => ValueTypeConstants.U16Str,
+            ValueType.U32 => ValueTypeConstants.U32Str,
+            ValueType.U64 => ValueTypeConstants.U64Str,
+            ValueType.F32 => ValueTypeConstants.F32Str,
+            ValueType.F64 => ValueTypeConstants.F64Str,
+            ValueType.Bigint => ValueTypeConstants.BigintStr,
+            ValueType.Datetime => ValueTypeConstants.DatetimeStr,
             ValueType.Date => ValueTypeConstants.DateStr,
             ValueType.Time => ValueTypeConstants.TimeStr,
-            ValueType.UUID => ValueTypeConstants.UUIDStr,
+            ValueType.Uuid => ValueTypeConstants.UuidStr,
             ValueType.Decimal => ValueTypeConstants.DecimalStr,
-            ValueType.IP => ValueTypeConstants.IPStr,
-            ValueType.URL => ValueTypeConstants.URLStr,
+            ValueType.Ip => ValueTypeConstants.IpStr,
+            ValueType.Url => ValueTypeConstants.UrlStr,
             ValueType.Email => ValueTypeConstants.EmailStr,
             ValueType.Enum => ValueTypeConstants.EnumStr,
             ValueType.Image => ValueTypeConstants.ImageStr,
@@ -178,12 +178,12 @@ public static class ValueTypeExtensions
         {
             ValueType.Str => true,
             ValueType.Bytes => true,
-            ValueType.DateTime => true,
+            ValueType.Datetime => true,
             ValueType.Date => true,
             ValueType.Time => true,
-            ValueType.UUID => true,
-            ValueType.IP => true,
-            ValueType.URL => true,
+            ValueType.Uuid => true,
+            ValueType.Ip => true,
+            ValueType.Url => true,
             ValueType.Email => true,
             ValueType.Enum => true,
             _ => false

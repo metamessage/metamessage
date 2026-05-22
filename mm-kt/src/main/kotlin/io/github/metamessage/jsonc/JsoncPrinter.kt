@@ -89,9 +89,9 @@ class JsoncPrinter {
                         ValueType.DATETIME,
                         ValueType.DATE,
                         ValueType.TIME,
-                        ValueType.UUID,
-                        ValueType.IP,
-                        ValueType.URL,
+                        ValueType.Uuid,
+                        ValueType.Ip,
+                        ValueType.Url,
                         ValueType.EMAIL,
                         ValueType.ENUM -> true
                         else -> false

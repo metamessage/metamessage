@@ -141,16 +141,16 @@ object Binder {
             ValueType.BIGINT -> {
                 (data as? BigInteger ?: BigInteger.ZERO) as T
             }
-            ValueType.UUID -> {
+            ValueType.Uuid -> {
                 (data as? UUID ?: UUID(0, 0)).toString() as T
             }
             ValueType.DECIMAL, ValueType.EMAIL -> {
                 (data as? String ?: text) as T
             }
-            ValueType.IP -> {
+            ValueType.Ip -> {
                 (data as? java.net.InetAddress) as T
             }
-            ValueType.URL -> {
+            ValueType.Url -> {
                 (data as? java.net.URI) as T
             }
             ValueType.ENUM -> {

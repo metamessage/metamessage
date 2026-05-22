@@ -47,7 +47,7 @@ mm-cpp/
 ```bash
 cd mm-cpp
 mkdir build && cd build
-cmake ..
+cmake .. -DCMAKE_CXX_COMPILER=/usr/bin/clang++ -DCMAKE_C_COMPILER=/usr/bin/clang
 cmake --build .
 ```
 
