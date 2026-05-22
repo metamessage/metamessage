@@ -249,10 +249,7 @@ impl Tag {
             }
 
             let (key, value) = if let Some(idx) = part.find('=') {
-                (
-                    part[..idx].trim(),
-                    Some(part[idx + 1..].trim().to_string()),
-                )
+                (part[..idx].trim(), Some(part[idx + 1..].trim().to_string()))
             } else {
                 (part.trim(), None)
             };
@@ -454,13 +451,13 @@ impl Tag {
 
         if self.value_type != ValueType::Unknown && !self.is_inherit {
             match self.value_type {
-                ValueType::String
-                | ValueType::Int
-                | ValueType::Float64
+                ValueType::Str
+                | ValueType::I
+                | ValueType::F64
                 | ValueType::Bool
-                | ValueType::Struct
-                | ValueType::Slice => {}
-                ValueType::Array => if self.size.is_none() || self.size.unwrap_or(0) == 0 {},
+                | ValueType::Obj
+                | ValueType::Vec => {}
+                ValueType::Arr => if self.size.is_none() || self.size.unwrap_or(0) == 0 {},
                 ValueType::Enum => if self.enum_values.is_some() {},
                 _ => {
                     parts.push(format!("type={}", self.value_type.to_str()));
@@ -558,13 +555,13 @@ impl Tag {
 
         if self.child_type != ValueType::Unknown {
             match self.child_type {
-                ValueType::String
-                | ValueType::Int
-                | ValueType::Float64
+                ValueType::Str
+                | ValueType::I
+                | ValueType::F64
                 | ValueType::Bool
-                | ValueType::Struct
-                | ValueType::Slice => {}
-                ValueType::Array => {
+                | ValueType::Obj
+                | ValueType::Vec => {}
+                ValueType::Arr => {
                     if self.child_size.is_none() || self.child_size.unwrap_or(0) == 0 {}
                 }
                 ValueType::Enum => if self.child_enum.is_some() {},

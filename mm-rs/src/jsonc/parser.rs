@@ -113,7 +113,7 @@ impl Parser {
             TokenType::String => {
                 let mut tag = self.consume_comments_for(tok.line).unwrap_or_default();
                 if tag.value_type == ValueType::Unknown {
-                    tag.value_type = ValueType::String;
+                    tag.value_type = ValueType::Str;
                 }
                 let text = tok.literal;
                 let value = Node::Value(Value {
@@ -130,9 +130,9 @@ impl Parser {
 
                 if tag.value_type == ValueType::Unknown {
                     if text.contains('.') {
-                        tag.value_type = ValueType::Float64;
+                        tag.value_type = ValueType::F64;
                     } else {
-                        tag.value_type = ValueType::Int;
+                        tag.value_type = ValueType::I;
                     }
                 }
 
@@ -214,7 +214,7 @@ impl Parser {
 
         let mut tag = self.consume_comments_for(open_line).unwrap_or_default();
         if tag.value_type == ValueType::Unknown {
-            tag.value_type = ValueType::Struct;
+            tag.value_type = ValueType::Obj;
         }
 
         let obj_path = path.to_string();
@@ -300,12 +300,12 @@ impl Parser {
         if tag.value_type == ValueType::Unknown {
             if let Some(size) = tag.size {
                 if size > 0 {
-                    tag.value_type = ValueType::Array;
+                    tag.value_type = ValueType::Arr;
                 } else {
-                    tag.value_type = ValueType::Slice;
+                    tag.value_type = ValueType::Vec;
                 }
             } else {
-                tag.value_type = ValueType::Slice;
+                tag.value_type = ValueType::Vec;
             }
         }
 

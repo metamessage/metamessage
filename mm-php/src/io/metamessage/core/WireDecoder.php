@@ -139,17 +139,17 @@ class WireDecoder
                     $node = new Value(0.0, '0.0', $tag, $path);
                     break;
                 case ValueType::EMAIL:
-                case ValueType::UUID:
+                case ValueType::Uuid:
                 case ValueType::DECIMAL:
                     $node = new Value('', '', $tag, $path);
                     break;
                 case ValueType::BIGINT:
                     $node = new Value('0', '0', $tag, $path);
                     break;
-                case ValueType::URL:
+                case ValueType::Url:
                     $node = new Value('', '', $tag, $path);
                     break;
-                case ValueType::IP:
+                case ValueType::Ip:
                     switch ($tag->version) {
                         case 0:
                             $text = '';
@@ -651,10 +651,10 @@ class WireDecoder
             case ValueType::EMAIL:
                 $data = $text;
                 break;
-            case ValueType::URL:
+            case ValueType::Url:
                 $data = $text;
                 break;
-            case ValueType::IP:
+            case ValueType::Ip:
                 $data = $text;
                 break;
             case ValueType::STR:
@@ -708,12 +708,12 @@ class WireDecoder
                 $text = base64_encode(pack('C*', ...$bs));
                 break;
 
-            case ValueType::UUID:
+            case ValueType::Uuid:
                 $data = $bs;
                 $text = $this->uuidToString($bs);
                 break;
 
-            case ValueType::IP:
+            case ValueType::Ip:
                 $data = $bs;
                 $text = $this->bytesToIPString($bs);
                 break;

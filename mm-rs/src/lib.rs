@@ -35,7 +35,7 @@ mod tests {
         let result = Tag::parse("// mm:type=str;desc=用户名");
         assert!(result.is_some(), "Tag::parse should succeed");
         let tag = result.unwrap();
-        assert_eq!(tag.value_type, ValueType::String);
+        assert_eq!(tag.value_type, ValueType::Str);
         assert_eq!(tag.desc, Some("用户名".to_string()));
     }
 
@@ -84,7 +84,7 @@ mod tests {
                 let tag = o.fields[0].value.get_tag();
                 assert!(tag.is_some());
                 let tag = tag.unwrap();
-                assert_eq!(tag.value_type, ValueType::String);
+                assert_eq!(tag.value_type, ValueType::Str);
                 assert_eq!(tag.desc, Some("用户名".to_string()));
             }
             _ => panic!("expected object"),
@@ -127,7 +127,7 @@ mod tests {
         assert_eq!(tag.desc, Some("用户ID".to_string()));
         assert_eq!(tag.enum_values, Some("active|pending".to_string()));
         assert_eq!(tag.pattern, Some("^a,b$".to_string()));
-        assert_eq!(tag.value_type, ValueType::String);
+        assert_eq!(tag.value_type, ValueType::Str);
         assert_eq!(tag.min, Some("1".to_string()));
         assert_eq!(tag.max, Some("5".to_string()));
         assert!(tag.nullable);
@@ -137,7 +137,7 @@ mod tests {
     #[test]
     fn test_tag_parse_block_comment() {
         let tag = Tag::parse("/* mm:type=i64;desc=用户ID */").unwrap();
-        assert_eq!(tag.value_type, ValueType::Int64);
+        assert_eq!(tag.value_type, ValueType::I64);
         assert_eq!(tag.desc, Some("用户ID".to_string()));
     }
 
@@ -156,13 +156,13 @@ mod tests {
     #[test]
     fn test_tag_parse_type_aliases() {
         let tag = Tag::parse("// mm:type=slice").unwrap();
-        assert_eq!(tag.value_type, ValueType::Slice);
+        assert_eq!(tag.value_type, ValueType::Vec);
         let tag = Tag::parse("// mm:type=array").unwrap();
-        assert_eq!(tag.value_type, ValueType::Array);
+        assert_eq!(tag.value_type, ValueType::Arr);
         let tag = Tag::parse("// mm:type=vec").unwrap();
-        assert_eq!(tag.value_type, ValueType::Slice);
+        assert_eq!(tag.value_type, ValueType::Vec);
         let tag = Tag::parse("// mm:type=arr").unwrap();
-        assert_eq!(tag.value_type, ValueType::Array);
+        assert_eq!(tag.value_type, ValueType::Arr);
     }
 
     // ===== Parser edge case tests (aligned with Go's parser_test.go) =====
@@ -304,7 +304,7 @@ mod tests {
             Node::Object(o) => {
                 let val = &o.fields[0].value;
                 let tag = val.get_tag().unwrap();
-                assert_eq!(tag.value_type, ValueType::Int);
+                assert_eq!(tag.value_type, ValueType::I);
             }
             _ => panic!("expected object"),
         }
@@ -317,7 +317,7 @@ mod tests {
             Node::Object(o) => {
                 let val = &o.fields[0].value;
                 let tag = val.get_tag().unwrap();
-                assert_eq!(tag.value_type, ValueType::Float64);
+                assert_eq!(tag.value_type, ValueType::F64);
             }
             _ => panic!("expected object"),
         }
@@ -359,13 +359,13 @@ mod tests {
         let mut child = Tag::new();
         let parent = Tag {
             child_desc: Some("用户名".to_string()),
-            child_type: ValueType::String,
+            child_type: ValueType::Str,
             child_nullable: true,
             ..Tag::new()
         };
         child.inherit(&parent);
         assert_eq!(child.desc, Some("用户名".to_string()));
-        assert_eq!(child.value_type, ValueType::String);
+        assert_eq!(child.value_type, ValueType::Str);
         assert!(child.nullable);
         assert!(child.is_inherit);
     }
@@ -395,7 +395,7 @@ mod tests {
         match node {
             Node::Object(o) => {
                 let tag = o.fields[0].value.get_tag().unwrap();
-                assert_eq!(tag.value_type, ValueType::String);
+                assert_eq!(tag.value_type, ValueType::Str);
                 assert_eq!(tag.desc, Some("用户名".to_string()));
             }
             _ => panic!("expected object"),
@@ -410,7 +410,7 @@ mod tests {
             Node::Object(o) => {
                 let tag = o.fields[0].value.get_tag().unwrap();
                 assert_eq!(tag.desc, Some("用户名".to_string()));
-                assert_eq!(tag.value_type, ValueType::String);
+                assert_eq!(tag.value_type, ValueType::Str);
             }
             _ => panic!("expected object"),
         }
@@ -436,7 +436,7 @@ mod tests {
         match node {
             Node::Array(a) => {
                 let tag = a.tag.as_ref().unwrap();
-                assert_eq!(tag.value_type, ValueType::Array);
+                assert_eq!(tag.value_type, ValueType::Arr);
                 assert_eq!(tag.size, Some(3));
             }
             _ => panic!("expected array"),
@@ -453,7 +453,7 @@ mod tests {
                 assert!(tag.is_some());
                 let tag = tag.unwrap();
                 assert_eq!(tag.desc, None);
-                assert_eq!(tag.value_type, ValueType::String);
+                assert_eq!(tag.value_type, ValueType::Str);
             }
             _ => panic!("expected object"),
         }

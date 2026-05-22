@@ -1,13 +1,13 @@
 import XCTest
 @testable import MetaMessage
 
-final class MMDecoderTests: XCTestCase {
+final class DecoderTests: XCTestCase {
     func testDecodeBool() throws {
-        let encoder = MMEncoder()
+        let encoder = Encoder()
         encoder.encode(true)
         let data = encoder.buffer.data
 
-        let decoder = MMDecoder(data: data)
+        let decoder = Decoder(data: data)
         let value = try decoder.decode()
 
         guard case .bool(let b) = value else {
@@ -18,11 +18,11 @@ final class MMDecoderTests: XCTestCase {
     }
 
     func testDecodeFalse() throws {
-        let encoder = MMEncoder()
+        let encoder = Encoder()
         encoder.encode(false)
         let data = encoder.buffer.data
 
-        let decoder = MMDecoder(data: data)
+        let decoder = Decoder(data: data)
         let value = try decoder.decode()
 
         guard case .bool(let b) = value else {
@@ -33,11 +33,11 @@ final class MMDecoderTests: XCTestCase {
     }
 
     func testDecodeNil() throws {
-        let encoder = MMEncoder()
+        let encoder = Encoder()
         encoder.encodeNil()
         let data = encoder.buffer.data
 
-        let decoder = MMDecoder(data: data)
+        let decoder = Decoder(data: data)
         let value = try decoder.decode()
 
         guard case .null = value else {
@@ -47,11 +47,11 @@ final class MMDecoderTests: XCTestCase {
     }
 
     func testDecodeInt() throws {
-        let encoder = MMEncoder()
+        let encoder = Encoder()
         encoder.encode(Int(23))
         let data = encoder.buffer.data
 
-        let decoder = MMDecoder(data: data)
+        let decoder = Decoder(data: data)
         let value = try decoder.decode()
 
         guard case .int(let i) = value else {
@@ -62,11 +62,11 @@ final class MMDecoderTests: XCTestCase {
     }
 
     func testDecodeNegativeInt() throws {
-        let encoder = MMEncoder()
+        let encoder = Encoder()
         encoder.encode(Int(-7890))
         let data = encoder.buffer.data
 
-        let decoder = MMDecoder(data: data)
+        let decoder = Decoder(data: data)
         let value = try decoder.decode()
 
         guard case .int(let i) = value else {
@@ -77,11 +77,11 @@ final class MMDecoderTests: XCTestCase {
     }
 
     func testDecodeInt8() throws {
-        let encoder = MMEncoder()
+        let encoder = Encoder()
         encoder.encode(Int8(127))
         let data = encoder.buffer.data
 
-        let decoder = MMDecoder(data: data)
+        let decoder = Decoder(data: data)
         let value = try decoder.decode()
 
         guard case .int(let i) = value else {
@@ -92,11 +92,11 @@ final class MMDecoderTests: XCTestCase {
     }
 
     func testDecodeInt16() throws {
-        let encoder = MMEncoder()
+        let encoder = Encoder()
         encoder.encode(Int16(32767))
         let data = encoder.buffer.data
 
-        let decoder = MMDecoder(data: data)
+        let decoder = Decoder(data: data)
         let value = try decoder.decode()
 
         guard case .int(let i) = value else {
@@ -107,11 +107,11 @@ final class MMDecoderTests: XCTestCase {
     }
 
     func testDecodeInt32() throws {
-        let encoder = MMEncoder()
+        let encoder = Encoder()
         encoder.encode(Int32(2147483647))
         let data = encoder.buffer.data
 
-        let decoder = MMDecoder(data: data)
+        let decoder = Decoder(data: data)
         let value = try decoder.decode()
 
         guard case .int(let i) = value else {
@@ -122,11 +122,11 @@ final class MMDecoderTests: XCTestCase {
     }
 
     func testDecodeInt64() throws {
-        let encoder = MMEncoder()
+        let encoder = Encoder()
         encoder.encode(Int64(9223372036854775807))
         let data = encoder.buffer.data
 
-        let decoder = MMDecoder(data: data)
+        let decoder = Decoder(data: data)
         let value = try decoder.decode()
 
         guard case .int(let i) = value else {
@@ -137,11 +137,11 @@ final class MMDecoderTests: XCTestCase {
     }
 
     func testDecodeUInt() throws {
-        let encoder = MMEncoder()
+        let encoder = Encoder()
         encoder.encode(UInt(987654))
         let data = encoder.buffer.data
 
-        let decoder = MMDecoder(data: data)
+        let decoder = Decoder(data: data)
         let value = try decoder.decode()
 
         switch value {
@@ -155,11 +155,11 @@ final class MMDecoderTests: XCTestCase {
     }
 
     func testDecodeUInt8() throws {
-        let encoder = MMEncoder()
+        let encoder = Encoder()
         encoder.encode(UInt8(255))
         let data = encoder.buffer.data
 
-        let decoder = MMDecoder(data: data)
+        let decoder = Decoder(data: data)
         let value = try decoder.decode()
 
         switch value {
@@ -173,11 +173,11 @@ final class MMDecoderTests: XCTestCase {
     }
 
     func testDecodeUInt16() throws {
-        let encoder = MMEncoder()
+        let encoder = Encoder()
         encoder.encode(UInt16(65535))
         let data = encoder.buffer.data
 
-        let decoder = MMDecoder(data: data)
+        let decoder = Decoder(data: data)
         let value = try decoder.decode()
 
         switch value {
@@ -191,11 +191,11 @@ final class MMDecoderTests: XCTestCase {
     }
 
     func testDecodeUInt32() throws {
-        let encoder = MMEncoder()
+        let encoder = Encoder()
         encoder.encode(UInt32(4294967295))
         let data = encoder.buffer.data
 
-        let decoder = MMDecoder(data: data)
+        let decoder = Decoder(data: data)
         let value = try decoder.decode()
 
         switch value {
@@ -209,11 +209,11 @@ final class MMDecoderTests: XCTestCase {
     }
 
     func testDecodeUInt64() throws {
-        let encoder = MMEncoder()
+        let encoder = Encoder()
         encoder.encode(UInt64(18446744073709551615))
         let data = encoder.buffer.data
 
-        let decoder = MMDecoder(data: data)
+        let decoder = Decoder(data: data)
         let value = try decoder.decode()
 
         guard case .uint(let u) = value else {
@@ -224,11 +224,11 @@ final class MMDecoderTests: XCTestCase {
     }
 
     func testDecodeFloat() throws {
-        let encoder = MMEncoder()
+        let encoder = Encoder()
         encoder.encode(Float(3.14))
         let data = encoder.buffer.data
 
-        let decoder = MMDecoder(data: data)
+        let decoder = Decoder(data: data)
         let value = try decoder.decode()
 
         guard case .float(let f) = value else {
@@ -239,11 +239,11 @@ final class MMDecoderTests: XCTestCase {
     }
 
     func testDecodeDouble() throws {
-        let encoder = MMEncoder()
+        let encoder = Encoder()
         encoder.encode(Double(3.14159265359))
         let data = encoder.buffer.data
 
-        let decoder = MMDecoder(data: data)
+        let decoder = Decoder(data: data)
         let value = try decoder.decode()
 
         guard case .float(let f) = value else {
@@ -254,11 +254,11 @@ final class MMDecoderTests: XCTestCase {
     }
 
     func testDecodeString() throws {
-        let encoder = MMEncoder()
+        let encoder = Encoder()
         encoder.encode("hello")
         let data = encoder.buffer.data
 
-        let decoder = MMDecoder(data: data)
+        let decoder = Decoder(data: data)
         let value = try decoder.decode()
 
         guard case .string(let s) = value else {
@@ -269,11 +269,11 @@ final class MMDecoderTests: XCTestCase {
     }
 
     func testDecodeEmptyString() throws {
-        let encoder = MMEncoder()
+        let encoder = Encoder()
         encoder.encode("")
         let data = encoder.buffer.data
 
-        let decoder = MMDecoder(data: data)
+        let decoder = Decoder(data: data)
         let value = try decoder.decode()
 
         guard case .string(let s) = value else {
@@ -284,11 +284,11 @@ final class MMDecoderTests: XCTestCase {
     }
 
     func testDecodeData() throws {
-        let encoder = MMEncoder()
+        let encoder = Encoder()
         encoder.encode(Data([0x01, 0x02, 0x03]))
         let data = encoder.buffer.data
 
-        let decoder = MMDecoder(data: data)
+        let decoder = Decoder(data: data)
         let value = try decoder.decode()
 
         guard case .data(let d) = value else {
@@ -299,11 +299,11 @@ final class MMDecoderTests: XCTestCase {
     }
 
     func testDecodeArrayBool() throws {
-        let encoder = MMEncoder()
+        let encoder = Encoder()
         encoder.encodeArray([true, false, true])
         let data = encoder.buffer.data
 
-        let decoder = MMDecoder(data: data)
+        let decoder = Decoder(data: data)
         let value = try decoder.decode()
 
         guard case .array(let arr) = value else {
@@ -314,11 +314,11 @@ final class MMDecoderTests: XCTestCase {
     }
 
     func testDecodeArrayStrings() throws {
-        let encoder = MMEncoder()
+        let encoder = Encoder()
         encoder.encodeArrayStrings(["a", "b", "c"])
         let data = encoder.buffer.data
 
-        let decoder = MMDecoder(data: data)
+        let decoder = Decoder(data: data)
         let value = try decoder.decode()
 
         guard case .array(let arr) = value else {
@@ -329,11 +329,11 @@ final class MMDecoderTests: XCTestCase {
     }
 
     func testDecodeArrayInt() throws {
-        let encoder = MMEncoder()
+        let encoder = Encoder()
         encoder.encodeArrayInt([10, 20, 30])
         let data = encoder.buffer.data
 
-        let decoder = MMDecoder(data: data)
+        let decoder = Decoder(data: data)
         let value = try decoder.decode()
 
         guard case .array(let arr) = value else {
@@ -344,11 +344,11 @@ final class MMDecoderTests: XCTestCase {
     }
 
     func testDecodeEmptyArray() throws {
-        let encoder = MMEncoder()
+        let encoder = Encoder()
         encoder.encodeArray([Bool]())
         let data = encoder.buffer.data
 
-        let decoder = MMDecoder(data: data)
+        let decoder = Decoder(data: data)
         let value = try decoder.decode()
 
         guard case .array(let arr) = value else {
@@ -359,7 +359,7 @@ final class MMDecoderTests: XCTestCase {
     }
 
     func testDecodeUnexpectedEndOfData() {
-        let decoder = MMDecoder(data: Data())
+        let decoder = Decoder(data: Data())
         XCTAssertThrowsError(try decoder.decode()) { error in
             if case MMError.unexpectedEndOfData = error {
             } else {

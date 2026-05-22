@@ -3,11 +3,11 @@ import XCTest
 
 final class MetaMessageIntegrationTests: XCTestCase {
     func testEncodeDecodeBool() throws {
-        let encoder = MMEncoder()
+        let encoder = Encoder()
         encoder.encode(true)
         let data = encoder.buffer.data
 
-        let decoder = MMDecoder(data: data)
+        let decoder = Decoder(data: data)
         let value = try decoder.decode()
 
         guard case .bool(let b) = value else {
@@ -18,11 +18,11 @@ final class MetaMessageIntegrationTests: XCTestCase {
     }
 
     func testEncodeDecodeInt() throws {
-        let encoder = MMEncoder()
+        let encoder = Encoder()
         encoder.encode(Int(123456))
         let data = encoder.buffer.data
 
-        let decoder = MMDecoder(data: data)
+        let decoder = Decoder(data: data)
         let value = try decoder.decode()
 
         guard case .int(let i) = value else {
@@ -33,11 +33,11 @@ final class MetaMessageIntegrationTests: XCTestCase {
     }
 
     func testEncodeDecodeNegativeInt() throws {
-        let encoder = MMEncoder()
+        let encoder = Encoder()
         encoder.encode(Int(-7890))
         let data = encoder.buffer.data
 
-        let decoder = MMDecoder(data: data)
+        let decoder = Decoder(data: data)
         let value = try decoder.decode()
 
         guard case .int(let i) = value else {
@@ -48,11 +48,11 @@ final class MetaMessageIntegrationTests: XCTestCase {
     }
 
     func testEncodeDecodeFloat() throws {
-        let encoder = MMEncoder()
+        let encoder = Encoder()
         encoder.encode(Float(3.14159))
         let data = encoder.buffer.data
 
-        let decoder = MMDecoder(data: data)
+        let decoder = Decoder(data: data)
         let value = try decoder.decode()
 
         guard case .float(let f) = value else {
@@ -63,11 +63,11 @@ final class MetaMessageIntegrationTests: XCTestCase {
     }
 
     func testEncodeDecodeDouble() throws {
-        let encoder = MMEncoder()
+        let encoder = Encoder()
         encoder.encode(Double(3.14159265359))
         let data = encoder.buffer.data
 
-        let decoder = MMDecoder(data: data)
+        let decoder = Decoder(data: data)
         let value = try decoder.decode()
 
         guard case .float(let f) = value else {
@@ -78,11 +78,11 @@ final class MetaMessageIntegrationTests: XCTestCase {
     }
 
     func testEncodeDecodeString() throws {
-        let encoder = MMEncoder()
+        let encoder = Encoder()
         encoder.encode("hello world")
         let data = encoder.buffer.data
 
-        let decoder = MMDecoder(data: data)
+        let decoder = Decoder(data: data)
         let value = try decoder.decode()
 
         guard case .string(let s) = value else {
@@ -93,11 +93,11 @@ final class MetaMessageIntegrationTests: XCTestCase {
     }
 
     func testEncodeDecodeData() throws {
-        let encoder = MMEncoder()
+        let encoder = Encoder()
         encoder.encode(Data([0xDE, 0xAD, 0xBE, 0xEF]))
         let data = encoder.buffer.data
 
-        let decoder = MMDecoder(data: data)
+        let decoder = Decoder(data: data)
         let value = try decoder.decode()
 
         guard case .data(let d) = value else {
@@ -108,11 +108,11 @@ final class MetaMessageIntegrationTests: XCTestCase {
     }
 
     func testEncodeDecodeArray() throws {
-        let encoder = MMEncoder()
+        let encoder = Encoder()
         encoder.encodeArrayStrings(["a", "b", "c"])
         let data = encoder.buffer.data
 
-        let decoder = MMDecoder(data: data)
+        let decoder = Decoder(data: data)
         let value = try decoder.decode()
 
         guard case .array(let arr) = value else {
@@ -123,11 +123,11 @@ final class MetaMessageIntegrationTests: XCTestCase {
     }
 
     func testEncodeDecodeIntArray() throws {
-        let encoder = MMEncoder()
+        let encoder = Encoder()
         encoder.encodeArrayInt([10, 20, 30, 40, 50])
         let data = encoder.buffer.data
 
-        let decoder = MMDecoder(data: data)
+        let decoder = Decoder(data: data)
         let value = try decoder.decode()
 
         guard case .array(let arr) = value else {
@@ -149,7 +149,7 @@ final class MetaMessageIntegrationTests: XCTestCase {
     }
 
     func testMetaMessageStaticDecode() throws {
-        let encoder = MMEncoder()
+        let encoder = Encoder()
         encoder.encode(Int(42))
         let data = encoder.buffer.data
 
@@ -217,29 +217,31 @@ final class MetaMessageIntegrationTests: XCTestCase {
             return
         }
 
-        let binder = Binder()
-        let result = try binder.bind(node, to: TestStruct.self)
+        let printer = JSONCPrinter()
+        let jsonString = printer.printCompact(node)
+        let jsonData = jsonString.data(using: .utf8)!
+        let result = try JSONDecoder().decode(TestStruct.self, from: jsonData)
         XCTAssertEqual(result.name, "test")
     }
 
     func testValueTypeParsing() {
-        XCTAssertEqual(ValueType.parse("str"), .string)
-        XCTAssertEqual(ValueType.parse("i"), .int)
-        XCTAssertEqual(ValueType.parse("i64"), .int64)
-        XCTAssertEqual(ValueType.parse("u"), .uint)
-        XCTAssertEqual(ValueType.parse("f64"), .float64)
+        XCTAssertEqual(ValueType.parse("str"), .str)
+        XCTAssertEqual(ValueType.parse("i"), .i)
+        XCTAssertEqual(ValueType.parse("i64"), .i64)
+        XCTAssertEqual(ValueType.parse("u"), .u)
+        XCTAssertEqual(ValueType.parse("f64"), .f64)
         XCTAssertEqual(ValueType.parse("bool"), .bool)
-        XCTAssertEqual(ValueType.parse("arr"), .array)
+        XCTAssertEqual(ValueType.parse("arr"), .arr)
         XCTAssertEqual(ValueType.parse("unknown"), .unknown)
     }
 
     func testEncodeLargeString() throws {
         let longString = String(repeating: "a", count: 1000)
-        let encoder = MMEncoder()
+        let encoder = Encoder()
         encoder.encode(longString)
         let data = encoder.buffer.data
 
-        let decoder = MMDecoder(data: data)
+        let decoder = Decoder(data: data)
         let value = try decoder.decode()
 
         guard case .string(let s) = value else {
@@ -251,11 +253,11 @@ final class MetaMessageIntegrationTests: XCTestCase {
 
     func testEncodeLargeData() throws {
         let longData = Data(repeating: 0xAB, count: 1000)
-        let encoder = MMEncoder()
+        let encoder = Encoder()
         encoder.encode(longData)
         let data = encoder.buffer.data
 
-        let decoder = MMDecoder(data: data)
+        let decoder = Decoder(data: data)
         let value = try decoder.decode()
 
         guard case .data(let d) = value else {
@@ -266,11 +268,11 @@ final class MetaMessageIntegrationTests: XCTestCase {
     }
 
     func testEncodeDecodeUInt64Max() throws {
-        let encoder = MMEncoder()
+        let encoder = Encoder()
         encoder.encode(UInt64(UInt64.max))
         let data = encoder.buffer.data
 
-        let decoder = MMDecoder(data: data)
+        let decoder = Decoder(data: data)
         let value = try decoder.decode()
 
         guard case .uint(let u) = value else {
@@ -281,11 +283,11 @@ final class MetaMessageIntegrationTests: XCTestCase {
     }
 
     func testEncodeDecodeInt64Min() throws {
-        let encoder = MMEncoder()
+        let encoder = Encoder()
         encoder.encode(Int64.min)
         let data = encoder.buffer.data
 
-        let decoder = MMDecoder(data: data)
+        let decoder = Decoder(data: data)
         let value = try decoder.decode()
 
         guard case .int(let i) = value else {
@@ -296,11 +298,11 @@ final class MetaMessageIntegrationTests: XCTestCase {
     }
 
     func testEncodeDecodeInt64Max() throws {
-        let encoder = MMEncoder()
+        let encoder = Encoder()
         encoder.encode(Int64.max)
         let data = encoder.buffer.data
 
-        let decoder = MMDecoder(data: data)
+        let decoder = Decoder(data: data)
         let value = try decoder.decode()
 
         guard case .int(let i) = value else {

@@ -1,9 +1,9 @@
 import XCTest
 @testable import MetaMessage
 
-final class MMEncoderTests: XCTestCase {
+final class EncoderTests: XCTestCase {
     func testEncodeBool() {
-        let encoder = MMEncoder()
+        let encoder = Encoder()
 
         encoder.encode(true)
         var data = encoder.buffer.data
@@ -18,7 +18,7 @@ final class MMEncoderTests: XCTestCase {
     }
 
     func testEncodeNil() {
-        let encoder = MMEncoder()
+        let encoder = Encoder()
         encoder.encodeNil()
         let data = encoder.buffer.data
         XCTAssertEqual(data.count, 1)
@@ -26,7 +26,7 @@ final class MMEncoderTests: XCTestCase {
     }
 
     func testEncodeInt() {
-        let encoder = MMEncoder()
+        let encoder = Encoder()
 
         encoder.encode(Int(0))
         XCTAssertEqual(encoder.buffer.data.count, 1)
@@ -55,7 +55,7 @@ final class MMEncoderTests: XCTestCase {
     }
 
     func testEncodeInt8() {
-        let encoder = MMEncoder()
+        let encoder = Encoder()
 
         encoder.encode(Int8(0))
         XCTAssertEqual(encoder.buffer.data.count, 1)
@@ -72,7 +72,7 @@ final class MMEncoderTests: XCTestCase {
     }
 
     func testEncodeInt16() {
-        let encoder = MMEncoder()
+        let encoder = Encoder()
 
         encoder.encode(Int16(0))
         XCTAssertEqual(encoder.buffer.data.count, 1)
@@ -89,7 +89,7 @@ final class MMEncoderTests: XCTestCase {
     }
 
     func testEncodeInt32() {
-        let encoder = MMEncoder()
+        let encoder = Encoder()
 
         encoder.encode(Int32(0))
         XCTAssertEqual(encoder.buffer.data.count, 1)
@@ -106,7 +106,7 @@ final class MMEncoderTests: XCTestCase {
     }
 
     func testEncodeInt64() {
-        let encoder = MMEncoder()
+        let encoder = Encoder()
 
         encoder.encode(Int64(0))
         XCTAssertEqual(encoder.buffer.data.count, 1)
@@ -123,7 +123,7 @@ final class MMEncoderTests: XCTestCase {
     }
 
     func testEncodeUInt() {
-        let encoder = MMEncoder()
+        let encoder = Encoder()
 
         encoder.encode(UInt(0))
         XCTAssertEqual(encoder.buffer.data.count, 1)
@@ -140,7 +140,7 @@ final class MMEncoderTests: XCTestCase {
     }
 
     func testEncodeUInt8() {
-        let encoder = MMEncoder()
+        let encoder = Encoder()
 
         encoder.encode(UInt8(0))
         XCTAssertEqual(encoder.buffer.data.count, 1)
@@ -152,7 +152,7 @@ final class MMEncoderTests: XCTestCase {
     }
 
     func testEncodeUInt16() {
-        let encoder = MMEncoder()
+        let encoder = Encoder()
 
         encoder.encode(UInt16(0))
         XCTAssertEqual(encoder.buffer.data.count, 1)
@@ -164,7 +164,7 @@ final class MMEncoderTests: XCTestCase {
     }
 
     func testEncodeUInt32() {
-        let encoder = MMEncoder()
+        let encoder = Encoder()
 
         encoder.encode(UInt32(0))
         XCTAssertEqual(encoder.buffer.data.count, 1)
@@ -176,7 +176,7 @@ final class MMEncoderTests: XCTestCase {
     }
 
     func testEncodeUInt64() {
-        let encoder = MMEncoder()
+        let encoder = Encoder()
 
         encoder.encode(UInt64(0))
         XCTAssertEqual(encoder.buffer.data.count, 1)
@@ -188,7 +188,7 @@ final class MMEncoderTests: XCTestCase {
     }
 
     func testEncodeFloat() {
-        let encoder = MMEncoder()
+        let encoder = Encoder()
 
         encoder.encode(Float(0.0))
         var data = encoder.buffer.data
@@ -201,7 +201,7 @@ final class MMEncoderTests: XCTestCase {
     }
 
     func testEncodeDouble() {
-        let encoder = MMEncoder()
+        let encoder = Encoder()
 
         encoder.encode(Double(0.0))
         var data = encoder.buffer.data
@@ -214,7 +214,7 @@ final class MMEncoderTests: XCTestCase {
     }
 
     func testEncodeString() {
-        let encoder = MMEncoder()
+        let encoder = Encoder()
 
         encoder.encode("")
         var data = encoder.buffer.data
@@ -238,7 +238,7 @@ final class MMEncoderTests: XCTestCase {
     }
 
     func testEncodeData() {
-        let encoder = MMEncoder()
+        let encoder = Encoder()
 
         encoder.encode(Data())
         var data = encoder.buffer.data
@@ -257,63 +257,63 @@ final class MMEncoderTests: XCTestCase {
     }
 
     func testEncodeArrayBool() {
-        let encoder = MMEncoder()
+        let encoder = Encoder()
         encoder.encodeArray([true, false, true])
         let data = encoder.buffer.data
         XCTAssertTrue(data.count > 3)
     }
 
     func testEncodeArrayStrings() {
-        let encoder = MMEncoder()
+        let encoder = Encoder()
         encoder.encodeArrayStrings(["a", "b", "c"])
         let data = encoder.buffer.data
         XCTAssertTrue(data.count > 3)
     }
 
     func testEncodeArrayInt() {
-        let encoder = MMEncoder()
+        let encoder = Encoder()
         encoder.encodeArrayInt([10, 20, 30])
         let data = encoder.buffer.data
         XCTAssertTrue(data.count > 3)
     }
 
     func testEncodeArrayUInt() {
-        let encoder = MMEncoder()
+        let encoder = Encoder()
         encoder.encodeArrayUInt([100, 200, 300])
         let data = encoder.buffer.data
         XCTAssertTrue(data.count > 3)
     }
 
     func testEncodeArrayFloat() {
-        let encoder = MMEncoder()
+        let encoder = Encoder()
         encoder.encodeArrayFloat([1.0, 2.0, 3.0])
         let data = encoder.buffer.data
         XCTAssertTrue(data.count > 3)
     }
 
     func testEncodeArrayDouble() {
-        let encoder = MMEncoder()
+        let encoder = Encoder()
         encoder.encodeArrayDouble([1.0, 2.0, 3.0])
         let data = encoder.buffer.data
         XCTAssertTrue(data.count > 3)
     }
 
     func testEncodeArrayData() {
-        let encoder = MMEncoder()
+        let encoder = Encoder()
         encoder.encodeArrayData([Data([0x01]), Data([0x02]), Data([0x03])])
         let data = encoder.buffer.data
         XCTAssertTrue(data.count > 3)
     }
 
     func testEncodeEmptyArray() {
-        let encoder = MMEncoder()
+        let encoder = Encoder()
         encoder.encodeArray([Bool]())
         let data = encoder.buffer.data
         XCTAssertTrue(data.count >= 1)
     }
 
     func testEncodeLargeArray() {
-        let encoder = MMEncoder()
+        let encoder = Encoder()
         let largeArray = [Bool](repeating: true, count: 1000)
         encoder.encodeArray(largeArray)
         let data = encoder.buffer.data

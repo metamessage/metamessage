@@ -1,6 +1,6 @@
 import Foundation
 
-public class JSONCTag {
+public class Tag {
     public var name: String = ""
 
     public var isNull: Bool = false
@@ -12,13 +12,13 @@ public class JSONCTag {
     public var nullable: Bool = false
     public var allowEmpty: Bool = false
     public var unique: Bool = false
-    public var defaultValue: String = ""
+    public var defaultVal: String = ""
     public var min: String = ""
     public var max: String = ""
     public var size: Int = 0
-    public var enumValues: String = ""
+    public var enums: String = ""
     public var pattern: String = ""
-    public var locationOffset: Int = 0
+    public var location: Int = 0
     public var version: Int = 0
     public var mime: String = ""
 
@@ -28,13 +28,13 @@ public class JSONCTag {
     public var childNullable: Bool = false
     public var childAllowEmpty: Bool = false
     public var childUnique: Bool = false
-    public var childDefault: String = ""
+    public var childDefaultVal: String = ""
     public var childMin: String = ""
     public var childMax: String = ""
     public var childSize: Int = 0
-    public var childEnum: String = ""
+    public var childEnums: String = ""
     public var childPattern: String = ""
-    public var childLocationOffset: Int = 0
+    public var childLocation: Int = 0
     public var childVersion: Int = 0
     public var childMime: String = ""
 
@@ -42,20 +42,20 @@ public class JSONCTag {
 
     public init() {}
 
-    public func inherit(from tag: JSONCTag) {
+    public func inherit(from tag: Tag) {
         self.desc = tag.childDesc
         self.type = tag.childType
         self.raw = tag.childRaw
         self.nullable = tag.childNullable
         self.allowEmpty = tag.childAllowEmpty
         self.unique = tag.childUnique
-        self.defaultValue = tag.childDefault
+        self.defaultVal = tag.childDefaultVal
         self.min = tag.childMin
         self.max = tag.childMax
         self.size = tag.childSize
-        self.enumValues = tag.childEnum
+        self.enums = tag.childEnums
         self.pattern = tag.childPattern
-        self.locationOffset = tag.childLocationOffset
+        self.location = tag.childLocation
         self.version = tag.childVersion
         self.mime = tag.childMime
     }
@@ -64,9 +64,9 @@ public class JSONCTag {
         var parts: [String] = []
 
         if type != .unknown && !isInherit {
-            if type == .string || type == .int || type == .float64 || type == .bool || type == .structType || type == .slice {
+            if type == .str || type == .i || type == .f64 || type == .bool || type == .obj || type == .vec {
             } else {
-                if type == .array && size > 0 || type == .enumValue && enumValues != "" {
+                if type == .arr && size > 0 || type == .enums && enums != "" {
                 } else {
                     parts.append("type=\(type.stringValue)")
                 }
@@ -101,8 +101,8 @@ public class JSONCTag {
             parts.append("unique")
         }
 
-        if defaultValue != "" && !isInherit {
-            parts.append("default=\(defaultValue)")
+        if defaultVal != "" && !isInherit {
+            parts.append("default_val=\(defaultVal)")
         }
 
         if min != "" && !isInherit {
@@ -117,16 +117,16 @@ public class JSONCTag {
             parts.append("size=\(size)")
         }
 
-        if enumValues != "" && !isInherit {
-            parts.append("enum=\(enumValues)")
+        if enums != "" && !isInherit {
+            parts.append("enums=\(enums)")
         }
 
         if pattern != "" && !isInherit {
             parts.append("pattern=\(pattern)")
         }
 
-        if locationOffset != 0 && !isInherit {
-            parts.append("location=\(locationOffset)")
+        if location != 0 && !isInherit {
+            parts.append("location=\(location)")
         }
 
         if version != 0 && !isInherit {
@@ -142,9 +142,9 @@ public class JSONCTag {
         }
 
         if childType != .unknown {
-            if childType == .string || childType == .int || childType == .float64 || childType == .bool || childType == .structType || childType == .slice {
+            if childType == .str || childType == .i || childType == .f64 || childType == .bool || childType == .obj || childType == .vec {
             } else {
-                if childType == .array && childSize > 0 || childType == .enumValue && childEnum != "" {
+                if childType == .arr && childSize > 0 || childType == .enums && childEnums != "" {
                 } else {
                     parts.append("child_type=\(childType.stringValue)")
                 }
@@ -167,8 +167,8 @@ public class JSONCTag {
             parts.append("child_unique")
         }
 
-        if childDefault != "" {
-            parts.append("child_default=\(childDefault)")
+        if childDefaultVal != "" {
+            parts.append("child_default_val=\(childDefaultVal)")
         }
 
         if childMin != "" {
@@ -183,16 +183,16 @@ public class JSONCTag {
             parts.append("child_size=\(childSize)")
         }
 
-        if childEnum != "" {
-            parts.append("child_enum=\(childEnum)")
+        if childEnums != "" {
+            parts.append("child_enums=\(childEnums)")
         }
 
         if childPattern != "" {
             parts.append("child_pattern=\(childPattern)")
         }
 
-        if childLocationOffset != 0 {
-            parts.append("child_location=\(childLocationOffset)")
+        if childLocation != 0 {
+            parts.append("child_location=\(childLocation)")
         }
 
         if childVersion != 0 {
@@ -207,7 +207,7 @@ public class JSONCTag {
     }
 }
 
-public func parseMMTag(_ tagStr: String) -> JSONCTag? {
+public func parseMMTag(_ tagStr: String) -> Tag? {
     var tag = tagStr.trimmingCharacters(in: .whitespaces)
 
     if tag.hasPrefix("//") {
@@ -221,10 +221,10 @@ public func parseMMTag(_ tagStr: String) -> JSONCTag? {
     tag = tag.trimmingCharacters(in: .whitespaces)
 
     if tag.isEmpty {
-        return JSONCTag()
+        return Tag()
     }
 
-    let result = JSONCTag()
+    let result = Tag()
     let parts = tag.split(separator: ";").map { String($0).trimmingCharacters(in: .whitespaces) }
 
     for part in parts {
@@ -272,7 +272,7 @@ public func parseMMTag(_ tagStr: String) -> JSONCTag? {
             result.unique = true
 
         case "default":
-            result.defaultValue = value
+            result.defaultVal = value
 
         case "pattern":
             result.pattern = value
@@ -289,12 +289,12 @@ public func parseMMTag(_ tagStr: String) -> JSONCTag? {
             }
 
         case "enum":
-            result.type = .enumValue
-            result.enumValues = value
+            result.type = .enums
+            result.enums = value
 
         case "location":
             if let offset = Int(value), offset >= -12, offset <= 14 {
-                result.locationOffset = offset
+                result.location = offset
             }
 
         case "version":
@@ -325,8 +325,8 @@ public func parseMMTag(_ tagStr: String) -> JSONCTag? {
         case "child_unique":
             result.childUnique = true
 
-        case "child_default":
-            result.childDefault = value
+        case "child_default_val":
+            result.childDefaultVal = value
 
         case "child_pattern":
             result.childPattern = value
@@ -342,13 +342,13 @@ public func parseMMTag(_ tagStr: String) -> JSONCTag? {
                 result.childSize = size
             }
 
-        case "child_enum":
-            result.childEnum = value
-            result.childType = .enumValue
+        case "child_enums":
+            result.childEnums = value
+            result.childType = .enums
 
         case "child_location":
             if let offset = Int(value), offset >= -12, offset <= 14 {
-                result.childLocationOffset = offset
+                result.childLocation = offset
             }
 
         case "child_version":

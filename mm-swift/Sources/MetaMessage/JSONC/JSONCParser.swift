@@ -35,7 +35,7 @@ public class JSONCParser {
         return token
     }
 
-    private func consumeCommentsFor(_ anchorLine: Int) -> JSONCTag? {
+    private func consumeCommentsFor(_ anchorLine: Int) -> Tag? {
         guard !pendingComments.isEmpty else { return nil }
 
         let last = pendingComments[pendingComments.count - 1]
@@ -44,7 +44,7 @@ public class JSONCParser {
             return nil
         }
 
-        var result: JSONCTag?
+        var result: Tag?
         for comment in pendingComments {
             if let parsed = parseCommentToTag(comment.literal) {
                 result = mergeTag(result, parsed)
@@ -55,12 +55,12 @@ public class JSONCParser {
         return result
     }
 
-    private func mergeTag(_ dst: JSONCTag?, _ src: JSONCTag) -> JSONCTag {
+    private func mergeTag(_ dst: Tag?, _ src: Tag) -> Tag {
         if dst == nil {
             return src
         }
 
-        let merged = JSONCTag()
+        let merged = Tag()
         merged.name = src.name.isEmpty ? (dst?.name ?? "") : src.name
 
         if src.isNull { merged.isNull = src.isNull }
@@ -71,13 +71,13 @@ public class JSONCParser {
         if src.nullable { merged.nullable = src.nullable }
         if src.allowEmpty { merged.allowEmpty = src.allowEmpty }
         if src.unique { merged.unique = src.unique }
-        if !src.defaultValue.isEmpty { merged.defaultValue = src.defaultValue }
+        if !src.defaultVal.isEmpty { merged.defaultVal = src.defaultVal }
         if !src.min.isEmpty { merged.min = src.min }
         if !src.max.isEmpty { merged.max = src.max }
         if src.size != 0 { merged.size = src.size }
-        if !src.enumValues.isEmpty { merged.enumValues = src.enumValues }
+        if !src.enums.isEmpty { merged.enums = src.enums }
         if !src.pattern.isEmpty { merged.pattern = src.pattern }
-        if src.locationOffset != 0 { merged.locationOffset = src.locationOffset }
+        if src.location != 0 { merged.location = src.location }
         if src.version != 0 { merged.version = src.version }
         if !src.mime.isEmpty { merged.mime = src.mime }
 
@@ -87,28 +87,28 @@ public class JSONCParser {
         if src.childNullable { merged.childNullable = src.childNullable }
         if src.childAllowEmpty { merged.childAllowEmpty = src.childAllowEmpty }
         if src.childUnique { merged.childUnique = src.childUnique }
-        if !src.childDefault.isEmpty { merged.childDefault = src.childDefault }
+        if !src.childDefaultVal.isEmpty { merged.childDefaultVal = src.childDefaultVal }
         if !src.childMin.isEmpty { merged.childMin = src.childMin }
         if !src.childMax.isEmpty { merged.childMax = src.childMax }
         if src.childSize != 0 { merged.childSize = src.childSize }
-        if !src.childEnum.isEmpty { merged.childEnum = src.childEnum }
+        if !src.childEnums.isEmpty { merged.childEnums = src.childEnums }
         if !src.childPattern.isEmpty { merged.childPattern = src.childPattern }
-        if src.childLocationOffset != 0 { merged.childLocationOffset = src.childLocationOffset }
+        if src.childLocation != 0 { merged.childLocation = src.childLocation }
         if src.childVersion != 0 { merged.childVersion = src.childVersion }
         if !src.childMime.isEmpty { merged.childMime = src.childMime }
 
         return merged
     }
 
-    private func parseCommentToTag(_ literal: String) -> JSONCTag? {
+    private func parseCommentToTag(_ literal: String) -> Tag? {
         if literal.hasPrefix("mm:") {
             return parseMMTag(String(literal.dropFirst(3)))
         }
         return nil
     }
 
-    public func parse() throws -> JSONCNode? {
-        var result: JSONCNode?
+    public func parse() throws -> Node? {
+        var result: Node?
 
         while true {
             let tok = peek()
@@ -142,7 +142,7 @@ public class JSONCParser {
         }
     }
 
-    private func parseNode(_ path: String) throws -> JSONCNode? {
+    private func parseNode(_ path: String) throws -> Node? {
         let tok = next()
 
         switch tok.type {
@@ -156,13 +156,13 @@ public class JSONCParser {
             return try parseArray(tok.line, path)
 
         case .string:
-                var tag = try consumeCommentsFor(tok.line) ?? JSONCTag()
+                var tag = try consumeCommentsFor(tok.line) ?? Tag()
                 if tag.type == .unknown {
-                    tag.type = .string
+                    tag.type = .str
                 }
                 let text = tok.literal
                 
-                let value = JSONCValue(data: text, text: text, tag: tag, path: path)
+                let value = Value(data: text, text: text, tag: tag, path: path)
                 // 验证值
                 let stringResult = validator.validate(text, tag: tag)
                 if !stringResult.isValid {
@@ -171,14 +171,14 @@ public class JSONCParser {
                 return value
 
         case .number:
-            var tag = try consumeCommentsFor(tok.line) ?? JSONCTag()
+            var tag = try consumeCommentsFor(tok.line) ?? Tag()
             if tag.type == .unknown {
                 if tok.literal.contains(".") {
-                    tag.type = .float64
+                    tag.type = .f64
                 } else if tok.literal.hasPrefix("-") {
-                    tag.type = .int
+                    tag.type = .i
                 } else {
-                    tag.type = .int
+                    tag.type = .i
                 }
             }
 
@@ -201,7 +201,7 @@ public class JSONCParser {
                 }
             }
 
-            let value = JSONCValue(data: data, text: tok.literal, tag: tag, path: path)
+            let value = Value(data: data, text: tok.literal, tag: tag, path: path)
             // 验证值
             let numberResult = validator.validate(data, tag: tag)
             if !numberResult.isValid {
@@ -210,11 +210,11 @@ public class JSONCParser {
             return value
 
         case .trueValue:
-            var tag = try consumeCommentsFor(tok.line) ?? JSONCTag()
+            var tag = try consumeCommentsFor(tok.line) ?? Tag()
             if tag.type == .unknown {
                 tag.type = .bool
             }
-            let value = JSONCValue(data: true, text: "true", tag: tag, path: path)
+            let value = Value(data: true, text: "true", tag: tag, path: path)
             // 验证值
             let trueResult = validator.validate(true, tag: tag)
             if !trueResult.isValid {
@@ -223,11 +223,11 @@ public class JSONCParser {
             return value
 
         case .falseValue:
-            var tag = try consumeCommentsFor(tok.line) ?? JSONCTag()
+            var tag = try consumeCommentsFor(tok.line) ?? Tag()
             if tag.type == .unknown {
                 tag.type = .bool
             }
-            let value = JSONCValue(data: false, text: "false", tag: tag, path: path)
+            let value = Value(data: false, text: "false", tag: tag, path: path)
             // 验证值
             let falseResult = validator.validate(false, tag: tag)
             if !falseResult.isValid {
@@ -236,10 +236,10 @@ public class JSONCParser {
             return value
 
         case .nullValue:
-            var tag = try consumeCommentsFor(tok.line) ?? JSONCTag()
+            var tag = try consumeCommentsFor(tok.line) ?? Tag()
             tag.nullable = true
             tag.isNull = true
-            let value = JSONCValue(data: nil, text: "null", tag: tag, path: path)
+            let value = Value(data: nil, text: "null", tag: tag, path: path)
             // 验证值
             let nullResult = validator.validate(nil, tag: tag)
             if !nullResult.isValid {
@@ -260,9 +260,9 @@ public class JSONCParser {
 
         defer { depth -= 1 }
 
-        var tag = try consumeCommentsFor(openLine) ?? JSONCTag()
+        var tag = try consumeCommentsFor(openLine) ?? Tag()
         if tag.type == .unknown {
-            tag.type = .structType
+            tag.type = .obj
         }
 
         let obj = MMObject(tag: tag, path: path)
@@ -296,7 +296,7 @@ public class JSONCParser {
             }
 
             if tok.type == .trailingComment {
-                if let lastField = obj.fields.last, let val = lastField.value as? JSONCNode {
+                if let lastField = obj.fields.last, let val = lastField.value as? Node {
                     if let parsed = parseCommentToTag(tok.literal) {
                         mergeNodeTag(val, parsed)
                     }
@@ -317,10 +317,10 @@ public class JSONCParser {
             let childPath = "\(path).\(key)"
             if let val = try parseNode(childPath) {
                 let childTag = val.getTag()
-                if let ct = childTag, let t = tag as JSONCTag? {
+                if let ct = childTag, let t = tag as Tag? {
                     ct.inherit(from: t)
                 }
-                let field = JSONCField(key: key, value: val)
+                let field = Field(key: key, value: val)
                 obj.fields.append(field)
             }
 
@@ -340,12 +340,12 @@ public class JSONCParser {
 
         defer { depth -= 1 }
 
-        var tag = try consumeCommentsFor(openLine) ?? JSONCTag()
+        var tag = try consumeCommentsFor(openLine) ?? Tag()
         if tag.type == .unknown {
             if tag.size > 0 {
-                tag.type = .array
+                tag.type = .arr
             } else {
-                tag.type = .slice
+                tag.type = .vec
             }
         }
 
@@ -381,7 +381,7 @@ public class JSONCParser {
             }
 
             if tok.type == .trailingComment {
-                if let lastItem = arr.items.last, let val = lastItem as? JSONCNode {
+                if let lastItem = arr.items.last, let val = lastItem as? Node {
                     if let parsed = parseCommentToTag(tok.literal) {
                         mergeNodeTag(val, parsed)
                     }
@@ -393,7 +393,7 @@ public class JSONCParser {
             let itemPath = "\(path)[\(index)]"
             if let item = try parseNode(itemPath) {
                 let childTag = item.getTag()
-                if let ct = childTag, let t = tag as JSONCTag? {
+                if let ct = childTag, let t = tag as Tag? {
                     ct.inherit(from: t)
                 }
                 arr.items.append(item)
@@ -408,11 +408,11 @@ public class JSONCParser {
         return arr
     }
 
-    private func mergeNodeTag(_ node: JSONCNode, _ tag: JSONCTag) {
+    private func mergeNodeTag(_ node: Node, _ tag: Tag) {
         guard let existing = node.getTag() else { return }
 
-        if node is JSONCValue {
-            (node as? JSONCValue)?.tag = mergeTag(existing, tag)
+        if node is Value {
+            (node as? Value)?.tag = mergeTag(existing, tag)
         } else if node is MMObject {
             (node as? MMObject)?.tag = mergeTag(existing, tag)
         } else if node is MMArray {
@@ -421,7 +421,7 @@ public class JSONCParser {
     }
 }
 
-public func parseJSONC(_ input: String) throws -> JSONCNode? {
+public func parseJSONC(_ input: String) throws -> Node? {
     let scanner = JSONCScanner(input: input)
     var tokens: [JSONCToken] = []
 

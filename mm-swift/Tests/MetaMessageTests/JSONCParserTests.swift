@@ -26,8 +26,8 @@ final class JSONCParserTests: XCTestCase {
         XCTAssertEqual(obj.fields.count, 1)
         XCTAssertEqual(obj.fields[0].key, "name")
 
-        guard let valueNode = obj.fields[0].value as? JSONCValue else {
-            XCTFail("Expected JSONCValue")
+        guard let valueNode = obj.fields[0].value as? Value else {
+            XCTFail("Expected Value")
             return
         }
 

@@ -18,19 +18,19 @@ final class JSONCTagTests: XCTestCase {
     func testParseType() {
         let tag = parseMMTag("// mm:type=str")
         XCTAssertNotNil(tag)
-        XCTAssertEqual(tag?.type, .string)
+        XCTAssertEqual(tag?.type, .str)
     }
 
     func testParseTypeInt() {
         let tag = parseMMTag("// mm:type=i")
         XCTAssertNotNil(tag)
-        XCTAssertEqual(tag?.type, .int)
+        XCTAssertEqual(tag?.type, .i)
     }
 
     func testParseTypeFloat() {
         let tag = parseMMTag("// mm:type=f64")
         XCTAssertNotNil(tag)
-        XCTAssertEqual(tag?.type, .float64)
+        XCTAssertEqual(tag?.type, .f64)
     }
 
     func testParseTypeBool() {
@@ -54,7 +54,7 @@ final class JSONCTagTests: XCTestCase {
     func testParseDefault() {
         let tag = parseMMTag("// mm:default=value")
         XCTAssertNotNil(tag)
-        XCTAssertEqual(tag?.defaultValue, "value")
+        XCTAssertEqual(tag?.defaultVal, "value")
     }
 
     func testParseMinMax() {
@@ -73,8 +73,8 @@ final class JSONCTagTests: XCTestCase {
     func testParseEnum() {
         let tag = parseMMTag("// mm:enum=a|b|c")
         XCTAssertNotNil(tag)
-        XCTAssertEqual(tag?.type, .enumValue)
-        XCTAssertEqual(tag?.enumValues, "a|b|c")
+        XCTAssertEqual(tag?.type, .enums)
+        XCTAssertEqual(tag?.enums, "a|b|c")
     }
 
     func testParsePattern() {
@@ -86,7 +86,7 @@ final class JSONCTagTests: XCTestCase {
     func testParseLocation() {
         let tag = parseMMTag("// mm:location=8")
         XCTAssertNotNil(tag)
-        XCTAssertEqual(tag?.locationOffset, 8)
+        XCTAssertEqual(tag?.location, 8)
     }
 
     func testParseVersion() {
@@ -98,7 +98,7 @@ final class JSONCTagTests: XCTestCase {
     func testParseChildType() {
         let tag = parseMMTag("// mm:child_type=str")
         XCTAssertNotNil(tag)
-        XCTAssertEqual(tag?.childType, .string)
+        XCTAssertEqual(tag?.childType, .str)
     }
 
     func testParseChildDesc() {
@@ -110,7 +110,7 @@ final class JSONCTagTests: XCTestCase {
     func testParseMultipleTags() {
         let tag = parseMMTag("// mm:type=str;desc=\"description\";nullable;size=100")
         XCTAssertNotNil(tag)
-        XCTAssertEqual(tag?.type, .string)
+        XCTAssertEqual(tag?.type, .str)
         XCTAssertEqual(tag?.desc, "description")
         XCTAssertEqual(tag?.nullable, true)
         XCTAssertEqual(tag?.size, 100)
@@ -119,16 +119,16 @@ final class JSONCTagTests: XCTestCase {
     func testParseComplexTag() {
         let tag = parseMMTag("// mm:type=array;size=5;child_type=i;child_nullable;desc=\"array of ints\"")
         XCTAssertNotNil(tag)
-        XCTAssertEqual(tag?.type, .array)
+        XCTAssertEqual(tag?.type, .arr)
         XCTAssertEqual(tag?.size, 5)
-        XCTAssertEqual(tag?.childType, .int)
+        XCTAssertEqual(tag?.childType, .i)
         XCTAssertEqual(tag?.childNullable, true)
         XCTAssertEqual(tag?.desc, "array of ints")
     }
 
     func testTagStringValue() {
-        let tag = JSONCTag()
-        tag.type = .string
+        let tag = Tag()
+        tag.type = .str
         tag.desc = "test"
         tag.nullable = true
 
@@ -139,16 +139,16 @@ final class JSONCTagTests: XCTestCase {
     }
 
     func testTagInherit() {
-        let parent = JSONCTag()
-        parent.childType = .int
+        let parent = Tag()
+        parent.childType = .i
         parent.childNullable = true
-        parent.childDefault = "0"
+        parent.childDefaultVal = "0"
 
-        let child = JSONCTag()
+        let child = Tag()
         child.inherit(from: parent)
 
-        XCTAssertEqual(child.type, .int)
+        XCTAssertEqual(child.type, .i)
         XCTAssertEqual(child.nullable, true)
-        XCTAssertEqual(child.defaultValue, "0")
+        XCTAssertEqual(child.defaultVal, "0")
     }
 }

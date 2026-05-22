@@ -15,43 +15,43 @@ public class ValidationResult {
     }
 }
 
-public class MmValidator {
+public class Validator {
     public init() {}
     
-    public func validate(_ value: Any?, tag: JSONCTag) -> ValidationResult {
+    public func validate(_ value: Any?, tag: Tag) -> ValidationResult {
         let result = ValidationResult()
         
         if let value = value {
             switch tag.type {
             case .bool:
                 validateBool(value, tag: tag, result: result)
-            case .int:
+            case .i:
                 validateI(value, tag: tag, result: result)
-            case .int8:
+            case .i8:
                 validateI8(value, tag: tag, result: result)
-            case .int16:
+            case .i16:
                 validateI16(value, tag: tag, result: result)
-            case .int32:
+            case .i32:
                 validateI32(value, tag: tag, result: result)
-            case .int64:
+            case .i64:
                 validateI64(value, tag: tag, result: result)
-            case .uint:
+            case .u:
                 validateU(value, tag: tag, result: result)
-            case .uint8:
+            case .u8:
                 validateU8(value, tag: tag, result: result)
-            case .uint16:
+            case .u16:
                 validateU16(value, tag: tag, result: result)
-            case .uint32:
+            case .u32:
                 validateU32(value, tag: tag, result: result)
-            case .uint64:
+            case .u64:
                 validateU64(value, tag: tag, result: result)
-            case .bigInt:
+            case .bigint:
                 validateBigint(value, tag: tag, result: result)
-            case .float32:
+            case .f32:
                 validateF32(value, tag: tag, result: result)
-            case .float64, .decimal:
+            case .f64, .decimal:
                 validateF64(value, tag: tag, result: result)
-            case .string:
+            case .str:
                 validateStr(value, tag: tag, result: result)
             case .email:
                 validateEmail(value, tag: tag, result: result)
@@ -61,13 +61,13 @@ public class MmValidator {
                 validateBytes(value, tag: tag, result: result)
             case .uuid:
                 validateUUID(value, tag: tag, result: result)
-            case .dateTime, .date, .time:
+            case .datetime, .date, .time:
                 validateDatetime(value, tag: tag, result: result)
-            case .enumValue:
+            case .enums:
                 validateEnum(value, tag: tag, result: result)
-            case .array, .slice:
+            case .arr, .vec:
                 validateArr(value, tag: tag, result: result)
-            case .structType:
+            case .obj:
                 validateObj(value, tag: tag, result: result)
             default:
                 break
@@ -81,13 +81,13 @@ public class MmValidator {
         return result
     }
     
-    private func validateBool(_ value: Any, tag: JSONCTag, result: ValidationResult) {
+    private func validateBool(_ value: Any, tag: Tag, result: ValidationResult) {
         if !(value is Bool) {
             result.addError("value must be a boolean")
         }
     }
 
-    private func validateI(_ value: Any, tag: JSONCTag, result: ValidationResult) {
+    private func validateI(_ value: Any, tag: Tag, result: ValidationResult) {
         guard let intValue = value as? Int else {
             result.addError("value must be a number")
             return
@@ -121,7 +121,7 @@ public class MmValidator {
         }
     }
 
-    private func validateI8(_ value: Any, tag: JSONCTag, result: ValidationResult) {
+    private func validateI8(_ value: Any, tag: Tag, result: ValidationResult) {
         guard let intValue = value as? Int else {
             result.addError("value must be a number")
             return
@@ -159,7 +159,7 @@ public class MmValidator {
         }
     }
 
-    private func validateI16(_ value: Any, tag: JSONCTag, result: ValidationResult) {
+    private func validateI16(_ value: Any, tag: Tag, result: ValidationResult) {
         guard let intValue = value as? Int else {
             result.addError("value must be a number")
             return
@@ -197,7 +197,7 @@ public class MmValidator {
         }
     }
 
-    private func validateI32(_ value: Any, tag: JSONCTag, result: ValidationResult) {
+    private func validateI32(_ value: Any, tag: Tag, result: ValidationResult) {
         guard let intValue = value as? Int else {
             result.addError("value must be a number")
             return
@@ -235,7 +235,7 @@ public class MmValidator {
         }
     }
 
-    private func validateI64(_ value: Any, tag: JSONCTag, result: ValidationResult) {
+    private func validateI64(_ value: Any, tag: Tag, result: ValidationResult) {
         guard let intValue = value as? Int else {
             result.addError("value must be a number")
             return
@@ -273,7 +273,7 @@ public class MmValidator {
         }
     }
 
-    private func validateU(_ value: Any, tag: JSONCTag, result: ValidationResult) {
+    private func validateU(_ value: Any, tag: Tag, result: ValidationResult) {
         guard let intValue = value as? Int else {
             result.addError("value must be a number")
             return
@@ -311,7 +311,7 @@ public class MmValidator {
         }
     }
 
-    private func validateU8(_ value: Any, tag: JSONCTag, result: ValidationResult) {
+    private func validateU8(_ value: Any, tag: Tag, result: ValidationResult) {
         guard let intValue = value as? Int else {
             result.addError("value must be a number")
             return
@@ -349,7 +349,7 @@ public class MmValidator {
         }
     }
 
-    private func validateU16(_ value: Any, tag: JSONCTag, result: ValidationResult) {
+    private func validateU16(_ value: Any, tag: Tag, result: ValidationResult) {
         guard let intValue = value as? Int else {
             result.addError("value must be a number")
             return
@@ -387,7 +387,7 @@ public class MmValidator {
         }
     }
 
-    private func validateU32(_ value: Any, tag: JSONCTag, result: ValidationResult) {
+    private func validateU32(_ value: Any, tag: Tag, result: ValidationResult) {
         guard let intValue = value as? Int else {
             result.addError("value must be a number")
             return
@@ -425,7 +425,7 @@ public class MmValidator {
         }
     }
 
-    private func validateU64(_ value: Any, tag: JSONCTag, result: ValidationResult) {
+    private func validateU64(_ value: Any, tag: Tag, result: ValidationResult) {
         guard let intValue = value as? Int else {
             result.addError("value must be a number")
             return
@@ -463,7 +463,7 @@ public class MmValidator {
         }
     }
 
-    private func validateBigint(_ value: Any, tag: JSONCTag, result: ValidationResult) {
+    private func validateBigint(_ value: Any, tag: Tag, result: ValidationResult) {
         guard let stringValue = value as? String else {
             result.addError("value must be a string")
             return
@@ -479,7 +479,7 @@ public class MmValidator {
         }
     }
 
-    private func validateF32(_ value: Any, tag: JSONCTag, result: ValidationResult) {
+    private func validateF32(_ value: Any, tag: Tag, result: ValidationResult) {
         guard let floatValue = value as? Float else {
             result.addError("value must be a float")
             return
@@ -514,7 +514,7 @@ public class MmValidator {
         }
     }
 
-    private func validateF64(_ value: Any, tag: JSONCTag, result: ValidationResult) {
+    private func validateF64(_ value: Any, tag: Tag, result: ValidationResult) {
         guard let doubleValue = value as? Double else {
             result.addError("value must be a double")
             return
@@ -549,7 +549,7 @@ public class MmValidator {
         }
     }
     
-    private func validateStr(_ value: Any, tag: JSONCTag, result: ValidationResult) {
+    private func validateStr(_ value: Any, tag: Tag, result: ValidationResult) {
         if let strValue = value as? String {
             if strValue.isEmpty && !tag.allowEmpty {
                 result.addError("value is empty")
@@ -559,7 +559,7 @@ public class MmValidator {
         }
     }
     
-    private func validateEmail(_ value: Any, tag: JSONCTag, result: ValidationResult) {
+    private func validateEmail(_ value: Any, tag: Tag, result: ValidationResult) {
         if let email = value as? String {
             if email.isEmpty && !tag.allowEmpty {
                 result.addError("value is empty")
@@ -578,7 +578,7 @@ public class MmValidator {
         }
     }
     
-    private func validateUrl(_ value: Any, tag: JSONCTag, result: ValidationResult) {
+    private func validateUrl(_ value: Any, tag: Tag, result: ValidationResult) {
         if let url = value as? String {
             if url.isEmpty && !tag.allowEmpty {
                 result.addError("value is empty")
@@ -599,7 +599,7 @@ public class MmValidator {
         }
     }
     
-    private func validateBytes(_ value: Any, tag: JSONCTag, result: ValidationResult) {
+    private func validateBytes(_ value: Any, tag: Tag, result: ValidationResult) {
         if let bytes = value as? Data {
             if bytes.isEmpty && !tag.allowEmpty {
                 result.addError("value is empty")
@@ -609,7 +609,7 @@ public class MmValidator {
         }
     }
     
-    private func validateUUID(_ value: Any, tag: JSONCTag, result: ValidationResult) {
+    private func validateUUID(_ value: Any, tag: Tag, result: ValidationResult) {
         if let uuid = value as? String {
             if uuid.isEmpty && !tag.allowEmpty {
                 result.addError("value is empty")
@@ -626,22 +626,22 @@ public class MmValidator {
         }
     }
     
-    private func validateDatetime(_ value: Any, tag: JSONCTag, result: ValidationResult) {
+    private func validateDatetime(_ value: Any, tag: Tag, result: ValidationResult) {
         if !(value is String) && !(value is Date) {
             result.addError("value must be a datetime")
         }
     }
     
-    private func validateEnum(_ value: Any, tag: JSONCTag, result: ValidationResult) {
-        if let enumValue = value as? String {
-            if enumValue.isEmpty && !tag.allowEmpty {
+    private func validateEnum(_ value: Any, tag: Tag, result: ValidationResult) {
+        if let enumsue = value as? String {
+            if enumsue.isEmpty && !tag.allowEmpty {
                 result.addError("value is empty")
                 return
             }
             
-            if !enumValue.isEmpty && !tag.enumValues.isEmpty {
-                let enumValues = tag.enumValues.split(separator: "|").map { $0.trimmingCharacters(in: .whitespaces) }
-                if !enumValues.contains(enumValue) {
+            if !enumsue.isEmpty && !tag.enums.isEmpty {
+                let enums = tag.enums.split(separator: "|").map { $0.trimmingCharacters(in: .whitespaces) }
+                if !enums.contains(enumsue) {
                     result.addError("value is not in enum")
                 }
             }
@@ -650,14 +650,14 @@ public class MmValidator {
         }
     }
     
-    private func validateArr(_ value: Any, tag: JSONCTag, result: ValidationResult) {
+    private func validateArr(_ value: Any, tag: Tag, result: ValidationResult) {
         if let array = value as? [Any] {
             if array.isEmpty && !tag.allowEmpty {
                 result.addError("value is empty")
             }
 
             for (index, item) in array.enumerated() {
-                let childTag = JSONCTag()
+                let childTag = Tag()
                 childTag.inherit(from: tag)
                 let itemResult = validate(item, tag: childTag)
                 if !itemResult.isValid {
@@ -672,11 +672,11 @@ public class MmValidator {
         }
     }
     
-    private func validateObj(_ value: Any, tag: JSONCTag, result: ValidationResult) {
+    private func validateObj(_ value: Any, tag: Tag, result: ValidationResult) {
         if !(value is [String: Any]) && !(value is MMObject) {
             result.addError("value must be an object")
         }
     }
 }
 
-public let validator = MmValidator()
+public let validator = Validator()

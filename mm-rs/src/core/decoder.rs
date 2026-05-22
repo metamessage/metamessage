@@ -1,12 +1,10 @@
 use crate::core::constants::{
-    CONTAINER_ARRAY, CONTAINER_LEN_MASK,
-    TAG_ALLOW_EMPTY, TAG_CHILD_ALLOW_EMPTY, TAG_CHILD_DEFAULT, TAG_CHILD_DESC,
-    TAG_CHILD_ENUM, TAG_CHILD_LOCATION, TAG_CHILD_MAX, TAG_CHILD_MIME, TAG_CHILD_MIN,
-    TAG_CHILD_NULLABLE, TAG_CHILD_PATTERN, TAG_CHILD_RAW, TAG_CHILD_SIZE,
-    TAG_CHILD_TYPE, TAG_CHILD_UNIQUE, TAG_CHILD_VERSION,
-    TAG_DEFAULT, TAG_DESC, TAG_ENUM, TAG_EXAMPLE, TAG_IS_NULL, TAG_KEY_MASK,
-    TAG_LOCATION, TAG_MAX, TAG_MIME, TAG_MIN, TAG_NULLABLE, TAG_PAYLOAD_MASK,
-    TAG_PATTERN, TAG_RAW, TAG_SIZE, TAG_TYPE, TAG_UNIQUE, TAG_VERSION,
+    CONTAINER_ARRAY, CONTAINER_LEN_MASK, TAG_ALLOW_EMPTY, TAG_CHILD_ALLOW_EMPTY, TAG_CHILD_DEFAULT,
+    TAG_CHILD_DESC, TAG_CHILD_ENUM, TAG_CHILD_LOCATION, TAG_CHILD_MAX, TAG_CHILD_MIME,
+    TAG_CHILD_MIN, TAG_CHILD_NULLABLE, TAG_CHILD_PATTERN, TAG_CHILD_RAW, TAG_CHILD_SIZE,
+    TAG_CHILD_TYPE, TAG_CHILD_UNIQUE, TAG_CHILD_VERSION, TAG_DEFAULT, TAG_DESC, TAG_ENUM,
+    TAG_EXAMPLE, TAG_IS_NULL, TAG_KEY_MASK, TAG_LOCATION, TAG_MAX, TAG_MIME, TAG_MIN, TAG_NULLABLE,
+    TAG_PATTERN, TAG_PAYLOAD_MASK, TAG_RAW, TAG_SIZE, TAG_TYPE, TAG_UNIQUE, TAG_VERSION,
 };
 use crate::core::prefix::{Prefix, FLOAT_LEN_1, FLOAT_LEN_MASK, FLOAT_POSITIVE_NEGATIVE_MASK};
 use crate::core::simple_value::SimpleValue;
@@ -114,12 +112,12 @@ impl Decoder {
 
         if tag.is_null {
             let data = match tag.value_type {
-                ValueType::Int => ValueData::Int(0),
-                ValueType::Float64 => ValueData::Float(0.0),
+                ValueType::I => ValueData::Int(0),
+                ValueType::F64 => ValueData::Float(0.0),
                 ValueType::Bool => ValueData::Bool(false),
-                ValueType::String => ValueData::String(String::new()),
+                ValueType::Str => ValueData::String(String::new()),
                 ValueType::Bytes => ValueData::Bytes(vec![]),
-                ValueType::DateTime => ValueData::String("1970-01-01T00:00:00Z".to_string()),
+                ValueType::Datetime => ValueData::String("1970-01-01T00:00:00Z".to_string()),
                 _ => ValueData::Null,
             };
             Ok(Node::Value(Value {

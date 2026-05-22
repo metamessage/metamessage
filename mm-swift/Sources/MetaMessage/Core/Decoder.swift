@@ -1,6 +1,6 @@
 import Foundation
 
-public class MMDecoder {
+public class Decoder {
     private let buffer: MMBuffer
 
     public init(data: Data) {
@@ -368,7 +368,7 @@ public class MMDecoder {
         }
 
         let payloadData = Data(data[pos...])
-        let innerDecoder = MMDecoder(data: payloadData)
+        let innerDecoder = Decoder(data: payloadData)
         return try innerDecoder.decode()
     }
 }

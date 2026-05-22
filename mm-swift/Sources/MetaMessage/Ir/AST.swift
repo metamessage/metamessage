@@ -1,6 +1,6 @@
 import Foundation
 
-public enum JSONCNodeType: String {
+public enum NodeType: String {
     case unknown
     case object
     case array
@@ -8,39 +8,39 @@ public enum JSONCNodeType: String {
     case doc
 }
 
-public protocol JSONCNode {
-    func getTag() -> JSONCTag?
-    func getType() -> JSONCNodeType
+public protocol Node {
+    func getTag() -> Tag?
+    func getType() -> NodeType
     func getPath() -> String
     func setPath(_ path: String)
 }
 
-public struct JSONCField {
+public struct Field {
     public var key: String
-    public var value: JSONCNode
+    public var value: Node
 
-    public init(key: String, value: JSONCNode) {
+    public init(key: String, value: Node) {
         self.key = key
         self.value = value
     }
 }
 
-public class MMObject: JSONCNode {
-    public var fields: [JSONCField]
-    public var tag: JSONCTag?
+public class MMObject: Node {
+    public var fields: [Field]
+    public var tag: Tag?
     public var path: String
 
-    public init(fields: [JSONCField] = [], tag: JSONCTag? = nil, path: String = "") {
+    public init(fields: [Field] = [], tag: Tag? = nil, path: String = "") {
         self.fields = fields
         self.tag = tag
         self.path = path
     }
 
-    public func getTag() -> JSONCTag? {
+    public func getTag() -> Tag? {
         return tag
     }
 
-    public func getType() -> JSONCNodeType {
+    public func getType() -> NodeType {
         return .object
     }
 
@@ -53,22 +53,22 @@ public class MMObject: JSONCNode {
     }
 }
 
-public class MMArray: JSONCNode {
-    public var items: [JSONCNode]
-    public var tag: JSONCTag?
+public class MMArray: Node {
+    public var items: [Node]
+    public var tag: Tag?
     public var path: String
 
-    public init(items: [JSONCNode] = [], tag: JSONCTag? = nil, path: String = "") {
+    public init(items: [Node] = [], tag: Tag? = nil, path: String = "") {
         self.items = items
         self.tag = tag
         self.path = path
     }
 
-    public func getTag() -> JSONCTag? {
+    public func getTag() -> Tag? {
         return tag
     }
 
-    public func getType() -> JSONCNodeType {
+    public func getType() -> NodeType {
         return .array
     }
 
@@ -81,24 +81,24 @@ public class MMArray: JSONCNode {
     }
 }
 
-public class JSONCValue: JSONCNode {
+public class Value: Node {
     public var data: Any?
     public var text: String
-    public var tag: JSONCTag?
+    public var tag: Tag?
     public var path: String
 
-    public init(data: Any? = nil, text: String = "", tag: JSONCTag? = nil, path: String = "") {
+    public init(data: Any? = nil, text: String = "", tag: Tag? = nil, path: String = "") {
         self.data = data
         self.text = text
         self.tag = tag
         self.path = path
     }
 
-    public func getTag() -> JSONCTag? {
+    public func getTag() -> Tag? {
         return tag
     }
 
-    public func getType() -> JSONCNodeType {
+    public func getType() -> NodeType {
         return .value
     }
 
@@ -111,22 +111,22 @@ public class JSONCValue: JSONCNode {
     }
 }
 
-public class MMDoc: JSONCNode {
-    public var fields: [JSONCField]
-    public var tag: JSONCTag?
+public class MMDoc: Node {
+    public var fields: [Field]
+    public var tag: Tag?
     public var path: String
 
-    public init(fields: [JSONCField] = [], tag: JSONCTag? = nil, path: String = "") {
+    public init(fields: [Field] = [], tag: Tag? = nil, path: String = "") {
         self.fields = fields
         self.tag = tag
         self.path = path
     }
 
-    public func getTag() -> JSONCTag? {
+    public func getTag() -> Tag? {
         return tag
     }
 
-    public func getType() -> JSONCNodeType {
+    public func getType() -> NodeType {
         return .doc
     }
 

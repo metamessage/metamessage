@@ -56,31 +56,31 @@ impl MmValidator {
 
         match tag.value_type {
             ValueType::Bool => self.validate_bool(value, tag, &mut result),
-            ValueType::Int => self.validate_i(value, tag, &mut result),
-            ValueType::Int8 => self.validate_i8(value, tag, &mut result),
-            ValueType::Int16 => self.validate_i16(value, tag, &mut result),
-            ValueType::Int32 => self.validate_i32(value, tag, &mut result),
-            ValueType::Int64 => self.validate_i64(value, tag, &mut result),
-            ValueType::Uint => self.validate_u(value, tag, &mut result),
-            ValueType::Uint8 => self.validate_u8(value, tag, &mut result),
-            ValueType::Uint16 => self.validate_u16(value, tag, &mut result),
-            ValueType::Uint32 => self.validate_u32(value, tag, &mut result),
-            ValueType::Uint64 => self.validate_u64(value, tag, &mut result),
-            ValueType::BigInt => self.validate_bigint(value, tag, &mut result),
-            ValueType::Float32 => self.validate_f32(value, tag, &mut result),
-            ValueType::Float64 => self.validate_f64(value, tag, &mut result),
+            ValueType::I => self.validate_i(value, tag, &mut result),
+            ValueType::I8 => self.validate_i8(value, tag, &mut result),
+            ValueType::I16 => self.validate_i16(value, tag, &mut result),
+            ValueType::I32 => self.validate_i32(value, tag, &mut result),
+            ValueType::I64 => self.validate_i64(value, tag, &mut result),
+            ValueType::U => self.validate_u(value, tag, &mut result),
+            ValueType::U8 => self.validate_u8(value, tag, &mut result),
+            ValueType::U16 => self.validate_u16(value, tag, &mut result),
+            ValueType::U32 => self.validate_u32(value, tag, &mut result),
+            ValueType::U64 => self.validate_u64(value, tag, &mut result),
+            ValueType::Bigint => self.validate_bigint(value, tag, &mut result),
+            ValueType::F32 => self.validate_f32(value, tag, &mut result),
+            ValueType::F64 => self.validate_f64(value, tag, &mut result),
             ValueType::Decimal => self.validate_f(value, tag, &mut result),
-            ValueType::String => self.validate_str(value, tag, &mut result),
+            ValueType::Str => self.validate_str(value, tag, &mut result),
             ValueType::Email => self.validate_email(value, tag, &mut result),
-            ValueType::URL => self.validate_url(value, tag, &mut result),
+            ValueType::Url => self.validate_url(value, tag, &mut result),
             ValueType::Bytes => self.validate_bytes(value, tag, &mut result),
-            ValueType::UUID => self.validate_uuid(value, tag, &mut result),
-            ValueType::DateTime | ValueType::Date | ValueType::Time => {
+            ValueType::Uuid => self.validate_uuid(value, tag, &mut result),
+            ValueType::Datetime | ValueType::Date | ValueType::Time => {
                 self.validate_datetime(value, tag, &mut result)
             }
             ValueType::Enum => self.validate_enum(value, tag, &mut result),
-            ValueType::Array | ValueType::Slice => self.validate_arr(value, tag, &mut result),
-            ValueType::Struct => self.validate_obj(value, tag, &mut result),
+            ValueType::Arr | ValueType::Vec => self.validate_arr(value, tag, &mut result),
+            ValueType::Obj => self.validate_obj(value, tag, &mut result),
             _ => {}
         }
 
@@ -674,12 +674,12 @@ impl MmValidator {
     fn validate_f(&self, value: &dyn Any, tag: &Tag, result: &mut ValidationResult) {
         if let Some(float_value) = value.downcast_ref::<f64>() {
             match tag.value_type {
-                ValueType::Float32 => {
+                ValueType::F32 => {
                     if *float_value < f32::MIN as f64 || *float_value > f32::MAX as f64 {
                         result.add_error("value out of range for float32".to_string());
                     }
                 }
-                ValueType::Float64 => {
+                ValueType::F64 => {
                     if *float_value < f64::MIN || *float_value > f64::MAX {
                         result.add_error("value out of range for float64".to_string());
                     }

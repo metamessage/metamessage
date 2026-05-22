@@ -1,14 +1,14 @@
 import Foundation
 
 public class MetaMessageEncoder {
-    private var encoder: MMEncoder
+    private var encoder: Encoder
 
     public init() {
-        self.encoder = MMEncoder()
+        self.encoder = Encoder()
     }
 
     public init(capacity: Int) {
-        self.encoder = MMEncoder(capacity: capacity)
+        self.encoder = Encoder(capacity: capacity)
     }
 
     public func encode(_ value: Bool) -> Data {
@@ -128,13 +128,13 @@ public class MetaMessageEncoder {
 }
 
 public class MetaMessageDecoder {
-    private var decoder: MMDecoder
+    private var decoder: Decoder
 
     public init(data: Data) {
-        self.decoder = MMDecoder(data: data)
+        self.decoder = Decoder(data: data)
     }
 
-    public func decode() throws -> MMDecoder.DecodedValue {
+    public func decode() throws -> Decoder.DecodedValue {
         return try decoder.decode()
     }
 
@@ -210,7 +210,7 @@ public class MetaMessageDecoder {
         return d
     }
 
-    public func decodeToArray() throws -> [MMDecoder.DecodedValue] {
+    public func decodeToArray() throws -> [Decoder.DecodedValue] {
         let value = try decode()
         guard case .array(let arr) = value else {
             throw MMError.typeMismatch
@@ -218,7 +218,7 @@ public class MetaMessageDecoder {
         return arr
     }
 
-    public func decodeToObject() throws -> [String: MMDecoder.DecodedValue] {
+    public func decodeToObject() throws -> [String: Decoder.DecodedValue] {
         let value = try decode()
         guard case .object(let obj) = value else {
             throw MMError.typeMismatch
@@ -288,7 +288,7 @@ public enum MetaMessage {
         return MetaMessageEncoder().encode(value)
     }
 
-    public static func decode(_ data: Data) throws -> MMDecoder.DecodedValue {
+    public static func decode(_ data: Data) throws -> Decoder.DecodedValue {
         return try MetaMessageDecoder(data: data).decode()
     }
 
@@ -297,7 +297,7 @@ public enum MetaMessage {
         return nodeToString(node)
     }
 
-    public static func validate(_ value: Any?, tag: JSONCTag) -> ValidationResult {
+    public static func validate(_ value: Any?, tag: Tag) -> ValidationResult {
         return validator.validate(value, tag: tag)
     }
 
@@ -305,7 +305,7 @@ public enum MetaMessage {
 
     public static func fromValue(_ value: Any?, tag: String) throws -> Data {
         let node = try valueToNode(value, tag: tag)
-        let encoder = MMEncoder()
+        let encoder = Encoder()
         return try encodeNode(node, with: encoder)
     }
 
@@ -313,7 +313,7 @@ public enum MetaMessage {
         guard let node = try parseJSONC(s) else {
             throw MMError.invalidData
         }
-        let encoder = MMEncoder()
+        let encoder = Encoder()
         return try encodeNode(node, with: encoder)
     }
 
@@ -326,16 +326,16 @@ public enum MetaMessage {
         guard let node = try parseJSONC(inString) else {
             throw MMError.invalidData
         }
-        try bindJSONCNode(node, to: out)
+        try bindNode(node, to: out)
     }
 
-    private static func encodeNode(_ node: JSONCNode, with encoder: MMEncoder) throws -> Data {
+    private static func encodeNode(_ node: Node, with encoder: Encoder) throws -> Data {
         switch node {
         case let obj as MMObject:
             encoder.encodeNodeObject(obj)
         case let arr as MMArray:
             encoder.encodeNodeArray(arr)
-        case let val as JSONCValue:
+        case let val as Value:
             encoder.encodeNodeValue(val)
         default:
             throw MMError.unsupportedType
@@ -343,7 +343,7 @@ public enum MetaMessage {
         return encoder.result
     }
 
-    private static func nodeToString(_ node: MMDecoder.DecodedValue) -> String {
+    private static func nodeToString(_ node: Decoder.DecodedValue) -> String {
         let printer = JSONCPrinter()
         switch node {
         case .bool(let b):

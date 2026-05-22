@@ -1,6 +1,6 @@
 import Foundation
 
-public class MMEncoder {
+public class Encoder {
     let buffer: MMBuffer
 
     public init() {
@@ -322,7 +322,7 @@ public class MMEncoder {
         var valBuf = MMBuffer()
 
         for element in array {
-            let encoder = MMEncoder()
+            let encoder = Encoder()
             encoder.encode(element)
             let data = encoder.buffer.data
             valBuf.write([UInt8](data))
@@ -348,7 +348,7 @@ public class MMEncoder {
         var valBuf = MMBuffer()
 
         for element in array {
-            let encoder = MMEncoder()
+            let encoder = Encoder()
             encoder.encode(element)
             let data = encoder.buffer.data
             valBuf.write([UInt8](data))
@@ -374,7 +374,7 @@ public class MMEncoder {
         var valBuf = MMBuffer()
 
         for element in array {
-            let encoder = MMEncoder()
+            let encoder = Encoder()
             encoder.encode(element)
             let data = encoder.buffer.data
             valBuf.write([UInt8](data))
@@ -400,7 +400,7 @@ public class MMEncoder {
         var valBuf = MMBuffer()
 
         for element in array {
-            let encoder = MMEncoder()
+            let encoder = Encoder()
             encoder.encode(element)
             let data = encoder.buffer.data
             valBuf.write([UInt8](data))
@@ -426,7 +426,7 @@ public class MMEncoder {
         var valBuf = MMBuffer()
 
         for element in array {
-            let encoder = MMEncoder()
+            let encoder = Encoder()
             encoder.encode(element)
             let data = encoder.buffer.data
             valBuf.write([UInt8](data))
@@ -452,7 +452,7 @@ public class MMEncoder {
         var valBuf = MMBuffer()
 
         for element in array {
-            let encoder = MMEncoder()
+            let encoder = Encoder()
             encoder.encode(element)
             let data = encoder.buffer.data
             valBuf.write([UInt8](data))
@@ -478,7 +478,7 @@ public class MMEncoder {
         var valBuf = MMBuffer()
 
         for element in array {
-            let encoder = MMEncoder()
+            let encoder = Encoder()
             encoder.encode(element)
             let data = encoder.buffer.data
             valBuf.write([UInt8](data))
@@ -516,20 +516,20 @@ enum TagKey {
     static let nullable: UInt8 = 5 << 3     // 0x28
     static let allowEmpty: UInt8 = 6 << 3   // 0x30
     static let unique: UInt8 = 7 << 3       // 0x38
-    static let defaultValue: UInt8 = 8 << 3 // 0x40
+    static let defaultVal: UInt8 = 8 << 3 // 0x40
     static let min: UInt8 = 9 << 3          // 0x48
     static let max: UInt8 = 10 << 3         // 0x50
     static let size: UInt8 = 11 << 3        // 0x58
-    static let enumValues: UInt8 = 12 << 3  // 0x60
+    static let enums: UInt8 = 12 << 3  // 0x60
     static let pattern: UInt8 = 13 << 3     // 0x68
     static let location: UInt8 = 14 << 3    // 0x70
     static let version: UInt8 = 15 << 3     // 0x78
     static let mime: UInt8 = 16 << 3        // 0x80
 }
 
-// MARK: - JSONCNode encoding
-extension MMEncoder {
-    public func encodeNodeValue(_ node: JSONCValue) {
+// MARK: - Node encoding
+extension Encoder {
+    public func encodeNodeValue(_ node: Value) {
         guard let tag = node.getTag() else {
             encodeRawValue(node)
             return
@@ -556,8 +556,8 @@ extension MMEncoder {
         guard let tag = node.getTag() else {
             var valBuf = MMBuffer()
             for item in node.items {
-                if let val = item as? JSONCValue {
-                    let encoder = MMEncoder()
+                if let val = item as? Value {
+                    let encoder = Encoder()
                     encoder.encodeNodeValue(val)
                     valBuf.write([UInt8](encoder.buffer.data))
                 }
@@ -581,8 +581,8 @@ extension MMEncoder {
         let payloadStart = buffer.count
         var valBuf = MMBuffer()
         for item in node.items {
-            if let val = item as? JSONCValue {
-                let encoder = MMEncoder()
+            if let val = item as? Value {
+                let encoder = Encoder()
                 encoder.encodeNodeValue(val)
                 valBuf.write([UInt8](encoder.buffer.data))
             }
@@ -618,12 +618,12 @@ extension MMEncoder {
         var valBuf = MMBuffer()
 
         for field in node.fields {
-            let encoder = MMEncoder()
+            let encoder = Encoder()
             encoder.encode(field.key)
             keyBuf.write([UInt8](encoder.buffer.data))
 
-            let valEncoder = MMEncoder()
-            if let val = field.value as? JSONCValue {
+            let valEncoder = Encoder()
+            if let val = field.value as? Value {
                 valEncoder.encodeNodeValue(val)
             } else if let arr = field.value as? MMArray {
                 valEncoder.encodeNodeArray(arr)
@@ -680,7 +680,7 @@ extension MMEncoder {
         }
     }
 
-    private func encodeRawValue(_ node: JSONCValue) {
+    private func encodeRawValue(_ node: Value) {
         guard let data = node.data else {
             encodeNil()
             return
@@ -724,11 +724,11 @@ extension MMEncoder {
         }
     }
 
-    private func needsTagEncoding(_ tag: JSONCTag) -> Bool {
+    private func needsTagEncoding(_ tag: Tag) -> Bool {
         return tag.type != .unknown || tag.name != "" || tag.desc != "" || tag.nullable || tag.isNull || tag.raw || tag.allowEmpty
     }
 
-    private func encodeTagToBytes(_ tag: JSONCTag) -> [UInt8] {
+    private func encodeTagToBytes(_ tag: Tag) -> [UInt8] {
         var bytes: [UInt8] = []
 
         if tag.isNull {
@@ -753,8 +753,8 @@ extension MMEncoder {
         if tag.unique {
             bytes.append(TagKey.unique | 1)
         }
-        if !tag.defaultValue.isEmpty {
-            bytes.append(contentsOf: encodeTagString(TagKey.defaultValue, value: tag.defaultValue))
+        if !tag.defaultVal.isEmpty {
+            bytes.append(contentsOf: encodeTagString(TagKey.defaultVal, value: tag.defaultVal))
         }
         if !tag.min.isEmpty {
             bytes.append(contentsOf: encodeTagString(TagKey.min, value: tag.min))
@@ -765,14 +765,14 @@ extension MMEncoder {
         if tag.size != 0 {
             bytes.append(contentsOf: encodeTagU64(TagKey.size, value: UInt64(tag.size)))
         }
-        if !tag.enumValues.isEmpty {
-            bytes.append(contentsOf: encodeTagString(TagKey.enumValues, value: tag.enumValues))
+        if !tag.enums.isEmpty {
+            bytes.append(contentsOf: encodeTagString(TagKey.enums, value: tag.enums))
         }
         if !tag.pattern.isEmpty {
             bytes.append(contentsOf: encodeTagString(TagKey.pattern, value: tag.pattern))
         }
-        if tag.locationOffset != 0 {
-            let v = "\(tag.locationOffset)"
+        if tag.location != 0 {
+            let v = "\(tag.location)"
             bytes.append(contentsOf: encodeTagString(TagKey.location, value: v))
         }
         if tag.version != 0 {

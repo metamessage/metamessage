@@ -8,7 +8,7 @@ public enum MMBindError: Error {
     case notAClass
 }
 
-public func bindJSONCNode(_ node: JSONCNode, to out: AnyObject) throws {
+public func bindNode(_ node: Node, to out: AnyObject) throws {
     guard let obj = node as? MMObject else {
         throw MMBindError.notAnObject
     }
@@ -26,11 +26,11 @@ public func bindObject(_ obj: MMObject, to out: AnyObject) throws {
 
         let childValue = field.value
 
-        if let valueNode = childValue as? JSONCValue {
+        if let valueNode = childValue as? Value {
             let boundValue = try extractValue(from: valueNode)
             setProperty(propertyName, value: boundValue, on: out)
         } else if let childObj = childValue as? MMObject {
-            if childObj.tag?.type == .structType || childObj.tag?.type == .unknown || childObj.tag == nil {
+            if childObj.tag?.type == .obj || childObj.tag?.type == .unknown || childObj.tag == nil {
                 if let nestedObject = createNestedInstance(for: propertyName, on: out, mirror: mirror) {
                     try bindObject(childObj, to: nestedObject)
                     setProperty(propertyName, value: nestedObject, on: out)
@@ -57,7 +57,7 @@ private func findPropertyName(in mirror: Mirror, matching snakeKey: String) -> S
     return nil
 }
 
-private func extractValue(from node: JSONCValue) throws -> Any? {
+private func extractValue(from node: Value) throws -> Any? {
     let tag = node.getTag()
     if tag?.isNull == true {
         return nil
@@ -68,7 +68,7 @@ private func extractValue(from node: JSONCValue) throws -> Any? {
 private func extractDict(from obj: MMObject) throws -> [String: Any] {
     var result: [String: Any] = [:]
     for field in obj.fields {
-        if let valueNode = field.value as? JSONCValue {
+        if let valueNode = field.value as? Value {
             result[field.key] = valueNode.data ?? NSNull()
         } else if let childObj = field.value as? MMObject {
             result[field.key] = try extractDict(from: childObj)
@@ -82,7 +82,7 @@ private func extractDict(from obj: MMObject) throws -> [String: Any] {
 private func extractArray(from arr: MMArray) throws -> [Any] {
     var result: [Any] = []
     for item in arr.items {
-        if let valueNode = item as? JSONCValue {
+        if let valueNode = item as? Value {
             let tag = valueNode.getTag()
             if tag?.isNull == true {
                 result.append(NSNull())

@@ -1,8 +1,8 @@
 import Foundation
 
 private protocol ObjectFieldsProvider {
-    var fields: [JSONCField] { get }
-    var tag: JSONCTag? { get }
+    var fields: [Field] { get }
+    var tag: Tag? { get }
 }
 
 extension MMObject: ObjectFieldsProvider {}
@@ -19,7 +19,7 @@ public class JSONCPrinter {
         self.useIndent = useIndent
     }
 
-    public func print(_ node: JSONCNode?) -> String {
+    public func print(_ node: Node?) -> String {
         guard let node = node else { return "" }
 
         switch node.getType() {
@@ -28,7 +28,7 @@ public class JSONCPrinter {
         case .array:
             return printArray(node as! MMArray)
         case .value:
-            return printValue(node as! JSONCValue)
+            return printValue(node as! Value)
         case .doc:
             return printObject(node as! MMDoc)
         case .unknown:
@@ -73,7 +73,7 @@ public class JSONCPrinter {
             case .array:
                 result += printArray(field.value as! MMArray)
             case .value:
-                result += printValue(field.value as! JSONCValue)
+                result += printValue(field.value as! Value)
             case .doc:
                 result += printObject(field.value as! MMDoc)
             case .unknown:
@@ -109,7 +109,7 @@ public class JSONCPrinter {
             case .array:
                 result += printArray(item as! MMArray)
             case .value:
-                result += printValue(item as! JSONCValue)
+                result += printValue(item as! Value)
             case .doc:
                 result += printObject(item as! MMDoc)
             case .unknown:
@@ -128,7 +128,7 @@ public class JSONCPrinter {
         return result
     }
 
-    private func printValue(_ value: JSONCValue) -> String {
+    private func printValue(_ value: Value) -> String {
         if let tag = value.tag, tag.isNull {
             return "null"
         }
@@ -230,7 +230,7 @@ public class JSONCPrinter {
         return result
     }
 
-    public func printCompact(_ node: JSONCNode?) -> String {
+    public func printCompact(_ node: Node?) -> String {
         guard let node = node else { return "" }
 
         switch node.getType() {
@@ -239,7 +239,7 @@ public class JSONCPrinter {
         case .array:
             return printArrayCompact(node as! MMArray)
         case .value:
-            return printValueCompact(node as! JSONCValue)
+            return printValueCompact(node as! Value)
         case .doc:
             return printObjectCompact(node as! MMDoc)
         case .unknown:
@@ -259,7 +259,7 @@ public class JSONCPrinter {
             case .array:
                 part += printArrayCompact(field.value as! MMArray)
             case .value:
-                part += printValueCompact(field.value as! JSONCValue)
+                part += printValueCompact(field.value as! Value)
             case .doc:
                 part += printObjectCompact(field.value as! MMDoc)
             case .unknown:
@@ -284,7 +284,7 @@ public class JSONCPrinter {
             case .array:
                 part += printArrayCompact(item as! MMArray)
             case .value:
-                part += printValueCompact(item as! JSONCValue)
+                part += printValueCompact(item as! Value)
             case .doc:
                 part += printObjectCompact(item as! MMDoc)
             case .unknown:
@@ -297,7 +297,7 @@ public class JSONCPrinter {
         return "[" + parts.joined(separator: ",") + "]"
     }
 
-    private func printValueCompact(_ value: JSONCValue) -> String {
+    private func printValueCompact(_ value: Value) -> String {
         if let tag = value.tag, tag.isNull {
             return "null"
         }
