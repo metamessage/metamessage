@@ -220,13 +220,13 @@ export class JSONCParser {
               }
               break;
 
-            case ValueType.Enum:
+            case ValueType.Enums:
               if (!strTag.enums) {
                 throw new Error('enum empty');
               }
               if (strTag.isNull) {
                 if (text !== '') {
-                  throw new Error(`invalid enum: "${text}", valid: ""`);
+                  throw new Error(`invalid enums: "${text}", valid: ""`);
                 }
                 data = -1;
               } else {

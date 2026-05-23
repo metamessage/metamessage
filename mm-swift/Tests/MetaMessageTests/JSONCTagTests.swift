@@ -52,7 +52,7 @@ final class JSONCTagTests: XCTestCase {
     }
 
     func testParseDefault() {
-        let tag = parseMMTag("// mm:default=value")
+        let tag = parseMMTag("// mm:default_val=value")
         XCTAssertNotNil(tag)
         XCTAssertEqual(tag?.defaultVal, "value")
     }
@@ -71,7 +71,7 @@ final class JSONCTagTests: XCTestCase {
     }
 
     func testParseEnum() {
-        let tag = parseMMTag("// mm:enum=a|b|c")
+        let tag = parseMMTag("// mm:enums=a|b|c")
         XCTAssertNotNil(tag)
         XCTAssertEqual(tag?.type, .enums)
         XCTAssertEqual(tag?.enums, "a|b|c")

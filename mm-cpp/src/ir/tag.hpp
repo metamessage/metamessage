@@ -22,11 +22,11 @@ enum TagKey : uint8_t {
   KNullable = 5 << 3,
   KAllowEmpty = 6 << 3,
   KUnique = 7 << 3,
-  KDefault = 8 << 3,
+  KDefaultVal = 8 << 3,
   KMin = 9 << 3,
   KMax = 10 << 3,
   KSize = 11 << 3,
-  KEnum = 12 << 3,
+  KEnums = 12 << 3,
   KPattern = 13 << 3,
   KLocation = 14 << 3,
   KVersion = 15 << 3,
@@ -38,11 +38,11 @@ enum TagKey : uint8_t {
   KChildNullable = 20 << 3,
   KChildAllowEmpty = 21 << 3,
   KChildUnique = 22 << 3,
-  KChildDefault = 23 << 3,
+  KChildDefaultVal = 23 << 3,
   KChildMin = 24 << 3,
   KChildMax = 25 << 3,
   KChildSize = 26 << 3,
-  KChildEnum = 27 << 3,
+  KChildEnums = 27 << 3,
   KChildPattern = 28 << 3,
   KChildLocation = 29 << 3,
   KChildVersion = 30 << 3,
@@ -143,7 +143,7 @@ struct Tag {
                    type == ValueType::F64 || type == ValueType::Bool ||
                    type == ValueType::Obj || type == ValueType::Vec);
       if (!(skip || (type == ValueType::Arr && size > 0) ||
-            (type == ValueType::Enum && !enums.empty()))) {
+            (type == ValueType::Enums && !enums.empty()))) {
         add("type=" + valueTypeToString(type));
       }
     }
@@ -201,7 +201,7 @@ struct Tag {
     if (childSize != 0)
       add("child_size=" + std::to_string(childSize));
     if (!child_enums.empty())
-      add('child_enums=" + child_enums);
+      add("child_enums=" + child_enums);
     if (!childPattern.empty())
       add("child_pattern=" + childPattern);
     if (childLocationOffset != DefaultLocationOffset)
@@ -280,7 +280,7 @@ struct Tag {
       } else if (lower == "size") {
         r.size = std::stoi(v);
       } else if (lower == "enums") {
-        r.type = ValueType::Enum;
+        r.type = ValueType::Enums;
         r.enums = v;
       } else if (lower == "pattern") {
         r.pattern = v;
@@ -312,7 +312,7 @@ struct Tag {
         r.childSize = std::stoi(v);
       } else if (lower == "child_enums") {
         r.child_enums = v;
-        r.childType = ValueType::Enum;
+        r.childType = ValueType::Enums;
       } else if (lower == "child_pattern") {
         r.childPattern = v;
       } else if (lower == "child_location") {
@@ -348,7 +348,7 @@ struct Tag {
                    type == ValueType::Bool || type == ValueType::Obj ||
                    type == ValueType::Vec);
       if (!(skip || (type == ValueType::Arr && size > 0) ||
-            (type == ValueType::Enum && !enums.empty()))) {
+            (type == ValueType::Enums && !enums.empty()))) {
         writeByte(static_cast<uint8_t>(KType));
         writeByte(static_cast<uint8_t>(type));
       }
@@ -360,7 +360,7 @@ struct Tag {
     if (unique && !isInherit)
       writeByte(static_cast<uint8_t>(KUnique | 1));
     if (!default_val.empty() && !isInherit)
-      encodeString(&bs, KDefault, default_val);
+      encodeString(&bs, KDefaultVal, default_val);
     if (!min.empty() && !isInherit)
       encodeString(&bs, KMin, min);
     if (!max.empty() && !isInherit)
@@ -368,7 +368,7 @@ struct Tag {
     if (size != 0 && !isInherit)
       encodeU64(&bs, KSize, static_cast<uint64_t>(size));
     if (!enums.empty() && !isInherit)
-      encodeString(&bs, KEnum, enums);
+      encodeString(&bs, KEnums, enums);
     if (!pattern.empty() && !isInherit)
       encodeString(&bs, KPattern, pattern);
     if (locationOffset != 0 && !isInherit) {
@@ -397,7 +397,7 @@ struct Tag {
     if (childUnique)
       writeByte(static_cast<uint8_t>(KChildUnique | 1));
     if (!child_default_val.empty())
-      encodeString(&bs, KChildDefault, child_default_val);
+      encodeString(&bs, KChildDefaultVal, child_default_val);
     if (!childMin.empty())
       encodeString(&bs, KChildMin, childMin);
     if (!childMax.empty())
@@ -405,7 +405,7 @@ struct Tag {
     if (childSize != 0)
       encodeU64(&bs, KChildSize, static_cast<uint64_t>(childSize));
     if (!child_enums.empty())
-      encodeString(&bs, KChildEnum, child_enums);
+      encodeString(&bs, KChildEnums, child_enums);
     if (!childPattern.empty())
       encodeString(&bs, KChildPattern, childPattern);
     if (childLocationOffset != DefaultLocationOffset) {

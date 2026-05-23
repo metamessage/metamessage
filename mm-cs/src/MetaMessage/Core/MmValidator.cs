@@ -114,7 +114,7 @@ public class MmValidator
             case ValueType.TIME:
                 ValidateDatetime(value, tag, result);
                 break;
-            case ValueType.ENUM:
+            case ValueType.ENUMS:
                 ValidateEnum(value, tag, result);
                 break;
             case ValueType.ARR:
@@ -1226,7 +1226,7 @@ public class MmValidator
 
     private void ValidateImage(dynamic value, MmTag tag, ValidationResult result)
     {
-        byte[] bytes = value is byte[] b ? b : null;
+        byte[]? bytes = value is byte[] b ? b : null;
         if (bytes == null)
         {
             result.AddError("value must be a byte array");
@@ -1267,7 +1267,7 @@ public class MmValidator
 
     private void ValidateVideo(dynamic value, MmTag tag, ValidationResult result)
     {
-        byte[] bytes = value is byte[] b ? b : null;
+        byte[]? bytes = value is byte[] b ? b : null;
         if (bytes == null)
         {
             result.AddError("value must be a byte array");

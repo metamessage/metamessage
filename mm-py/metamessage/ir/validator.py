@@ -931,7 +931,7 @@ class MmValidator:
                 break
 
         if idx == -1:
-            return ValidationResult(False, "value '%s' not found in enum: %s" % (value, enums))
+            return ValidationResult(False, "value '%s' not found in enums: %s" % (value, enums))
 
         if len(tag.desc) > 65535:
             return ValidationResult(False, "desc length exceeds 65535 bytes")
@@ -1116,7 +1116,7 @@ class MmValidator:
                 return MmValidator.validate_email(value, tag)
             else:
                 return ValidationResult(False, "expected string, got %s" % type(value).__name__)
-        elif tag.type == ValueType.Enum:
+        elif tag.type == ValueType.Enums:
             if isinstance(value, str):
                 return MmValidator.validate_enum(value, tag)
             else:

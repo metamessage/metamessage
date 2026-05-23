@@ -23,12 +23,12 @@ object TagFieldParser {
             Tag.TagKey.K_NULLABLE -> tag.nullable = (low and 1) == 1
             Tag.TagKey.K_ALLOW_EMPTY -> tag.allowEmpty = (low and 1) == 1
             Tag.TagKey.K_UNIQUE -> tag.unique = (low and 1) == 1
-            Tag.TagKey.K_DEFAULT -> tag.default_val = readShortUtf8(c, low)
+            Tag.TagKey.K_DEFAULT_VAL -> tag.default_val = readShortUtf8(c, low)
             Tag.TagKey.K_MIN -> tag.min = readShortUtf8(c, low)
             Tag.TagKey.K_MAX -> tag.max = readShortUtf8(c, low)
             Tag.TagKey.K_SIZE -> tag.size = readUintN(c, low)
             Tag.TagKey.K_ENUM -> {
-                tag.type = ValueType.ENUM
+                tag.type = ValueType.ENUMS
                 tag.enums = readSizedUtf8Only(c, low)
             }
             Tag.TagKey.K_PATTERN -> tag.pattern = readShortUtf8(c, low)
@@ -41,12 +41,12 @@ object TagFieldParser {
             Tag.TagKey.K_CHILD_NULLABLE -> tag.childNullable = (low and 1) == 1
             Tag.TagKey.K_CHILD_ALLOW_EMPTY -> tag.childAllowEmpty = (low and 1) == 1
             Tag.TagKey.K_CHILD_UNIQUE -> tag.childUnique = (low and 1) == 1
-            Tag.TagKey.K_CHILD_DEFAULT -> tag.childDefaultVal = readShortUtf8(c, low)
+            Tag.TagKey.K_CHILD_DEFAULT_VAL -> tag.childDefaultVal = readShortUtf8(c, low)
             Tag.TagKey.K_CHILD_MIN -> tag.childMin = readShortUtf8(c, low)
             Tag.TagKey.K_CHILD_MAX -> tag.childMax = readShortUtf8(c, low)
             Tag.TagKey.K_CHILD_SIZE -> tag.childSize = readUintN(c, low)
-            Tag.TagKey.K_CHILD_ENUM -> {
-                tag.childType = ValueType.ENUM
+            Tag.TagKey.K_CHILD_ENUMS -> {
+                tag.childType = ValueType.ENUMS
                 tag.childEnums = readSizedUtf8Only(c, low)
             }
             Tag.TagKey.K_CHILD_PATTERN -> tag.childPattern = readShortUtf8(c, low)

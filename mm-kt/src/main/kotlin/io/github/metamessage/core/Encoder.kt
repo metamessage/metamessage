@@ -194,7 +194,7 @@ object Encoder {
                     tmp.encodeString(value.text)
                 }
             }
-            ValueType.Uuid -> {
+            ValueType.UUID -> {
                 if (!tag.isNull) {
                     val uuid = value.data as? UUID ?: throw IllegalArgumentException("invalid uuid")
                     tmp.encodeBytes(uuidBytes(uuid))
@@ -205,12 +205,12 @@ object Encoder {
                     tmp.encodeFloatString(value.text)
                 }
             }
-            ValueType.Url -> {
+            ValueType.URL -> {
                 if (!tag.isNull) {
                     tmp.encodeString(value.text)
                 }
             }
-            ValueType.Ip -> {
+            ValueType.IP -> {
                 if (!tag.isNull) {
                     val ip =
                             value.data as? java.net.InetAddress
@@ -252,7 +252,7 @@ object Encoder {
                     tmp.encodeBool(boolValue)
                 }
             }
-            ValueType.ENUM -> {
+            ValueType.ENUMS -> {
                 if (!tag.isNull) {
                     tmp.encodeInt64((value.data as Number).toLong())
                 }

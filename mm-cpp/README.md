@@ -30,8 +30,8 @@ mm-cpp/
 ## Features
 
 - **Header-heavy design**: Most logic is in `.hpp` headers; only the scanner has a `.cpp` file.
-- **30+ value types**: `str`, `bool`, `i8`-`i64`, `u8`-`u64`, `f32`, `f64`, `datetime`, `uuid`, `email`, `url`, `ip`, `image`, `video`, `bytes`, `bigint`, `decimal`, `enum`, etc.
-- **Rich metadata tags**: `desc`, `min`, `max`, `size`, `nullable`, `raw`, `allowEmpty`, `unique`, `default`, `enum`, `pattern`, `location`, `version`, `mime` — plus child element variants.
+- **30+ value types**: `str`, `bool`, `i8`-`i64`, `u8`-`u64`, `f32`, `f64`, `datetime`, `uuid`, `email`, `url`, `ip`, `image`, `video`, `bytes`, `bigint`, `decimal`, `enums`, etc.
+- **Rich metadata tags**: `desc`, `min`, `max`, `size`, `nullable`, `raw`, `allowEmpty`, `unique`, `default_val`, `enums`, `pattern`, `location`, `version`, `mime` — plus child element variants.
 - **JSONC with inline** **`mm:`** **annotations**: Parse comments like `// mm: type=u8; min=0; max=150` to attach metadata.
 - **Declarative macro system**: `MM_OBJECT` / `MM_FIELD` for compile-time schema definition and auto-generated serializer/deserializer.
 - **Binary encoding**: Compact wire format with prefix-based encoding for efficient storage and transmission.
@@ -239,7 +239,7 @@ MM_OBJECT(Person,
 | `min`         | `int`         | Minimum value                  |
 | `max`         | `int`         | Maximum value                  |
 | `size`        | `int`         | Size constraint                |
-| `enum`        | `const char*` | Enum values (pipe-separated)   |
+| `enums`       | `const char*` | Enum values (pipe-separated)   |
 | `pattern`     | `const char*` | Regex pattern                  |
 | `nullable`    | `bool`        | Whether null is allowed        |
 | `raw`         | `bool`        | Raw mode flag                  |
@@ -337,6 +337,6 @@ Key methods:
 | `decimal`                         | —     | Decimal     |
 | `datetime`, `date`, `time`        | —     | Temporal    |
 | `uuid`, `ip`, `url`, `email`      | —     | Identifier  |
-| `enum`                            | —     | Enumeration |
+| `enums`                           | —     | Enumeration |
 | `image`, `video`                  | —     | Media       |
 | `doc`, `vec`, `arr`, `obj`, `map` | —     | Container   |

@@ -85,7 +85,7 @@ class ValueToNodeTest {
         val node = valueToNode(3.141592653589793, Tag.empty().apply { type = ValueType.F64 }, "")
         assertTrue(node is Value)
         assertTrue((node as Value).data is Double)
-        assertEquals(3.141592653589793, (node as Value).data as Double, 0.0000001)
+        assertEquals(3.141592653589793, node.data as Double, 0.0000001)
     }
 
     @Test
@@ -131,7 +131,7 @@ class ValueToNodeTest {
     @Test
     fun uuidToNode() {
         val uuid = UUID.randomUUID()
-        val node = valueToNode(uuid, Tag.empty().apply { type = ValueType.Uuid }, "")
+        val node = valueToNode(uuid, Tag.empty().apply { type = ValueType.UUID }, "")
         assertTrue(node is Value)
         assertTrue((node as Value).data is ByteArray)
     }

@@ -501,7 +501,7 @@ char *mm_tag_to_string(const mm_tag_t *tag) {
     if (is_simple_type(tag->type)) {
     } else {
       if ((tag->type == MM_VALUE_ARR && tag->size > 0) ||
-          (tag->type == MM_VALUE_ENUM && tag->enums)) {
+          (tag->type == MM_VALUE_ENUMS && tag->enums)) {
       } else {
         if (!first)
           append_str(&buf, &cap, &len, "; ");
@@ -653,7 +653,7 @@ char *mm_tag_to_string(const mm_tag_t *tag) {
     if (is_simple_type(tag->child_type)) {
     } else {
       if ((tag->child_type == MM_VALUE_ARR && tag->child_size > 0) ||
-          (tag->child_type == MM_VALUE_ENUM && tag->child_enums)) {
+          (tag->child_type == MM_VALUE_ENUMS && tag->child_enums)) {
       } else {
         if (!first)
           append_str(&buf, &cap, &len, "; ");
@@ -926,7 +926,7 @@ mm_tag_t mm_tag_parse(const char *tag_str) {
         r.size = (int)u;
       }
     } else if (strcmp(k, "enums") == 0) {
-      r.type = MM_VALUE_ENUM;
+      r.type = MM_VALUE_ENUMS;
       free(r.enums);
       r.enums = strdup(val);
     } else if (strcmp(k, "pattern") == 0) {
@@ -978,7 +978,7 @@ mm_tag_t mm_tag_parse(const char *tag_str) {
     } else if (strcmp(k, "child_enums") == 0) {
       free(r.child_enums);
       r.child_enums = strdup(val);
-      r.child_type = MM_VALUE_ENUM;
+      r.child_type = MM_VALUE_ENUMS;
     } else if (strcmp(k, "child_pattern") == 0) {
       free(r.child_pattern);
       r.child_pattern = strdup(val);
@@ -1047,7 +1047,7 @@ uint8_t *mm_tag_bytes(const mm_tag_t *tag, size_t *out_len) {
     if (is_bytes_simple_type(tag->type)) {
     } else {
       if ((tag->type == MM_VALUE_ARR && tag->size > 0) ||
-          (tag->type == MM_VALUE_ENUM && tag->enums)) {
+          (tag->type == MM_VALUE_ENUMS && tag->enums)) {
       } else {
         if (len + 2 > cap) {
           cap = cap ? cap * 2 : 128;
@@ -1084,7 +1084,8 @@ uint8_t *mm_tag_bytes(const mm_tag_t *tag, size_t *out_len) {
   }
 
   if (tag->default_val && !tag->is_inherit) {
-    encode_string_simple(&buf, &cap, &len, MM_TAG_KDEFAULT, tag->default_val);
+    encode_string_simple(&buf, &cap, &len, MM_TAG_KDEFAULTVAL,
+                         tag->default_val);
   }
 
   if (tag->min && !tag->is_inherit) {
@@ -1100,7 +1101,7 @@ uint8_t *mm_tag_bytes(const mm_tag_t *tag, size_t *out_len) {
   }
 
   if (tag->enums && !tag->is_inherit) {
-    encode_string(&buf, &cap, &len, MM_TAG_KENUM, tag->enums);
+    encode_string(&buf, &cap, &len, MM_TAG_KENUMS, tag->enums);
   }
 
   if (tag->pattern && !tag->is_inherit) {
@@ -1153,7 +1154,7 @@ uint8_t *mm_tag_bytes(const mm_tag_t *tag, size_t *out_len) {
     if (is_simple_type(tag->child_type)) {
     } else {
       if ((tag->child_type == MM_VALUE_ARR && tag->child_size > 0) ||
-          (tag->child_type == MM_VALUE_ENUM && tag->child_enums)) {
+          (tag->child_type == MM_VALUE_ENUMS && tag->child_enums)) {
       } else {
         if (len + 2 > cap) {
           cap = cap ? cap * 2 : 128;
@@ -1198,7 +1199,7 @@ uint8_t *mm_tag_bytes(const mm_tag_t *tag, size_t *out_len) {
   }
 
   if (tag->child_default_val) {
-    encode_string_simple(&buf, &cap, &len, MM_TAG_KCHILDDEFAULT,
+    encode_string_simple(&buf, &cap, &len, MM_TAG_KCHILDDEFAULTVAL,
                          tag->child_default_val);
   }
 
@@ -1215,7 +1216,7 @@ uint8_t *mm_tag_bytes(const mm_tag_t *tag, size_t *out_len) {
   }
 
   if (tag->child_enums) {
-    encode_string(&buf, &cap, &len, MM_TAG_KCHILDENUM, tag->child_enums);
+    encode_string(&buf, &cap, &len, MM_TAG_KCHILDENUMS, tag->child_enums);
   }
 
   if (tag->child_pattern) {

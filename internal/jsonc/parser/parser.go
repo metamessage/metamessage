@@ -339,7 +339,7 @@ func (p *Parser) parse(path string) (val ir.Node, err error) {
 
 					if tag.IsNull {
 						if text != "" {
-							return nil, fmt.Errorf("invalid enum: %q, valid: %q", text, "")
+							return nil, fmt.Errorf("invalid enums: %q, valid: %q", text, "")
 						}
 
 						data = -1

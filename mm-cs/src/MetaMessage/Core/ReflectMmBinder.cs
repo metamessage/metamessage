@@ -132,15 +132,15 @@ public static class ReflectMmBinder
         }
         else if (targetType == typeof(ushort))
         {
-            return unchecked((ushort)Convert.ToInt64(data));
+            return Convert.ToUInt16(data);
         }
         else if (targetType == typeof(uint))
         {
-            return unchecked((uint)Convert.ToInt64(data));
+            return Convert.ToUInt32(data);
         }
         else if (targetType == typeof(ulong))
         {
-            return unchecked((ulong)Convert.ToInt64(data));
+            return Convert.ToUInt64(data);
         }
         else if (targetType == typeof(float))
         {

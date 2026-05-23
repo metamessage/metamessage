@@ -438,7 +438,7 @@ static void test_tag_attributes_roundtrip(void) {
     mm_buffer_free(enc);
   }
 
-  printf("  enum: ");
+  printf("  enums: ");
   {
     mm_node_t *v = mm_i(0, .enums = "a|b|c");
     mm_buffer_t *enc = mm_encode(v);

@@ -37,7 +37,7 @@ class ValueType(IntEnum):
     Ip = 27
     Url = 28
     Email = 29
-    Enum = 30
+    Enums = 30
     Image = 31
     Video = 32
 
@@ -73,7 +73,7 @@ class ValueType(IntEnum):
             ValueType.Ip: "ip",
             ValueType.Url: "url",
             ValueType.Email: "email",
-            ValueType.Enum: "enums",
+            ValueType.Enums: "enums",
             ValueType.Image: "image",
             ValueType.Video: "video",
         }
@@ -89,7 +89,7 @@ _str_to_value_type = {
     "f32": ValueType.F32, "f64": ValueType.F64,
     "bigint": ValueType.Bigint, "datetime": ValueType.Datetime, "date": ValueType.Date, "time": ValueType.Time,
     "uuid": ValueType.Uuid, "decimal": ValueType.Decimal, "ip": ValueType.Ip, "url": ValueType.Url,
-    "email": ValueType.Email, "enums": ValueType.Enum,
+    "email": ValueType.Email, "enums": ValueType.Enums,
     "image": ValueType.Image, "video": ValueType.Video,
 }
 
@@ -285,7 +285,7 @@ class Tag:
             if self.type not in (ValueType.Str, ValueType.Bytes, ValueType.I, ValueType.F64,
                                  ValueType.Bool, ValueType.Obj, ValueType.Vec):
                 if not (self.type == ValueType.Arr and self.size > 0) and not (
-                        self.type == ValueType.Enum and self.enums):
+                        self.type == ValueType.Enums and self.enums):
                     buf.append(TagKey.Type)
                     buf.append(self.type)
 
@@ -393,7 +393,7 @@ class Tag:
             if self.child_type not in (ValueType.Str, ValueType.I, ValueType.F64,
                                        ValueType.Bool, ValueType.Obj, ValueType.Vec):
                 if not (self.child_type == ValueType.Arr and self.child_size > 0) and not (
-                        self.child_type == ValueType.Enum and self.child_enums):
+                        self.child_type == ValueType.Enums and self.child_enums):
                     buf.append(TagKey.ChildType)
                     buf.append(self.child_type)
 
@@ -496,7 +496,7 @@ class Tag:
                 pass
             else:
                 if not (self.type == ValueType.Arr and self.size > 0) and not (
-                        self.type == ValueType.Enum and self.enums):
+                        self.type == ValueType.Enums and self.enums):
                     parts.append("type=%s" % str(self.type))
 
         if self.example:
@@ -561,7 +561,7 @@ class Tag:
             if self.child_type not in (ValueType.Str, ValueType.I, ValueType.F64,
                                        ValueType.Bool, ValueType.Obj, ValueType.Vec):
                 if not (self.child_type == ValueType.Arr and self.child_size > 0) and not (
-                        self.child_type == ValueType.Enum and self.child_enums):
+                        self.child_type == ValueType.Enums and self.child_enums):
                     parts.append("child_type=%s" % str(self.child_type))
 
         if self.child_raw:
@@ -589,7 +589,7 @@ class Tag:
             parts.append("child_size=%d" % self.child_size)
 
         if self.child_enums:
-            parts.append('child_enums=%s" % self.child_enums)
+            parts.append("child_enums=%s" % self.child_enums)
 
         if self.child_pattern:
             parts.append("child_pattern=%s" % self.child_pattern)
@@ -726,7 +726,7 @@ def mm_tag(tag_str: str) -> Tag:
             except ValueError:
                 pass
         elif k == "enums":
-            tag.type = ValueType.Enum
+            tag.type = ValueType.Enums
             tag.enums = v
         elif k == "pattern":
             tag.pattern = v
@@ -767,7 +767,7 @@ def mm_tag(tag_str: str) -> Tag:
                 pass
         elif k == "child_enums":
             tag.child_enums = v
-            tag.child_type = ValueType.Enum
+            tag.child_type = ValueType.Enums
         elif k == "child_pattern":
             tag.child_pattern = v
         elif k == "child_location":

@@ -1,5 +1,4 @@
 import Foundation
-import MetaMessage
 
 public enum JSONCParserError: Error {
     case unexpectedToken(String)
@@ -156,7 +155,7 @@ public class JSONCParser {
             return try parseArray(tok.line, path)
 
         case .string:
-                var tag = try consumeCommentsFor(tok.line) ?? Tag()
+                let tag = consumeCommentsFor(tok.line) ?? Tag()
                 if tag.type == .unknown {
                     tag.type = .str
                 }
@@ -171,7 +170,7 @@ public class JSONCParser {
                 return value
 
         case .number:
-            var tag = try consumeCommentsFor(tok.line) ?? Tag()
+            let tag = consumeCommentsFor(tok.line) ?? Tag()
             if tag.type == .unknown {
                 if tok.literal.contains(".") {
                     tag.type = .f64
@@ -210,7 +209,7 @@ public class JSONCParser {
             return value
 
         case .trueValue:
-            var tag = try consumeCommentsFor(tok.line) ?? Tag()
+            let tag = consumeCommentsFor(tok.line) ?? Tag()
             if tag.type == .unknown {
                 tag.type = .bool
             }
@@ -223,7 +222,7 @@ public class JSONCParser {
             return value
 
         case .falseValue:
-            var tag = try consumeCommentsFor(tok.line) ?? Tag()
+            let tag = consumeCommentsFor(tok.line) ?? Tag()
             if tag.type == .unknown {
                 tag.type = .bool
             }
@@ -236,7 +235,7 @@ public class JSONCParser {
             return value
 
         case .nullValue:
-            var tag = try consumeCommentsFor(tok.line) ?? Tag()
+            let tag = consumeCommentsFor(tok.line) ?? Tag()
             tag.nullable = true
             tag.isNull = true
             let value = Value(data: nil, text: "null", tag: tag, path: path)
@@ -260,7 +259,7 @@ public class JSONCParser {
 
         defer { depth -= 1 }
 
-        var tag = try consumeCommentsFor(openLine) ?? Tag()
+        let tag = consumeCommentsFor(openLine) ?? Tag()
         if tag.type == .unknown {
             tag.type = .obj
         }
@@ -296,7 +295,8 @@ public class JSONCParser {
             }
 
             if tok.type == .trailingComment {
-                if let lastField = obj.fields.last, let val = lastField.value as? Node {
+                if let lastField = obj.fields.last {
+                    let val = lastField.value
                     if let parsed = parseCommentToTag(tok.literal) {
                         mergeNodeTag(val, parsed)
                     }
@@ -317,8 +317,8 @@ public class JSONCParser {
             let childPath = "\(path).\(key)"
             if let val = try parseNode(childPath) {
                 let childTag = val.getTag()
-                if let ct = childTag, let t = tag as Tag? {
-                    ct.inherit(from: t)
+                if let ct = childTag {
+                    ct.inherit(from: tag)
                 }
                 let field = Field(key: key, value: val)
                 obj.fields.append(field)
@@ -340,7 +340,7 @@ public class JSONCParser {
 
         defer { depth -= 1 }
 
-        var tag = try consumeCommentsFor(openLine) ?? Tag()
+        let tag = consumeCommentsFor(openLine) ?? Tag()
         if tag.type == .unknown {
             if tag.size > 0 {
                 tag.type = .arr
@@ -381,7 +381,8 @@ public class JSONCParser {
             }
 
             if tok.type == .trailingComment {
-                if let lastItem = arr.items.last, let val = lastItem as? Node {
+                if let lastItem = arr.items.last {
+                    let val = lastItem
                     if let parsed = parseCommentToTag(tok.literal) {
                         mergeNodeTag(val, parsed)
                     }
@@ -393,8 +394,8 @@ public class JSONCParser {
             let itemPath = "\(path)[\(index)]"
             if let item = try parseNode(itemPath) {
                 let childTag = item.getTag()
-                if let ct = childTag, let t = tag as Tag? {
-                    ct.inherit(from: t)
+                if let ct = childTag {
+                    ct.inherit(from: tag)
                 }
                 arr.items.append(item)
                 index += 1

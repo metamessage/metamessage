@@ -1,9 +1,11 @@
+using MetaMessage.Ir;
+
 namespace MetaMessage.Jsonc;
 
 public interface IJsoncNode
 {
     JsoncTokenType TokenType { get; }
-    JsoncTag? Tag { get; set; }
+    Tag? Tag { get; set; }
     JsoncComment? LeadingComment { get; set; }
     JsoncComment? TrailingComment { get; set; }
 }
@@ -19,7 +21,7 @@ public class JsoncComment
 public abstract class JsoncNode : IJsoncNode
 {
     public JsoncTokenType TokenType { get; set; }
-    public JsoncTag? Tag { get; set; }
+    public Tag? Tag { get; set; }
     public JsoncComment? LeadingComment { get; set; }
     public JsoncComment? TrailingComment { get; set; }
 }

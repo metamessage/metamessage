@@ -420,7 +420,7 @@ class Decoder:
             tag.size = self._read_varint(l)
             return 2 + l
         elif p == TagKey.Enum:
-            tag.type = ValueType.Enum
+            tag.type = ValueType.Enums
             n, s = self._read_length_str(l, True, True)
             tag.enums = s
             return n
@@ -479,7 +479,7 @@ class Decoder:
             tag.child_size = self._read_varint(l)
             return 2 + l
         elif p == TagKey.ChildEnum:
-            tag.child_type = ValueType.Enum
+            tag.child_type = ValueType.Enums
             n, s = self._read_length_str(l, True, True)
             tag.child_enums = s
             return n
@@ -694,7 +694,7 @@ class Decoder:
                 d = datetime(1970, 1, 1, hour, minute, second, tzinfo=timezone.utc)
                 data = d
                 text = d.strftime('%H:%M:%S')
-        elif tag.type == ValueType.Enum:
+        elif tag.type == ValueType.Enums:
             if tag.is_null:
                 data = -1
                 text = ""

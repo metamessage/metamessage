@@ -351,7 +351,7 @@ export class MMDecoder {
         throw new Error('size 不能超过 8 字节');
 
       case KEnum:
-        tag.type = ValueType.Enum;
+        tag.type = ValueType.Enums;
         let lenEnum = l;
         if (lenEnum <= 5) {
           const bs = this.readBytes(lenEnum);
@@ -506,7 +506,7 @@ export class MMDecoder {
         throw new Error('size 不能超过 8 字节');
 
       case KChildEnum:
-        tag.childType = ValueType.Enum;
+        tag.childType = ValueType.Enums;
         let lenChildEnum = l;
         if (lenChildEnum <= 5) {
           const bs = this.readBytes(lenChildEnum);
@@ -822,7 +822,7 @@ export class MMDecoder {
         data = new Date(Date.UTC(1970, 0, 1, hours, minutes, secs));
         text = data.toTimeString().split(' ')[0];
         break;
-      case ValueType.Enum:
+      case ValueType.Enums:
         data = Number(v);
         if (tag.enums) {
           const enumList = tag.enums.split('|');

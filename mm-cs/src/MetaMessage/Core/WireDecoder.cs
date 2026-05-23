@@ -216,7 +216,7 @@ public class WireDecoder
             ValueType.DATETIME => DateTimeFromInt(v, tag),
             ValueType.DATE => DateFromInt(v, tag),
             ValueType.TIME => TimeFromInt(v, tag),
-            ValueType.ENUM => EnumFromInt((int)v, tag),
+            ValueType.ENUMS => EnumFromInt((int)v, tag),
             ValueType.I8 => ((sbyte)v, v.ToString()),
             ValueType.I16 => ((short)v, v.ToString()),
             ValueType.I32 => ((int)v, v.ToString()),
@@ -362,7 +362,7 @@ public class WireDecoder
         // Type-specific string handling
         return tag.Type switch
         {
-            ValueType.EMAIL or ValueType.URL or ValueType.IP or ValueType.ENUM =>
+            ValueType.EMAIL or ValueType.URL or ValueType.IP or ValueType.ENUMS =>
                 new MmScalar(s, s, tag),
             _ => new MmScalar(s, s, tag)
         };

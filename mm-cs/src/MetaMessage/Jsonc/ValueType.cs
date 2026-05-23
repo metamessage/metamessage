@@ -39,7 +39,7 @@ public enum ValueType
     Url,
     Email,
 
-    Enum,
+    Enums,
 
     Image,
     Video
@@ -116,7 +116,7 @@ public static class ValueTypeExtensions
         { ValueTypeConstants.IpStr, ValueType.Ip },
         { ValueTypeConstants.UrlStr, ValueType.Url },
         { ValueTypeConstants.EmailStr, ValueType.Email },
-        { ValueTypeConstants.EnumStr, ValueType.Enum },
+        { ValueTypeConstants.EnumStr, ValueType.Enums },
         { ValueTypeConstants.ImageStr, ValueType.Image },
         { ValueTypeConstants.VideoStr, ValueType.Video }
     };
@@ -155,7 +155,7 @@ public static class ValueTypeExtensions
             ValueType.Ip => ValueTypeConstants.IpStr,
             ValueType.Url => ValueTypeConstants.UrlStr,
             ValueType.Email => ValueTypeConstants.EmailStr,
-            ValueType.Enum => ValueTypeConstants.EnumStr,
+            ValueType.Enums => ValueTypeConstants.EnumStr,
             ValueType.Image => ValueTypeConstants.ImageStr,
             ValueType.Video => ValueTypeConstants.VideoStr,
             _ => ValueTypeConstants.UnknownStr
@@ -185,7 +185,7 @@ public static class ValueTypeExtensions
             ValueType.Ip => true,
             ValueType.Url => true,
             ValueType.Email => true,
-            ValueType.Enum => true,
+            ValueType.Enums => true,
             _ => false
         };
     }

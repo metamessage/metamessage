@@ -1320,7 +1320,7 @@ func (t *Tag) ValidateEnum(val string) (data any, text string, err error) {
 	}
 
 	if idx == -1 {
-		err = fmt.Errorf("value '%s' not found in enum: %v", val, enums)
+		err = fmt.Errorf("value '%s' not found in enums: %v", val, enums)
 		return
 	}
 

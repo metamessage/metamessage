@@ -147,7 +147,7 @@ final class EncoderTests: XCTestCase {
 
         encoder.reset()
         encoder.encode(UInt8(255))
-        var data = encoder.buffer.data
+        let data = encoder.buffer.data
         XCTAssertTrue(data.count >= 1)
     }
 
@@ -159,7 +159,7 @@ final class EncoderTests: XCTestCase {
 
         encoder.reset()
         encoder.encode(UInt16(65535))
-        var data = encoder.buffer.data
+        let data = encoder.buffer.data
         XCTAssertTrue(data.count > 1)
     }
 
@@ -171,7 +171,7 @@ final class EncoderTests: XCTestCase {
 
         encoder.reset()
         encoder.encode(UInt32(4294967295))
-        var data = encoder.buffer.data
+        let data = encoder.buffer.data
         XCTAssertTrue(data.count > 1)
     }
 
@@ -183,7 +183,7 @@ final class EncoderTests: XCTestCase {
 
         encoder.reset()
         encoder.encode(UInt64(18446744073709551615))
-        var data = encoder.buffer.data
+        let data = encoder.buffer.data
         XCTAssertTrue(data.count > 1)
     }
 

@@ -1,5 +1,7 @@
+Thumbs.db
 .DS_Store
 .idea
+.vscode
 .README.md
 releases/
 tmp/
@@ -72,15 +74,9 @@ node_modules/
 __pycache__/
 
 # IDE files
-.vscode/
-.idea/
 *.swp
 *.swo
 *~
-
-# OS files
-Thumbs.db
-.DS_Store
 
 # Log files
 *.log

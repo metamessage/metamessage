@@ -66,7 +66,7 @@ public static class TypeInference
         }
         else if (type.IsEnum)
         {
-            return ValueType.ENUM;
+            return ValueType.ENUMS;
         }
         else if (type.IsArray)
         {

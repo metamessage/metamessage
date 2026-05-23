@@ -58,8 +58,8 @@ Catatan:
 
 ```jsonc
 {
-    // mm: type=datetime; desc=waktu pembuatan
-    "create_time": "2026-01-01 00:00:00"
+  // mm: type=datetime; desc=waktu pembuatan
+  "create_time": "2026-01-01 00:00:00",
 }
 ```
 
@@ -100,7 +100,7 @@ Definisikan tipe data menggunakan tag `type=`. Formatnya adalah `type=typeIdenti
 - ip: IP, mendukung IPv4/IPv6
 - url: URL, valid
 - email: email, valid
-- enum: enum, nilai adalah string yang dipisahkan oleh |
+- enums: enum, nilai adalah string yang dipisahkan oleh |
 - image: gambar, bytes di bawahnya
 - video: video, bytes di bawahnya
 
@@ -122,7 +122,7 @@ Tag adalah anotasi, label, atau atribut dari struktur bahasa pemrograman, atau k
 
 - unique: hanya berlaku untuk slices atau array, menunjukkan elemen tidak dapat diulang
 
-- default: nilai default, belum diaktifkan
+- default_val: nilai default, belum diaktifkan
 
 - example: data contoh yang digunakan ketika array, slices, atau map kosong, secara otomatis menghasilkan contoh nilai kosong
 
@@ -132,7 +132,7 @@ Tag adalah anotasi, label, atau atribut dari struktur bahasa pemrograman, atau k
 
 - size: kapasitas untuk array, panjang tetap untuk string atau byte array
 
-- enum: ketika tag ini ada, nilai secara default bertipe enum. Tipe enum di sini dalam bentuk string dan tidak menerima bentuk lain
+- enums: ketika tag ini ada, nilai secara default bertipe enum. Tipe enum di sini dalam bentuk string dan tidak menerima bentuk lain
 
 - pattern: regex, berlaku untuk string
 
@@ -389,14 +389,14 @@ fun main() {
 [npmjs.com](https://www.npmjs.com/package/metamessage)
 
 ```typescript
-import { encodeFromValue, decodeToValue, mm, ValueType } from 'metamessage';
+import { encodeFromValue, decodeToValue, mm, ValueType } from "metamessage";
 
-@mm({ desc: '' })
+@mm({ desc: "" })
 class Person {
-    @mm({ desc: '' })
-    name: string = ''
-    @mm({ desc: '' })
-    age: number = 0
+  @mm({ desc: "" })
+  name: string = "";
+  @mm({ desc: "" })
+  age: number = 0;
 }
 const person = { name: "Ed", age: 30 };
 const wire = encodeFromValue(person);
@@ -420,7 +420,7 @@ decoded = decode(wire)
 [npmjs.com](https://www.npmjs.com/package/metamessage)
 
 ```javascript
-const { encode, decode } = require('metamessage');
+const { encode, decode } = require("metamessage");
 
 const person = { name: "Ed", age: 30 };
 const wire = encode(person);
@@ -460,6 +460,8 @@ let decoded = try MetaMessage.decodeToValue(wire)
 ```
 
 #### PHP
+
+[packagist.org](https://packagist.org/packages/metamessage/metamessage)
 
 ```php
 <?php

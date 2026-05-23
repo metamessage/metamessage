@@ -140,7 +140,7 @@ mm.ip = (v: string, tag?: Tag) =>
 mm.decimal = (v: string, tag?: Tag) =>
   new MMValue(v, { ...tag, type: ValueType.Decimal } as Tag);
 mm.enum = (v: number, tag?: Tag) =>
-  new MMValue(v, { ...tag, type: ValueType.Enum } as Tag);
+  new MMValue(v, { ...tag, type: ValueType.Enums } as Tag);
 mm.image = (v: Uint8Array, tag?: Tag) =>
   new MMValue(v, { ...tag, type: ValueType.Image } as Tag);
 mm.video = (v: Uint8Array, tag?: Tag) =>

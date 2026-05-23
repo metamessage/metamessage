@@ -27,7 +27,7 @@ v_url = Val(data='https://example.com', text='https://example.com', tag=Tag(type
 print(f'URL: {to_jsonc(v_url)}')
 
 # Test: Enum 應該加引號
-v_enum = Val(data='a', text='a', tag=Tag(type=ValueType.Enum))
+v_enum = Val(data='a', text='a', tag=Tag(type=ValueType.Enums))
 print(f'Enum: {to_jsonc(v_enum)}')
 
 # Test: Bytes 應該加引號

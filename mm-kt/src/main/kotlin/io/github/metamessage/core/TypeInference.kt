@@ -101,7 +101,7 @@ object TypeInference {
                     ft == BigInteger::class.java -> ValueType.BIGINT
 
                     // UUID
-                    ft == UUID::class.java -> ValueType.Uuid
+                    ft == UUID::class.java -> ValueType.UUID
 
                     // 时间类型
                     ft == LocalDateTime::class.java || ft == Instant::class.java ->

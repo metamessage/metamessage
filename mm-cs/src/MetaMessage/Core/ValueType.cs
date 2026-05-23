@@ -32,7 +32,7 @@ public enum ValueType
     IP = 27,
     URL = 28,
     EMAIL = 29,
-    ENUM = 30,
+    ENUMS = 30,
     IMAGE = 31,
     VIDEO = 32
 }

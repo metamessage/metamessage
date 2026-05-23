@@ -294,7 +294,7 @@ mm_node_t *mm_email_create(const char *val, mm_field_attr_t attr) {
 }
 
 mm_node_t *mm_enum_create(const char *val, mm_field_attr_t attr) {
-  return mm_value_create_str(val, MM_VALUE_ENUM, attr);
+  return mm_value_create_str(val, MM_VALUE_ENUMS, attr);
 }
 
 mm_node_t *mm_image_create(const char *val, mm_field_attr_t attr) {

@@ -1,4 +1,5 @@
 using MetaMessage.Core;
+using MetaMessage.Ir;
 using MmVT = MetaMessage.Core.ValueType;
 
 namespace MetaMessage.Jsonc;
@@ -108,19 +109,22 @@ public class JsoncParser
             };
             if (trailingToken.Literal.Contains("mm:") && valueNode.Tag == null)
             {
-                valueNode.Tag = JsoncTag.Parse(trailingToken.Literal);
+                valueNode.Tag = Tag.Parse(trailingToken.Literal);
             }
         }
 
         if (valueNode.Tag != null)
         {
-            var mmTag = ConvertJsoncTagToMmTag(valueNode.Tag);
+            var mmTag = ConvertTagToMmTag(valueNode.Tag);
             // Convert string value to proper type for validation
             var validationValue = ConvertForValidation(valueNode.Value, mmTag.Type);
-            var result = Validator.Validate(validationValue, mmTag);
-            if (!result.IsValid)
+            if (validationValue != null || valueNode.Value == null)
             {
-                throw new Exception(string.Join(", ", result.Errors) ?? "Value validation failed");
+                var result = Validator.Validate(validationValue!, mmTag);
+                if (!result.IsValid)
+                {
+                    throw new Exception(string.Join(", ", result.Errors) ?? "Value validation failed");
+                }
             }
         }
 
@@ -142,7 +146,7 @@ public class JsoncParser
 
         if (obj.Tag != null)
         {
-            var mmTag = ConvertJsoncTagToMmTag(obj.Tag);
+            var mmTag = ConvertTagToMmTag(obj.Tag);
             var result = Validator.Validate(obj, mmTag);
             if (!result.IsValid)
             {
@@ -206,7 +210,7 @@ public class JsoncParser
                         };
                         if (trailingToken.Literal.Contains("mm:"))
                         {
-                            var trailingTag = JsoncTag.Parse(trailingToken.Literal);
+                            var trailingTag = Tag.Parse(trailingToken.Literal);
                             if (lastValue.Tag != null)
                             {
                                 MergeTag(lastValue.Tag, trailingTag);
@@ -257,7 +261,7 @@ public class JsoncParser
 
         if (array.Tag != null)
         {
-            var mmTag = ConvertJsoncTagToMmTag(array.Tag);
+            var mmTag = ConvertTagToMmTag(array.Tag);
             var result = Validator.Validate(array, mmTag);
             if (!result.IsValid)
             {
@@ -306,7 +310,7 @@ public class JsoncParser
                         };
                         if (trailingToken.Literal.Contains("mm:"))
                         {
-                            var trailingTag = JsoncTag.Parse(trailingToken.Literal);
+                            var trailingTag = Tag.Parse(trailingToken.Literal);
                             if (lastValue.Tag != null)
                             {
                                 MergeTag(lastValue.Tag, trailingTag);
@@ -342,7 +346,7 @@ public class JsoncParser
         return array;
     }
 
-    private JsoncTag? ConsumeCommentsFor(int anchorLine, JsoncNode? node = null)
+    private Tag? ConsumeCommentsFor(int anchorLine, JsoncNode? node = null)
     {
         if (_pendingComments.Count == 0)
         {
@@ -367,12 +371,12 @@ public class JsoncParser
             };
         }
 
-        JsoncTag? mergedTag = null;
+        Tag? mergedTag = null;
         foreach (var commentToken in _pendingComments)
         {
             if (commentToken.Literal.Contains("mm:"))
             {
-                var tag = JsoncTag.Parse(commentToken.Literal);
+                var tag = Tag.Parse(commentToken.Literal);
                 if (mergedTag == null)
                 {
                     mergedTag = tag;
@@ -388,7 +392,7 @@ public class JsoncParser
         return mergedTag;
     }
 
-    private static void MergeTag(JsoncTag target, JsoncTag source)
+    private static void MergeTag(Tag target, Tag source)
     {
         if (source.Type != ValueType.Unknown) target.Type = source.Type;
         if (source.Desc != null) target.Desc = source.Desc;
@@ -409,7 +413,7 @@ public class JsoncParser
         if (source.EleDesc != null) target.EleDesc = source.EleDesc;
     }
 
-    private MmTag ConvertJsoncTagToMmTag(JsoncTag jsoncTag)
+    private MmTag ConvertTagToMmTag(Tag jsoncTag)
     {
         var mmTag = new MmTag();
 
@@ -487,8 +491,8 @@ public class JsoncParser
             case ValueType.Email:
                 mmTag.Type = MmVT.EMAIL;
                 break;
-            case ValueType.Enum:
-                mmTag.Type = MmVT.ENUM;
+            case ValueType.Enums:
+                mmTag.Type = MmVT.ENUMS;
                 break;
             case ValueType.Image:
                 mmTag.Type = MmVT.IMAGE;
@@ -524,5 +528,40 @@ public class JsoncParser
         mmTag.DefaultVal = jsoncTag.DefaultValue ?? string.Empty;
 
         return mmTag;
+    }
+
+    private static object? ConvertForValidation(object? value, MmVT type)
+    {
+        if (value == null) return null;
+
+        switch (type)
+        {
+            case MmVT.I:
+            case MmVT.I8:
+            case MmVT.I16:
+            case MmVT.I32:
+                if (value is string s) return int.Parse(s);
+                return Convert.ToInt32(value);
+            case MmVT.I64:
+                if (value is string s64) return long.Parse(s64);
+                return Convert.ToInt64(value);
+            case MmVT.U:
+            case MmVT.U8:
+            case MmVT.U16:
+            case MmVT.U32:
+                if (value is string us) return uint.Parse(us);
+                return Convert.ToUInt32(value);
+            case MmVT.U64:
+                if (value is string u64s) return ulong.Parse(u64s);
+                return Convert.ToUInt64(value);
+            case MmVT.F32:
+            case MmVT.F64:
+                if (value is string fs) return double.Parse(fs);
+                return Convert.ToDouble(value);
+            case MmVT.BOOL:
+                return value;
+            default:
+                return value;
+        }
     }
 }

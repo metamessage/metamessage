@@ -154,7 +154,7 @@ export class Tag {
       } else {
         if (
           (this.type === ValueType.Arr && this.size > 0) ||
-          (this.type === ValueType.Enum && this.enums !== '')
+          (this.type === ValueType.Enums && this.enums !== '')
         ) {
         } else {
           parts.push(`type=${typeToString(this.type)}`);
@@ -246,7 +246,7 @@ export class Tag {
           (this.childType === ValueType.Arr &&
             this.childSize &&
             this.childSize > 0) ||
-          (this.childType === ValueType.Enum && this.childEnums)
+          (this.childType === ValueType.Enums && this.childEnums)
         ) {
         } else {
           parts.push(`child_type=${this.childType}`);
@@ -443,7 +443,7 @@ export class Tag {
       } else {
         if (
           (this.type === ValueType.Arr && this.size > 0) ||
-          (this.type === ValueType.Enum && this.enums !== '')
+          (this.type === ValueType.Enums && this.enums !== '')
         ) {
         } else {
           buf.push(KType);
@@ -603,7 +603,7 @@ export class Tag {
       } else {
         if (
           (this.childType === ValueType.Arr && this.childSize > 0) ||
-          (this.childType === ValueType.Enum && this.childEnums !== '')
+          (this.childType === ValueType.Enums && this.childEnums !== '')
         ) {
         } else {
           buf.push(KChildType);
@@ -1598,7 +1598,7 @@ export class Tag {
     if (idx === -1) {
       return {
         valid: false,
-        error: `value '${val}' not found in enum: ${enumList}`,
+        error: `value '${val}' not found in enums: ${enumList}`,
       };
     }
 
@@ -1835,7 +1835,7 @@ export function parseMMTag(tagStr: string): Tag {
         tag.size = BigInt(value) || 0n;
         break;
       case 'enums':
-        tag.type = ValueType.Enum;
+        tag.type = ValueType.Enums;
         tag.enums = value;
         break;
       case 'pattern':

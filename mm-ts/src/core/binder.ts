@@ -188,7 +188,7 @@ export class Binder {
       case ValueType.Ip:
       case ValueType.Uuid:
       case ValueType.Decimal:
-      case ValueType.Enum:
+      case ValueType.Enums:
         return '';
 
       case ValueType.Decimal:

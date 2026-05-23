@@ -79,7 +79,7 @@ export class JSONCPrinter {
         case ValueType.Ip:
         case ValueType.Url:
         case ValueType.Email:
-        case ValueType.Enum:
+        case ValueType.Enums:
           return `"${text}"`;
         default:
           return text;
@@ -101,7 +101,7 @@ export class JSONCPrinter {
         return `"${this.dateToText(val)}"`;
       case ValueType.Ip:
       case ValueType.Url:
-      case ValueType.Enum:
+      case ValueType.Enums:
         return `"${val}"`;
       case ValueType.Bool:
         return val ? 'true' : 'false';

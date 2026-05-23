@@ -711,7 +711,7 @@ class Encoder:
                 self._encode_simple(SimpleNullBool)
             else:
                 self._encode_bool(bool(val.data))
-        elif tag.type == ValueType.Enum:
+        elif tag.type == ValueType.Enums:
             if not tag.is_null:
                 self._encode_i64(int(val.data))
         else:

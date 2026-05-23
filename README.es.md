@@ -104,7 +104,7 @@ Defina tipos de datos usando la etiqueta `type=`. El formato es `type=typeIdenti
 - ip: IP, admite IPv4/IPv6
 - url: URL, debe ser una URL válida
 - email: correo electrónico, debe ser válido
-- enum: enum, valores son cadenas separadas por |
+- enums: enum, valores son cadenas separadas por |
 - image: imagen, bytes subyacentes
 - video: video, bytes subyacentes
 
@@ -119,12 +119,12 @@ Las etiquetas son anotaciones, etiquetas o atributos de estructuras de lenguajes
 - nullable: si se permite null, se aplica a todos los tipos
 - allow_empty: excepto para tipos booleanos, otros tipos no permiten vacío por defecto. Cuando se establece allow_empty, se permiten valores vacíos siguiendo ciertas reglas
 - unique: se aplica solo a slices o arreglos, indica que los elementos no pueden repetirse
-- default: valor predeterminado, no está habilitado aún
+- default_val: valor predeterminado, no está habilitado aún
 - example: datos de ejemplo usados cuando un arreglo o map está vacío
 - min: capacidad mínima en arreglos, longitud mínima en cadenas/byte arrays, valor mínimo en números
 - max: capacidad máxima en arreglos, longitud máxima en cadenas/byte arrays, valor máximo en números
 - size: capacidad en arreglos, longitud fija para cadenas o byte arrays
-- enum: cuando esta etiqueta está presente, el valor es de tipo enum por defecto. El tipo enum aquí se presenta en forma de cadena y no acepta otras formas
+- enums: cuando esta etiqueta está presente, el valor es de tipo enum por defecto. El tipo enum aquí se presenta en forma de cadena y no acepta otras formas
 - pattern: expresión regular, se aplica a cadenas
 - location: desplazamiento de zona horaria, valor predeterminado 0, se aplica solo a tipos datetime, rango -12 a 14
 - version: limita versión en uuid; en ip puede restringir ipv4 o ipv6
@@ -377,14 +377,14 @@ fun main() {
 [npmjs.com](https://www.npmjs.com/package/metamessage)
 
 ```typescript
-import { encodeFromValue, decodeToValue, mm, ValueType } from 'metamessage';
+import { encodeFromValue, decodeToValue, mm, ValueType } from "metamessage";
 
-@mm({ desc: '' })
+@mm({ desc: "" })
 class Person {
-    @mm({ desc: '' })
-    name: string = ''
-    @mm({ desc: '' })
-    age: number = 0
+  @mm({ desc: "" })
+  name: string = "";
+  @mm({ desc: "" })
+  age: number = 0;
 }
 const person = { name: "Ed", age: 30 };
 const wire = encodeFromValue(person);
@@ -408,7 +408,7 @@ decoded = decode(wire)
 [npmjs.com](https://www.npmjs.com/package/metamessage)
 
 ```javascript
-const { encode, decode } = require('metamessage');
+const { encode, decode } = require("metamessage");
 
 const person = { name: "Ed", age: 30 };
 const wire = encode(person);
@@ -448,6 +448,8 @@ let decoded = try MetaMessage.decodeToValue(wire)
 ```
 
 #### PHP
+
+[packagist.org](https://packagist.org/packages/metamessage/metamessage)
 
 ```php
 <?php

@@ -237,22 +237,22 @@ private fun valueToNode(v: Any?, tag: Tag?, depth: Int, path: String): Node {
                     data = result.data
                     text = result.text ?: Null
                 }
-                ValueType.ENUM -> {
+                ValueType.ENUMS -> {
                     val result = workTag.validateEnum(v)
                     data = result.data
                     text = result.text ?: Null
                 }
-                ValueType.Uuid -> {
+                ValueType.UUID -> {
                     val result = workTag.validateUUID(v)
                     data = result.data
                     text = result.text ?: Null
                 }
-                ValueType.Url -> {
+                ValueType.URL -> {
                     val result = workTag.validateURL(v)
                     data = result.data
                     text = result.text ?: Null
                 }
-                ValueType.Ip -> {
+                ValueType.IP -> {
                     val result = workTag.validateIP(v)
                     data = result.data
                     text = result.text ?: Null
@@ -281,10 +281,10 @@ private fun valueToNode(v: Any?, tag: Tag?, depth: Int, path: String): Node {
         }
         is UUID -> {
             if (workTag.type == ValueType.UNKNOWN) {
-                workTag.type = ValueType.Uuid
+                workTag.type = ValueType.UUID
             }
             when (workTag.type) {
-                ValueType.Uuid -> {
+                ValueType.UUID -> {
                     val result = workTag.validateUUID(v.toString())
                     data = result.data
                     text = result.text ?: Null
@@ -297,10 +297,10 @@ private fun valueToNode(v: Any?, tag: Tag?, depth: Int, path: String): Node {
         }
         is InetAddress -> {
             if (workTag.type == ValueType.UNKNOWN) {
-                workTag.type = ValueType.Ip
+                workTag.type = ValueType.IP
             }
             when (workTag.type) {
-                ValueType.Ip -> {
+                ValueType.IP -> {
                     val result = workTag.validateIP(v.hostAddress ?: "")
                     data = result.data
                     text = result.text ?: Null
@@ -313,10 +313,10 @@ private fun valueToNode(v: Any?, tag: Tag?, depth: Int, path: String): Node {
         }
         is URI -> {
             if (workTag.type == ValueType.UNKNOWN) {
-                workTag.type = ValueType.Url
+                workTag.type = ValueType.URL
             }
             when (workTag.type) {
-                ValueType.Url -> {
+                ValueType.URL -> {
                     val result = workTag.validateURL(v.toString())
                     data = result.data
                     text = result.text ?: Null
@@ -828,15 +828,15 @@ private fun createExampleValue(type: ValueType): Any? {
         ValueType.U64 -> BigInteger.ZERO
         ValueType.F32 -> 0.0f
         ValueType.F64 -> 0.0
-        ValueType.STR, ValueType.DECIMAL, ValueType.EMAIL, ValueType.Url, ValueType.Ip -> ""
+        ValueType.STR, ValueType.DECIMAL, ValueType.EMAIL, ValueType.URL, ValueType.IP -> ""
         ValueType.BOOL -> false
         ValueType.BYTES, ValueType.IMAGE -> ByteArray(0)
         ValueType.BIGINT -> BigInteger.ZERO
-        ValueType.Uuid -> UUID(0, 0)
+        ValueType.UUID -> UUID(0, 0)
         ValueType.DATETIME -> LocalDateTime.of(1970, 1, 1, 0, 0, 0)
         ValueType.DATE -> LocalDate.of(1970, 1, 1)
         ValueType.TIME -> LocalTime.of(0, 0, 0)
-        ValueType.ENUM -> 0
+        ValueType.ENUMS -> 0
         ValueType.VEC -> emptyList<Any>()
         ValueType.MAP -> emptyMap<String, Any>()
         ValueType.OBJ -> emptyMap<String, Any>()

@@ -1,8 +1,10 @@
-namespace MetaMessage.Jsonc;
+using MetaMessage.Jsonc;
 
-public class JsoncTag
+namespace MetaMessage.Ir;
+
+public class Tag
 {
-    public ValueType Type { get; set; } = ValueType.Unknown;
+    public Jsonc.ValueType Type { get; set; } = Jsonc.ValueType.Unknown;
     public string? Desc { get; set; }
     public bool Nullable { get; set; }
     public bool IsNull { get; set; }
@@ -15,15 +17,15 @@ public class JsoncTag
     public string? Location { get; set; }
     public string? Version { get; set; }
     public string? Mime { get; set; }
-    public ValueType? ChildType { get; set; }
+    public Jsonc.ValueType? ChildType { get; set; }
     public string? ChildDesc { get; set; }
     public string? KeyDesc { get; set; }
     public string? ValueDesc { get; set; }
     public string? EleDesc { get; set; }
 
-    public static JsoncTag Parse(string comment)
+    public static Tag Parse(string comment)
     {
-        var tag = new JsoncTag();
+        var tag = new Tag();
         if (string.IsNullOrWhiteSpace(comment))
         {
             return tag;
@@ -69,7 +71,7 @@ public class JsoncTag
             switch (key.ToLower())
             {
                 case "type":
-                    tag.Type = ValueTypeExtensions.ParseValueType(value);
+                    tag.Type = Jsonc.ValueTypeExtensions.ParseValueType(value);
                     break;
                 case "desc":
                     tag.Desc = value;
@@ -110,7 +112,7 @@ public class JsoncTag
                     tag.Mime = value;
                     break;
                 case "child_type":
-                    tag.ChildType = ValueTypeExtensions.ParseValueType(value);
+                    tag.ChildType = Jsonc.ValueTypeExtensions.ParseValueType(value);
                     break;
                 case "child_desc":
                     tag.ChildDesc = value;
@@ -133,7 +135,7 @@ public class JsoncTag
     public override string ToString()
     {
         var parts = new List<string>();
-        if (Type != ValueType.Unknown)
+        if (Type != Jsonc.ValueType.Unknown)
         {
             parts.Add($"type={Type.ToTypeString()}");
         }
@@ -151,7 +153,7 @@ public class JsoncTag
         }
         if (!string.IsNullOrEmpty(DefaultValue))
         {
-            parts.Add($"default={DefaultValue}");
+            parts.Add($"default_val={DefaultValue}");
         }
         if (!string.IsNullOrEmpty(MinValue))
         {
@@ -167,7 +169,7 @@ public class JsoncTag
         }
         if (EnumValues != null && EnumValues.Count > 0)
         {
-            parts.Add($"enum={string.Join(",", EnumValues)}");
+            parts.Add($"enums={string.Join(",", EnumValues)}");
         }
         if (!string.IsNullOrEmpty(Pattern))
         {

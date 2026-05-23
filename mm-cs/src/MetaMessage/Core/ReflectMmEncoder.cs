@@ -184,7 +184,7 @@ public static class ReflectMmEncoder
         if (!string.IsNullOrEmpty(src.Enums))
         {
             dst.Enums = src.Enums;
-            dst.Type = ValueType.ENUM;
+            dst.Type = ValueType.ENUMS;
         }
         dst.LocationHours = src.LocationHours;
         dst.Version = src.Version;
@@ -197,7 +197,7 @@ public static class ReflectMmEncoder
         if (!string.IsNullOrEmpty(src.ChildEnums))
         {
             dst.ChildEnums = src.ChildEnums;
-            dst.ChildType = ValueType.ENUM;
+            dst.ChildType = ValueType.ENUMS;
         }
     }
 
@@ -300,7 +300,7 @@ public static class ReflectMmEncoder
                 var time = (DateTime)value!;
                 encoder.EncodeInt64(TimeUtil.SecondsOfDay(time));
                 break;
-            case ValueType.ENUM:
+            case ValueType.ENUMS:
                 encoder.EncodeInt64(Convert.ToInt64(value));
                 break;
             default:

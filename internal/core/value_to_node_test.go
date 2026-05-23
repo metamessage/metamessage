@@ -23,7 +23,7 @@ func TestValueToNode(t *testing.T) {
 		ID       int64    `mm:"name=id; min=1;desc=用户ID"`
 		Name     string   `mm:"required; max_len=20;desc=用户名"`
 		Age      int      `mm:"min=18;max=120;desc=年龄"`
-		IsActive bool     `mm:"default=true;desc=是否激活"`
+		IsActive bool     `mm:"default_val=true;desc=是否激活"`
 		Tags     []string `mm:"max_items=10;desc=标签列表"`
 		Addr     Address  `mm:"required;desc=地址信息"`
 	}
@@ -46,7 +46,7 @@ func TestValueToNode(t *testing.T) {
 		ID       int64    `mm:"name=id; min=1;desc=用户ID"`
 		Name     string   `mm:"name=name; required; max_len=20;desc=用户名"`
 		Age      int      `mm:"name=age; min=18;max=120;desc=年龄"`
-		IsActive bool     `mm:"name=is_active; default=true;desc=是否激活"`
+		IsActive bool     `mm:"name=is_active; default_val=true;desc=是否激活"`
 		Tags     []string `mm:"name=tags; max_items=10;desc=标签列表"`
 		Addr     *A
 	}

@@ -34,7 +34,7 @@ enum ValueType
     case IP;
     case URL;
     case EMAIL;
-    case ENUM;
+    case ENUMS;
     case IMAGE;
     case VIDEO;
 
@@ -82,7 +82,7 @@ enum ValueType
             self::IP => 'ip',
             self::URL => 'url',
             self::EMAIL => 'email',
-            self::ENUM => 'enum',
+            self::ENUMS => 'enums',
             self::IMAGE => 'image',
             self::VIDEO => 'video',
         };

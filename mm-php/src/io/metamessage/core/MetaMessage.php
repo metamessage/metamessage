@@ -349,7 +349,7 @@ class MetaMessage
             if ($tag->type === ValueType::UNKNOWN) {
                 $tag->type = ValueType::STR;
             }
-            if ($tag->type === ValueType::ENUM) {
+            if ($tag->type === ValueType::ENUMS) {
                 return new Value((int)$v, $v, $tag, $path);
             }
             return new Value($v, $v, $tag, $path);
@@ -485,7 +485,7 @@ class MetaMessage
             case ValueType::URL:
             case ValueType::UUID:
             case ValueType::DECIMAL:
-            case ValueType::ENUM:
+            case ValueType::ENUMS:
             case ValueType::IP:
                 $out = $val->Text;
                 break;

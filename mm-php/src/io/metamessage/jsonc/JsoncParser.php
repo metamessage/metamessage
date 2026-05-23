@@ -341,14 +341,14 @@ class JsoncParser
                                 }
                                 break;
 
-                            case ValueType::ENUM:
+                            case ValueType::ENUMS:
                                 if ($tag->enumValues === '') {
                                     throw new \Exception('enum empty');
                                 }
 
                                 if ($tag->isNull) {
                                     if ($text !== '') {
-                                        throw new \Exception(sprintf('invalid enum: %s, valid: ""', json_encode($text)));
+                                        throw new \Exception(sprintf('invalid enums: %s, valid: ""', json_encode($text)));
                                     }
                                     $data = -1;
                                 } else {
@@ -1809,7 +1809,7 @@ class JsoncParser
 
         if ($idx === -1) {
             $enumList = implode(', ', $enums);
-            throw new \Exception(sprintf("value '%s' not found in enum: [%s]", $val, $enumList));
+            throw new \Exception(sprintf("value '%s' not found in enums: [%s]", $val, $enumList));
         }
 
         return [$idx, $val];

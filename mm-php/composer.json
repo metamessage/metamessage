@@ -1,5 +1,5 @@
 {
-    "name": "metamessage/mm-php",
+    "name": "metamessage/metamessage",
     "description": "PHP implementation of metamessage binary codec (compatible with github.com/metamessage/metamessage Go mm package). Field metadata via attributes.",
     "type": "library",
     "autoload": {

@@ -1,0 +1,24 @@
+Thumbs.db
+.DS_Store
+.idea
+.vscode
+
+.README.md
+tmp/
+
+.lock
+*.diff
+
+# PHP
+vendor/
+*.log
+.phpunit.cache
+
+# IDE files
+*.swp
+*.swo
+*~
+
+# Test files
+coverage/
+.nyc_output/

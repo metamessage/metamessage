@@ -203,7 +203,7 @@ describe('JSONC Tag Parser', () => {
       ['ip', ValueType.Ip],
       ['url', ValueType.Url],
       ['email', ValueType.Email],
-      ['enums', ValueType.Enum],
+      ['enums', ValueType.Enums],
       ['arr', ValueType.Arr],
       ['struct', ValueType.Obj],
     ];

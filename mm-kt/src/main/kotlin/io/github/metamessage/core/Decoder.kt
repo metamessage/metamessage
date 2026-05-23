@@ -124,10 +124,10 @@ class Decoder() {
             ValueType.U64 -> Value(0L, "0", tag)
             ValueType.F32 -> Value(0f, "0.0", tag)
             ValueType.F64 -> Value(0.0, "0.0", tag)
-            ValueType.EMAIL, ValueType.Uuid, ValueType.DECIMAL -> Value("", "", tag)
+            ValueType.EMAIL, ValueType.UUID, ValueType.DECIMAL -> Value("", "", tag)
             ValueType.BIGINT -> Value(BigInteger.ZERO, "0", tag)
-            ValueType.Url -> Value("", "", tag)
-            ValueType.Ip -> Value(ByteArray(0), ipNullText(tag.version), tag)
+            ValueType.URL -> Value("", "", tag)
+            ValueType.IP -> Value(ByteArray(0), ipNullText(tag.version), tag)
             else -> null
         }
     }
@@ -272,7 +272,7 @@ class Decoder() {
             ValueType.DATETIME -> decodeDateTime(tag, v)
             ValueType.DATE -> decodeDate(tag, v)
             ValueType.TIME -> decodeTime(tag, v)
-            ValueType.ENUM -> decodeEnum(tag, v)
+            ValueType.ENUMS -> decodeEnum(tag, v)
             else -> throw MmDecodeException("unsupported int type: ${tag.type}")
         }
     }
@@ -379,8 +379,8 @@ class Decoder() {
         val node =
                 when (tag.type) {
                     ValueType.STR, ValueType.EMAIL -> Value(text, text, tag)
-                    ValueType.Url -> Value(text, text, tag)
-                    ValueType.Ip -> Value(text, text, tag)
+                    ValueType.URL -> Value(text, text, tag)
+                    ValueType.IP -> Value(text, text, tag)
                     else -> throw MmDecodeException("unsupported string type: ${tag.type}")
                 }
         return Decoded(node, offset - start)
@@ -410,12 +410,12 @@ class Decoder() {
                 when (tag.type) {
                     ValueType.BYTES -> Value(bs, "", tag)
                     ValueType.BIGINT -> bigintFromBytes(bs, tag)
-                    ValueType.Uuid -> {
+                    ValueType.UUID -> {
                         if (bs.size != 16) throw MmDecodeException("uuid length")
                         val u = uuidFromBytes(bs)
                         Value(u, u.toString(), tag)
                     }
-                    ValueType.Ip -> Value(bs, "", tag)
+                    ValueType.IP -> Value(bs, "", tag)
                     else -> throw MmDecodeException("unsupported bytes type: ${tag.type}")
                 }
         return Decoded(node, offset - start)

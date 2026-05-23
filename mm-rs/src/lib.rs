@@ -155,9 +155,9 @@ mod tests {
 
     #[test]
     fn test_tag_parse_type_aliases() {
-        let tag = Tag::parse("// mm:type=slice").unwrap();
+        let tag = Tag::parse("// mm:type=vec").unwrap();
         assert_eq!(tag.value_type, ValueType::Vec);
-        let tag = Tag::parse("// mm:type=array").unwrap();
+        let tag = Tag::parse("// mm:type=arr").unwrap();
         assert_eq!(tag.value_type, ValueType::Arr);
         let tag = Tag::parse("// mm:type=vec").unwrap();
         assert_eq!(tag.value_type, ValueType::Vec);

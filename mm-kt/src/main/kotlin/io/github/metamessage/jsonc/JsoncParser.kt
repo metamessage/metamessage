@@ -113,7 +113,7 @@ class JsoncParser(private val tokens: List<JsoncToken>) {
                                 ValueType.IP -> parseIPValue(text, tag)
                                 ValueType.URL -> parseURLValue(text, tag)
                                 ValueType.EMAIL -> parseEmailValue(text, tag)
-                                ValueType.ENUM -> parseEnumValue(text, tag)
+                                ValueType.ENUMS -> parseEnumValue(text, tag)
                                 ValueType.IMAGE -> parseImageValue(text, tag)
                                 else ->
                                         throw JsoncException(
@@ -358,7 +358,7 @@ class JsoncParser(private val tokens: List<JsoncToken>) {
 
         return if (tag.isNull) {
             if (text != "") {
-                throw JsoncException("invalid enum: \"$text\", valid: \"\"")
+                throw JsoncException("invalid enums: \"$text\", valid: \"\"")
             }
             -1 to ""
         } else {
@@ -880,7 +880,7 @@ class JsoncParser(private val tokens: List<JsoncToken>) {
                                 "ip" -> ValueType.IP
                                 "url" -> ValueType.URL
                                 "email" -> ValueType.EMAIL
-                                "enums" -> ValueType.ENUM
+                                "enums" -> ValueType.ENUMS
                                 "arr" -> ValueType.ARR
                                 "vec" -> ValueType.VEC
                                 "obj" -> ValueType.OBJ
@@ -897,7 +897,7 @@ class JsoncParser(private val tokens: List<JsoncToken>) {
                 "max" -> tag.max = value
                 "size" -> tag.size = value.toIntOrNull() ?: 0
                 "enums" -> {
-                    tag.type = ValueType.ENUM
+                    tag.type = ValueType.ENUMS
                     tag.enums = value
                 }
                 "pattern" -> tag.pattern = value

@@ -31,7 +31,7 @@ enum class ValueType {
     IP,
     URL,
     EMAIL,
-    ENUM,
+    ENUMS,
     IMAGE,
     VIDEO;
 
@@ -69,7 +69,7 @@ enum class ValueType {
                 IP -> "ip"
                 URL -> "url"
                 EMAIL -> "email"
-                ENUM -> "enums"
+                ENUMS -> "enums"
                 IMAGE -> "image"
                 VIDEO -> "video"
             }

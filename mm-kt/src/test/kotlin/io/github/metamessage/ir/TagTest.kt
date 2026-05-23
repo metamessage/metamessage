@@ -80,7 +80,7 @@ class TagTest {
 
     @Test
     fun parseMMTagWithDefault() {
-        val t = Tag.parseMMTag("mm: default=42")
+        val t = Tag.parseMMTag("mm: default_val=42")
         assertEquals("42", t.default_val)
     }
 
@@ -104,8 +104,8 @@ class TagTest {
 
     @Test
     fun parseMMTagWithEnum() {
-        val t = Tag.parseMMTag("mm: enum=a|b|c")
-        assertEquals(ValueType.ENUM, t.type)
+        val t = Tag.parseMMTag("mm: enums=a|b|c")
+        assertEquals(ValueType.ENUMS, t.type)
         assertEquals("a|b|c", t.enums)
     }
 
@@ -271,7 +271,7 @@ class TagTest {
 
     @Test
     fun toStringBasicType() {
-        val t = Tag().apply { type = ValueType.Uuid }
+        val t = Tag().apply { type = ValueType.UUID }
         val s = t.toString()
         assertTrue(s.contains("type=uuid"))
     }
@@ -335,7 +335,7 @@ class TagTest {
 
     @Test
     fun toBytesWithType() {
-        val t = Tag().apply { type = ValueType.Uuid }
+        val t = Tag().apply { type = ValueType.UUID }
         val bytes = t.toBytes()
         assertTrue(bytes.isNotEmpty())
     }

@@ -49,7 +49,7 @@ class JsoncPrinter
             case ValueType::IP:
             case ValueType::URL:
             case ValueType::EMAIL:
-            case ValueType::ENUM:
+            case ValueType::ENUMS:
                 return '"' . $v->Text . '"';
 
             case ValueType::I:

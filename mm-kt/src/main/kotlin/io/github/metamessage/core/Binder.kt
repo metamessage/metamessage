@@ -141,19 +141,19 @@ object Binder {
             ValueType.BIGINT -> {
                 (data as? BigInteger ?: BigInteger.ZERO) as T
             }
-            ValueType.Uuid -> {
+            ValueType.UUID -> {
                 (data as? UUID ?: UUID(0, 0)).toString() as T
             }
             ValueType.DECIMAL, ValueType.EMAIL -> {
                 (data as? String ?: text) as T
             }
-            ValueType.Ip -> {
+            ValueType.IP -> {
                 (data as? java.net.InetAddress) as T
             }
-            ValueType.Url -> {
+            ValueType.URL -> {
                 (data as? java.net.URI) as T
             }
-            ValueType.ENUM -> {
+            ValueType.ENUMS -> {
                 text as T
             }
             ValueType.I -> {
@@ -206,7 +206,7 @@ object Binder {
     }
 
     private fun convertScalarToAny(value: Value): Any? {
-        return convertScalar(value, Any::class.java) as? Any?
+        return convertScalar(value, Any::class.java)
     }
 
     private fun materialize(f: java.lang.reflect.Field, node: Node): Any? {

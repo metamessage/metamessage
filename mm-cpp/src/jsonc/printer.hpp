@@ -91,7 +91,7 @@ inline void printValue(std::ostringstream &os, std::shared_ptr<ir::Value> val,
   case ir::ValueType::U64:
   case ir::ValueType::F32:
   case ir::ValueType::F64:
-  case ir::ValueType::Enum:
+  case ir::ValueType::Enums:
     os << val->text;
     break;
   case ir::ValueType::Bigint:

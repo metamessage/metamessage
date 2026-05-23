@@ -268,7 +268,7 @@ export class MMEncoder {
           n = this.encodeBool(Boolean(val.getValue()));
         }
         break;
-      case ValueType.Enum:
+      case ValueType.Enums:
         if (!tag.isNull) {
           n = this.encodeInt64(BigInt(val.getValue() as number));
         }

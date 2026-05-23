@@ -101,7 +101,7 @@ class MmValidator
             case ValueType::EMAIL:
                 $this->validateEmail($value, $tag, $result);
                 break;
-            case ValueType::ENUM:
+            case ValueType::ENUMS:
                 $this->validateEnum($value, $tag, $result);
                 break;
             case ValueType::IMAGE:
@@ -1290,7 +1290,7 @@ class MmValidator
 
         if ($idx === -1) {
             $enumList = implode(', ', $enums);
-            $result->addError("value '$val' not found in enum: [$enumList]");
+            $result->addError("value '$val' not found in enums: [$enumList]");
             return;
         }
 

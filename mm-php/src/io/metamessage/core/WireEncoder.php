@@ -343,7 +343,7 @@ class WireEncoder
                 }
                 break;
 
-            case ValueType::ENUM:
+            case ValueType::ENUMS:
                 if ($tag->isNull) {
                     $n = $this->encodeSimple(SimpleValue::NULL_STRING);
                 } else {

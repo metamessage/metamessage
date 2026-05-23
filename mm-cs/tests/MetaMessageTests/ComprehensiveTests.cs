@@ -200,7 +200,7 @@ public class ComprehensiveTests
         enc.EncodeBytes(data);
         var dec = new WireDecoder(enc.ToByteArray());
         var result = (MmScalar)dec.Decode();
-        Assert.Empty(result.Data as byte[]);
+        Assert.Empty((byte[])result.Data!);
     }
 
     // ========== BigInt Tests ==========
@@ -314,7 +314,7 @@ public class ComprehensiveTests
     [Fact]
     public void TestEncodeTree_DecodeToTree_NullValues()
     {
-        var scalar = new MmScalar(null, "null", new MmTag { Type = MmVT.I, IsNull = true });
+        var scalar = new MmScalar(null!, "null", new MmTag { Type = MmVT.I, IsNull = true });
         byte[] encoded = EncodeTree(scalar);
         var decoded = DecodeToTree(encoded);
         var resultScalar = Assert.IsType<MmScalar>(decoded);
@@ -652,7 +652,7 @@ public class ComprehensiveTests
         var validResult = Validator.Validate("hello", tag);
         Assert.True(validResult.IsValid);
 
-        var nullResult = Validator.Validate(null, tag);
+        var nullResult = Validator.Validate((object?)null!, tag);
         Assert.False(nullResult.IsValid);
     }
 

@@ -174,7 +174,7 @@ class mm:
             elif k == 'size':
                 tag.size = int(v)
             elif k == 'enums':
-                tag.type = ValueType.Enum
+                tag.type = ValueType.Enums
                 tag.enums = str(v)
             elif k == 'pattern':
                 tag.pattern = str(v)
@@ -250,7 +250,7 @@ def _python_type_to_value_type(py_type: type) -> ValueType:
     if py_type in _PYTHON_TYPE_TO_VALUETYPE:
         return _PYTHON_TYPE_TO_VALUETYPE[py_type]
     if isinstance(py_type, type) and issubclass(py_type, Enum):
-        return ValueType.Enum
+        return ValueType.Enums
     return ValueType.Unknown
 
 
@@ -349,10 +349,10 @@ def value_to_node(value: Any, tag: Optional[Tag] = None, depth: int = 0, path: s
 
     elif isinstance(value, str):
         # Auto-detect: any non-string type that got inherited gets overridden
-        if tag.type == ValueType(0) or tag.type not in (ValueType.Str, ValueType.Email, ValueType.Enum, ValueType.Decimal, ValueType.Uuid,
+        if tag.type == ValueType(0) or tag.type not in (ValueType.Str, ValueType.Email, ValueType.Enums, ValueType.Decimal, ValueType.Uuid,
                             ValueType.Url, ValueType.Bigint):
             tag.type = ValueType.Str
-        if tag.type in (ValueType.Str, ValueType.Email, ValueType.Enum, ValueType.Decimal, ValueType.Uuid,
+        if tag.type in (ValueType.Str, ValueType.Email, ValueType.Enums, ValueType.Decimal, ValueType.Uuid,
                         ValueType.Url, ValueType.Bigint):
             val_str = _validate_str(value, tag)
             if val_str is not None:

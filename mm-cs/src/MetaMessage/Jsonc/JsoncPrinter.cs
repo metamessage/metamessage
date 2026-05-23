@@ -1,3 +1,5 @@
+using MetaMessage.Ir;
+
 namespace MetaMessage.Jsonc;
 
 public class JsoncPrinter
@@ -35,7 +37,7 @@ public class JsoncPrinter
         }
     }
 
-    private void PrintTag(JsoncTag? tag, System.Text.StringBuilder sb)
+    private void PrintTag(Tag? tag, System.Text.StringBuilder sb)
     {
         if (tag == null) return;
         var tagStr = tag.ToString();
