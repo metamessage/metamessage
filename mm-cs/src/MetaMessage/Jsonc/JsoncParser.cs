@@ -520,8 +520,8 @@ public class JsoncParser
         mmTag.IsNull = jsoncTag.IsNull;
         mmTag.Min = jsoncTag.MinValue ?? string.Empty;
         mmTag.Max = jsoncTag.MaxValue ?? string.Empty;
-        mmTag.Enum = jsoncTag.EnumValues != null ? string.Join("|", jsoncTag.EnumValues) : string.Empty;
-        mmTag.DefaultValue = jsoncTag.DefaultValue ?? string.Empty;
+        mmTag.Enums = jsoncTag.EnumValues != null ? string.Join("|", jsoncTag.EnumValues) : string.Empty;
+        mmTag.DefaultVal = jsoncTag.DefaultValue ?? string.Empty;
 
         return mmTag;
     }

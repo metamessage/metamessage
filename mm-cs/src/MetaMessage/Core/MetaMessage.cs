@@ -323,7 +323,7 @@ public static class MetaMessage
         mmTag.IsNull = tag.IsNull;
         mmTag.Min = tag.MinValue ?? string.Empty;
         mmTag.Max = tag.MaxValue ?? string.Empty;
-        mmTag.DefaultValue = tag.DefaultValue ?? string.Empty;
+        mmTag.DefaultVal = tag.DefaultValue ?? string.Empty;
         return mmTag;
     }
 
@@ -338,8 +338,8 @@ public static class MetaMessage
             tag.MinValue = mmTag.Min;
         if (!string.IsNullOrEmpty(mmTag.Max) && mmTag.Max != "0")
             tag.MaxValue = mmTag.Max;
-        if (!string.IsNullOrEmpty(mmTag.DefaultValue))
-            tag.DefaultValue = mmTag.DefaultValue;
+        if (!string.IsNullOrEmpty(mmTag.DefaultVal))
+            tag.DefaultValue = mmTag.DefaultVal;
         return tag;
     }
 

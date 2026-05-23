@@ -64,11 +64,11 @@ export class Tag {
   nullable: boolean = false;
   allowEmpty: boolean = false;
   unique: boolean = false;
-  default: string = '';
+  default_val: string = '';
   min: string = '';
   max: string = '';
   size: bigint = 0n;
-  enum: string = '';
+  enums: string = '';
   pattern: string = '';
   location: number = 0;
   version: number = 0;
@@ -79,11 +79,11 @@ export class Tag {
   childNullable: boolean = false;
   childAllowEmpty: boolean = false;
   childUnique: boolean = false;
-  childDefault: string = '';
+  childDefaultVal: string = '';
   childMin: string = '';
   childMax: string = '';
   childSize: bigint = 0n;
-  childEnum: string = '';
+  childEnums: string = '';
   childPattern: string = '';
   childLocation: number = 0;
   childVersion: number = 0;
@@ -123,8 +123,8 @@ export class Tag {
     if (this.childSize !== 0n) {
       this.size = tag.childSize;
     }
-    if (this.childEnum !== '') {
-      this.enum = tag.childEnum;
+    if (this.childEnums !== '') {
+      this.enums = tag.childEnums;
     }
     if (this.childPattern !== '') {
       this.pattern = tag.childPattern;
@@ -154,7 +154,7 @@ export class Tag {
       } else {
         if (
           (this.type === ValueType.Arr && this.size > 0) ||
-          (this.type === ValueType.Enum && this.enum !== '')
+          (this.type === ValueType.Enum && this.enums !== '')
         ) {
         } else {
           parts.push(`type=${typeToString(this.type)}`);
@@ -192,8 +192,8 @@ export class Tag {
       parts.push('unique');
     }
 
-    if (this.default) {
-      parts.push(`default=${this.default}`);
+    if (this.default_val) {
+      parts.push(`default=${this.default_val}`);
     }
 
     if (this.min) {
@@ -208,8 +208,8 @@ export class Tag {
       parts.push(`size=${this.size}`);
     }
 
-    if (this.enum) {
-      parts.push(`enum=${this.enum}`);
+    if (this.enums) {
+      parts.push(`enum=${this.enums}`);
     }
 
     if (this.pattern) {
@@ -246,7 +246,7 @@ export class Tag {
           (this.childType === ValueType.Arr &&
             this.childSize &&
             this.childSize > 0) ||
-          (this.childType === ValueType.Enum && this.childEnum)
+          (this.childType === ValueType.Enum && this.childEnums)
         ) {
         } else {
           parts.push(`child_type=${this.childType}`);
@@ -270,8 +270,8 @@ export class Tag {
       parts.push('child_unique');
     }
 
-    if (this.childDefault) {
-      parts.push(`child_default=${this.childDefault}`);
+    if (this.childDefaultVal) {
+      parts.push(`child_default=${this.childDefaultVal}`);
     }
 
     if (this.childMin) {
@@ -286,8 +286,8 @@ export class Tag {
       parts.push(`child_size=${this.childSize}`);
     }
 
-    if (this.childEnum) {
-      parts.push(`child_enum=${this.childEnum}`);
+    if (this.childEnums) {
+      parts.push(`child_enum=${this.childEnums}`);
     }
 
     if (this.childPattern) {
@@ -443,7 +443,7 @@ export class Tag {
       } else {
         if (
           (this.type === ValueType.Arr && this.size > 0) ||
-          (this.type === ValueType.Enum && this.enum !== '')
+          (this.type === ValueType.Enum && this.enums !== '')
         ) {
         } else {
           buf.push(KType);
@@ -464,9 +464,9 @@ export class Tag {
       buf.push(KUnique | 1);
     }
 
-    if (this.default !== '' && !this.isInherit) {
+    if (this.default_val !== '' && !this.isInherit) {
       const encoder = new TextEncoder();
-      const defaultBytes = encoder.encode(this.default);
+      const defaultBytes = encoder.encode(this.default_val);
       const l = defaultBytes.length;
 
       if (l < 7) {
@@ -513,9 +513,9 @@ export class Tag {
       this.encodeU64(buf, KSize, this.size);
     }
 
-    if (this.enum !== '' && !this.isInherit) {
+    if (this.enums !== '' && !this.isInherit) {
       const encoder = new TextEncoder();
-      const enumBytes = encoder.encode(this.enum);
+      const enumBytes = encoder.encode(this.enums);
       const l = enumBytes.length;
 
       if (l <= 5) {
@@ -603,7 +603,7 @@ export class Tag {
       } else {
         if (
           (this.childType === ValueType.Arr && this.childSize > 0) ||
-          (this.childType === ValueType.Enum && this.childEnum !== '')
+          (this.childType === ValueType.Enum && this.childEnums !== '')
         ) {
         } else {
           buf.push(KChildType);
@@ -628,9 +628,9 @@ export class Tag {
       buf.push(KChildUnique | 1);
     }
 
-    if (this.childDefault !== '') {
+    if (this.childDefaultVal !== '') {
       const encoder = new TextEncoder();
-      const childDefaultBytes = encoder.encode(this.childDefault);
+      const childDefaultBytes = encoder.encode(this.childDefaultVal);
       const l = childDefaultBytes.length;
 
       if (l < 7) {
@@ -677,9 +677,9 @@ export class Tag {
       this.encodeU64(buf, KChildSize, BigInt(this.childSize));
     }
 
-    if (this.childEnum !== '') {
+    if (this.childEnums !== '') {
       const encoder = new TextEncoder();
-      const childEnumBytes = encoder.encode(this.childEnum);
+      const childEnumBytes = encoder.encode(this.childEnums);
       const l = childEnumBytes.length;
 
       if (l <= 5) {
@@ -1585,10 +1585,10 @@ export class Tag {
       return { valid: false, error: 'type enum not allow empty value ""' };
     }
 
-    const enums = this.enum.split('|');
+    const enumList = this.enums.split('|');
     let idx = -1;
-    for (let i = 0; i < enums.length; i++) {
-      const e = enums[i];
+    for (let i = 0; i < enumList.length; i++) {
+      const e = enumList[i];
       if (e && e.trim() === val) {
         idx = i;
         break;
@@ -1598,7 +1598,7 @@ export class Tag {
     if (idx === -1) {
       return {
         valid: false,
-        error: `value '${val}' not found in enum: ${enums}`,
+        error: `value '${val}' not found in enum: ${enumList}`,
       };
     }
 
@@ -1823,7 +1823,7 @@ export function parseMMTag(tagStr: string): Tag {
         tag.unique = true;
         break;
       case 'default':
-        tag.default = value;
+        tag.default_val = value;
         break;
       case 'min':
         tag.min = value;
@@ -1836,7 +1836,7 @@ export function parseMMTag(tagStr: string): Tag {
         break;
       case 'enum':
         tag.type = ValueType.Enum;
-        tag.enum = value;
+        tag.enums = value;
         break;
       case 'pattern':
         tag.pattern = value;
@@ -1869,7 +1869,7 @@ export function parseMMTag(tagStr: string): Tag {
         tag.childUnique = true;
         break;
       case 'child_default':
-        tag.childDefault = value;
+        tag.childDefaultVal = value;
         break;
       case 'child_min':
         tag.childMin = value;
@@ -1881,7 +1881,7 @@ export function parseMMTag(tagStr: string): Tag {
         tag.childSize = BigInt(value) || 0n;
         break;
       case 'child_enum':
-        tag.childEnum = value;
+        tag.childEnums = value;
         break;
       case 'child_pattern':
         tag.childPattern = value;

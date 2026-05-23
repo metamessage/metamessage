@@ -674,7 +674,7 @@ func valueToNode(v any, tag *ir.Tag, depth int, path string) (node ir.Node, err 
 			}
 
 		case ir.ValueTypeEnum:
-			if tag.Enum == "" {
+			if tag.Enums == "" {
 				err = fmt.Errorf("enum empty")
 				return
 			}
@@ -1197,11 +1197,11 @@ func anyToJSONC(obj any, tag *ir.Tag, depth int, path string) (ir.Node, error) {
 				node.Tag.ChildNullable = tagItem.Nullable
 				node.Tag.ChildAllowEmpty = tagItem.AllowEmpty
 				node.Tag.ChildUnique = tagItem.Unique
-				node.Tag.ChildDefault = tagItem.Default
+				node.Tag.ChildDefaultVal = tagItem.DefaultVal
 				node.Tag.ChildMin = tagItem.Min
 				node.Tag.ChildMax = tagItem.Max
 				node.Tag.ChildSize = tagItem.Size
-				node.Tag.ChildEnum = tagItem.Enum
+				node.Tag.ChildEnums = tagItem.Enums
 				node.Tag.ChildPattern = tagItem.Pattern
 				node.Tag.ChildLocation = tagItem.Location
 				node.Tag.ChildVersion = tagItem.Version
@@ -1252,11 +1252,11 @@ func anyToJSONC(obj any, tag *ir.Tag, depth int, path string) (ir.Node, error) {
 				node.Tag.ChildNullable = tagItem.Nullable
 				node.Tag.ChildAllowEmpty = tagItem.AllowEmpty
 				node.Tag.ChildUnique = tagItem.Unique
-				node.Tag.ChildDefault = tagItem.Default
+				node.Tag.ChildDefaultVal = tagItem.DefaultVal
 				node.Tag.ChildMin = tagItem.Min
 				node.Tag.ChildMax = tagItem.Max
 				node.Tag.ChildSize = tagItem.Size
-				node.Tag.ChildEnum = tagItem.Enum
+				node.Tag.ChildEnums = tagItem.Enums
 				node.Tag.ChildPattern = tagItem.Pattern
 				node.Tag.ChildLocation = tagItem.Location
 				node.Tag.ChildVersion = tagItem.Version
@@ -1305,11 +1305,11 @@ func anyToJSONC(obj any, tag *ir.Tag, depth int, path string) (ir.Node, error) {
 				node.Tag.ChildNullable = tagItem.Nullable
 				node.Tag.ChildAllowEmpty = tagItem.AllowEmpty
 				node.Tag.ChildUnique = tagItem.Unique
-				node.Tag.ChildDefault = tagItem.Default
+				node.Tag.ChildDefaultVal = tagItem.DefaultVal
 				node.Tag.ChildMin = tagItem.Min
 				node.Tag.ChildMax = tagItem.Max
 				node.Tag.ChildSize = tagItem.Size
-				node.Tag.ChildEnum = tagItem.Enum
+				node.Tag.ChildEnums = tagItem.Enums
 				node.Tag.ChildPattern = tagItem.Pattern
 				node.Tag.ChildLocation = tagItem.Location
 				node.Tag.ChildVersion = tagItem.Version
@@ -1347,11 +1347,11 @@ func anyToJSONC(obj any, tag *ir.Tag, depth int, path string) (ir.Node, error) {
 				node.Tag.ChildNullable = tagItem.Nullable
 				node.Tag.ChildAllowEmpty = tagItem.AllowEmpty
 				node.Tag.ChildUnique = tagItem.Unique
-				node.Tag.ChildDefault = tagItem.Default
+				node.Tag.ChildDefaultVal = tagItem.DefaultVal
 				node.Tag.ChildMin = tagItem.Min
 				node.Tag.ChildMax = tagItem.Max
 				node.Tag.ChildSize = tagItem.Size
-				node.Tag.ChildEnum = tagItem.Enum
+				node.Tag.ChildEnums = tagItem.Enums
 				node.Tag.ChildPattern = tagItem.Pattern
 				node.Tag.ChildLocation = tagItem.Location
 				node.Tag.ChildVersion = tagItem.Version
@@ -1399,11 +1399,11 @@ func anyToJSONC(obj any, tag *ir.Tag, depth int, path string) (ir.Node, error) {
 				node.Tag.ChildNullable = tagItem.Nullable
 				node.Tag.ChildAllowEmpty = tagItem.AllowEmpty
 				node.Tag.ChildUnique = tagItem.Unique
-				node.Tag.ChildDefault = tagItem.Default
+				node.Tag.ChildDefaultVal = tagItem.DefaultVal
 				node.Tag.ChildMin = tagItem.Min
 				node.Tag.ChildMax = tagItem.Max
 				node.Tag.ChildSize = tagItem.Size
-				node.Tag.ChildEnum = tagItem.Enum
+				node.Tag.ChildEnums = tagItem.Enums
 				node.Tag.ChildPattern = tagItem.Pattern
 				node.Tag.ChildLocation = tagItem.Location
 				node.Tag.ChildVersion = tagItem.Version
@@ -1441,11 +1441,11 @@ func anyToJSONC(obj any, tag *ir.Tag, depth int, path string) (ir.Node, error) {
 				node.Tag.ChildNullable = tagItem.Nullable
 				node.Tag.ChildAllowEmpty = tagItem.AllowEmpty
 				node.Tag.ChildUnique = tagItem.Unique
-				node.Tag.ChildDefault = tagItem.Default
+				node.Tag.ChildDefaultVal = tagItem.DefaultVal
 				node.Tag.ChildMin = tagItem.Min
 				node.Tag.ChildMax = tagItem.Max
 				node.Tag.ChildSize = tagItem.Size
-				node.Tag.ChildEnum = tagItem.Enum
+				node.Tag.ChildEnums = tagItem.Enums
 				node.Tag.ChildPattern = tagItem.Pattern
 				node.Tag.ChildLocation = tagItem.Location
 				node.Tag.ChildVersion = tagItem.Version

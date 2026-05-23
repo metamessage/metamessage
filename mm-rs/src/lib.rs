@@ -105,33 +105,33 @@ mod tests {
     #[test]
     fn test_tag_parse_basic() {
         let tag =
-            Tag::parse("// mm:name=id;min=1;desc=用户ID;enum=active|pending|deleted").unwrap();
+            Tag::parse("// mm:name=id;min=1;desc=用户ID;enums=active|pending|deleted").unwrap();
         assert_eq!(tag.value_type, ValueType::Enum);
         assert_eq!(tag.desc, Some("用户ID".to_string()));
         assert_eq!(tag.min, Some("1".to_string()));
-        assert_eq!(tag.enum_values, Some("active|pending|deleted".to_string()));
+        assert_eq!(tag.enums, Some("active|pending|deleted".to_string()));
     }
 
     #[test]
     fn test_tag_parse_flags() {
-        let tag = Tag::parse("// mm:nullable;default=abc;max=10;min=5").unwrap();
+        let tag = Tag::parse("// mm:nullable;default_val=abc;max=10;min=5").unwrap();
         assert!(tag.nullable);
-        assert_eq!(tag.default, Some("abc".to_string()));
+        assert_eq!(tag.default_val, Some("abc".to_string()));
         assert_eq!(tag.max, Some("10".to_string()));
         assert_eq!(tag.min, Some("5".to_string()));
     }
 
     #[test]
     fn test_tag_parse_quoted_and_semicolon() {
-        let tag = Tag::parse(r#"// mm:name="id";desc="用户ID";enum="active|pending";pattern="^a,b$";type=str;min=1;max=5;nullable;default="x""#).unwrap();
+        let tag = Tag::parse(r#"// mm:name="id";desc="用户ID";enums="active|pending";pattern="^a,b$";type=str;min=1;max=5;nullable;default_val="x""#).unwrap();
         assert_eq!(tag.desc, Some("用户ID".to_string()));
-        assert_eq!(tag.enum_values, Some("active|pending".to_string()));
+        assert_eq!(tag.enums, Some("active|pending".to_string()));
         assert_eq!(tag.pattern, Some("^a,b$".to_string()));
         assert_eq!(tag.value_type, ValueType::Str);
         assert_eq!(tag.min, Some("1".to_string()));
         assert_eq!(tag.max, Some("5".to_string()));
         assert!(tag.nullable);
-        assert_eq!(tag.default, Some("x".to_string()));
+        assert_eq!(tag.default_val, Some("x".to_string()));
     }
 
     #[test]

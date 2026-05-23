@@ -258,14 +258,14 @@ public class WireDecoder
 
     private static (object data, string text) EnumFromInt(int v, MmTag tag)
     {
-        if (!string.IsNullOrEmpty(tag.Enum))
+        if (!string.IsNullOrEmpty(tag.Enums))
         {
-            var enumValues = tag.Enum.Split('|');
+            var enumValues = tag.Enums.Split('|');
             if (v >= 0 && v < enumValues.Length)
             {
                 return (v, enumValues[v].Trim());
             }
-            throw new MmDecodeException($"Enum index {v} out of range for values: {tag.Enum}");
+            throw new MmDecodeException($"Enum index {v} out of range for values: {tag.Enums}");
         }
         return (v, v.ToString());
     }

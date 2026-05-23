@@ -312,8 +312,8 @@ class Decoder() {
 
     private fun decodeEnum(tag: Tag, v: Long): Node {
         if (tag.isNull) return Value(-1, "", tag)
-        if (tag.enum.isEmpty()) throw MmDecodeException("enum without labels")
-        val parts = tag.enum.split("\\|")
+        if (tag.enums.isEmpty()) throw MmDecodeException("enum without labels")
+        val parts = tag.enums.split("\\|")
         if (v >= parts.size) throw MmDecodeException("enum index out of range")
         val label = parts[v.toInt()].trim()
         return Value(v.toInt(), label, tag)

@@ -271,7 +271,7 @@ class JsoncParser
                                 }
                                 break;
 
-                            case ValueType::Uuid:
+                            case ValueType::UUID:
                                 if ($tag->isNull) {
                                     if ($text !== '') {
                                         throw new \Exception(sprintf('invalid uuid: %s, valid: ""', json_encode($text)));
@@ -297,7 +297,7 @@ class JsoncParser
                                 }
                                 break;
 
-                            case ValueType::Ip:
+                            case ValueType::IP:
                                 if ($tag->isNull) {
                                     if ($text !== '') {
                                         throw new \Exception(sprintf('invalid ip: %s, valid: ""', json_encode($text)));
@@ -311,7 +311,7 @@ class JsoncParser
                                 }
                                 break;
 
-                            case ValueType::Url:
+                            case ValueType::URL:
                                 if ($tag->isNull) {
                                     if ($text !== '') {
                                         throw new \Exception(sprintf('invalid url: %s, valid: ""', json_encode($text)));

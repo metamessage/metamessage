@@ -111,7 +111,7 @@ func (d *decoder) decodeTagBytes(tag *ir.Tag) (length int, err error) {
 			if err != nil {
 				return
 			}
-			tag.Default = string(bs)
+			tag.DefaultVal = string(bs)
 			length = 1 + l
 		} else {
 			var l2 byte
@@ -125,7 +125,7 @@ func (d *decoder) decodeTagBytes(tag *ir.Tag) (length int, err error) {
 			if err != nil {
 				return
 			}
-			tag.Default = string(bs)
+			tag.DefaultVal = string(bs)
 			length = 1 + 1 + l
 		}
 
@@ -205,7 +205,7 @@ func (d *decoder) decodeTagBytes(tag *ir.Tag) (length int, err error) {
 				return
 			}
 
-			tag.Enum = string(bs)
+			tag.Enums = string(bs)
 			length = 1 + l
 		case l <= 1<<8:
 			var l2 byte
@@ -220,7 +220,7 @@ func (d *decoder) decodeTagBytes(tag *ir.Tag) (length int, err error) {
 			if err != nil {
 				return
 			}
-			tag.Enum = string(bs)
+			tag.Enums = string(bs)
 			length = 1 + 1 + l
 		case l <= 1<<16:
 			var l2 []byte
@@ -235,7 +235,7 @@ func (d *decoder) decodeTagBytes(tag *ir.Tag) (length int, err error) {
 			if err != nil {
 				return
 			}
-			tag.Enum = string(bs)
+			tag.Enums = string(bs)
 			length = 1 + 2 + l
 		default:
 			// err = fmt.Errorf("enum too long")
@@ -379,14 +379,14 @@ func (d *decoder) decodeTagBytes(tag *ir.Tag) (length int, err error) {
 		tag.ChildUnique = l&0x01 == 1
 		length = 1
 
-	case ir.KChildDefault:
+	case ir.KChildDefaultVal:
 		if l < 7 {
 			var bs []byte
 			bs, err = d.ReadBytes(l)
 			if err != nil {
 				return
 			}
-			tag.ChildDefault = string(bs)
+			tag.ChildDefaultVal = string(bs)
 			length = 1 + l
 		} else {
 			var l2 byte
@@ -400,7 +400,7 @@ func (d *decoder) decodeTagBytes(tag *ir.Tag) (length int, err error) {
 			if err != nil {
 				return
 			}
-			tag.ChildDefault = string(bs)
+			tag.ChildDefaultVal = string(bs)
 			length = 1 + 1 + l
 		}
 
@@ -467,7 +467,7 @@ func (d *decoder) decodeTagBytes(tag *ir.Tag) (length int, err error) {
 			length = 2 + l
 		}
 
-	case ir.KChildEnum:
+	case ir.KChildEnums:
 		tag.ChildType = ir.ValueTypeEnum
 		switch {
 		case l <= 5:
@@ -477,7 +477,7 @@ func (d *decoder) decodeTagBytes(tag *ir.Tag) (length int, err error) {
 				return
 			}
 
-			tag.ChildEnum = string(bs)
+			tag.ChildEnums = string(bs)
 			length = 1 + l
 		case l <= 1<<8:
 			var l2 byte
@@ -492,7 +492,7 @@ func (d *decoder) decodeTagBytes(tag *ir.Tag) (length int, err error) {
 			if err != nil {
 				return
 			}
-			tag.ChildEnum = string(bs)
+			tag.ChildEnums = string(bs)
 			length = 1 + 1 + l
 		case l <= 1<<16:
 			var l2 []byte
@@ -507,7 +507,7 @@ func (d *decoder) decodeTagBytes(tag *ir.Tag) (length int, err error) {
 			if err != nil {
 				return
 			}
-			tag.ChildEnum = string(bs)
+			tag.ChildEnums = string(bs)
 			length = 1 + 2 + l
 		default:
 			// err = fmt.Errorf("child enum too long")

@@ -70,7 +70,7 @@ public static class TagFieldParser
                     int defaultValueLen = data[offset++];
                     if (offset + defaultValueLen > data.Length)
                         throw new MmDecodeException("Tag default value data overflow");
-                    tag.DefaultValue = System.Text.Encoding.UTF8.GetString(data, offset, defaultValueLen);
+                    tag.DefaultVal = System.Text.Encoding.UTF8.GetString(data, offset, defaultValueLen);
                     offset += defaultValueLen;
                     break;
 
@@ -80,7 +80,7 @@ public static class TagFieldParser
                     int enumLen = data[offset++];
                     if (offset + enumLen > data.Length)
                         throw new MmDecodeException("Tag enum data overflow");
-                    tag.Enum = System.Text.Encoding.UTF8.GetString(data, offset, enumLen);
+                    tag.Enums = System.Text.Encoding.UTF8.GetString(data, offset, enumLen);
                     offset += enumLen;
                     break;
 
@@ -139,7 +139,7 @@ public static class TagFieldParser
                     int childEnumLen = data[offset++];
                     if (offset + childEnumLen > data.Length)
                         throw new MmDecodeException("Tag child enum data overflow");
-                    tag.ChildEnum = System.Text.Encoding.UTF8.GetString(data, offset, childEnumLen);
+                    tag.ChildEnums = System.Text.Encoding.UTF8.GetString(data, offset, childEnumLen);
                     offset += childEnumLen;
                     break;
 

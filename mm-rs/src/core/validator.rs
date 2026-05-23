@@ -777,7 +777,7 @@ impl MmValidator {
         if let Some(enum_value) = value.downcast_ref::<String>() {
             if enum_value.is_empty() {
                 result.add_error("value is empty".to_string());
-            } else if let Some(enum_values) = &tag.enum_values {
+            } else if let Some(enum_values) = &tag.enums {
                 if !enum_values.contains(enum_value) {
                     result.add_error("value is not in enum".to_string());
                 }

@@ -86,16 +86,16 @@ class MmValidator
             case ValueType::TIME:
                 $this->validateTime($value, $tag, $result);
                 break;
-            case ValueType::Uuid:
+            case ValueType::UUID:
                 $this->validateUUID($value, $tag, $result);
                 break;
             case ValueType::DECIMAL:
                 $this->validateDecimal($value, $tag, $result);
                 break;
-            case ValueType::Ip:
+            case ValueType::IP:
                 $this->validateIP($value, $tag, $result);
                 break;
-            case ValueType::Url:
+            case ValueType::URL:
                 $this->validateURL($value, $tag, $result);
                 break;
             case ValueType::EMAIL:

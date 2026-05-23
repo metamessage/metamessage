@@ -722,8 +722,8 @@ func (d *decoder) decodePositiveInt(prefix byte, tag *ir.Tag, path string) (node
 			data = -1
 			text = ""
 		} else {
-			if tag.Enum != "" {
-				enums := strings.Split(tag.Enum, "|")
+			if tag.Enums != "" {
+				enums := strings.Split(tag.Enums, "|")
 				d := int(v)
 				if d >= len(enums) {
 					err = fmt.Errorf("enum index out of range")

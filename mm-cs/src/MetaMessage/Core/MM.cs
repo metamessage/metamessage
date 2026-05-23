@@ -11,14 +11,14 @@ public class MM : Attribute
     public bool Raw { get; set; } = false;
     public bool AllowEmpty { get; set; } = false;
     public bool Unique { get; set; } = false;
-    public string DefaultValue { get; set; } = string.Empty;
-    public string Enum { get; set; } = string.Empty;
+    public string DefaultVal { get; set; } = string.Empty;
+    public string Enums { get; set; } = string.Empty;
     public int LocationHours { get; set; } = 0;
     public int Version { get; set; } = 0;
     public string Mime { get; set; } = string.Empty;
     public string ChildDesc { get; set; } = string.Empty;
     public bool ChildNullable { get; set; } = false;
-    public string ChildEnum { get; set; } = string.Empty;
+    public string ChildEnums { get; set; } = string.Empty;
 }
 
 public static class MmTagExtensions
@@ -45,10 +45,10 @@ public static class MmTagExtensions
         tag.Raw = attribute.Raw;
         tag.AllowEmpty = attribute.AllowEmpty;
         tag.Unique = attribute.Unique;
-        if (!string.IsNullOrEmpty(attribute.DefaultValue))
-            tag.DefaultValue = attribute.DefaultValue;
-        if (!string.IsNullOrEmpty(attribute.Enum))
-            tag.Enum = attribute.Enum;
+        if (!string.IsNullOrEmpty(attribute.DefaultVal))
+            tag.DefaultVal = attribute.DefaultVal;
+        if (!string.IsNullOrEmpty(attribute.Enums))
+            tag.Enums = attribute.Enums;
         tag.LocationHours = attribute.LocationHours;
         tag.Version = attribute.Version;
         if (!string.IsNullOrEmpty(attribute.Mime))
@@ -56,8 +56,8 @@ public static class MmTagExtensions
         if (!string.IsNullOrEmpty(attribute.ChildDesc))
             tag.ChildDesc = attribute.ChildDesc;
         tag.ChildNullable = attribute.ChildNullable;
-        if (!string.IsNullOrEmpty(attribute.ChildEnum))
-            tag.ChildEnum = attribute.ChildEnum;
+        if (!string.IsNullOrEmpty(attribute.ChildEnums))
+            tag.ChildEnums = attribute.ChildEnums;
         
         return tag;
     }

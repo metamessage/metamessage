@@ -43,8 +43,8 @@ mm_node_t *mm_value_create_str(const char *text, mm_value_type_t type,
     node->data.value.tag.size = attr.size;
   }
 
-  if (attr.enum_val && strlen(attr.enum_val) > 0) {
-    node->data.value.tag.enum_val = strdup(attr.enum_val);
+  if (attr.enums && strlen(attr.enums) > 0) {
+    node->data.value.tag.enums = strdup(attr.enums);
   }
 
   if (attr.pattern && strlen(attr.pattern) > 0) {
@@ -105,8 +105,8 @@ void mm_container_apply_attr(mm_node_t *container, mm_container_attr_t attr) {
   if (attr.size > 0) {
     tag->size = attr.size;
   }
-  if (attr.enum_val && strlen(attr.enum_val) > 0) {
-    tag->enum_val = strdup(attr.enum_val);
+  if (attr.enums && strlen(attr.enums) > 0) {
+    tag->enums = strdup(attr.enums);
   }
   if (attr.pattern && strlen(attr.pattern) > 0) {
     tag->pattern = strdup(attr.pattern);
@@ -158,11 +158,11 @@ void mm_container_apply_attr(mm_node_t *container, mm_container_attr_t attr) {
   if (attr.child_type && strlen(attr.child_type) > 0) {
     tag->child_type = mm_value_type_parse(attr.child_type);
   }
-  if (attr.child_default && strlen(attr.child_default) > 0) {
-    tag->child_default = strdup(attr.child_default);
+  if (attr.child_default_val && strlen(attr.child_default_val) > 0) {
+    tag->child_default_val = strdup(attr.child_default_val);
   }
-  if (attr.child_enum && strlen(attr.child_enum) > 0) {
-    tag->child_enum = strdup(attr.child_enum);
+  if (attr.child_enums && strlen(attr.child_enums) > 0) {
+    tag->child_enums = strdup(attr.child_enums);
   }
   if (attr.child_pattern && strlen(attr.child_pattern) > 0) {
     tag->child_pattern = strdup(attr.child_pattern);

@@ -270,7 +270,7 @@ class WireEncoder
                 }
                 break;
 
-            case ValueType::Uuid:
+            case ValueType::UUID:
                 if ($tag->isNull) {
                     $n = $this->encodeSimple(SimpleValue::NULL_STRING);
                 } else {
@@ -286,7 +286,7 @@ class WireEncoder
                 }
                 break;
 
-            case ValueType::Url:
+            case ValueType::URL:
                 if ($tag->isNull) {
                     $n = $this->encodeSimple(SimpleValue::NULL_STRING);
                 } else {
@@ -294,7 +294,7 @@ class WireEncoder
                 }
                 break;
 
-            case ValueType::Ip:
+            case ValueType::IP:
                 if ($tag->isNull) {
                     $n = $this->encodeSimple(SimpleValue::NULL_STRING);
                 } else {

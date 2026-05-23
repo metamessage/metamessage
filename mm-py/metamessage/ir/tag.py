@@ -192,11 +192,11 @@ class Tag:
     nullable: bool = False
     allow_empty: bool = False
     unique: bool = False
-    default: str = ""
+    default_val: str = ""
     min: str = ""
     max: str = ""
     size: int = 0
-    enum: str = ""
+    enums: str = ""
     pattern: str = ""
     location: Any = None
     version: int = 0
@@ -207,11 +207,11 @@ class Tag:
     child_nullable: bool = False
     child_allow_empty: bool = False
     child_unique: bool = False
-    child_default: str = ""
+    child_default_val: str = ""
     child_min: str = ""
     child_max: str = ""
     child_size: int = 0
-    child_enum: str = ""
+    child_enums: str = ""
     child_pattern: str = ""
     child_location: Any = None
     child_version: int = 0
@@ -234,16 +234,16 @@ class Tag:
             self.allow_empty = tag.child_allow_empty
         if tag.child_unique:
             self.unique = tag.child_unique
-        if tag.child_default:
-            self.default = tag.child_default
+        if tag.child_default_val:
+            self.default_val = tag.child_default_val
         if tag.child_min:
             self.min = tag.child_min
         if tag.child_max:
             self.max = tag.child_max
         if tag.child_size:
             self.size = tag.child_size
-        if tag.child_enum:
-            self.enum = tag.child_enum
+        if tag.child_enums:
+            self.enums = tag.child_enums
         if tag.child_pattern:
             self.pattern = tag.child_pattern
         if tag.child_location is not None and tag.child_location != 0:
@@ -285,7 +285,7 @@ class Tag:
             if self.type not in (ValueType.Str, ValueType.Bytes, ValueType.I, ValueType.F64,
                                  ValueType.Bool, ValueType.Obj, ValueType.Vec):
                 if not (self.type == ValueType.Arr and self.size > 0) and not (
-                        self.type == ValueType.Enum and self.enum):
+                        self.type == ValueType.Enum and self.enums):
                     buf.append(TagKey.Type)
                     buf.append(self.type)
 
@@ -298,14 +298,14 @@ class Tag:
         if self.unique and not self.is_inherit:
             buf.append(TagKey.Unique | 1)
 
-        if self.default and not self.is_inherit:
-            l = len(self.default)
+        if self.default_val and not self.is_inherit:
+            l = len(self.default_val)
             if l < 7:
                 buf.append(TagKey.Default | l)
             else:
                 buf.append(TagKey.Default | 7)
                 buf.append(l)
-            buf.extend(self.default.encode('utf-8'))
+            buf.extend(self.default_val.encode('utf-8'))
 
         if self.min and not self.is_inherit:
             l = len(self.min)
@@ -328,8 +328,8 @@ class Tag:
         if self.size and not self.is_inherit:
             _encode_u64(buf, TagKey.Size, self.size)
 
-        if self.enum and not self.is_inherit:
-            enum_bytes = self.enum.encode('utf-8')
+        if self.enums and not self.is_inherit:
+            enum_bytes = self.enums.encode('utf-8')
             l = len(enum_bytes)
             if l <= 5:
                 buf.append(TagKey.Enum | l)
@@ -393,7 +393,7 @@ class Tag:
             if self.child_type not in (ValueType.Str, ValueType.I, ValueType.F64,
                                        ValueType.Bool, ValueType.Obj, ValueType.Vec):
                 if not (self.child_type == ValueType.Arr and self.child_size > 0) and not (
-                        self.child_type == ValueType.Enum and self.child_enum):
+                        self.child_type == ValueType.Enum and self.child_enums):
                     buf.append(TagKey.ChildType)
                     buf.append(self.child_type)
 
@@ -409,14 +409,14 @@ class Tag:
         if self.child_unique:
             buf.append(TagKey.ChildUnique | 1)
 
-        if self.child_default:
-            l = len(self.child_default)
+        if self.child_default_val:
+            l = len(self.child_default_val)
             if l < 7:
                 buf.append(TagKey.ChildDefault | l)
             else:
                 buf.append(TagKey.ChildDefault | 7)
                 buf.append(l)
-            buf.extend(self.child_default.encode('utf-8'))
+            buf.extend(self.child_default_val.encode('utf-8'))
 
         if self.child_min:
             l = len(self.child_min)
@@ -439,8 +439,8 @@ class Tag:
         if self.child_size:
             _encode_u64(buf, TagKey.ChildSize, self.child_size)
 
-        if self.child_enum:
-            child_enum_bytes = self.child_enum.encode('utf-8')
+        if self.child_enums:
+            child_enum_bytes = self.child_enums.encode('utf-8')
             l = len(child_enum_bytes)
             if l <= 5:
                 buf.append(TagKey.ChildEnum | l)
@@ -496,7 +496,7 @@ class Tag:
                 pass
             else:
                 if not (self.type == ValueType.Arr and self.size > 0) and not (
-                        self.type == ValueType.Enum and self.enum):
+                        self.type == ValueType.Enum and self.enums):
                     parts.append("type=%s" % str(self.type))
 
         if self.example:
@@ -521,8 +521,8 @@ class Tag:
         if self.unique and not self.is_inherit:
             parts.append("unique")
 
-        if self.default and not self.is_inherit:
-            parts.append("default=%s" % self.default)
+        if self.default_val and not self.is_inherit:
+            parts.append("default=%s" % self.default_val)
 
         if self.min and not self.is_inherit:
             parts.append("min=%s" % self.min)
@@ -533,8 +533,8 @@ class Tag:
         if self.size and not self.is_inherit:
             parts.append("size=%d" % self.size)
 
-        if self.enum and not self.is_inherit:
-            parts.append("enum=%s" % self.enum)
+        if self.enums and not self.is_inherit:
+            parts.append("enum=%s" % self.enums)
 
         if self.pattern and not self.is_inherit:
             parts.append("pattern=%s" % self.pattern)
@@ -561,7 +561,7 @@ class Tag:
             if self.child_type not in (ValueType.Str, ValueType.I, ValueType.F64,
                                        ValueType.Bool, ValueType.Obj, ValueType.Vec):
                 if not (self.child_type == ValueType.Arr and self.child_size > 0) and not (
-                        self.child_type == ValueType.Enum and self.child_enum):
+                        self.child_type == ValueType.Enum and self.child_enums):
                     parts.append("child_type=%s" % str(self.child_type))
 
         if self.child_raw:
@@ -576,8 +576,8 @@ class Tag:
         if self.child_unique:
             parts.append("child_unique")
 
-        if self.child_default:
-            parts.append("child_default=%s" % self.child_default)
+        if self.child_default_val:
+            parts.append("child_default=%s" % self.child_default_val)
 
         if self.child_min:
             parts.append("child_min=%s" % self.child_min)
@@ -588,8 +588,8 @@ class Tag:
         if self.child_size:
             parts.append("child_size=%d" % self.child_size)
 
-        if self.child_enum:
-            parts.append("child_enum=%s" % self.child_enum)
+        if self.child_enums:
+            parts.append("child_enum=%s" % self.child_enums)
 
         if self.child_pattern:
             parts.append("child_pattern=%s" % self.child_pattern)
@@ -621,11 +621,11 @@ TAG_KEY_MAP = {
     "nullable": "nullable",
     "allow_empty": "allow_empty",
     "unique": "unique",
-    "default": "default",
+    "default": "default_val",
     "min": "min",
     "max": "max",
     "size": "size",
-    "enum": "enum",
+    "enum": "enums",
     "pattern": "pattern",
     "location": "location",
     "version": "version",
@@ -636,11 +636,11 @@ TAG_KEY_MAP = {
     "child_nullable": "child_nullable",
     "child_allow_empty": "child_allow_empty",
     "child_unique": "child_unique",
-    "child_default": "child_default",
+    "child_default": "child_default_val",
     "child_min": "child_min",
     "child_max": "child_max",
     "child_size": "child_size",
-    "child_enum": "child_enum",
+    "child_enum": "child_enums",
     "child_pattern": "child_pattern",
     "child_location": "child_location",
     "child_version": "child_version",
@@ -715,7 +715,7 @@ def mm_tag(tag_str: str) -> Tag:
         elif k == "unique":
             tag.unique = True
         elif k == "default":
-            tag.default = v
+            tag.default_val = v
         elif k == "min":
             tag.min = v
         elif k == "max":
@@ -727,7 +727,7 @@ def mm_tag(tag_str: str) -> Tag:
                 pass
         elif k == "enum":
             tag.type = ValueType.Enum
-            tag.enum = v
+            tag.enums = v
         elif k == "pattern":
             tag.pattern = v
         elif k == "location":
@@ -755,7 +755,7 @@ def mm_tag(tag_str: str) -> Tag:
         elif k == "child_unique":
             tag.child_unique = True
         elif k == "child_default":
-            tag.child_default = v
+            tag.child_default_val = v
         elif k == "child_min":
             tag.child_min = v
         elif k == "child_max":
@@ -766,7 +766,7 @@ def mm_tag(tag_str: str) -> Tag:
             except ValueError:
                 pass
         elif k == "child_enum":
-            tag.child_enum = v
+            tag.child_enums = v
             tag.child_type = ValueType.Enum
         elif k == "child_pattern":
             tag.child_pattern = v
@@ -812,16 +812,16 @@ def MergeTag(dst: Tag, src: Tag) -> Tag:
         dst.allow_empty = True
     if src.unique:
         dst.unique = True
-    if src.default:
-        dst.default = src.default
+    if src.default_val:
+        dst.default_val = src.default_val
     if src.min:
         dst.min = src.min
     if src.max:
         dst.max = src.max
     if src.size:
         dst.size = src.size
-    if src.enum:
-        dst.enum = src.enum
+    if src.enums:
+        dst.enums = src.enums
     if src.pattern:
         dst.pattern = src.pattern
     if src.location is not None and src.location != 0:
@@ -842,16 +842,16 @@ def MergeTag(dst: Tag, src: Tag) -> Tag:
         dst.child_allow_empty = True
     if src.child_unique:
         dst.child_unique = True
-    if src.child_default:
-        dst.child_default = src.child_default
+    if src.child_default_val:
+        dst.child_default_val = src.child_default_val
     if src.child_min:
         dst.child_min = src.child_min
     if src.child_max:
         dst.child_max = src.child_max
     if src.child_size:
         dst.child_size = src.child_size
-    if src.child_enum:
-        dst.child_enum = src.child_enum
+    if src.child_enums:
+        dst.child_enums = src.child_enums
     if src.child_pattern:
         dst.child_pattern = src.child_pattern
     if src.child_location is not None and src.child_location != 0:

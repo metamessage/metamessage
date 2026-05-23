@@ -81,7 +81,7 @@ class TagTest {
     @Test
     fun parseMMTagWithDefault() {
         val t = Tag.parseMMTag("mm: default=42")
-        assertEquals("42", t.default)
+        assertEquals("42", t.default_val)
     }
 
     @Test
@@ -106,7 +106,7 @@ class TagTest {
     fun parseMMTagWithEnum() {
         val t = Tag.parseMMTag("mm: enum=a|b|c")
         assertEquals(ValueType.ENUM, t.type)
-        assertEquals("a|b|c", t.enum)
+        assertEquals("a|b|c", t.enums)
     }
 
     @Test

@@ -176,8 +176,8 @@ impl Decoder {
             }
             TAG_DEFAULT => {
                 let s = self.read_tag_short_str(payload)?;
-                tag.default = Some(s);
-                Ok(1 + tag.default.as_ref().map_or(0, |s| s.len()))
+                tag.default_val = Some(s);
+                Ok(1 + tag.default_val.as_ref().map_or(0, |s| s.len()))
             }
             TAG_MIN => {
                 let s = self.read_tag_short_str(payload)?;
@@ -197,8 +197,8 @@ impl Decoder {
             TAG_ENUM => {
                 tag.value_type = ValueType::Enum;
                 let s = self.read_tag_str(payload)?;
-                tag.enum_values = Some(s);
-                Ok(1 + tag.enum_values.as_ref().map_or(0, |s| s.len()))
+                tag.enums = Some(s);
+                Ok(1 + tag.enums.as_ref().map_or(0, |s| s.len()))
             }
             TAG_PATTERN => {
                 let s = self.read_tag_short_str(payload)?;
@@ -255,8 +255,8 @@ impl Decoder {
             }
             TAG_CHILD_DEFAULT => {
                 let s = self.read_tag_short_str(payload)?;
-                tag.child_default = Some(s);
-                Ok(1 + tag.child_default.as_ref().map_or(0, |s| s.len()))
+                tag.child_default_val = Some(s);
+                Ok(1 + tag.child_default_val.as_ref().map_or(0, |s| s.len()))
             }
             TAG_CHILD_MIN => {
                 let s = self.read_tag_short_str(payload)?;
@@ -276,8 +276,8 @@ impl Decoder {
             TAG_CHILD_ENUM => {
                 tag.child_type = ValueType::Enum;
                 let s = self.read_tag_str(payload)?;
-                tag.child_enum = Some(s);
-                Ok(1 + tag.child_enum.as_ref().map_or(0, |s| s.len()))
+                tag.child_enums = Some(s);
+                Ok(1 + tag.child_enums.as_ref().map_or(0, |s| s.len()))
             }
             TAG_CHILD_PATTERN => {
                 let s = self.read_tag_short_str(payload)?;

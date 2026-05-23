@@ -40,11 +40,11 @@ const (
 	TChildNullable   = "child_nullable"
 	TChildAllowEmpty = "child_allow_empty"
 	TChildUnique     = "child_unique"
-	TChildDefault    = "child_default"
+	TChildDefaultVal    = "child_default"
 	TChildMin        = "child_min"
 	TChildMax        = "child_max"
 	TChildSize       = "child_size"
-	TChildEnum       = "child_enum"
+	TChildEnums       = "child_enum"
 	TChildPattern    = "child_pattern"
 	TChildLocation   = "child_location"
 	TChildVersion    = "child_version"
@@ -79,11 +79,11 @@ const (
 	KChildNullable   = 20 << 3
 	KChildAllowEmpty = 21 << 3
 	KChildUnique     = 22 << 3
-	KChildDefault    = 23 << 3
+	KChildDefaultVal    = 23 << 3
 	KChildMin        = 24 << 3
 	KChildMax        = 25 << 3
 	KChildSize       = 26 << 3
-	KChildEnum       = 27 << 3
+	KChildEnums       = 27 << 3
 	KChildPattern    = 28 << 3
 	KChildLocation   = 29 << 3
 	KChildVersion    = 30 << 3
@@ -102,11 +102,11 @@ type Tag struct {
 	Nullable   bool           // nullable
 	AllowEmpty bool           // allow_empty
 	Unique     bool           // unique
-	Default    string         // default=...
+	DefaultVal string         // default=...
 	Min        string         // min=...
 	Max        string         // max=...
 	Size       int            // size=... default 0
-	Enum       string         // enum=...|...
+	Enums      string         // enum=...|...
 	Pattern    string         // pattern=...
 	Location   *time.Location // location=0  for time.Time [-12, +14]
 	Version    int            // version=0 for uuid/ip
@@ -118,11 +118,11 @@ type Tag struct {
 	ChildNullable   bool           // child_nullable
 	ChildAllowEmpty bool           // child_allow_empty
 	ChildUnique     bool           // child_unique
-	ChildDefault    string         // child_default=...
+	ChildDefaultVal    string         // child_default=...
 	ChildMin        string         // child_min=...
 	ChildMax        string         // child_max=...
 	ChildSize       int            // child_size=... default 0
-	ChildEnum       string         // child_enum=...|...
+	ChildEnums      string         // child_enum=...|...
 	ChildPattern    string         // child_pattern=...
 	ChildLocation   *time.Location // child_location=0  for time.Time [-12, +14]
 	ChildVersion    int            // child_version=0 for uuid/ip
@@ -173,8 +173,8 @@ func (t *Tag) Inherit(tag *Tag) {
 		t.Unique = tag.ChildUnique
 	}
 
-	if tag.ChildDefault != "" {
-		t.Default = tag.ChildDefault
+	if tag.ChildDefaultVal != "" {
+		t.DefaultVal = tag.ChildDefaultVal
 	}
 
 	if tag.ChildMin != "" {
@@ -189,8 +189,8 @@ func (t *Tag) Inherit(tag *Tag) {
 		t.Size = tag.ChildSize
 	}
 
-	if tag.ChildEnum != "" {
-		t.Enum = tag.ChildEnum
+	if tag.ChildEnums != "" {
+		t.Enums = tag.ChildEnums
 	}
 
 	if tag.ChildPattern != "" {
@@ -246,7 +246,7 @@ func (t *Tag) ToString() string {
 			t.Type == ValueTypeVec {
 		} else {
 			if t.Type == ValueTypeArr && t.Size > 0 ||
-				t.Type == ValueTypeEnum && t.Enum != "" {
+				t.Type == ValueTypeEnum && t.Enums != "" {
 
 			} else {
 				add(TType + "=" + t.Type.String())
@@ -284,8 +284,8 @@ func (t *Tag) ToString() string {
 		add(TUnique)
 	}
 
-	if t.Default != "" && !t.IsInherit {
-		add(TDefault + "=" + t.Default)
+	if t.DefaultVal != "" && !t.IsInherit {
+		add(TDefault + "=" + t.DefaultVal)
 	}
 
 	if t.Min != "" && !t.IsInherit {
@@ -300,8 +300,8 @@ func (t *Tag) ToString() string {
 		add(TSize + "=" + strconv.Itoa(t.Size))
 	}
 
-	if t.Enum != "" && !t.IsInherit {
-		add(TEnum + "=" + t.Enum)
+	if t.Enums != "" && !t.IsInherit {
+		add(TEnum + "=" + t.Enums)
 	}
 
 	if t.Pattern != "" && !t.IsInherit {
@@ -334,7 +334,7 @@ func (t *Tag) ToString() string {
 			t.ChildType == ValueTypeVec {
 		} else {
 			if t.ChildType == ValueTypeArr && t.ChildSize > 0 ||
-				t.ChildType == ValueTypeEnum && t.ChildEnum != "" {
+				t.ChildType == ValueTypeEnum && t.ChildEnums != "" {
 
 			} else {
 				add(TChildType + "=" + t.ChildType.String())
@@ -358,8 +358,8 @@ func (t *Tag) ToString() string {
 		add(TChildUnique)
 	}
 
-	if t.ChildDefault != "" {
-		add(TChildDefault + "=" + t.ChildDefault)
+	if t.ChildDefaultVal != "" {
+		add(TChildDefaultVal + "=" + t.ChildDefaultVal)
 	}
 
 	if t.ChildMin != "" {
@@ -374,8 +374,8 @@ func (t *Tag) ToString() string {
 		add(TChildSize + "=" + strconv.Itoa(t.ChildSize))
 	}
 
-	if t.ChildEnum != "" {
-		add(TChildEnum + "=" + t.ChildEnum)
+	if t.ChildEnums != "" {
+		add(TChildEnums + "=" + t.ChildEnums)
 	}
 
 	if t.ChildPattern != "" {
@@ -445,7 +445,7 @@ func (t *Tag) Bytes() []byte {
 			t.Type == ValueTypeVec {
 		} else {
 			if t.Type == ValueTypeArr && t.Size > 0 ||
-				t.Type == ValueTypeEnum && t.Enum != "" {
+				t.Type == ValueTypeEnum && t.Enums != "" {
 
 			} else {
 				bs.WriteByte(byte(KType))
@@ -466,15 +466,15 @@ func (t *Tag) Bytes() []byte {
 		bs.WriteByte(byte(KUnique | 1))
 	}
 
-	if t.Default != "" && !t.IsInherit {
-		l := len(t.Default)
+	if t.DefaultVal != "" && !t.IsInherit {
+		l := len(t.DefaultVal)
 		if l < 7 {
 			bs.WriteByte(byte(KDefault) | byte(l))
-			bs.WriteString(t.Default)
+			bs.WriteString(t.DefaultVal)
 		} else {
 			bs.WriteByte(byte(KDefault) | byte(7))
 			bs.WriteByte(byte(l))
-			bs.WriteString(t.Default)
+			bs.WriteString(t.DefaultVal)
 		}
 	}
 
@@ -506,21 +506,21 @@ func (t *Tag) Bytes() []byte {
 		encodeU64(&bs, KSize, uint64(t.Size))
 	}
 
-	if t.Enum != "" && !t.IsInherit {
-		l := len(t.Enum)
+	if t.Enums != "" && !t.IsInherit {
+		l := len(t.Enums)
 		switch {
 		case l <= 5:
 			bs.WriteByte(byte(KEnum) | byte(l))
-			bs.WriteString(t.Enum)
+			bs.WriteString(t.Enums)
 		case l <= 1<<8:
 			bs.WriteByte(byte(KEnum) | byte(6))
 			bs.WriteByte(byte(l))
-			bs.WriteString(t.Enum)
+			bs.WriteString(t.Enums)
 		case l <= 1<<16:
 			bs.WriteByte(byte(KEnum) | byte(7))
 			bs.WriteByte(byte(l >> 8))
 			bs.WriteByte(byte(l))
-			bs.WriteString(t.Enum)
+			bs.WriteString(t.Enums)
 		default:
 			// err = fmt.Errorf("enum too long")
 			// return
@@ -589,7 +589,7 @@ func (t *Tag) Bytes() []byte {
 			t.ChildType == ValueTypeVec {
 		} else {
 			if t.ChildType == ValueTypeArr && t.ChildSize > 0 ||
-				t.ChildType == ValueTypeEnum && t.ChildEnum != "" {
+				t.ChildType == ValueTypeEnum && t.ChildEnums != "" {
 
 			} else {
 				bs.WriteByte(byte(KChildType))
@@ -614,15 +614,15 @@ func (t *Tag) Bytes() []byte {
 		bs.WriteByte(byte(KChildUnique | 1))
 	}
 
-	if t.ChildDefault != "" {
-		l := len(t.ChildDefault)
+	if t.ChildDefaultVal != "" {
+		l := len(t.ChildDefaultVal)
 		if l < 7 {
-			bs.WriteByte(byte(KChildDefault) | byte(l))
-			bs.WriteString(t.ChildDefault)
+			bs.WriteByte(byte(KChildDefaultVal) | byte(l))
+			bs.WriteString(t.ChildDefaultVal)
 		} else {
-			bs.WriteByte(byte(KChildDefault) | byte(7))
+			bs.WriteByte(byte(KChildDefaultVal) | byte(7))
 			bs.WriteByte(byte(l))
-			bs.WriteString(t.ChildDefault)
+			bs.WriteString(t.ChildDefaultVal)
 		}
 	}
 
@@ -654,21 +654,21 @@ func (t *Tag) Bytes() []byte {
 		encodeU64(&bs, KChildSize, uint64(t.ChildSize))
 	}
 
-	if t.ChildEnum != "" {
-		l := len(t.ChildEnum)
+	if t.ChildEnums != "" {
+		l := len(t.ChildEnums)
 		switch {
 		case l <= 5:
-			bs.WriteByte(byte(KChildEnum) | byte(l))
-			bs.WriteString(t.ChildEnum)
+			bs.WriteByte(byte(KChildEnums) | byte(l))
+			bs.WriteString(t.ChildEnums)
 		case l <= 1<<8:
-			bs.WriteByte(byte(KChildEnum) | byte(6))
+			bs.WriteByte(byte(KChildEnums) | byte(6))
 			bs.WriteByte(byte(l))
-			bs.WriteString(t.ChildEnum)
+			bs.WriteString(t.ChildEnums)
 		case l <= 1<<16:
-			bs.WriteByte(byte(KChildEnum) | byte(7))
+			bs.WriteByte(byte(KChildEnums) | byte(7))
 			bs.WriteByte(byte(l >> 8))
 			bs.WriteByte(byte(l))
-			bs.WriteString(t.ChildEnum)
+			bs.WriteString(t.ChildEnums)
 		default:
 			// err = fmt.Errorf("child enum too long")
 			// return
@@ -842,8 +842,8 @@ func MergeTag(dst *Tag, src *Tag) *Tag {
 		dst.Unique = true
 	}
 
-	if src.Default != "" {
-		dst.Default = src.Default
+	if src.DefaultVal != "" {
+		dst.DefaultVal = src.DefaultVal
 	}
 
 	if src.Min != "" {
@@ -858,8 +858,8 @@ func MergeTag(dst *Tag, src *Tag) *Tag {
 		dst.Size = src.Size
 	}
 
-	if src.Enum != "" {
-		dst.Enum = src.Enum
+	if src.Enums != "" {
+		dst.Enums = src.Enums
 	}
 
 	if src.Pattern != "" {
@@ -902,8 +902,8 @@ func MergeTag(dst *Tag, src *Tag) *Tag {
 		dst.ChildUnique = true
 	}
 
-	if src.ChildDefault != "" {
-		dst.ChildDefault = src.ChildDefault
+	if src.ChildDefaultVal != "" {
+		dst.ChildDefaultVal = src.ChildDefaultVal
 	}
 
 	if src.ChildMin != "" {
@@ -918,8 +918,8 @@ func MergeTag(dst *Tag, src *Tag) *Tag {
 		dst.ChildSize = src.ChildSize
 	}
 
-	if src.ChildEnum != "" {
-		dst.ChildEnum = src.ChildEnum
+	if src.ChildEnums != "" {
+		dst.ChildEnums = src.ChildEnums
 	}
 
 	if src.ChildPattern != "" {
@@ -1009,7 +1009,7 @@ func ParseMMTag(tag string) (*Tag, error) {
 			r.Unique = true
 
 		case TDefault:
-			r.Default = v
+			r.DefaultVal = v
 
 		case TPattern:
 			r.Pattern = v
@@ -1036,7 +1036,7 @@ func ParseMMTag(tag string) (*Tag, error) {
 
 		case TEnum:
 			r.Type = ValueTypeEnum
-			r.Enum = v
+			r.Enums = v
 
 		case TLocation:
 			d, err := strconv.Atoi(v)
@@ -1083,8 +1083,8 @@ func ParseMMTag(tag string) (*Tag, error) {
 		case TChildUnique:
 			r.ChildUnique = true
 
-		case TChildDefault:
-			r.ChildDefault = v
+		case TChildDefaultVal:
+			r.ChildDefaultVal = v
 
 		case TChildPattern:
 			r.ChildPattern = v
@@ -1109,8 +1109,8 @@ func ParseMMTag(tag string) (*Tag, error) {
 			}
 			r.ChildSize = int(u)
 
-		case TChildEnum:
-			r.ChildEnum = v
+		case TChildEnums:
+			r.ChildEnums = v
 			r.ChildType = ValueTypeEnum
 
 		case TChildLocation:

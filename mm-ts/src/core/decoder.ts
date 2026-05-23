@@ -307,12 +307,12 @@ export class MMDecoder {
       case KDefault:
         if (l < 7) {
           const bs = this.readBytes(l);
-          tag.default = new TextDecoder('utf-8').decode(bs);
+          tag.default_val = new TextDecoder('utf-8').decode(bs);
           return 1 + l;
         } else {
           const l2 = this.readByte();
           const bs = this.readBytes(l2);
-          tag.default = new TextDecoder('utf-8').decode(bs);
+          tag.default_val = new TextDecoder('utf-8').decode(bs);
           return 1 + 1 + l2;
         }
 
@@ -355,13 +355,13 @@ export class MMDecoder {
         let lenEnum = l;
         if (lenEnum <= 5) {
           const bs = this.readBytes(lenEnum);
-          tag.enum = new TextDecoder('utf-8').decode(bs);
+          tag.enums = new TextDecoder('utf-8').decode(bs);
           return 1 + lenEnum;
         } else if (lenEnum <= 0xff) {
           const l2 = this.readByte();
           lenEnum = l2;
           const bs = this.readBytes(lenEnum);
-          tag.enum = new TextDecoder('utf-8').decode(bs);
+          tag.enums = new TextDecoder('utf-8').decode(bs);
           return 1 + 1 + lenEnum;
         } else if (lenEnum <= 0xffff) {
           const l2 = this.readBytes(2);
@@ -370,7 +370,7 @@ export class MMDecoder {
           }
           lenEnum = (l2[0]! << 8) | l2[1]!;
           const bs = this.readBytes(lenEnum);
-          tag.enum = new TextDecoder('utf-8').decode(bs);
+          tag.enums = new TextDecoder('utf-8').decode(bs);
           return 1 + 2 + lenEnum;
         }
         return 1;
@@ -462,12 +462,12 @@ export class MMDecoder {
       case KChildDefault:
         if (l < 7) {
           const bs = this.readBytes(l);
-          tag.childDefault = new TextDecoder('utf-8').decode(bs);
+          tag.childDefaultVal = new TextDecoder('utf-8').decode(bs);
           return 1 + l;
         } else {
           const l2 = this.readByte();
           const bs = this.readBytes(l2);
-          tag.childDefault = new TextDecoder('utf-8').decode(bs);
+          tag.childDefaultVal = new TextDecoder('utf-8').decode(bs);
           return 1 + 1 + l2;
         }
 
@@ -510,13 +510,13 @@ export class MMDecoder {
         let lenChildEnum = l;
         if (lenChildEnum <= 5) {
           const bs = this.readBytes(lenChildEnum);
-          tag.childEnum = new TextDecoder('utf-8').decode(bs);
+          tag.childEnums = new TextDecoder('utf-8').decode(bs);
           return 1 + lenChildEnum;
         } else if (lenChildEnum <= 0xff) {
           const l2 = this.readByte();
           lenChildEnum = l2;
           const bs = this.readBytes(lenChildEnum);
-          tag.childEnum = new TextDecoder('utf-8').decode(bs);
+          tag.childEnums = new TextDecoder('utf-8').decode(bs);
           return 1 + 1 + lenChildEnum;
         } else if (lenChildEnum <= 0xffff) {
           const l2 = this.readBytes(2);
@@ -525,7 +525,7 @@ export class MMDecoder {
           }
           lenChildEnum = (l2[0]! << 8) | l2[1]!;
           const bs = this.readBytes(lenChildEnum);
-          tag.childEnum = new TextDecoder('utf-8').decode(bs);
+          tag.childEnums = new TextDecoder('utf-8').decode(bs);
           return 1 + 2 + lenChildEnum;
         }
         return 1;
@@ -824,9 +824,9 @@ export class MMDecoder {
         break;
       case ValueType.Enum:
         data = Number(v);
-        if (tag.enum) {
-          const enums = tag.enum.split('|');
-          text = enums[Number(v)] || text;
+        if (tag.enums) {
+          const enumList = tag.enums.split('|');
+          text = enumList[Number(v)] || text;
         }
         break;
       default:

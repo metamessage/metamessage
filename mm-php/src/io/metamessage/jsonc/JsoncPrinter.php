@@ -45,9 +45,9 @@ class JsoncPrinter
             case ValueType::DATETIME:
             case ValueType::DATE:
             case ValueType::TIME:
-            case ValueType::Uuid:
-            case ValueType::Ip:
-            case ValueType::Url:
+            case ValueType::UUID:
+            case ValueType::IP:
+            case ValueType::URL:
             case ValueType::EMAIL:
             case ValueType::ENUM:
                 return '"' . $v->Text . '"';

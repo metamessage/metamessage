@@ -10,8 +10,8 @@ public class MmTag
     public bool Raw { get; set; } = false;
     public bool AllowEmpty { get; set; } = false;
     public bool Unique { get; set; } = false;
-    public string DefaultValue { get; set; } = string.Empty;
-    public string Enum { get; set; } = string.Empty;
+    public string DefaultVal { get; set; } = string.Empty;
+    public string Enums { get; set; } = string.Empty;
     public int LocationHours { get; set; } = 0;
     public int Version { get; set; } = 0;
     public string Mime { get; set; } = string.Empty;
@@ -22,11 +22,11 @@ public class MmTag
     public string Pattern { get; set; } = string.Empty;
     public string ChildDesc { get; set; } = string.Empty;
     public bool ChildNullable { get; set; } = false;
-    public string ChildEnum { get; set; } = string.Empty;
+    public string ChildEnums { get; set; } = string.Empty;
     public bool ChildRaw { get; set; } = false;
     public bool ChildAllowEmpty { get; set; } = false;
     public bool ChildUnique { get; set; } = false;
-    public string ChildDefault { get; set; } = string.Empty;
+    public string ChildDefaultVal { get; set; } = string.Empty;
     public string ChildMin { get; set; } = string.Empty;
     public string ChildMax { get; set; } = string.Empty;
     public int ChildSize { get; set; } = 0;
@@ -54,8 +54,8 @@ public class MmTag
             Raw = Raw,
             AllowEmpty = AllowEmpty,
             Unique = Unique,
-            DefaultValue = DefaultValue,
-            Enum = Enum,
+            DefaultVal = DefaultVal,
+            Enums = Enums,
             LocationHours = LocationHours,
             Version = Version,
             Mime = Mime,
@@ -66,11 +66,11 @@ public class MmTag
             Pattern = Pattern,
             ChildDesc = ChildDesc,
             ChildNullable = ChildNullable,
-            ChildEnum = ChildEnum,
+            ChildEnums = ChildEnums,
             ChildRaw = ChildRaw,
             ChildAllowEmpty = ChildAllowEmpty,
             ChildUnique = ChildUnique,
-            ChildDefault = ChildDefault,
+            ChildDefaultVal = ChildDefaultVal,
             ChildMin = ChildMin,
             ChildMax = ChildMax,
             ChildSize = ChildSize,
@@ -117,9 +117,9 @@ public class MmTag
             Unique = parent.ChildUnique;
         }
 
-        if (!string.IsNullOrEmpty(parent.ChildDefault))
+        if (!string.IsNullOrEmpty(parent.ChildDefaultVal))
         {
-            DefaultValue = parent.ChildDefault;
+            DefaultVal = parent.ChildDefaultVal;
         }
 
         if (!string.IsNullOrEmpty(parent.ChildMin))
@@ -137,9 +137,9 @@ public class MmTag
             Size = parent.ChildSize;
         }
 
-        if (!string.IsNullOrEmpty(parent.ChildEnum))
+        if (!string.IsNullOrEmpty(parent.ChildEnums))
         {
-            Enum = parent.ChildEnum;
+            Enums = parent.ChildEnums;
         }
 
         if (!string.IsNullOrEmpty(parent.ChildPattern))
@@ -215,18 +215,18 @@ public class MmTag
             result.Add(8);
         }
 
-        if (!string.IsNullOrEmpty(DefaultValue))
+        if (!string.IsNullOrEmpty(DefaultVal))
         {
             result.Add(9);
-            var defaultValueBytes = System.Text.Encoding.UTF8.GetBytes(DefaultValue);
+            var defaultValueBytes = System.Text.Encoding.UTF8.GetBytes(DefaultVal);
             result.Add((byte)defaultValueBytes.Length);
             result.AddRange(defaultValueBytes);
         }
 
-        if (!string.IsNullOrEmpty(Enum))
+        if (!string.IsNullOrEmpty(Enums))
         {
             result.Add(10);
-            var enumBytes = System.Text.Encoding.UTF8.GetBytes(Enum);
+            var enumBytes = System.Text.Encoding.UTF8.GetBytes(Enums);
             result.Add((byte)enumBytes.Length);
             result.AddRange(enumBytes);
         }
@@ -266,10 +266,10 @@ public class MmTag
             result.Add(15);
         }
 
-        if (!string.IsNullOrEmpty(ChildEnum))
+        if (!string.IsNullOrEmpty(ChildEnums))
         {
             result.Add(16);
-            var childEnumBytes = System.Text.Encoding.UTF8.GetBytes(ChildEnum);
+            var childEnumBytes = System.Text.Encoding.UTF8.GetBytes(ChildEnums);
             result.Add((byte)childEnumBytes.Length);
             result.AddRange(childEnumBytes);
         }

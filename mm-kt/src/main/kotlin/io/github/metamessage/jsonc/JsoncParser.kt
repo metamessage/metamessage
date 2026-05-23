@@ -108,10 +108,10 @@ class JsoncParser(private val tokens: List<JsoncToken>) {
                                 ValueType.DATETIME -> parseDateTimeValue(text, tag)
                                 ValueType.DATE -> parseDateValue(text, tag)
                                 ValueType.TIME -> parseTimeValue(text, tag)
-                                ValueType.Uuid -> parseUUIDValue(text, tag)
+                                ValueType.UUID -> parseUUIDValue(text, tag)
                                 ValueType.DECIMAL -> parseDecimalValue(text, tag)
-                                ValueType.Ip -> parseIPValue(text, tag)
-                                ValueType.Url -> parseURLValue(text, tag)
+                                ValueType.IP -> parseIPValue(text, tag)
+                                ValueType.URL -> parseURLValue(text, tag)
                                 ValueType.EMAIL -> parseEmailValue(text, tag)
                                 ValueType.ENUM -> parseEnumValue(text, tag)
                                 ValueType.IMAGE -> parseImageValue(text, tag)
@@ -352,7 +352,7 @@ class JsoncParser(private val tokens: List<JsoncToken>) {
     }
 
     private fun parseEnumValue(text: String, tag: Tag): Pair<Any?, String?> {
-        if (tag.enum.isEmpty()) {
+        if (tag.enums.isEmpty()) {
             throw JsoncException("enum empty")
         }
 
@@ -875,10 +875,10 @@ class JsoncParser(private val tokens: List<JsoncToken>) {
                                 "datetime" -> ValueType.DATETIME
                                 "date" -> ValueType.DATE
                                 "time" -> ValueType.TIME
-                                "uuid" -> ValueType.Uuid
+                                "uuid" -> ValueType.UUID
                                 "decimal" -> ValueType.DECIMAL
-                                "ip" -> ValueType.Ip
-                                "url" -> ValueType.Url
+                                "ip" -> ValueType.IP
+                                "url" -> ValueType.URL
                                 "email" -> ValueType.EMAIL
                                 "enum" -> ValueType.ENUM
                                 "arr" -> ValueType.ARR
@@ -892,13 +892,13 @@ class JsoncParser(private val tokens: List<JsoncToken>) {
                 "raw" -> tag.raw = true
                 "allow_empty" -> tag.allowEmpty = true
                 "unique" -> tag.unique = true
-                "default" -> tag.default = value
+                "default" -> tag.default_val = value
                 "min" -> tag.min = value
                 "max" -> tag.max = value
                 "size" -> tag.size = value.toIntOrNull() ?: 0
                 "enum" -> {
                     tag.type = ValueType.ENUM
-                    tag.enum = value
+                    tag.enums = value
                 }
                 "pattern" -> tag.pattern = value
                 "location" -> tag.location = value.toIntOrNull() ?: 0
@@ -915,11 +915,11 @@ class JsoncParser(private val tokens: List<JsoncToken>) {
         if (a.desc.isNotEmpty()) b.desc = a.desc
         if (a.nullable) b.nullable = true
         if (a.isNull) b.isNull = true
-        if (a.default.isNotEmpty()) b.default = a.default
+        if (a.default_val.isNotEmpty()) b.default_val = a.default_val
         if (a.min.isNotEmpty()) b.min = a.min
         if (a.max.isNotEmpty()) b.max = a.max
         if (a.size != 0) b.size = a.size
-        if (a.enum.isNotEmpty()) b.enum = a.enum
+        if (a.enums.isNotEmpty()) b.enums = a.enums
         if (a.pattern.isNotEmpty()) b.pattern = a.pattern
         if (a.location != 0) b.location = a.location
         if (a.version != 0) b.version = a.version

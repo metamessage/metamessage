@@ -292,7 +292,7 @@ function valueToNode(v: any, tag: Tag, depth: number, path: string): Node {
           break;
         }
         case ValueType.Enum: {
-          if (!tag.enum) {
+          if (!tag.enums) {
             throw new Error('enum empty');
           }
           const result = tag.validateEnum(v);

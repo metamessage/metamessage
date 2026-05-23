@@ -482,11 +482,11 @@ class MetaMessage
 
             case ValueType::STR:
             case ValueType::EMAIL:
-            case ValueType::Url:
-            case ValueType::Uuid:
+            case ValueType::URL:
+            case ValueType::UUID:
             case ValueType::DECIMAL:
             case ValueType::ENUM:
-            case ValueType::Ip:
+            case ValueType::IP:
                 $out = $val->Text;
                 break;
 

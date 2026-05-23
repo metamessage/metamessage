@@ -230,8 +230,8 @@ private:
                     return static_cast<int>(1 + tag.desc.size());
                 }
                 if (b >= KDefault && b < KDefault + 8) {
-                    tag.defaultVal = decodeTagString(suffix);
-                    return static_cast<int>(1 + tag.defaultVal.size());
+                    tag.default_val = decodeTagString(suffix);
+                    return static_cast<int>(1 + tag.default_val.size());
                 }
                 if (b >= KMin && b < KMin + 8) {
                     tag.min = decodeTagString(suffix);
@@ -242,8 +242,8 @@ private:
                     return static_cast<int>(1 + tag.max.size());
                 }
                 if (b >= KEnum && b < KEnum + 8) {
-                    tag.enumVal = decodeTagString(suffix);
-                    return static_cast<int>(1 + tag.enumVal.size());
+                    tag.enums = decodeTagString(suffix);
+                    return static_cast<int>(1 + tag.enums.size());
                 }
                 if (b >= KPattern && b < KPattern + 8) {
                     tag.pattern = decodeTagString(suffix);
@@ -262,8 +262,8 @@ private:
                     return static_cast<int>(1 + tag.childDesc.size());
                 }
                 if (b >= KChildDefault && b < KChildDefault + 8) {
-                    tag.childDefault = decodeTagString(suffix);
-                    return static_cast<int>(1 + tag.childDefault.size());
+                    tag.child_default_val = decodeTagString(suffix);
+                    return static_cast<int>(1 + tag.child_default_val.size());
                 }
                 if (b >= KChildMin && b < KChildMin + 8) {
                     tag.childMin = decodeTagString(suffix);
@@ -274,8 +274,8 @@ private:
                     return static_cast<int>(1 + tag.childMax.size());
                 }
                 if (b >= KChildEnum && b < KChildEnum + 8) {
-                    tag.childEnum = decodeTagString(suffix);
-                    return static_cast<int>(1 + tag.childEnum.size());
+                    tag.child_enums = decodeTagString(suffix);
+                    return static_cast<int>(1 + tag.child_enums.size());
                 }
                 if (b >= KChildPattern && b < KChildPattern + 8) {
                     tag.childPattern = decodeTagString(suffix);

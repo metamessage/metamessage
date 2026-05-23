@@ -1331,9 +1331,9 @@ public class MmValidator
             return;
         }
 
-        if (!string.IsNullOrEmpty(enumValue) && !string.IsNullOrEmpty(tag.Enum))
+        if (!string.IsNullOrEmpty(enumValue) && !string.IsNullOrEmpty(tag.Enums))
         {
-            var enumValues = tag.Enum.Split('|');
+            var enumValues = tag.Enums.Split('|');
             if (!enumValues.Contains(enumValue))
             {
                 result.AddError("value is not in enum");

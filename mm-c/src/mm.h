@@ -22,7 +22,7 @@ typedef struct {
   int64_t min;
   int64_t max;
   int size;
-  const char *enum_val;
+  const char *enums;
   const char *pattern;
   bool nullable;
   bool raw;
@@ -39,7 +39,7 @@ typedef struct {
   int64_t min;
   int64_t max;
   int size;
-  const char *enum_val;
+  const char *enums;
   const char *pattern;
   bool nullable;
   bool raw;
@@ -56,8 +56,8 @@ typedef struct {
   bool child_raw;
   bool child_allow_empty;
   bool child_unique;
-  const char *child_default;
-  const char *child_enum;
+  const char *child_default_val;
+  const char *child_enums;
   const char *child_pattern;
   int child_location;
   int child_version;
@@ -105,7 +105,7 @@ mm_node_t *mm_video_create(const char *val, mm_field_attr_t attr);
                                                   .location = INT_MIN,         \
                                                   .desc = NULL,                \
                                                   .default_val = NULL,         \
-                                                  .enum_val = NULL,            \
+                                                  .enums = NULL,            \
                                                   .pattern = NULL,             \
                                                   .nullable = false,           \
                                                   .raw = false,                \
@@ -121,7 +121,7 @@ mm_node_t *mm_video_create(const char *val, mm_field_attr_t attr);
                                                        .location = INT_MIN,    \
                                                        .desc = NULL,           \
                                                        .default_val = NULL,    \
-                                                       .enum_val = NULL,       \
+                                                       .enums = NULL,       \
                                                        .pattern = NULL,        \
                                                        .nullable = false,      \
                                                        .raw = false,           \
@@ -137,7 +137,7 @@ mm_node_t *mm_video_create(const char *val, mm_field_attr_t attr);
                                                 .location = INT_MIN,           \
                                                 .desc = NULL,                  \
                                                 .default_val = NULL,           \
-                                                .enum_val = NULL,              \
+                                                .enums = NULL,              \
                                                 .pattern = NULL,               \
                                                 .nullable = false,             \
                                                 .raw = false,                  \
@@ -153,7 +153,7 @@ mm_node_t *mm_video_create(const char *val, mm_field_attr_t attr);
                                                    .location = INT_MIN,        \
                                                    .desc = NULL,               \
                                                    .default_val = NULL,        \
-                                                   .enum_val = NULL,           \
+                                                   .enums = NULL,           \
                                                    .pattern = NULL,            \
                                                    .nullable = false,          \
                                                    .raw = false,               \
@@ -169,7 +169,7 @@ mm_node_t *mm_video_create(const char *val, mm_field_attr_t attr);
                                                  .location = INT_MIN,          \
                                                  .desc = NULL,                 \
                                                  .default_val = NULL,          \
-                                                 .enum_val = NULL,             \
+                                                 .enums = NULL,             \
                                                  .pattern = NULL,              \
                                                  .nullable = false,            \
                                                  .raw = false,                 \
@@ -185,7 +185,7 @@ mm_node_t *mm_video_create(const char *val, mm_field_attr_t attr);
                                                   .location = INT_MIN,         \
                                                   .desc = NULL,                \
                                                   .default_val = NULL,         \
-                                                  .enum_val = NULL,            \
+                                                  .enums = NULL,            \
                                                   .pattern = NULL,             \
                                                   .nullable = false,           \
                                                   .raw = false,                \
@@ -201,7 +201,7 @@ mm_node_t *mm_video_create(const char *val, mm_field_attr_t attr);
                                                   .location = INT_MIN,         \
                                                   .desc = NULL,                \
                                                   .default_val = NULL,         \
-                                                  .enum_val = NULL,            \
+                                                  .enums = NULL,            \
                                                   .pattern = NULL,             \
                                                   .nullable = false,           \
                                                   .raw = false,                \
@@ -217,7 +217,7 @@ mm_node_t *mm_video_create(const char *val, mm_field_attr_t attr);
                                                   .location = INT_MIN,         \
                                                   .desc = NULL,                \
                                                   .default_val = NULL,         \
-                                                  .enum_val = NULL,            \
+                                                  .enums = NULL,            \
                                                   .pattern = NULL,             \
                                                   .nullable = false,           \
                                                   .raw = false,                \
@@ -233,7 +233,7 @@ mm_node_t *mm_video_create(const char *val, mm_field_attr_t attr);
                                                     .location = INT_MIN,       \
                                                     .desc = NULL,              \
                                                     .default_val = NULL,       \
-                                                    .enum_val = NULL,          \
+                                                    .enums = NULL,          \
                                                     .pattern = NULL,           \
                                                     .nullable = false,         \
                                                     .raw = false,              \
@@ -249,7 +249,7 @@ mm_node_t *mm_video_create(const char *val, mm_field_attr_t attr);
                                                   .location = INT_MIN,         \
                                                   .desc = NULL,                \
                                                   .default_val = NULL,         \
-                                                  .enum_val = NULL,            \
+                                                  .enums = NULL,            \
                                                   .pattern = NULL,             \
                                                   .nullable = false,           \
                                                   .raw = false,                \
@@ -265,7 +265,7 @@ mm_node_t *mm_video_create(const char *val, mm_field_attr_t attr);
                                                    .location = INT_MIN,        \
                                                    .desc = NULL,               \
                                                    .default_val = NULL,        \
-                                                   .enum_val = NULL,           \
+                                                   .enums = NULL,           \
                                                    .pattern = NULL,            \
                                                    .nullable = false,          \
                                                    .raw = false,               \
@@ -281,7 +281,7 @@ mm_node_t *mm_video_create(const char *val, mm_field_attr_t attr);
                                                    .location = INT_MIN,        \
                                                    .desc = NULL,               \
                                                    .default_val = NULL,        \
-                                                   .enum_val = NULL,           \
+                                                   .enums = NULL,           \
                                                    .pattern = NULL,            \
                                                    .nullable = false,          \
                                                    .raw = false,               \
@@ -297,7 +297,7 @@ mm_node_t *mm_video_create(const char *val, mm_field_attr_t attr);
                                                    .location = INT_MIN,        \
                                                    .desc = NULL,               \
                                                    .default_val = NULL,        \
-                                                   .enum_val = NULL,           \
+                                                   .enums = NULL,           \
                                                    .pattern = NULL,            \
                                                    .nullable = false,          \
                                                    .raw = false,               \
@@ -313,7 +313,7 @@ mm_node_t *mm_video_create(const char *val, mm_field_attr_t attr);
                                                  .location = INT_MIN,          \
                                                  .desc = NULL,                 \
                                                  .default_val = NULL,          \
-                                                 .enum_val = NULL,             \
+                                                 .enums = NULL,             \
                                                  .pattern = NULL,              \
                                                  .nullable = false,            \
                                                  .raw = false,                 \
@@ -329,7 +329,7 @@ mm_node_t *mm_video_create(const char *val, mm_field_attr_t attr);
                                                          .location = INT_MIN,  \
                                                          .desc = NULL,         \
                                                          .default_val = NULL,  \
-                                                         .enum_val = NULL,     \
+                                                         .enums = NULL,     \
                                                          .pattern = NULL,      \
                                                          .nullable = false,    \
                                                          .raw = false,         \
@@ -346,7 +346,7 @@ mm_node_t *mm_video_create(const char *val, mm_field_attr_t attr);
                                      .location = INT_MIN,                      \
                                      .desc = NULL,                             \
                                      .default_val = NULL,                      \
-                                     .enum_val = NULL,                         \
+                                     .enums = NULL,                         \
                                      .pattern = NULL,                          \
                                      .nullable = false,                        \
                                      .raw = false,                             \
@@ -363,7 +363,7 @@ mm_node_t *mm_video_create(const char *val, mm_field_attr_t attr);
                                        .location = INT_MIN,                    \
                                        .desc = NULL,                           \
                                        .default_val = NULL,                    \
-                                       .enum_val = NULL,                       \
+                                       .enums = NULL,                       \
                                        .pattern = NULL,                        \
                                        .nullable = false,                      \
                                        .raw = false,                           \
@@ -379,7 +379,7 @@ mm_node_t *mm_video_create(const char *val, mm_field_attr_t attr);
                                                         .location = INT_MIN,   \
                                                         .desc = NULL,          \
                                                         .default_val = NULL,   \
-                                                        .enum_val = NULL,      \
+                                                        .enums = NULL,      \
                                                         .pattern = NULL,       \
                                                         .nullable = false,     \
                                                         .raw = false,          \
@@ -395,7 +395,7 @@ mm_node_t *mm_video_create(const char *val, mm_field_attr_t attr);
                                                         .location = INT_MIN,   \
                                                         .desc = NULL,          \
                                                         .default_val = NULL,   \
-                                                        .enum_val = NULL,      \
+                                                        .enums = NULL,      \
                                                         .pattern = NULL,       \
                                                         .nullable = false,     \
                                                         .raw = false,          \
@@ -411,7 +411,7 @@ mm_node_t *mm_video_create(const char *val, mm_field_attr_t attr);
                                                         .location = INT_MIN,   \
                                                         .desc = NULL,          \
                                                         .default_val = NULL,   \
-                                                        .enum_val = NULL,      \
+                                                        .enums = NULL,      \
                                                         .pattern = NULL,       \
                                                         .nullable = false,     \
                                                         .raw = false,          \
@@ -428,7 +428,7 @@ mm_node_t *mm_video_create(const char *val, mm_field_attr_t attr);
                                       .location = INT_MIN,                     \
                                       .desc = NULL,                            \
                                       .default_val = NULL,                     \
-                                      .enum_val = NULL,                        \
+                                      .enums = NULL,                        \
                                       .pattern = NULL,                         \
                                       .nullable = false,                       \
                                       .raw = false,                            \
@@ -444,7 +444,7 @@ mm_node_t *mm_video_create(const char *val, mm_field_attr_t attr);
                                                       .location = INT_MIN,     \
                                                       .desc = NULL,            \
                                                       .default_val = NULL,     \
-                                                      .enum_val = NULL,        \
+                                                      .enums = NULL,        \
                                                       .pattern = NULL,         \
                                                       .nullable = false,       \
                                                       .raw = false,            \
@@ -460,7 +460,7 @@ mm_node_t *mm_video_create(const char *val, mm_field_attr_t attr);
                                                        .location = INT_MIN,    \
                                                        .desc = NULL,           \
                                                        .default_val = NULL,    \
-                                                       .enum_val = NULL,       \
+                                                       .enums = NULL,       \
                                                        .pattern = NULL,        \
                                                        .nullable = false,      \
                                                        .raw = false,           \
@@ -476,7 +476,7 @@ mm_node_t *mm_video_create(const char *val, mm_field_attr_t attr);
                                                          .location = INT_MIN,  \
                                                          .desc = NULL,         \
                                                          .default_val = NULL,  \
-                                                         .enum_val = NULL,     \
+                                                         .enums = NULL,     \
                                                          .pattern = NULL,      \
                                                          .nullable = false,    \
                                                          .raw = false,         \
@@ -492,7 +492,7 @@ mm_node_t *mm_video_create(const char *val, mm_field_attr_t attr);
                                                         .location = INT_MIN,   \
                                                         .desc = NULL,          \
                                                         .default_val = NULL,   \
-                                                        .enum_val = NULL,      \
+                                                        .enums = NULL,      \
                                                         .pattern = NULL,       \
                                                         .nullable = false,     \
                                                         .raw = false,          \
@@ -508,7 +508,7 @@ mm_node_t *mm_video_create(const char *val, mm_field_attr_t attr);
                                                          .location = INT_MIN,  \
                                                          .desc = NULL,         \
                                                          .default_val = NULL,  \
-                                                         .enum_val = NULL,     \
+                                                         .enums = NULL,     \
                                                          .pattern = NULL,      \
                                                          .nullable = false,    \
                                                          .raw = false,         \
@@ -524,7 +524,7 @@ mm_node_t *mm_video_create(const char *val, mm_field_attr_t attr);
                                                          .location = INT_MIN,  \
                                                          .desc = NULL,         \
                                                          .default_val = NULL,  \
-                                                         .enum_val = NULL,     \
+                                                         .enums = NULL,     \
                                                          .pattern = NULL,      \
                                                          .nullable = false,    \
                                                          .raw = false,         \

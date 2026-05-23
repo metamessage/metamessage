@@ -1310,7 +1310,7 @@ func (t *Tag) ValidateEnum(val string) (data any, text string, err error) {
 		return
 	}
 
-	enums := strings.Split(t.Enum, "|")
+	enums := strings.Split(t.Enums, "|")
 	idx := -1
 	for i, s := range enums {
 		if strings.TrimSpace(s) == val {

@@ -3,7 +3,8 @@
     "description": "PHP implementation of metamessage binary codec (compatible with github.com/metamessage/metamessage Go mm package). Field metadata via attributes.",
     "type": "library",
     "autoload": {
-        "classmap": ["src/"]
+        "classmap": ["src/"],
+        "files": ["src/io/metamessage/jsonc/Jsonc.php"]
     },
     "autoload-dev": {
         "classmap": ["tests/"]

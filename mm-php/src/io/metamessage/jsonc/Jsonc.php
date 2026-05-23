@@ -3,6 +3,20 @@
 namespace io\metamessage\jsonc;
 
 use io\metamessage\ir\Node;
+use io\metamessage\ir\Object_;
+use io\metamessage\ir\Array_;
+use io\metamessage\ir\Value;
+use io\metamessage\ir\Field;
+
+class_alias(Object_::class, 'io\\metamessage\\jsonc\\JsoncObject');
+class_alias(Array_::class, 'io\\metamessage\\jsonc\\JsoncArray');
+class_alias(Value::class, 'io\\metamessage\\jsonc\\JsoncValue');
+class_alias(Field::class, 'io\\metamessage\\jsonc\\JsoncField');
+
+function parseJsonc(string $s): Node
+{
+    return Jsonc::ParseFromString($s);
+}
 
 class Jsonc
 {

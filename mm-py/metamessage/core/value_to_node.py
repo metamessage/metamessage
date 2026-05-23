@@ -166,7 +166,7 @@ class mm:
             elif k == 'unique':
                 tag.unique = bool(v)
             elif k == 'default':
-                tag.default = str(v)
+                tag.default_val = str(v)
             elif k == 'min':
                 tag.min = str(v)
             elif k == 'max':
@@ -175,7 +175,7 @@ class mm:
                 tag.size = int(v)
             elif k == 'enum':
                 tag.type = ValueType.Enum
-                tag.enum = str(v)
+                tag.enums = str(v)
             elif k == 'pattern':
                 tag.pattern = str(v)
             elif k == 'version':
@@ -199,7 +199,7 @@ class mm:
             elif k == 'child_unique':
                 tag.child_unique = bool(v)
             elif k == 'child_default':
-                tag.child_default = str(v)
+                tag.child_default_val = str(v)
             elif k == 'child_min':
                 tag.child_min = str(v)
             elif k == 'child_max':
@@ -207,7 +207,7 @@ class mm:
             elif k == 'child_size':
                 tag.child_size = int(v)
             elif k == 'child_enum':
-                tag.child_enum = str(v)
+                tag.child_enums = str(v)
             elif k == 'child_pattern':
                 tag.child_pattern = str(v)
             elif k == 'child_version':
@@ -647,16 +647,16 @@ def _any_to_node_dict(value: dict, tag: Tag, depth: int, path: str) -> Obj:
             tag_item.allow_empty = tag.child_allow_empty
         if tag.child_unique:
             tag_item.unique = tag.child_unique
-        if tag.child_default:
-            tag_item.default = tag.child_default
+        if tag.child_default_val:
+            tag_item.default_val = tag.child_default_val
         if tag.child_min:
             tag_item.min = tag.child_min
         if tag.child_max:
             tag_item.max = tag.child_max
         if tag.child_size:
             tag_item.size = tag.child_size
-        if tag.child_enum:
-            tag_item.enum = tag.child_enum
+        if tag.child_enums:
+            tag_item.enums = tag.child_enums
         if tag.child_pattern:
             tag_item.pattern = tag.child_pattern
         if tag.child_version:
@@ -676,11 +676,11 @@ def _any_to_node_dict(value: dict, tag: Tag, depth: int, path: str) -> Obj:
             tag.child_nullable = tag_item.nullable
             tag.child_allow_empty = tag_item.allow_empty
             tag.child_unique = tag_item.unique
-            tag.child_default = tag_item.default
+            tag.child_default_val = tag_item.default_val
             tag.child_min = tag_item.min
             tag.child_max = tag_item.max
             tag.child_size = tag_item.size
-            tag.child_enum = tag_item.enum
+            tag.child_enums = tag_item.enums
             tag.child_pattern = tag_item.pattern
             tag.child_version = tag_item.version
             tag.child_mime = tag_item.mime
@@ -728,11 +728,11 @@ def _any_to_node_list(value: list, tag: Tag, depth: int, path: str) -> Arr:
             tag.child_nullable = tag_item.nullable
             tag.child_allow_empty = tag_item.allow_empty
             tag.child_unique = tag_item.unique
-            tag.child_default = tag_item.default
+            tag.child_default_val = tag_item.default_val
             tag.child_min = tag_item.min
             tag.child_max = tag_item.max
             tag.child_size = tag_item.size
-            tag.child_enum = tag_item.enum
+            tag.child_enums = tag_item.enums
             tag.child_pattern = tag_item.pattern
             tag.child_version = tag_item.version
             tag.child_mime = tag_item.mime

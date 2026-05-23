@@ -920,10 +920,10 @@ class MmValidator:
                 return ValidationResult(False, "type enum not allow empty value \"\"")
             return ValidationResult(True, data=-1, text=value)
 
-        if not tag.enum:
+        if not tag.enums:
             return ValidationResult(False, "enum not defined")
 
-        enums = tag.enum.split('|')
+        enums = tag.enums.split('|')
         idx = -1
         for i, val in enumerate(enums):
             if val.strip() == value:

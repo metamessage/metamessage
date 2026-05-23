@@ -549,11 +549,11 @@ private fun convertVec(list: List<*>, tag: Tag, depth: Int, path: String): Node 
                 childNullable = resultTag.nullable
                 childAllowEmpty = resultTag.allowEmpty
                 childUnique = resultTag.unique
-                childDefault = resultTag.default
+                childDefaultVal = resultTag.default_val
                 childMin = resultTag.min
                 childMax = resultTag.max
                 childSize = resultTag.size
-                childEnum = resultTag.enum
+                childEnums = resultTag.enums
                 childPattern = resultTag.pattern
                 childLocation = resultTag.location
                 childVersion = resultTag.version
@@ -583,16 +583,17 @@ private fun convertVec(list: List<*>, tag: Tag, depth: Int, path: String): Node 
                 childNullable = resultTag.nullable
                 childAllowEmpty = resultTag.allowEmpty
                 childUnique = resultTag.unique
-                childDefault = resultTag.default
+                childDefaultVal = resultTag.default_val
                 childMin = resultTag.min
                 childMax = resultTag.max
                 childSize = resultTag.size
-                childEnum = resultTag.enum
+                childEnums = resultTag.enums
                 childPattern = resultTag.pattern
                 childLocation = resultTag.location
                 childVersion = resultTag.version
                 childMime = resultTag.mime
             }
+            setTag = true
         }
 
         node.items.add(itemNode)
@@ -629,11 +630,11 @@ private fun convertMap(map: Map<*, *>, tag: Tag, depth: Int, path: String): Node
                 childNullable = resultTag.nullable
                 childAllowEmpty = resultTag.allowEmpty
                 childUnique = resultTag.unique
-                childDefault = resultTag.default
+                childDefaultVal = resultTag.default_val
                 childMin = resultTag.min
                 childMax = resultTag.max
                 childSize = resultTag.size
-                childEnum = resultTag.enum
+                childEnums = resultTag.enums
                 childPattern = resultTag.pattern
                 childLocation = resultTag.location
                 childVersion = resultTag.version
@@ -664,11 +665,11 @@ private fun convertMap(map: Map<*, *>, tag: Tag, depth: Int, path: String): Node
                 childNullable = resultTag.nullable
                 childAllowEmpty = resultTag.allowEmpty
                 childUnique = resultTag.unique
-                childDefault = resultTag.default
+                childDefaultVal = resultTag.default_val
                 childMin = resultTag.min
                 childMax = resultTag.max
                 childSize = resultTag.size
-                childEnum = resultTag.enum
+                childEnums = resultTag.enums
                 childPattern = resultTag.pattern
                 childLocation = resultTag.location
                 childVersion = resultTag.version
@@ -720,8 +721,8 @@ private fun mergeTag(dst: Tag, src: Tag) {
         dst.unique = true
     }
 
-    if (src.default.isNotEmpty()) {
-        dst.default = src.default
+    if (src.default_val.isNotEmpty()) {
+        dst.default_val = src.default_val
     }
 
     if (src.min.isNotEmpty()) {
@@ -736,8 +737,8 @@ private fun mergeTag(dst: Tag, src: Tag) {
         dst.size = src.size
     }
 
-    if (src.enum.isNotEmpty()) {
-        dst.enum = src.enum
+    if (src.enums.isNotEmpty()) {
+        dst.enums = src.enums
     }
 
     if (src.pattern.isNotEmpty()) {
@@ -780,8 +781,8 @@ private fun mergeTag(dst: Tag, src: Tag) {
         dst.childUnique = true
     }
 
-    if (src.childDefault.isNotEmpty()) {
-        dst.childDefault = src.childDefault
+    if (src.childDefaultVal.isNotEmpty()) {
+        dst.childDefaultVal = src.childDefaultVal
     }
 
     if (src.childMin.isNotEmpty()) {
@@ -796,8 +797,8 @@ private fun mergeTag(dst: Tag, src: Tag) {
         dst.childSize = src.childSize
     }
 
-    if (src.childEnum.isNotEmpty()) {
-        dst.childEnum = src.childEnum
+    if (src.childEnums.isNotEmpty()) {
+        dst.childEnums = src.childEnums
     }
 
     if (src.childPattern.isNotEmpty()) {

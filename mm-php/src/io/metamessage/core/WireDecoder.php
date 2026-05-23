@@ -139,17 +139,17 @@ class WireDecoder
                     $node = new Value(0.0, '0.0', $tag, $path);
                     break;
                 case ValueType::EMAIL:
-                case ValueType::Uuid:
+                case ValueType::UUID:
                 case ValueType::DECIMAL:
                     $node = new Value('', '', $tag, $path);
                     break;
                 case ValueType::BIGINT:
                     $node = new Value('0', '0', $tag, $path);
                     break;
-                case ValueType::Url:
+                case ValueType::URL:
                     $node = new Value('', '', $tag, $path);
                     break;
-                case ValueType::Ip:
+                case ValueType::IP:
                     switch ($tag->version) {
                         case 0:
                             $text = '';
@@ -462,21 +462,21 @@ class WireDecoder
             case Tag::K_CHILD_DEFAULT:
                 $n = 1;
                 if ($remain < 7) {
-                    $childDefault = '';
+                    $childDefaultVal = '';
                     for ($i = 0; $i < $remain; $i++) {
-                        $childDefault .= chr($this->readByte());
+                        $childDefaultVal .=  chr($this->readByte());
                         $n++;
                     }
-                    $tag->childDefault = $childDefault;
+                    $tag->childDefaultVal = $childDefaultVal;
                 } else {
                     $l = $this->readByte();
                     $n++;
-                    $childDefault = '';
+                    $childDefaultVal = '';
                     for ($i = 0; $i < $l; $i++) {
-                        $childDefault .= chr($this->readByte());
+                        $childDefaultVal .=  chr($this->readByte());
                         $n++;
                     }
-                    $tag->childDefault = $childDefault;
+                    $tag->childDefaultVal = $childDefaultVal;
                 }
                 return $n;
 
@@ -536,32 +536,32 @@ class WireDecoder
                 $n = 1;
                 $tag->childType = ValueType::ENUM;
                 if ($remain <= 5) {
-                    $childEnum = '';
+                    $childEnums = '';
                     for ($i = 0; $i < $remain; $i++) {
-                        $childEnum .= chr($this->readByte());
+                        $childEnums .= chr($this->readByte());
                         $n++;
                     }
-                    $tag->childEnum = $childEnum;
+                    $tag->childEnums = $childEnums;
                 } elseif ($remain === 6) {
                     $l = $this->readByte();
                     $n++;
-                    $childEnum = '';
+                    $childEnums = '';
                     for ($i = 0; $i < $l; $i++) {
-                        $childEnum .= chr($this->readByte());
+                        $childEnums .= chr($this->readByte());
                         $n++;
                     }
-                    $tag->childEnum = $childEnum;
+                    $tag->childEnums = $childEnums;
                 } elseif ($remain === 7) {
                     $lh = $this->readByte();
                     $ll = $this->readByte();
                     $l = ($lh << 8) | $ll;
                     $n += 2;
-                    $childEnum = '';
+                    $childEnums = '';
                     for ($i = 0; $i < $l; $i++) {
-                        $childEnum .= chr($this->readByte());
+                        $childEnums .= chr($this->readByte());
                         $n++;
                     }
-                    $tag->childEnum = $childEnum;
+                    $tag->childEnums = $childEnums;
                 }
                 return $n;
 
@@ -651,10 +651,10 @@ class WireDecoder
             case ValueType::EMAIL:
                 $data = $text;
                 break;
-            case ValueType::Url:
+            case ValueType::URL:
                 $data = $text;
                 break;
-            case ValueType::Ip:
+            case ValueType::IP:
                 $data = $text;
                 break;
             case ValueType::STR:
@@ -708,12 +708,12 @@ class WireDecoder
                 $text = base64_encode(pack('C*', ...$bs));
                 break;
 
-            case ValueType::Uuid:
+            case ValueType::UUID:
                 $data = $bs;
                 $text = $this->uuidToString($bs);
                 break;
 
-            case ValueType::Ip:
+            case ValueType::IP:
                 $data = $bs;
                 $text = $this->bytesToIPString($bs);
                 break;

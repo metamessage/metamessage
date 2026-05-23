@@ -406,7 +406,7 @@ class Decoder:
             return 1
         elif p == TagKey.Default:
             n, s = self._read_length_str_small(l)
-            tag.default = s
+            tag.default_val = s
             return n
         elif p == TagKey.Min:
             n, s = self._read_length_str_small(l)
@@ -422,7 +422,7 @@ class Decoder:
         elif p == TagKey.Enum:
             tag.type = ValueType.Enum
             n, s = self._read_length_str(l, True, True)
-            tag.enum = s
+            tag.enums = s
             return n
         elif p == TagKey.Pattern:
             n, s = self._read_length_str_small(l)
@@ -465,7 +465,7 @@ class Decoder:
             return 1
         elif p == TagKey.ChildDefault:
             n, s = self._read_length_str_small(l)
-            tag.child_default = s
+            tag.child_default_val = s
             return n
         elif p == TagKey.ChildMin:
             n, s = self._read_length_str_small(l)
@@ -481,7 +481,7 @@ class Decoder:
         elif p == TagKey.ChildEnum:
             tag.child_type = ValueType.Enum
             n, s = self._read_length_str(l, True, True)
-            tag.child_enum = s
+            tag.child_enums = s
             return n
         elif p == TagKey.ChildPattern:
             n, s = self._read_length_str_small(l)
@@ -699,8 +699,8 @@ class Decoder:
                 data = -1
                 text = ""
             else:
-                if tag.enum:
-                    enums = [e.strip() for e in tag.enum.split('|')]
+                if tag.enums:
+                    enums = [e.strip() for e in tag.enums.split('|')]
                     if v >= len(enums):
                         raise ValueError("enum index out of range")
                     data = v

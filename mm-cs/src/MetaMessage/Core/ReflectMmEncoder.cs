@@ -179,11 +179,11 @@ public static class ReflectMmEncoder
         dst.Raw |= src.Raw;
         dst.AllowEmpty |= src.AllowEmpty;
         dst.Unique |= src.Unique;
-        if (!string.IsNullOrEmpty(src.DefaultValue))
-            dst.DefaultValue = src.DefaultValue;
-        if (!string.IsNullOrEmpty(src.Enum))
+        if (!string.IsNullOrEmpty(src.DefaultVal))
+            dst.DefaultVal = src.DefaultVal;
+        if (!string.IsNullOrEmpty(src.Enums))
         {
-            dst.Enum = src.Enum;
+            dst.Enums = src.Enums;
             dst.Type = ValueType.ENUM;
         }
         dst.LocationHours = src.LocationHours;
@@ -194,9 +194,9 @@ public static class ReflectMmEncoder
         if (src.ChildType != ValueType.UNKNOWN)
             dst.ChildType = src.ChildType;
         dst.ChildNullable |= src.ChildNullable;
-        if (!string.IsNullOrEmpty(src.ChildEnum))
+        if (!string.IsNullOrEmpty(src.ChildEnums))
         {
-            dst.ChildEnum = src.ChildEnum;
+            dst.ChildEnums = src.ChildEnums;
             dst.ChildType = ValueType.ENUM;
         }
     }
