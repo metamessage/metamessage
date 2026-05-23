@@ -6,6 +6,9 @@ use core::{Decoder, Encoder};
 use ir::ast::Node;
 use jsonc::Parser;
 
+pub use metamessage_derive::ToNode;
+pub use core::value_to_node::{ToNode as ToNodeTrait, value_to_node, nil_to_node};
+
 pub fn encode(node: &Node) -> Vec<u8> {
     let mut encoder = Encoder::new();
     encoder.encode(node)
@@ -457,5 +460,263 @@ mod tests {
             }
             _ => panic!("expected object"),
         }
+    }
+
+    #[test]
+    fn test_derive_to_node_simple_struct() {
+        use crate::ToNodeTrait;
+        use crate::ir::{Node, ValueType};
+
+        #[derive(ToNode)]
+        struct Person {
+            name: String,
+            age: i32,
+        }
+
+        let person = Person {
+            name: "Alice".to_string(),
+            age: 30,
+        };
+
+        let node = person.to_node(None);
+        match &node {
+            Node::Object(o) => {
+                assert_eq!(o.fields.len(), 2);
+                assert!(o.tag.is_some());
+                assert_eq!(o.tag.as_ref().unwrap().value_type, ValueType::Obj);
+
+                let name_field = o.fields.iter().find(|f| f.key == "name").unwrap();
+                match &name_field.value {
+                    Node::Value(v) => {
+                        assert_eq!(v.text, "Alice");
+                        assert_eq!(v.tag.as_ref().unwrap().value_type, ValueType::Str);
+                    }
+                    _ => panic!("expected Value node for name"),
+                }
+
+                let age_field = o.fields.iter().find(|f| f.key == "age").unwrap();
+                match &age_field.value {
+                    Node::Value(v) => {
+                        assert_eq!(v.text, "30");
+                        assert_eq!(v.tag.as_ref().unwrap().value_type, ValueType::I32);
+                    }
+                    _ => panic!("expected Value node for age"),
+                }
+            }
+            _ => panic!("expected Object node"),
+        }
+    }
+
+    #[test]
+    fn test_derive_to_node_with_mm_attributes() {
+        use crate::ToNodeTrait;
+
+        #[derive(ToNode)]
+        #[mm(desc = "用户信息")]
+        struct User {
+            #[mm(desc = "用户ID")]
+            id: i64,
+            #[mm(desc = "用户名", min = "1", max = "50")]
+            name: String,
+            #[mm(type = "email", desc = "电子邮箱")]
+            email: String,
+            #[mm(desc = "年龄", min = "0", max = "150")]
+            age: u8,
+            #[mm(desc = "是否激活")]
+            is_active: bool,
+        }
+
+        let user = User {
+            id: 1,
+            name: "Alice".to_string(),
+            email: "alice@example.com".to_string(),
+            age: 25,
+            is_active: true,
+        };
+
+        let node = user.to_node(None);
+        match &node {
+            Node::Object(o) => {
+                assert_eq!(o.fields.len(), 5);
+                assert_eq!(
+                    o.tag.as_ref().unwrap().desc,
+                    Some("用户信息".to_string())
+                );
+
+                let id_field = o.fields.iter().find(|f| f.key == "id").unwrap();
+                assert_eq!(
+                    id_field.value.get_tag().unwrap().desc,
+                    Some("用户ID".to_string())
+                );
+                assert_eq!(
+                    id_field.value.get_tag().unwrap().value_type,
+                    ValueType::I64
+                );
+
+                let email_field = o.fields.iter().find(|f| f.key == "email").unwrap();
+                assert_eq!(
+                    email_field.value.get_tag().unwrap().desc,
+                    Some("电子邮箱".to_string())
+                );
+                assert_eq!(
+                    email_field.value.get_tag().unwrap().value_type,
+                    ValueType::Email
+                );
+
+                let name_field = o.fields.iter().find(|f| f.key == "name").unwrap();
+                assert_eq!(
+                    name_field.value.get_tag().unwrap().desc,
+                    Some("用户名".to_string())
+                );
+                assert_eq!(
+                    name_field.value.get_tag().unwrap().min,
+                    Some("1".to_string())
+                );
+                assert_eq!(
+                    name_field.value.get_tag().unwrap().max,
+                    Some("50".to_string())
+                );
+
+                let age_field = o.fields.iter().find(|f| f.key == "age").unwrap();
+                assert_eq!(
+                    age_field.value.get_tag().unwrap().value_type,
+                    ValueType::U8
+                );
+            }
+            _ => panic!("expected Object node"),
+        }
+    }
+
+    #[test]
+    fn test_derive_to_node_with_nested_struct() {
+        use crate::ToNodeTrait;
+
+        #[derive(ToNode)]
+        struct Address {
+            city: String,
+            street: String,
+        }
+
+        #[derive(ToNode)]
+        #[mm(desc = "用户")]
+        struct User {
+            name: String,
+            address: Address,
+            tags: Vec<String>,
+        }
+
+        let user = User {
+            name: "Bob".to_string(),
+            address: Address {
+                city: "Beijing".to_string(),
+                street: "Chang'an".to_string(),
+            },
+            tags: vec!["tag1".to_string(), "tag2".to_string()],
+        };
+
+        let node = user.to_node(None);
+        match &node {
+            Node::Object(o) => {
+                assert_eq!(o.fields.len(), 3);
+                assert_eq!(o.tag.as_ref().unwrap().desc, Some("用户".to_string()));
+
+                let address_field = o.fields.iter().find(|f| f.key == "address").unwrap();
+                match &address_field.value {
+                    Node::Object(addr_obj) => {
+                        assert_eq!(addr_obj.fields.len(), 2);
+                        let city_field = addr_obj.fields.iter().find(|f| f.key == "city").unwrap();
+                        match &city_field.value {
+                            Node::Value(v) => {
+                                assert_eq!(v.text, "Beijing");
+                            }
+                            _ => panic!("expected Value node for city"),
+                        }
+                    }
+                    _ => panic!("expected nested Object node for address"),
+                }
+
+                let tags_field = o.fields.iter().find(|f| f.key == "tags").unwrap();
+                match &tags_field.value {
+                    Node::Array(a) => {
+                        assert_eq!(a.items.len(), 2);
+                        assert_eq!(a.tag.as_ref().unwrap().value_type, ValueType::Vec);
+                    }
+                    _ => panic!("expected Array node for tags"),
+                }
+            }
+            _ => panic!("expected Object node"),
+        }
+    }
+
+    #[test]
+    fn test_derive_to_node_with_nullable_field() {
+        use crate::ToNodeTrait;
+
+        #[derive(ToNode)]
+        struct Config {
+            name: String,
+            #[mm(nullable)]
+            description: Option<String>,
+        }
+
+        let config_with = Config {
+            name: "cfg1".to_string(),
+            description: Some("a config".to_string()),
+        };
+
+        let node = config_with.to_node(None);
+        match &node {
+            Node::Object(o) => {
+                let desc = o.fields.iter().find(|f| f.key == "description").unwrap();
+                match &desc.value {
+                    Node::Value(v) => {
+                        assert_eq!(v.text, "a config");
+                        assert!(v.tag.as_ref().unwrap().nullable);
+                        assert!(!v.tag.as_ref().unwrap().is_null);
+                    }
+                    _ => panic!("expected Value"),
+                }
+            }
+            _ => panic!("expected Object node"),
+        }
+
+        let config_without = Config {
+            name: "cfg2".to_string(),
+            description: None,
+        };
+
+        let node = config_without.to_node(None);
+        match &node {
+            Node::Object(o) => {
+                let desc = o.fields.iter().find(|f| f.key == "description").unwrap();
+                match &desc.value {
+                    Node::Value(v) => {
+                        assert!(v.tag.as_ref().unwrap().is_null);
+                    }
+                    _ => panic!("expected Value"),
+                }
+            }
+            _ => panic!("expected Object node"),
+        }
+    }
+
+    #[test]
+    fn test_derive_to_node_encode_roundtrip() {
+        use crate::ToNodeTrait;
+
+        #[derive(ToNode)]
+        struct Simple {
+            key: String,
+            value: i32,
+        }
+
+        let s = Simple {
+            key: "k".to_string(),
+            value: 42,
+        };
+
+        let node = s.to_node(None);
+        let encoded = encode(&node);
+        assert!(!encoded.is_empty());
     }
 }

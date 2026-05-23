@@ -35,6 +35,29 @@ func main() {
 		Users []User `mm:"desc=用戶列表"`
 	}
 
+	type CreateUserRequest struct {
+		Name  string `mm:"desc=用戶名稱;min=1;max=50"`
+		Email string `mm:"type=email;desc=電子郵箱"`
+		Age   uint8  `mm:"desc=年齡;min=0;max=150"`
+	}
+
+	createReq := &CreateUserRequest{
+		Name:  "David",
+		Email: "david@example.com",
+		Age:   28,
+	}
+	encodedReq, err := mm.EncodeFromValue(createReq, "")
+	fmt.Println("encodedReq", encodedReq)
+
+	var req *CreateUserRequest
+
+	// var obj any
+	// obj = &req
+
+	e := mm.DecodeToValue(encodedReq, &req)
+	fmt.Println("err", e, req)
+	return
+
 	data := APIResponse{Code: 0, Message: "success", Data: users[0]}
 
 	encoded, err := mm.EncodeFromValue(data, "")

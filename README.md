@@ -423,13 +423,9 @@ var decoded = MetaMessage.Decode<Person>(wire);
 
 #### Rust
 
-```rust
-use metamessage::{encode, decode, Node};
+[crates.io](https://crates.io/crates/metamessage)
 
-let person = Node::Object(/* ... */);
-let wire = encode(&person);
-let decoded = decode(&wire).unwrap();
-```
+[mm-rs](./mm-rs)
 
 #### Swift
 

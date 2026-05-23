@@ -5,6 +5,7 @@ pub mod utils;
 pub mod encoder;
 pub mod decoder;
 pub mod validator;
+pub mod value_to_node;
 
 pub use constants::{
     DEFAULT_BUF_SIZE, MAX_CAP,

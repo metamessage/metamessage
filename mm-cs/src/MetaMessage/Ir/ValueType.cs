@@ -1,4 +1,4 @@
-namespace MetaMessage.Jsonc;
+namespace MetaMessage.Ir;
 
 public enum ValueType
 {

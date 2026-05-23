@@ -1,0 +1,16 @@
+[package]
+name = "metamessage-derive"
+version = "0.1.0"
+edition = "2021"
+authors = ["MetaMessage Team"]
+description = "MetaMessage derive macros for Rust"
+license = "MIT"
+repository = "https://github.com/metamessage/metamessage"
+
+[lib]
+proc-macro = true
+
+[dependencies]
+syn = { version = "2.0", features = ["full", "extra-traits"] }
+quote = "1.0"
+proc-macro2 = "1.0"

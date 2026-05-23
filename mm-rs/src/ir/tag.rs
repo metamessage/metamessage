@@ -4,7 +4,7 @@ use crate::ir::value_type::ValueType;
 pub struct Tag {
     pub value_type: ValueType,
 
-    pub name: bool,
+    pub name: Option<String>,
     pub is_null: bool,
     pub example: bool,
     pub nullable: bool,
@@ -45,7 +45,7 @@ impl Tag {
     pub fn new() -> Self {
         Self {
             value_type: ValueType::Unknown,
-            name: false,
+            name: None,
             is_null: false,
             example: false,
             nullable: false,
@@ -256,8 +256,7 @@ impl Tag {
 
             match key {
                 "name" => {
-                    tag.name = true;
-                    let _v = value;
+                    tag.name = value.map(|v| v.trim_matches('"').to_string());
                 }
                 "type" => {
                     if let Some(ref v) = value {

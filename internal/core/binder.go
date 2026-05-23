@@ -60,15 +60,16 @@ func getFieldMap(t reflect.Type, val reflect.Value) map[string]reflect.Value {
 func convertObj(obj *ir.Object, outVal reflect.Value) error {
 	if obj.Tag.Nullable {
 		if outVal.Kind() != reflect.Pointer {
-			return fmt.Errorf("convertObj requires pointer type, got %s", outVal.Kind())
+			return fmt.Errorf("%s requires pointer type, got %s", obj.Path, outVal.Kind())
 		}
 		if outVal.IsNil() {
-			return fmt.Errorf("convertObj: nullable pointer must point to struct, got nil")
+			outVal.Set(reflect.New(outVal.Type().Elem()))
 		}
 		outVal = outVal.Elem()
 	}
+
 	if outVal.Kind() != reflect.Struct {
-		return fmt.Errorf("convertObj requires struct type, got %s", outVal.Kind())
+		return fmt.Errorf("%s requires struct type, got %s", obj.Path, outVal.Kind())
 	}
 
 	fieldMap := getFieldMap(outVal.Type(), outVal)
@@ -96,15 +97,16 @@ func convertObj(obj *ir.Object, outVal reflect.Value) error {
 func convertMap(obj *ir.Object, outVal reflect.Value) error {
 	if obj.Tag.Nullable {
 		if outVal.Kind() != reflect.Pointer {
-			return fmt.Errorf("convertMap requires pointer type, got %s", outVal.Kind())
+			return fmt.Errorf("%s requires pointer type, got %s", obj.Path, outVal.Kind())
 		}
 		if outVal.IsNil() {
-			return fmt.Errorf("convertMap: nullable pointer must point to map, got nil")
+			outVal.Set(reflect.New(outVal.Type().Elem()))
 		}
 		outVal = outVal.Elem()
 	}
+
 	if outVal.Kind() != reflect.Map {
-		return fmt.Errorf("convertMap requires map type, got %s", outVal.Kind())
+		return fmt.Errorf("%s requires map type, got %s", obj.Path, outVal.Kind())
 	}
 
 	if outVal.IsNil() {
@@ -135,15 +137,16 @@ func convertMap(obj *ir.Object, outVal reflect.Value) error {
 func convertArr(arr *ir.Array, outVal reflect.Value) error {
 	if arr.Tag.Nullable {
 		if outVal.Kind() != reflect.Pointer {
-			return fmt.Errorf("convert array requires pointer type, got %s", outVal.Kind())
+			return fmt.Errorf("%s requires pointer type, got %s", arr.Path, outVal.Kind())
 		}
 		if outVal.IsNil() {
-			return fmt.Errorf("convert array: nullable pointer must point to array, got nil")
+			outVal.Set(reflect.New(outVal.Type().Elem()))
 		}
 		outVal = outVal.Elem()
 	}
+
 	if outVal.Kind() != reflect.Array {
-		return fmt.Errorf("convert array requires array type, got %s", outVal.Kind())
+		return fmt.Errorf("%s requires array type, got %s", arr.Path, outVal.Kind())
 	}
 
 	arrayLen := outVal.Len()
@@ -165,15 +168,16 @@ func convertArr(arr *ir.Array, outVal reflect.Value) error {
 func convertVec(arr *ir.Array, outVal reflect.Value) error {
 	if arr.Tag.Nullable {
 		if outVal.Kind() != reflect.Pointer {
-			return fmt.Errorf("convert slice requires pointer type, got %s", outVal.Kind())
+			return fmt.Errorf("%s requires pointer type, got %s", arr.Path, outVal.Kind())
 		}
 		if outVal.IsNil() {
-			return fmt.Errorf("convert slice: nullable pointer must point to slice, got nil")
+			outVal.Set(reflect.New(outVal.Type().Elem()))
 		}
 		outVal = outVal.Elem()
 	}
+
 	if outVal.Kind() != reflect.Slice {
-		return fmt.Errorf("convert slice requires slice type, got %s", outVal.Kind())
+		return fmt.Errorf("%s requires slice type, got %s", arr.Path, outVal.Kind())
 	}
 
 	size := len(arr.Items)
@@ -193,7 +197,7 @@ func convertVec(arr *ir.Array, outVal reflect.Value) error {
 func convertScalar(val *ir.Value, outVal reflect.Value) error {
 	if val.Tag.Nullable {
 		if outVal.Kind() != reflect.Pointer {
-			return fmt.Errorf("convertScalar requires pointer type, got %s", outVal.Kind())
+			return fmt.Errorf("%s requires pointer type, got %s", val.Path, outVal.Kind())
 		}
 		if outVal.IsNil() {
 			outVal.Set(reflect.New(outVal.Type().Elem()))
@@ -206,7 +210,7 @@ func convertScalar(val *ir.Value, outVal reflect.Value) error {
 
 	tag := val.GetTag()
 	if tag == nil {
-		return fmt.Errorf("")
+		return fmt.Errorf("%s: tag is nil", val.Path)
 	}
 
 	switch tag.Type {

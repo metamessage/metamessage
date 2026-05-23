@@ -1,10 +1,8 @@
-using MetaMessage.Jsonc;
-
 namespace MetaMessage.Ir;
 
 public class Tag
 {
-    public Jsonc.ValueType Type { get; set; } = Jsonc.ValueType.Unknown;
+    public ValueType Type { get; set; } = ValueType.Unknown;
     public string? Desc { get; set; }
     public bool Nullable { get; set; }
     public bool IsNull { get; set; }
