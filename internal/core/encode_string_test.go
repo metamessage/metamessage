@@ -152,9 +152,9 @@ func TestEncodeString(t *testing.T) {
 			expectedErr: "",
 		},
 		{
-			name:        "enum",
+			name:        "enums",
 			input:       "SECOND",
-			tag:         "enum=FIRST|SECOND|THIRD",
+			tag:         "enums=FIRST|SECOND|THIRD",
 			expectedOut: 1,
 			expectedErr: "",
 		},

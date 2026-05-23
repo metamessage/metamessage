@@ -83,7 +83,7 @@ inline std::string valueTypeToString(ValueType vt) {
         case ValueType::Ip:       return "ip";
         case ValueType::Url:      return "url";
         case ValueType::Email:    return "email";
-        case ValueType::Enum:     return "enum";
+        case ValueType::Enum:     return "enums";
         case ValueType::Image:    return "image";
         case ValueType::Video:    return "video";
         default:                  return "ValueType(" + std::to_string(static_cast<int>(vt)) + ")";
@@ -122,7 +122,7 @@ inline ValueType parseValueType(const std::string& s) {
         {"ip",       ValueType::Ip},
         {"url",      ValueType::Url},
         {"email",    ValueType::Email},
-        {"enum",     ValueType::Enum},
+        {"enums",     ValueType::Enum},
         {"image",    ValueType::Image},
         {"video",    ValueType::Video}
     };

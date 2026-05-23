@@ -213,7 +213,7 @@ describe('Build Value', () => {
     });
   });
 
-  describe('enum', () => {
+  describe('enums', () => {
     test('', () => {
       const v = mm.enum(0);
       const v2 = mm.enum(1);

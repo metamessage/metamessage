@@ -86,7 +86,7 @@ const (
 	vtUrlStr      = "url"
 	vtEmailStr    = "email"
 
-	vtEnumStr = "enum"
+	vtEnumStr = "enums"
 
 	vtImageStr = "image"
 	vtVideoStr = "video"

@@ -880,7 +880,7 @@ class JsoncParser(private val tokens: List<JsoncToken>) {
                                 "ip" -> ValueType.IP
                                 "url" -> ValueType.URL
                                 "email" -> ValueType.EMAIL
-                                "enum" -> ValueType.ENUM
+                                "enums" -> ValueType.ENUM
                                 "arr" -> ValueType.ARR
                                 "vec" -> ValueType.VEC
                                 "obj" -> ValueType.OBJ
@@ -892,11 +892,11 @@ class JsoncParser(private val tokens: List<JsoncToken>) {
                 "raw" -> tag.raw = true
                 "allow_empty" -> tag.allowEmpty = true
                 "unique" -> tag.unique = true
-                "default" -> tag.default_val = value
+                "default_val" -> tag.default_val = value
                 "min" -> tag.min = value
                 "max" -> tag.max = value
                 "size" -> tag.size = value.toIntOrNull() ?: 0
-                "enum" -> {
+                "enums" -> {
                     tag.type = ValueType.ENUM
                     tag.enums = value
                 }

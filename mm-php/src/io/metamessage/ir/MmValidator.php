@@ -1294,7 +1294,7 @@ class MmValidator
             return;
         }
 
-        $this->checkDescAndLocation($tag, $result, 'enum');
+        $this->checkDescAndLocation($tag, $result, 'enums');
     }
 
     private function validateImage(mixed $value, Tag $tag, ValidationResult $result): void

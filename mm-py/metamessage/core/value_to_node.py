@@ -165,7 +165,7 @@ class mm:
                 tag.allow_empty = bool(v)
             elif k == 'unique':
                 tag.unique = bool(v)
-            elif k == 'default':
+            elif k == 'default_val':
                 tag.default_val = str(v)
             elif k == 'min':
                 tag.min = str(v)
@@ -173,7 +173,7 @@ class mm:
                 tag.max = str(v)
             elif k == 'size':
                 tag.size = int(v)
-            elif k == 'enum':
+            elif k == 'enums':
                 tag.type = ValueType.Enum
                 tag.enums = str(v)
             elif k == 'pattern':
@@ -198,7 +198,7 @@ class mm:
                 tag.child_allow_empty = bool(v)
             elif k == 'child_unique':
                 tag.child_unique = bool(v)
-            elif k == 'child_default':
+            elif k == 'child_default_val':
                 tag.child_default_val = str(v)
             elif k == 'child_min':
                 tag.child_min = str(v)
@@ -206,7 +206,7 @@ class mm:
                 tag.child_max = str(v)
             elif k == 'child_size':
                 tag.child_size = int(v)
-            elif k == 'child_enum':
+            elif k == 'child_enums':
                 tag.child_enums = str(v)
             elif k == 'child_pattern':
                 tag.child_pattern = str(v)

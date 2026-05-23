@@ -260,7 +260,7 @@ class TestEncoderValueTypes(unittest.TestCase):
         self.assertIsInstance(result, bytes)
 
     def test_encode_enum(self):
-        t = Tag(type=ValueType.Enum, enum="a|b|c")
+        t = Tag(type=ValueType.Enum, enums="a|b|c")
         v = Val(data=0, text="a", tag=t)
         result = self.encoder.encode(v)
         self.assertIsInstance(result, bytes)

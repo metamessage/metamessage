@@ -470,7 +470,7 @@ def _get_tag_str(tag) -> str:
     if tag.unique:
         parts.append("unique")
     if tag.default_val:
-        parts.append(f"default={tag.default_val}")
+        parts.append(f"default_val={tag.default_val}")
     if tag.min:
         parts.append(f"min={tag.min}")
     if tag.max:
@@ -478,7 +478,7 @@ def _get_tag_str(tag) -> str:
     if tag.size:
         parts.append(f"size={tag.size}")
     if tag.enums:
-        parts.append(f"enum={tag.enums}")
+        parts.append(f"enums={tag.enums}")
     if tag.pattern:
         parts.append(f"pattern={tag.pattern}")
     if tag.version:
@@ -499,7 +499,7 @@ def _get_tag_str(tag) -> str:
     if tag.child_unique:
         parts.append("child_unique")
     if tag.child_default_val:
-        parts.append(f"child_default={tag.child_default_val}")
+        parts.append(f"child_default_val={tag.child_default_val}")
     if tag.child_min:
         parts.append(f"child_min={tag.child_min}")
     if tag.child_max:
@@ -507,7 +507,7 @@ def _get_tag_str(tag) -> str:
     if tag.child_size:
         parts.append(f"child_size={tag.child_size}")
     if tag.child_enums:
-        parts.append(f"child_enum={tag.child_enums}")
+        parts.append(f'child_enums={tag.child_enums}")
     if tag.child_pattern:
         parts.append(f"child_pattern={tag.child_pattern}")
     if tag.child_version:

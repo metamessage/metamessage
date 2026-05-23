@@ -130,7 +130,7 @@ func TestGenerateGoBasic(t *testing.T) {
 		Ip       net.IP
 		Url      url.URL
 		Email    string `mm:"type=email"`
-		Enum     string `mm:"enum=email|phone"`
+		Enum     string `mm:"enums=email|phone"`
 		Int      int
 		Int8     int8
 		Bigint   big.Int
@@ -208,7 +208,7 @@ func TestGenerateGoStruct1(t *testing.T) {
 		ID       int64    `mm:"name=id; min=1;desc=用户ID"`      // 数值最小值+描述
 		Name     string   `mm:"required; max_len=20;desc=用户名"` // 必填+字符串长度+描述
 		Age      int      `mm:"min=18;max=120;desc=年龄"`        // 数值范围+描述
-		IsActive bool     `mm:"default=true;desc=是否激活"`        // 默认值+描述
+		IsActive bool     `mm:"default_val=true;desc=是否激活"`    // 默认值+描述
 		Tags     []string `mm:"max_items=10;desc=标签列表"`        // 切片元素限制+描述
 		Addr     Address  `mm:"required;desc=地址信息"`            // 必填+描述（嵌套结构体）
 	}

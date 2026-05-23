@@ -24,11 +24,11 @@ const (
 	TNullable   = "nullable"
 	TAllowEmpty = "allow_empty"
 	TUnique     = "unique"
-	TDefault    = "default"
+	TDefault    = "default_val"
 	TMin        = "min"
 	TMax        = "max"
 	TSize       = "size"
-	TEnum       = "enum"
+	TEnum       = "enums"
 	TPattern    = "pattern"
 	TLocation   = "location"
 	TVersion    = "version"
@@ -40,11 +40,11 @@ const (
 	TChildNullable   = "child_nullable"
 	TChildAllowEmpty = "child_allow_empty"
 	TChildUnique     = "child_unique"
-	TChildDefaultVal    = "child_default"
+	TChildDefaultVal = "child_default_val"
 	TChildMin        = "child_min"
 	TChildMax        = "child_max"
 	TChildSize       = "child_size"
-	TChildEnums       = "child_enum"
+	TChildEnums      = "child_enums"
 	TChildPattern    = "child_pattern"
 	TChildLocation   = "child_location"
 	TChildVersion    = "child_version"
@@ -79,11 +79,11 @@ const (
 	KChildNullable   = 20 << 3
 	KChildAllowEmpty = 21 << 3
 	KChildUnique     = 22 << 3
-	KChildDefaultVal    = 23 << 3
+	KChildDefaultVal = 23 << 3
 	KChildMin        = 24 << 3
 	KChildMax        = 25 << 3
 	KChildSize       = 26 << 3
-	KChildEnums       = 27 << 3
+	KChildEnums      = 27 << 3
 	KChildPattern    = 28 << 3
 	KChildLocation   = 29 << 3
 	KChildVersion    = 30 << 3
@@ -102,11 +102,11 @@ type Tag struct {
 	Nullable   bool           // nullable
 	AllowEmpty bool           // allow_empty
 	Unique     bool           // unique
-	DefaultVal string         // default=...
+	DefaultVal string         // default_val=...
 	Min        string         // min=...
 	Max        string         // max=...
 	Size       int            // size=... default 0
-	Enums      string         // enum=...|...
+	Enums      string         // enums=...|...
 	Pattern    string         // pattern=...
 	Location   *time.Location // location=0  for time.Time [-12, +14]
 	Version    int            // version=0 for uuid/ip
@@ -118,11 +118,11 @@ type Tag struct {
 	ChildNullable   bool           // child_nullable
 	ChildAllowEmpty bool           // child_allow_empty
 	ChildUnique     bool           // child_unique
-	ChildDefaultVal    string         // child_default=...
+	ChildDefaultVal string         // child_default_val=...
 	ChildMin        string         // child_min=...
 	ChildMax        string         // child_max=...
 	ChildSize       int            // child_size=... default 0
-	ChildEnums      string         // child_enum=...|...
+	ChildEnums      string         // child_enums=...|...
 	ChildPattern    string         // child_pattern=...
 	ChildLocation   *time.Location // child_location=0  for time.Time [-12, +14]
 	ChildVersion    int            // child_version=0 for uuid/ip
@@ -522,7 +522,7 @@ func (t *Tag) Bytes() []byte {
 			bs.WriteByte(byte(l))
 			bs.WriteString(t.Enums)
 		default:
-			// err = fmt.Errorf("enum too long")
+			// err = fmt.Errorf("enums too long")
 			// return
 		}
 	}

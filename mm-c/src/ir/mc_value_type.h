@@ -72,7 +72,7 @@ static inline const char* mm_value_type_to_string(mm_value_type_t vt) {
         case MM_VALUE_IP: return "ip";
         case MM_VALUE_URL: return "url";
         case MM_VALUE_EMAIL: return "email";
-        case MM_VALUE_ENUM: return "enum";
+        case MM_VALUE_ENUM: return "enums";
         case MM_VALUE_IMAGE: return "image";
         case MM_VALUE_VIDEO: return "video";
         default: return "unknown";
@@ -120,7 +120,7 @@ static inline mm_value_type_t mm_value_type_parse(const char* s) {
     if (strcmp(lower, "ip") == 0) return MM_VALUE_IP;
     if (strcmp(lower, "url") == 0) return MM_VALUE_URL;
     if (strcmp(lower, "email") == 0) return MM_VALUE_EMAIL;
-    if (strcmp(lower, "enum") == 0) return MM_VALUE_ENUM;
+    if (strcmp(lower, "enums") == 0) return MM_VALUE_ENUM;
     if (strcmp(lower, "image") == 0) return MM_VALUE_IMAGE;
     if (strcmp(lower, "video") == 0) return MM_VALUE_VIDEO;
     return MM_VALUE_UNKNOWN;

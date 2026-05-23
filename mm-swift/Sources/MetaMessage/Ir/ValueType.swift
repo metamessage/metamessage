@@ -75,7 +75,7 @@ public enum ValueType: UInt8, Codable {
         case .ip: return "ip"
         case .url: return "url"
         case .email: return "email"
-        case .enums: return "enum"
+        case .enums: return "enums"
         case .image: return "image"
         case .video: return "video"
         }
@@ -113,7 +113,7 @@ public enum ValueType: UInt8, Codable {
         case "ip": return .ip
         case "url": return .url
         case "email": return .email
-        case "enum": return .enums
+        case "enums": return .enums
         case "image": return .image
         case "video": return .video
         default: return nil

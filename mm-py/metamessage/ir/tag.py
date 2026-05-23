@@ -73,7 +73,7 @@ class ValueType(IntEnum):
             ValueType.Ip: "ip",
             ValueType.Url: "url",
             ValueType.Email: "email",
-            ValueType.Enum: "enum",
+            ValueType.Enum: "enums",
             ValueType.Image: "image",
             ValueType.Video: "video",
         }
@@ -89,7 +89,7 @@ _str_to_value_type = {
     "f32": ValueType.F32, "f64": ValueType.F64,
     "bigint": ValueType.Bigint, "datetime": ValueType.Datetime, "date": ValueType.Date, "time": ValueType.Time,
     "uuid": ValueType.Uuid, "decimal": ValueType.Decimal, "ip": ValueType.Ip, "url": ValueType.Url,
-    "email": ValueType.Email, "enum": ValueType.Enum,
+    "email": ValueType.Email, "enums": ValueType.Enum,
     "image": ValueType.Image, "video": ValueType.Video,
 }
 
@@ -522,7 +522,7 @@ class Tag:
             parts.append("unique")
 
         if self.default_val and not self.is_inherit:
-            parts.append("default=%s" % self.default_val)
+            parts.append("default_val=%s" % self.default_val)
 
         if self.min and not self.is_inherit:
             parts.append("min=%s" % self.min)
@@ -534,7 +534,7 @@ class Tag:
             parts.append("size=%d" % self.size)
 
         if self.enums and not self.is_inherit:
-            parts.append("enum=%s" % self.enums)
+            parts.append("enums=%s" % self.enums)
 
         if self.pattern and not self.is_inherit:
             parts.append("pattern=%s" % self.pattern)
@@ -577,7 +577,7 @@ class Tag:
             parts.append("child_unique")
 
         if self.child_default_val:
-            parts.append("child_default=%s" % self.child_default_val)
+            parts.append("child_default_val=%s" % self.child_default_val)
 
         if self.child_min:
             parts.append("child_min=%s" % self.child_min)
@@ -589,7 +589,7 @@ class Tag:
             parts.append("child_size=%d" % self.child_size)
 
         if self.child_enums:
-            parts.append("child_enum=%s" % self.child_enums)
+            parts.append('child_enums=%s" % self.child_enums)
 
         if self.child_pattern:
             parts.append("child_pattern=%s" % self.child_pattern)
@@ -621,11 +621,11 @@ TAG_KEY_MAP = {
     "nullable": "nullable",
     "allow_empty": "allow_empty",
     "unique": "unique",
-    "default": "default_val",
+    "default_val": "default_val",
     "min": "min",
     "max": "max",
     "size": "size",
-    "enum": "enums",
+    "enums": "enums",
     "pattern": "pattern",
     "location": "location",
     "version": "version",
@@ -636,11 +636,11 @@ TAG_KEY_MAP = {
     "child_nullable": "child_nullable",
     "child_allow_empty": "child_allow_empty",
     "child_unique": "child_unique",
-    "child_default": "child_default_val",
+    "child_default_val": "child_default_val",
     "child_min": "child_min",
     "child_max": "child_max",
     "child_size": "child_size",
-    "child_enum": "child_enums",
+    "child_enums": "child_enums",
     "child_pattern": "child_pattern",
     "child_location": "child_location",
     "child_version": "child_version",
@@ -714,7 +714,7 @@ def mm_tag(tag_str: str) -> Tag:
             tag.allow_empty = True
         elif k == "unique":
             tag.unique = True
-        elif k == "default":
+        elif k == "default_val":
             tag.default_val = v
         elif k == "min":
             tag.min = v
@@ -725,7 +725,7 @@ def mm_tag(tag_str: str) -> Tag:
                 tag.size = int(v)
             except ValueError:
                 pass
-        elif k == "enum":
+        elif k == "enums":
             tag.type = ValueType.Enum
             tag.enums = v
         elif k == "pattern":
@@ -754,7 +754,7 @@ def mm_tag(tag_str: str) -> Tag:
             tag.child_allow_empty = True
         elif k == "child_unique":
             tag.child_unique = True
-        elif k == "child_default":
+        elif k == "child_default_val":
             tag.child_default_val = v
         elif k == "child_min":
             tag.child_min = v
@@ -765,7 +765,7 @@ def mm_tag(tag_str: str) -> Tag:
                 tag.child_size = int(v)
             except ValueError:
                 pass
-        elif k == "child_enum":
+        elif k == "child_enums":
             tag.child_enums = v
             tag.child_type = ValueType.Enum
         elif k == "child_pattern":

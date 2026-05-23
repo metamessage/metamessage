@@ -163,7 +163,7 @@ struct Tag {
     if (unique && !isInherit)
       add("unique");
     if (!default_val.empty() && !isInherit)
-      add("default=" + default_val);
+      add("default_val=" + default_val);
     if (!min.empty() && !isInherit)
       add("min=" + min);
     if (!max.empty() && !isInherit)
@@ -171,7 +171,7 @@ struct Tag {
     if (size != 0 && !isInherit)
       add("size=" + std::to_string(size));
     if (!enums.empty() && !isInherit)
-      add("enum=" + enums);
+      add("enums=" + enums);
     if (!pattern.empty() && !isInherit)
       add("pattern=" + pattern);
     if (locationOffset != 0 && !isInherit)
@@ -193,7 +193,7 @@ struct Tag {
     if (childUnique)
       add("child_unique");
     if (!child_default_val.empty())
-      add("child_default=" + child_default_val);
+      add("child_default_val=" + child_default_val);
     if (!childMin.empty())
       add("child_min=" + childMin);
     if (!childMax.empty())
@@ -201,7 +201,7 @@ struct Tag {
     if (childSize != 0)
       add("child_size=" + std::to_string(childSize));
     if (!child_enums.empty())
-      add("child_enum=" + child_enums);
+      add('child_enums=" + child_enums);
     if (!childPattern.empty())
       add("child_pattern=" + childPattern);
     if (childLocationOffset != DefaultLocationOffset)
@@ -271,7 +271,7 @@ struct Tag {
         r.allowEmpty = true;
       } else if (lower == "unique") {
         r.unique = true;
-      } else if (lower == "default") {
+      } else if (lower == "default_val") {
         r.default_val = v;
       } else if (lower == "min") {
         r.min = v;
@@ -279,7 +279,7 @@ struct Tag {
         r.max = v;
       } else if (lower == "size") {
         r.size = std::stoi(v);
-      } else if (lower == "enum") {
+      } else if (lower == "enums") {
         r.type = ValueType::Enum;
         r.enums = v;
       } else if (lower == "pattern") {
@@ -302,7 +302,7 @@ struct Tag {
         r.childAllowEmpty = true;
       } else if (lower == "child_unique") {
         r.childUnique = true;
-      } else if (lower == "child_default") {
+      } else if (lower == "child_default_val") {
         r.child_default_val = v;
       } else if (lower == "child_min") {
         r.childMin = v;
@@ -310,7 +310,7 @@ struct Tag {
         r.childMax = v;
       } else if (lower == "child_size") {
         r.childSize = std::stoi(v);
-      } else if (lower == "child_enum") {
+      } else if (lower == "child_enums") {
         r.child_enums = v;
         r.childType = ValueType::Enum;
       } else if (lower == "child_pattern") {

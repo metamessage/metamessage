@@ -77,7 +77,7 @@ public static class ValueTypeConstants
     public const string IpStr = "ip";
     public const string UrlStr = "url";
     public const string EmailStr = "email";
-    public const string EnumStr = "enum";
+    public const string EnumStr = "enums";
     public const string ImageStr = "image";
     public const string VideoStr = "video";
 }

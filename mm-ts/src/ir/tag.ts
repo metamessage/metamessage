@@ -193,7 +193,7 @@ export class Tag {
     }
 
     if (this.default_val) {
-      parts.push(`default=${this.default_val}`);
+      parts.push(`default_val=${this.default_val}`);
     }
 
     if (this.min) {
@@ -209,7 +209,7 @@ export class Tag {
     }
 
     if (this.enums) {
-      parts.push(`enum=${this.enums}`);
+      parts.push(`enums=${this.enums}`);
     }
 
     if (this.pattern) {
@@ -271,7 +271,7 @@ export class Tag {
     }
 
     if (this.childDefaultVal) {
-      parts.push(`child_default=${this.childDefaultVal}`);
+      parts.push(`child_default_val=${this.childDefaultVal}`);
     }
 
     if (this.childMin) {
@@ -287,7 +287,7 @@ export class Tag {
     }
 
     if (this.childEnums) {
-      parts.push(`child_enum=${this.childEnums}`);
+      parts.push(`child_enums=${this.childEnums}`);
     }
 
     if (this.childPattern) {
@@ -1822,7 +1822,7 @@ export function parseMMTag(tagStr: string): Tag {
       case 'unique':
         tag.unique = true;
         break;
-      case 'default':
+      case 'default_val':
         tag.default_val = value;
         break;
       case 'min':
@@ -1834,7 +1834,7 @@ export function parseMMTag(tagStr: string): Tag {
       case 'size':
         tag.size = BigInt(value) || 0n;
         break;
-      case 'enum':
+      case 'enums':
         tag.type = ValueType.Enum;
         tag.enums = value;
         break;
@@ -1868,7 +1868,7 @@ export function parseMMTag(tagStr: string): Tag {
       case 'child_unique':
         tag.childUnique = true;
         break;
-      case 'child_default':
+      case 'child_default_val':
         tag.childDefaultVal = value;
         break;
       case 'child_min':
@@ -1880,7 +1880,7 @@ export function parseMMTag(tagStr: string): Tag {
       case 'child_size':
         tag.childSize = BigInt(value) || 0n;
         break;
-      case 'child_enum':
+      case 'child_enums':
         tag.childEnums = value;
         break;
       case 'child_pattern':
