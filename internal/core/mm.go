@@ -31,7 +31,6 @@ func FromValue(v any, tag string) (bs []byte, err error) {
 	var node ir.Node
 	node, err = ValueToNode(v, tag)
 	if err != nil {
-		err = fmt.Errorf("value to node error: %w", err)
 		return
 	}
 

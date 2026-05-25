@@ -137,13 +137,24 @@ func (t *Tag) ValidateMap() (err error) {
 }
 
 func (t *Tag) ValidateStr(val string, example bool) (data any, text string, err error) {
+	if len(t.Desc) > 65535 {
+		err = fmt.Errorf("desc length exceeds 65535 bytes")
+		return
+	}
+
+	if example {
+		data = val
+		text = val
+		return
+	}
+
 	if val == "" {
 		if t.AllowEmpty {
 			data = val
 			text = val
 			return
 		}
-		err = fmt.Errorf("type string not allow empty value %q", val)
+		err = fmt.Errorf("not allow empty (add 'allow_empty' tag if empty is allowed)")
 		return
 	}
 
@@ -201,11 +212,6 @@ func (t *Tag) ValidateStr(val string, example bool) (data any, text string, err 
 		}
 	}
 
-	if len(t.Desc) > 65535 {
-		err = fmt.Errorf("desc length exceeds 65535 bytes")
-		return
-	}
-
 	location := utils.GetLocationOffsetHour(t.Location)
 	if location != 0 {
 		err = fmt.Errorf("type string not support location UTC%d", location)
@@ -214,11 +220,21 @@ func (t *Tag) ValidateStr(val string, example bool) (data any, text string, err 
 
 	data = val
 	text = val
-
 	return
 }
 
 func (t *Tag) ValidateBytes(val []byte, example bool) (data any, text string, err error) {
+	if len(t.Desc) > 65535 {
+		err = fmt.Errorf("desc length exceeds 65535 bytes")
+		return
+	}
+
+	if example {
+		data = val
+		text = ""
+		return
+	}
+
 	l := len(val)
 
 	if l == 0 {
@@ -227,7 +243,7 @@ func (t *Tag) ValidateBytes(val []byte, example bool) (data any, text string, er
 			text = ""
 			return
 		}
-		err = fmt.Errorf("type []byte not allow empty value []byte{}")
+		err = fmt.Errorf("not allow empty (add 'allow_empty' tag if empty is allowed)")
 		return
 	}
 
@@ -264,11 +280,6 @@ func (t *Tag) ValidateBytes(val []byte, example bool) (data any, text string, er
 		}
 	}
 
-	if len(t.Desc) > 65535 {
-		err = fmt.Errorf("desc length exceeds 65535 bytes")
-		return
-	}
-
 	location := utils.GetLocationOffsetHour(t.Location)
 	if location != 0 {
 		err = fmt.Errorf("type []byte not support location UTC%d", location)
@@ -277,7 +288,6 @@ func (t *Tag) ValidateBytes(val []byte, example bool) (data any, text string, er
 
 	data = val
 	text = base64.StdEncoding.EncodeToString(val)
-
 	return
 }
 
@@ -287,8 +297,14 @@ func (t *Tag) ValidateBool(val bool, example bool) (data any, text string, err e
 		return
 	}
 
+	if example {
+		data = val
+		text = strconv.FormatBool(val)
+		return
+	}
+
 	if t.AllowEmpty {
-		err = fmt.Errorf("type bool not support allow empty")
+		err = fmt.Errorf("type bool not support 'allow_empty' tag")
 		return
 	}
 
@@ -300,18 +316,28 @@ func (t *Tag) ValidateBool(val bool, example bool) (data any, text string, err e
 
 	data = val
 	text = strconv.FormatBool(val)
-
 	return
 }
 
 func (t *Tag) ValidateI(val int, example bool) (data any, text string, err error) {
+	if len(t.Desc) > 65535 {
+		err = fmt.Errorf("desc length exceeds 65535 bytes")
+		return
+	}
+
+	if example {
+		data = val
+		text = "0"
+		return
+	}
+
 	if val == 0 {
 		if t.AllowEmpty {
 			data = val
 			text = "0"
 			return
 		}
-		err = fmt.Errorf("type int not allow empty value %v", val)
+		err = fmt.Errorf("not allow empty (add 'allow_empty' tag if empty is allowed)")
 		return
 	}
 
@@ -343,11 +369,6 @@ func (t *Tag) ValidateI(val int, example bool) (data any, text string, err error
 		}
 	}
 
-	if len(t.Desc) > 65535 {
-		err = fmt.Errorf("desc length exceeds 65535 bytes")
-		return
-	}
-
 	location := utils.GetLocationOffsetHour(t.Location)
 	if location != 0 {
 		err = fmt.Errorf("type int not support location UTC%d", location)
@@ -356,18 +377,28 @@ func (t *Tag) ValidateI(val int, example bool) (data any, text string, err error
 
 	data = val
 	text = strconv.Itoa(val)
-
 	return
 }
 
 func (t *Tag) ValidateI8(val int8, example bool) (data any, text string, err error) {
+	if len(t.Desc) > 65535 {
+		err = fmt.Errorf("desc length exceeds 65535 bytes")
+		return
+	}
+
+	if example {
+		data = val
+		text = "0"
+		return
+	}
+
 	if val == 0 {
 		if t.AllowEmpty {
 			data = val
 			text = "0"
 			return
 		}
-		err = fmt.Errorf("type int8 not allow empty value %v", val)
+		err = fmt.Errorf("not allow empty (add 'allow_empty' tag if empty is allowed)")
 		return
 	}
 
@@ -398,11 +429,6 @@ func (t *Tag) ValidateI8(val int8, example bool) (data any, text string, err err
 		}
 	}
 
-	if len(t.Desc) > 65535 {
-		err = fmt.Errorf("desc length exceeds 65535 bytes")
-		return
-	}
-
 	location := utils.GetLocationOffsetHour(t.Location)
 	if location != 0 {
 		err = fmt.Errorf("type int8 not support location UTC%d", location)
@@ -411,18 +437,28 @@ func (t *Tag) ValidateI8(val int8, example bool) (data any, text string, err err
 
 	data = val
 	text = strconv.FormatInt(int64(val), 10)
-
 	return
 }
 
 func (t *Tag) ValidateI16(val int16, example bool) (data any, text string, err error) {
+	if len(t.Desc) > 65535 {
+		err = fmt.Errorf("desc length exceeds 65535 bytes")
+		return
+	}
+
+	if example {
+		data = val
+		text = "0"
+		return
+	}
+
 	if val == 0 {
 		if t.AllowEmpty {
 			data = val
 			text = "0"
 			return
 		}
-		err = fmt.Errorf("type int16 not allow empty value %v", val)
+		err = fmt.Errorf("not allow empty (add 'allow_empty' tag if empty is allowed)")
 		return
 	}
 
@@ -454,11 +490,6 @@ func (t *Tag) ValidateI16(val int16, example bool) (data any, text string, err e
 		}
 	}
 
-	if len(t.Desc) > 65535 {
-		err = fmt.Errorf("desc length exceeds 65535 bytes")
-		return
-	}
-
 	location := utils.GetLocationOffsetHour(t.Location)
 	if location != 0 {
 		err = fmt.Errorf("type int16 not support location UTC%d", location)
@@ -467,18 +498,28 @@ func (t *Tag) ValidateI16(val int16, example bool) (data any, text string, err e
 
 	data = val
 	text = strconv.FormatInt(int64(val), 10)
-
 	return
 }
 
 func (t *Tag) ValidateI32(val int32, example bool) (data any, text string, err error) {
+	if len(t.Desc) > 65535 {
+		err = fmt.Errorf("desc length exceeds 65535 bytes")
+		return
+	}
+
+	if example {
+		data = val
+		text = "0"
+		return
+	}
+
 	if val == 0 {
 		if t.AllowEmpty {
 			data = val
 			text = "0"
 			return
 		}
-		err = fmt.Errorf("type int32 not allow empty value %v", val)
+		err = fmt.Errorf("not allow empty (add 'allow_empty' tag if empty is allowed)")
 		return
 	}
 
@@ -510,11 +551,6 @@ func (t *Tag) ValidateI32(val int32, example bool) (data any, text string, err e
 		}
 	}
 
-	if len(t.Desc) > 65535 {
-		err = fmt.Errorf("desc length exceeds 65535 bytes")
-		return
-	}
-
 	location := utils.GetLocationOffsetHour(t.Location)
 	if location != 0 {
 		err = fmt.Errorf("type int32 not support location UTC%d", location)
@@ -523,18 +559,28 @@ func (t *Tag) ValidateI32(val int32, example bool) (data any, text string, err e
 
 	data = val
 	text = strconv.FormatInt(int64(val), 10)
-
 	return
 }
 
 func (t *Tag) ValidateI64(val int64, example bool) (data any, text string, err error) {
+	if len(t.Desc) > 65535 {
+		err = fmt.Errorf("desc length exceeds 65535 bytes")
+		return
+	}
+
+	if example {
+		data = val
+		text = "0"
+		return
+	}
+
 	if val == 0 {
 		if t.AllowEmpty {
 			data = val
 			text = "0"
 			return
 		}
-		err = fmt.Errorf("type int64 not allow empty value %v", val)
+		err = fmt.Errorf("not allow empty (add 'allow_empty' tag if empty is allowed)")
 		return
 	}
 
@@ -564,11 +610,6 @@ func (t *Tag) ValidateI64(val int64, example bool) (data any, text string, err e
 		}
 	}
 
-	if len(t.Desc) > 65535 {
-		err = fmt.Errorf("desc length exceeds 65535 bytes")
-		return
-	}
-
 	location := utils.GetLocationOffsetHour(t.Location)
 	if location != 0 {
 		err = fmt.Errorf("type int64 not support location UTC%d", location)
@@ -577,18 +618,28 @@ func (t *Tag) ValidateI64(val int64, example bool) (data any, text string, err e
 
 	data = val
 	text = strconv.FormatInt(val, 10)
-
 	return
 }
 
 func (t *Tag) ValidateU(val uint, example bool) (data any, text string, err error) {
+	if len(t.Desc) > 65535 {
+		err = fmt.Errorf("desc length exceeds 65535 bytes")
+		return
+	}
+
+	if example {
+		data = val
+		text = "0"
+		return
+	}
+
 	if val == 0 {
 		if t.AllowEmpty {
 			data = val
 			text = "0"
 			return
 		}
-		err = fmt.Errorf("type uint not allow empty value %v", val)
+		err = fmt.Errorf("not allow empty (add 'allow_empty' tag if empty is allowed)")
 		return
 	}
 
@@ -620,11 +671,6 @@ func (t *Tag) ValidateU(val uint, example bool) (data any, text string, err erro
 		}
 	}
 
-	if len(t.Desc) > 65535 {
-		err = fmt.Errorf("desc length exceeds 65535 bytes")
-		return
-	}
-
 	location := utils.GetLocationOffsetHour(t.Location)
 	if location != 0 {
 		err = fmt.Errorf("type uint not support location UTC%d", location)
@@ -633,18 +679,28 @@ func (t *Tag) ValidateU(val uint, example bool) (data any, text string, err erro
 
 	data = val
 	text = strconv.FormatUint(uint64(val), 10)
-
 	return
 }
 
 func (t *Tag) ValidateU8(val uint8, example bool) (data any, text string, err error) {
+	if len(t.Desc) > 65535 {
+		err = fmt.Errorf("desc length exceeds 65535 bytes")
+		return
+	}
+
+	if example {
+		data = val
+		text = "0"
+		return
+	}
+
 	if val == 0 {
 		if t.AllowEmpty {
 			data = val
 			text = "0"
 			return
 		}
-		err = fmt.Errorf("type uint8 not allow empty value %v", val)
+		err = fmt.Errorf("not allow empty (add 'allow_empty' tag if empty is allowed)")
 		return
 	}
 
@@ -676,11 +732,6 @@ func (t *Tag) ValidateU8(val uint8, example bool) (data any, text string, err er
 		}
 	}
 
-	if len(t.Desc) > 65535 {
-		err = fmt.Errorf("desc length exceeds 65535 bytes")
-		return
-	}
-
 	location := utils.GetLocationOffsetHour(t.Location)
 	if location != 0 {
 		err = fmt.Errorf("type uint8 not support location UTC%d", location)
@@ -689,18 +740,28 @@ func (t *Tag) ValidateU8(val uint8, example bool) (data any, text string, err er
 
 	data = val
 	text = strconv.FormatUint(uint64(val), 10)
-
 	return
 }
 
 func (t *Tag) ValidateU16(val uint16, example bool) (data any, text string, err error) {
+	if len(t.Desc) > 65535 {
+		err = fmt.Errorf("desc length exceeds 65535 bytes")
+		return
+	}
+
+	if example {
+		data = val
+		text = "0"
+		return
+	}
+
 	if val == 0 {
 		if t.AllowEmpty {
 			data = val
 			text = "0"
 			return
 		}
-		err = fmt.Errorf("type uint16 not allow empty value %v", val)
+		err = fmt.Errorf("not allow empty (add 'allow_empty' tag if empty is allowed)")
 		return
 	}
 
@@ -732,11 +793,6 @@ func (t *Tag) ValidateU16(val uint16, example bool) (data any, text string, err 
 		}
 	}
 
-	if len(t.Desc) > 65535 {
-		err = fmt.Errorf("desc length exceeds 65535 bytes")
-		return
-	}
-
 	location := utils.GetLocationOffsetHour(t.Location)
 	if location != 0 {
 		err = fmt.Errorf("type uint16 not support location UTC%d", location)
@@ -745,18 +801,28 @@ func (t *Tag) ValidateU16(val uint16, example bool) (data any, text string, err 
 
 	data = val
 	text = strconv.FormatUint(uint64(val), 10)
-
 	return
 }
 
 func (t *Tag) ValidateU32(val uint32, example bool) (data any, text string, err error) {
+	if len(t.Desc) > 65535 {
+		err = fmt.Errorf("desc length exceeds 65535 bytes")
+		return
+	}
+
+	if example {
+		data = val
+		text = "0"
+		return
+	}
+
 	if val == 0 {
 		if t.AllowEmpty {
 			data = val
 			text = "0"
 			return
 		}
-		err = fmt.Errorf("type uint32 not allow empty value %v", val)
+		err = fmt.Errorf("not allow empty (add 'allow_empty' tag if empty is allowed)")
 		return
 	}
 
@@ -788,11 +854,6 @@ func (t *Tag) ValidateU32(val uint32, example bool) (data any, text string, err 
 		}
 	}
 
-	if len(t.Desc) > 65535 {
-		err = fmt.Errorf("desc length exceeds 65535 bytes")
-		return
-	}
-
 	location := utils.GetLocationOffsetHour(t.Location)
 	if location != 0 {
 		err = fmt.Errorf("type uint32 not support location UTC%d", location)
@@ -801,18 +862,28 @@ func (t *Tag) ValidateU32(val uint32, example bool) (data any, text string, err 
 
 	data = val
 	text = strconv.FormatUint(uint64(val), 10)
-
 	return
 }
 
 func (t *Tag) ValidateU64(val uint64, example bool) (data any, text string, err error) {
+	if len(t.Desc) > 65535 {
+		err = fmt.Errorf("desc length exceeds 65535 bytes")
+		return
+	}
+
+	if example {
+		data = val
+		text = "0"
+		return
+	}
+
 	if val == 0 {
 		if t.AllowEmpty {
 			data = val
 			text = "0"
 			return
 		}
-		err = fmt.Errorf("type uint64 not allow empty value %v", val)
+		err = fmt.Errorf("not allow empty (add 'allow_empty' tag if empty is allowed)")
 		return
 	}
 
@@ -842,11 +913,6 @@ func (t *Tag) ValidateU64(val uint64, example bool) (data any, text string, err 
 		}
 	}
 
-	if len(t.Desc) > 65535 {
-		err = fmt.Errorf("desc length exceeds 65535 bytes")
-		return
-	}
-
 	location := utils.GetLocationOffsetHour(t.Location)
 	if location != 0 {
 		err = fmt.Errorf("type uint64 not support location UTC%d", location)
@@ -855,18 +921,28 @@ func (t *Tag) ValidateU64(val uint64, example bool) (data any, text string, err 
 
 	data = val
 	text = strconv.FormatUint(val, 10)
-
 	return
 }
 
 func (t *Tag) ValidateF32(val float32, example bool) (data any, text string, err error) {
+	if len(t.Desc) > 65535 {
+		err = fmt.Errorf("desc length exceeds 65535 bytes")
+		return
+	}
+
+	if example {
+		data = val
+		text = "0.0"
+		return
+	}
+
 	if val == 0.0 {
 		if t.AllowEmpty {
 			data = val
 			text = "0.0"
 			return
 		}
-		err = fmt.Errorf("type float32 not allow empty value 0.0")
+		err = fmt.Errorf("not allow empty (add 'allow_empty' tag if empty is allowed)")
 		return
 	}
 
@@ -898,11 +974,6 @@ func (t *Tag) ValidateF32(val float32, example bool) (data any, text string, err
 		}
 	}
 
-	if len(t.Desc) > 65535 {
-		err = fmt.Errorf("desc length exceeds 65535 bytes")
-		return
-	}
-
 	location := utils.GetLocationOffsetHour(t.Location)
 	if location != 0 {
 		err = fmt.Errorf("type float32 not support location UTC%d", location)
@@ -911,18 +982,28 @@ func (t *Tag) ValidateF32(val float32, example bool) (data any, text string, err
 
 	data = val
 	text = utils.FormatFloat32(val)
-
 	return
 }
 
 func (t *Tag) ValidateF64(val float64, example bool) (data any, text string, err error) {
+	if len(t.Desc) > 65535 {
+		err = fmt.Errorf("desc length exceeds 65535 bytes")
+		return
+	}
+
+	if example {
+		data = val
+		text = "0.0"
+		return
+	}
+
 	if val == 0.0 {
 		if t.AllowEmpty {
 			data = val
 			text = "0.0"
 			return
 		}
-		err = fmt.Errorf("type float64 not allow empty value 0.0")
+		err = fmt.Errorf("not allow empty (add 'allow_empty' tag if empty is allowed)")
 		return
 	}
 
@@ -952,11 +1033,6 @@ func (t *Tag) ValidateF64(val float64, example bool) (data any, text string, err
 		}
 	}
 
-	if len(t.Desc) > 65535 {
-		err = fmt.Errorf("desc length exceeds 65535 bytes")
-		return
-	}
-
 	location := utils.GetLocationOffsetHour(t.Location)
 	if location != 0 {
 		err = fmt.Errorf("type float64 not support location UTC%d", location)
@@ -965,18 +1041,28 @@ func (t *Tag) ValidateF64(val float64, example bool) (data any, text string, err
 
 	data = val
 	text = utils.FormatFloat64(val)
-
 	return
 }
 
 func (t *Tag) ValidateBigint(val big.Int, example bool) (data any, text string, err error) {
+	if len(t.Desc) > 65535 {
+		err = fmt.Errorf("desc length exceeds 65535 bytes")
+		return
+	}
+
+	if example {
+		data = val
+		text = "0"
+		return
+	}
+
 	if val.Sign() == 0 {
 		if t.AllowEmpty {
 			data = val
-			text = "0"
+			text = "0.0"
 			return
 		}
-		err = fmt.Errorf("type big.Int not allow empty value 0")
+		err = fmt.Errorf("not allow empty (add 'allow_empty' tag if empty is allowed)")
 		return
 	}
 
@@ -1004,11 +1090,6 @@ func (t *Tag) ValidateBigint(val big.Int, example bool) (data any, text string, 
 		}
 	}
 
-	if len(t.Desc) > 65535 {
-		err = fmt.Errorf("desc length exceeds 65535 bytes")
-		return
-	}
-
 	location := utils.GetLocationOffsetHour(t.Location)
 	if location != 0 {
 		err = fmt.Errorf("type big.Int not support location UTC%d", location)
@@ -1017,11 +1098,15 @@ func (t *Tag) ValidateBigint(val big.Int, example bool) (data any, text string, 
 
 	data = val
 	text = val.String()
-
 	return
 }
 
 func (t *Tag) ValidateDatetime(val time.Time, example bool) (data any, text string, err error) {
+	if len(t.Desc) > 65535 {
+		err = fmt.Errorf("desc length exceeds 65535 bytes")
+		return
+	}
+
 	location := time.UTC
 	if t.Location != nil {
 		location = t.Location
@@ -1029,28 +1114,34 @@ func (t *Tag) ValidateDatetime(val time.Time, example bool) (data any, text stri
 
 	val = val.Truncate(time.Second)
 	format := val.In(location).Format(time.DateTime)
+
+	if example {
+		data = val
+		text = format
+		return
+	}
+
 	if val.Unix() == 0 {
 		if t.AllowEmpty {
 			data = val
 			text = format
 			return
 		}
-		err = fmt.Errorf("datetime type does not allow empty %q. you can set allow_empty or child_allow_empty to allow it.", format)
-		return
-	}
-
-	if len(t.Desc) > 65535 {
-		err = fmt.Errorf("desc length exceeds 65535 bytes")
+		err = fmt.Errorf("not allow empty (add 'allow_empty' tag if empty is allowed)")
 		return
 	}
 
 	data = val
 	text = format
-
 	return
 }
 
 func (t *Tag) ValidateDate(val time.Time, example bool) (data any, text string, err error) {
+	if len(t.Desc) > 65535 {
+		err = fmt.Errorf("desc length exceeds 65535 bytes")
+		return
+	}
+
 	location := time.UTC
 	if t.Location != nil {
 		location = t.Location
@@ -1058,28 +1149,34 @@ func (t *Tag) ValidateDate(val time.Time, example bool) (data any, text string, 
 
 	val = val.Truncate(time.Second)
 	format := val.In(location).Format(time.DateOnly)
+
+	if example {
+		data = val
+		text = format
+		return
+	}
+
 	if val.Unix() == 0 {
 		if t.AllowEmpty {
 			data = val
 			text = format
 			return
 		}
-		err = fmt.Errorf("date type does not allow empty %q. you can set allow_empty or child_allow_empty to allow it.", format)
-		return
-	}
-
-	if len(t.Desc) > 65535 {
-		err = fmt.Errorf("desc length exceeds 65535 bytes")
+		err = fmt.Errorf("not allow empty (add 'allow_empty' tag if empty is allowed)")
 		return
 	}
 
 	data = val
 	text = format
-
 	return
 }
 
 func (t *Tag) ValidateTime(val time.Time, example bool) (data any, text string, err error) {
+	if len(t.Desc) > 65535 {
+		err = fmt.Errorf("desc length exceeds 65535 bytes")
+		return
+	}
+
 	location := time.UTC
 	if t.Location != nil {
 		location = t.Location
@@ -1087,35 +1184,47 @@ func (t *Tag) ValidateTime(val time.Time, example bool) (data any, text string, 
 
 	val = val.Truncate(time.Second)
 	format := val.In(location).Format(time.TimeOnly)
+
+	if example {
+		data = val
+		text = format
+		return
+	}
+
 	if val.Unix() == 0 {
 		if t.AllowEmpty {
 			data = val
 			text = format
 			return
 		}
-		err = fmt.Errorf("time type does not allow empty %q. you can set allow_empty or child_allow_empty to allow it.", format)
-		return
-	}
-
-	if len(t.Desc) > 65535 {
-		err = fmt.Errorf("desc length exceeds 65535 bytes")
+		err = fmt.Errorf("not allow empty (add 'allow_empty' tag if empty is allowed)")
 		return
 	}
 
 	data = val
 	text = format
-
 	return
 }
 
 func (t *Tag) ValidateUuid(val string, example bool) (data any, text string, err error) {
+	if len(t.Desc) > 65535 {
+		err = fmt.Errorf("desc length exceeds 65535 bytes")
+		return
+	}
+
+	if example {
+		data = [16]byte{}
+		text = val
+		return
+	}
+
 	if val == "" {
 		if t.AllowEmpty {
 			data = [16]byte{}
 			text = val
 			return
 		}
-		err = fmt.Errorf("type uuid not allow empty value \"\"")
+		err = fmt.Errorf("not allow empty (add 'allow_empty' tag if empty is allowed)")
 		return
 	}
 
@@ -1136,11 +1245,6 @@ func (t *Tag) ValidateUuid(val string, example bool) (data any, text string, err
 		return
 	}
 
-	if len(t.Desc) > 65535 {
-		err = fmt.Errorf("desc length exceeds 65535 bytes")
-		return
-	}
-
 	location := utils.GetLocationOffsetHour(t.Location)
 	if location != 0 {
 		err = fmt.Errorf("type uuid not support location UTC%d", location)
@@ -1149,28 +1253,33 @@ func (t *Tag) ValidateUuid(val string, example bool) (data any, text string, err
 
 	data = uuid
 	text = val
-
 	return
 }
 
 func (t *Tag) ValidateDecimal(val string, example bool) (data any, text string, err error) {
+	if len(t.Desc) > 65535 {
+		err = fmt.Errorf("desc length exceeds 65535 bytes")
+		return
+	}
+
+	if example {
+		data = val
+		text = val
+		return
+	}
+
 	if val == "" {
 		if t.AllowEmpty {
 			data = val
 			text = val
 			return
 		}
-		err = fmt.Errorf("type decimal not allow empty value \"\"")
+		err = fmt.Errorf("not allow empty (add 'allow_empty' tag if empty is allowed)")
 		return
 	}
 
 	if !decimalRegex.MatchString(val) {
 		err = fmt.Errorf("invalid decimal %q, must be like \"0.0\"", val)
-		return
-	}
-
-	if len(t.Desc) > 65535 {
-		err = fmt.Errorf("desc length exceeds 65535 bytes")
 		return
 	}
 
@@ -1182,18 +1291,28 @@ func (t *Tag) ValidateDecimal(val string, example bool) (data any, text string, 
 
 	data = val
 	text = val
-
 	return
 }
 
 func (t *Tag) ValidateIp(val net.IP, example bool) (data any, text string, err error) {
+	if len(t.Desc) > 65535 {
+		err = fmt.Errorf("desc length exceeds 65535 bytes")
+		return
+	}
+
+	if example {
+		data = val
+		text = ""
+		return
+	}
+
 	if val.String() == "<nil>" {
 		if t.AllowEmpty {
 			data = val
 			text = ""
 			return
 		}
-		err = fmt.Errorf("type ip not allow empty value \"\"")
+		err = fmt.Errorf("not allow empty (add 'allow_empty' tag if empty is allowed)")
 		return
 	}
 
@@ -1211,11 +1330,6 @@ func (t *Tag) ValidateIp(val net.IP, example bool) (data any, text string, err e
 		}
 	}
 
-	if len(t.Desc) > 65535 {
-		err = fmt.Errorf("desc length exceeds 65535 bytes")
-		return
-	}
-
 	location := utils.GetLocationOffsetHour(t.Location)
 	if location != 0 {
 		err = fmt.Errorf("type ip not support location UTC%d", location)
@@ -1224,18 +1338,28 @@ func (t *Tag) ValidateIp(val net.IP, example bool) (data any, text string, err e
 
 	data = val
 	text = val.String()
-
 	return
 }
 
 func (t *Tag) ValidateUrl(val url.URL, example bool) (data any, text string, err error) {
+	if len(t.Desc) > 65535 {
+		err = fmt.Errorf("desc length exceeds 65535 bytes")
+		return
+	}
+
+	if example {
+		data = val
+		text = ""
+		return
+	}
+
 	if val.String() == "" {
 		if t.AllowEmpty {
 			data = val
 			text = ""
 			return
 		}
-		err = fmt.Errorf("type url not allow empty value \"\"")
+		err = fmt.Errorf("not allow empty (add 'allow_empty' tag if empty is allowed)")
 		return
 	}
 
@@ -1249,11 +1373,6 @@ func (t *Tag) ValidateUrl(val url.URL, example bool) (data any, text string, err
 		return
 	}
 
-	if len(t.Desc) > 65535 {
-		err = fmt.Errorf("desc length exceeds 65535 bytes")
-		return
-	}
-
 	location := utils.GetLocationOffsetHour(t.Location)
 	if location != 0 {
 		err = fmt.Errorf("type url not support location UTC%d", location)
@@ -1262,28 +1381,33 @@ func (t *Tag) ValidateUrl(val url.URL, example bool) (data any, text string, err
 
 	data = val
 	text = val.String()
-
 	return
 }
 
 func (t *Tag) ValidateEmail(val string, example bool) (data any, text string, err error) {
+	if len(t.Desc) > 65535 {
+		err = fmt.Errorf("desc length exceeds 65535 bytes")
+		return
+	}
+
+	if example {
+		data = val
+		text = val
+		return
+	}
+
 	if val == "" {
 		if t.AllowEmpty {
 			data = val
 			text = val
 			return
 		}
-		err = fmt.Errorf("type email not allow empty value \"\"")
+		err = fmt.Errorf("not allow empty (add 'allow_empty' tag if empty is allowed)")
 		return
 	}
 
 	if !emailRegex.MatchString(val) {
 		err = fmt.Errorf("value '%s' does not match email pattern", val)
-		return
-	}
-
-	if len(t.Desc) > 65535 {
-		err = fmt.Errorf("desc length exceeds 65535 bytes")
 		return
 	}
 
@@ -1295,18 +1419,28 @@ func (t *Tag) ValidateEmail(val string, example bool) (data any, text string, er
 
 	data = val
 	text = val
-
 	return
 }
 
 func (t *Tag) ValidateEnum(val string, example bool) (data any, text string, err error) {
+	if len(t.Desc) > 65535 {
+		err = fmt.Errorf("desc length exceeds 65535 bytes")
+		return
+	}
+
+	if example {
+		data = -1
+		text = val
+		return
+	}
+
 	if val == "" {
 		if t.AllowEmpty {
 			data = -1
 			text = val
 			return
 		}
-		err = fmt.Errorf("type enum not allow empty value \"\"")
+		err = fmt.Errorf("not allow empty (add 'allow_empty' tag if empty is allowed)")
 		return
 	}
 
@@ -1324,11 +1458,6 @@ func (t *Tag) ValidateEnum(val string, example bool) (data any, text string, err
 		return
 	}
 
-	if len(t.Desc) > 65535 {
-		err = fmt.Errorf("desc length exceeds 65535 bytes")
-		return
-	}
-
 	location := utils.GetLocationOffsetHour(t.Location)
 	if location != 0 {
 		err = fmt.Errorf("type enum not support location UTC%d", location)
@@ -1337,12 +1466,22 @@ func (t *Tag) ValidateEnum(val string, example bool) (data any, text string, err
 
 	data = idx
 	text = val
-
 	return
 }
 
 func (t *Tag) ValidateImage(val []byte, example bool) (data any, text string, err error) {
+	if len(t.Desc) > 65535 {
+		err = fmt.Errorf("desc length exceeds 65535 bytes")
+		return
+	}
+
 	l := len(val)
+
+	if example {
+		data = val
+		text = ""
+		return
+	}
 
 	if l == 0 {
 		if t.AllowEmpty {
@@ -1350,7 +1489,7 @@ func (t *Tag) ValidateImage(val []byte, example bool) (data any, text string, er
 			text = ""
 			return
 		}
-		err = fmt.Errorf("type image not allow empty value []byte{}")
+		err = fmt.Errorf("not allow empty (add 'allow_empty' tag if empty is allowed)")
 		return
 	}
 
@@ -1385,11 +1524,6 @@ func (t *Tag) ValidateImage(val []byte, example bool) (data any, text string, er
 		}
 	}
 
-	if len(t.Desc) > 65535 {
-		err = fmt.Errorf("desc length exceeds 65535 bytes")
-		return
-	}
-
 	location := utils.GetLocationOffsetHour(t.Location)
 	if location != 0 {
 		err = fmt.Errorf("type image not support location UTC%d", location)
@@ -1398,6 +1532,5 @@ func (t *Tag) ValidateImage(val []byte, example bool) (data any, text string, er
 
 	data = val
 	text = base64.StdEncoding.EncodeToString(val)
-
 	return
 }

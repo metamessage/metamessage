@@ -187,7 +187,11 @@ func valueToNode(v any, tag *ir.Tag, depth int, path string, example bool) (node
 					err = fmt.Errorf("%s: value is nil and not nullable", path)
 					return
 				}
-				tag.IsNull = true
+
+				if !example {
+					tag.IsNull = true
+				}
+
 				if d, t, ok := resolveDefaultValue(tag); ok {
 					data = d
 					text = t
@@ -205,7 +209,11 @@ func valueToNode(v any, tag *ir.Tag, depth int, path string, example bool) (node
 					err = fmt.Errorf("%s: value is nil and not nullable", path)
 					return
 				}
-				tag.IsNull = true
+
+				if !example {
+					tag.IsNull = true
+				}
+
 				if d, t, ok := resolveDefaultValue(tag); ok {
 					data = d
 					text = t
@@ -249,7 +257,11 @@ func valueToNode(v any, tag *ir.Tag, depth int, path string, example bool) (node
 					err = fmt.Errorf("%s: value is nil and not nullable", path)
 					return
 				}
-				tag.IsNull = true
+
+				if !example {
+					tag.IsNull = true
+				}
+
 				if d, t, ok := resolveDefaultValue(tag); ok {
 					data = d
 					text = t
@@ -290,7 +302,11 @@ func valueToNode(v any, tag *ir.Tag, depth int, path string, example bool) (node
 					err = fmt.Errorf("%s: value is nil and not nullable", path)
 					return
 				}
-				tag.IsNull = true
+
+				if !example {
+					tag.IsNull = true
+				}
+
 				if d, t, ok := resolveDefaultValue(tag); ok {
 					data = d
 					text = t
@@ -330,7 +346,11 @@ func valueToNode(v any, tag *ir.Tag, depth int, path string, example bool) (node
 					err = fmt.Errorf("%s: value is nil and not nullable", path)
 					return
 				}
-				tag.IsNull = true
+
+				if !example {
+					tag.IsNull = true
+				}
+
 				if d, t, ok := resolveDefaultValue(tag); ok {
 					data = d
 					text = t
@@ -370,7 +390,11 @@ func valueToNode(v any, tag *ir.Tag, depth int, path string, example bool) (node
 					err = fmt.Errorf("%s: value is nil and not nullable", path)
 					return
 				}
-				tag.IsNull = true
+
+				if !example {
+					tag.IsNull = true
+				}
+
 				if d, t, ok := resolveDefaultValue(tag); ok {
 					data = d
 					text = t
@@ -411,7 +435,11 @@ func valueToNode(v any, tag *ir.Tag, depth int, path string, example bool) (node
 					err = fmt.Errorf("%s: value is nil and not nullable", path)
 					return
 				}
-				tag.IsNull = true
+
+				if !example {
+					tag.IsNull = true
+				}
+
 				if d, t, ok := resolveDefaultValue(tag); ok {
 					data = d
 					text = t
@@ -451,7 +479,11 @@ func valueToNode(v any, tag *ir.Tag, depth int, path string, example bool) (node
 					err = fmt.Errorf("%s: value is nil and not nullable", path)
 					return
 				}
-				tag.IsNull = true
+
+				if !example {
+					tag.IsNull = true
+				}
+
 				if d, t, ok := resolveDefaultValue(tag); ok {
 					data = d
 					text = t
@@ -492,7 +524,11 @@ func valueToNode(v any, tag *ir.Tag, depth int, path string, example bool) (node
 					err = fmt.Errorf("%s: value is nil and not nullable", path)
 					return
 				}
-				tag.IsNull = true
+
+				if !example {
+					tag.IsNull = true
+				}
+
 				if d, t, ok := resolveDefaultValue(tag); ok {
 					data = d
 					text = t
@@ -532,7 +568,11 @@ func valueToNode(v any, tag *ir.Tag, depth int, path string, example bool) (node
 					err = fmt.Errorf("%s: value is nil and not nullable", path)
 					return
 				}
-				tag.IsNull = true
+
+				if !example {
+					tag.IsNull = true
+				}
+
 				if d, t, ok := resolveDefaultValue(tag); ok {
 					data = d
 					text = t
@@ -573,7 +613,11 @@ func valueToNode(v any, tag *ir.Tag, depth int, path string, example bool) (node
 					err = fmt.Errorf("%s: value is nil and not nullable", path)
 					return
 				}
-				tag.IsNull = true
+
+				if !example {
+					tag.IsNull = true
+				}
+
 				if d, t, ok := resolveDefaultValue(tag); ok {
 					data = d
 					text = t
@@ -613,7 +657,11 @@ func valueToNode(v any, tag *ir.Tag, depth int, path string, example bool) (node
 					err = fmt.Errorf("%s: value is nil and not nullable", path)
 					return
 				}
-				tag.IsNull = true
+
+				if !example {
+					tag.IsNull = true
+				}
+
 				if d, t, ok := resolveDefaultValue(tag); ok {
 					data = d
 					text = t
@@ -654,7 +702,11 @@ func valueToNode(v any, tag *ir.Tag, depth int, path string, example bool) (node
 					err = fmt.Errorf("%s: value is nil and not nullable", path)
 					return
 				}
-				tag.IsNull = true
+
+				if !example {
+					tag.IsNull = true
+				}
+
 				if d, t, ok := resolveDefaultValue(tag); ok {
 					data = d
 					text = t
@@ -703,7 +755,11 @@ func valueToNode(v any, tag *ir.Tag, depth int, path string, example bool) (node
 					err = fmt.Errorf("%s: value is nil and not nullable", path)
 					return
 				}
-				tag.IsNull = true
+
+				if !example {
+					tag.IsNull = true
+				}
+
 				if d, t, ok := resolveDefaultValue(tag); ok {
 					data = d
 					text = t
@@ -757,7 +813,11 @@ func valueToNode(v any, tag *ir.Tag, depth int, path string, example bool) (node
 					err = fmt.Errorf("%s: value is nil and not nullable", path)
 					return
 				}
-				tag.IsNull = true
+
+				if !example {
+					tag.IsNull = true
+				}
+
 				if d, t, ok := resolveDefaultValue(tag); ok {
 					data = d
 					text = t
@@ -817,7 +877,11 @@ func valueToNode(v any, tag *ir.Tag, depth int, path string, example bool) (node
 					err = fmt.Errorf("%s: value is nil and not nullable", path)
 					return
 				}
-				tag.IsNull = true
+
+				if !example {
+					tag.IsNull = true
+				}
+
 				if d, t, ok := resolveDefaultValue(tag); ok {
 					data = d
 					text = t
@@ -835,7 +899,11 @@ func valueToNode(v any, tag *ir.Tag, depth int, path string, example bool) (node
 					err = fmt.Errorf("%s: value is nil and not nullable", path)
 					return
 				}
-				tag.IsNull = true
+
+				if !example {
+					tag.IsNull = true
+				}
+
 				if d, t, ok := resolveDefaultValue(tag); ok {
 					data = d
 					text = t
@@ -853,7 +921,11 @@ func valueToNode(v any, tag *ir.Tag, depth int, path string, example bool) (node
 					err = fmt.Errorf("%s: value is nil and not nullable", path)
 					return
 				}
-				tag.IsNull = true
+
+				if !example {
+					tag.IsNull = true
+				}
+
 				if d, t, ok := resolveDefaultValue(tag); ok {
 					data = d
 					text = t
@@ -876,7 +948,11 @@ func valueToNode(v any, tag *ir.Tag, depth int, path string, example bool) (node
 					err = fmt.Errorf("%s: value is nil and not nullable", path)
 					return
 				}
-				tag.IsNull = true
+
+				if !example {
+					tag.IsNull = true
+				}
+
 				if d, t, ok := resolveDefaultValue(tag); ok {
 					data = d
 					text = t
@@ -894,7 +970,11 @@ func valueToNode(v any, tag *ir.Tag, depth int, path string, example bool) (node
 					err = fmt.Errorf("%s: value is nil and not nullable", path)
 					return
 				}
-				tag.IsNull = true
+
+				if !example {
+					tag.IsNull = true
+				}
+
 				if d, t, ok := resolveDefaultValue(tag); ok {
 					data = d
 					text = t
@@ -936,7 +1016,11 @@ func valueToNode(v any, tag *ir.Tag, depth int, path string, example bool) (node
 					err = fmt.Errorf("%s: value is nil and not nullable", path)
 					return
 				}
-				tag.IsNull = true
+
+				if !example {
+					tag.IsNull = true
+				}
+
 				if d, t, ok := resolveDefaultValue(tag); ok {
 					data = d
 					text = t
@@ -978,7 +1062,11 @@ func valueToNode(v any, tag *ir.Tag, depth int, path string, example bool) (node
 					err = fmt.Errorf("%s: value is nil and not nullable", path)
 					return
 				}
-				tag.IsNull = true
+
+				if !example {
+					tag.IsNull = true
+				}
+
 				if d, t, ok := resolveDefaultValue(tag); ok {
 					data = d
 					text = t
@@ -1020,7 +1108,11 @@ func valueToNode(v any, tag *ir.Tag, depth int, path string, example bool) (node
 					err = fmt.Errorf("%s: value is nil and not nullable", path)
 					return
 				}
-				tag.IsNull = true
+
+				if !example {
+					tag.IsNull = true
+				}
+
 				if d, t, ok := resolveDefaultValue(tag); ok {
 					data = d
 					text = t
@@ -1073,7 +1165,11 @@ func valueToNode(v any, tag *ir.Tag, depth int, path string, example bool) (node
 					err = fmt.Errorf("%s: value is nil and not nullable", path)
 					return
 				}
-				tag.IsNull = true
+
+				if !example {
+					tag.IsNull = true
+				}
+
 				if d, t, ok := resolveDefaultValue(tag); ok {
 					data = d
 					text = t
@@ -1096,7 +1192,11 @@ func valueToNode(v any, tag *ir.Tag, depth int, path string, example bool) (node
 					err = fmt.Errorf("%s: value is nil and not nullable", path)
 					return
 				}
-				tag.IsNull = true
+
+				if !example {
+					tag.IsNull = true
+				}
+
 				if d, t, ok := resolveDefaultValue(tag); ok {
 					data = d
 					text = t
@@ -1119,7 +1219,11 @@ func valueToNode(v any, tag *ir.Tag, depth int, path string, example bool) (node
 					err = fmt.Errorf("%s: value is nil and not nullable", path)
 					return
 				}
-				tag.IsNull = true
+
+				if !example {
+					tag.IsNull = true
+				}
+
 				if d, t, ok := resolveDefaultValue(tag); ok {
 					data = d
 					text = t
@@ -1271,11 +1375,13 @@ func anyToJSONC(obj any, tag *ir.Tag, depth int, path string, example bool) (ir.
 	if val.Kind() == reflect.Pointer {
 		tag.Nullable = true
 		if val.IsNil() {
-			tag.IsNull = true
+			if !example {
+				tag.IsNull = true
+			}
 			typ = typ.Elem()
 			elemVal, err := createExampleValue(typ)
 			if err != nil {
-				return nil, fmt.Errorf("create element %s: %w", typ, err)
+				return nil, fmt.Errorf("%s create element %s err: %w", path, typ, err)
 			}
 			val = reflect.ValueOf(elemVal)
 		} else {
@@ -1283,10 +1389,10 @@ func anyToJSONC(obj any, tag *ir.Tag, depth int, path string, example bool) (ir.
 			typ = typ.Elem()
 		}
 		if val.Kind() == reflect.Interface {
-			return nil, fmt.Errorf("unsupported type: interface{} (cannot reconstruct concrete value from abstract interface)")
+			return nil, fmt.Errorf("%s unsupported interface{} (cannot reconstruct concrete value from abstract interface)", path)
 		}
 		if val.Kind() == reflect.Pointer {
-			return nil, fmt.Errorf("unsupported type: multi-level pointer (%s) (only single-level pointer is allowed)", typ)
+			return nil, fmt.Errorf("%s unsupported multi-level pointer (%s) (only single-level pointer is allowed)", path, typ)
 		}
 	}
 
