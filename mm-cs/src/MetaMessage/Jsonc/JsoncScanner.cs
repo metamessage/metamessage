@@ -6,9 +6,7 @@ public class JsoncScanner
     private int _position;
     private int _line;
     private int _column;
-    private bool _newLine = true;
-    private JsoncToken? _lastToken;
-    private JsoncToken? _currentToken;
+    private bool _newLine;
 
     public JsoncScanner(string input)
     {
@@ -18,25 +16,17 @@ public class JsoncScanner
         _column = 1;
     }
 
-    public JsoncToken CurrentToken => _currentToken ?? throw new InvalidOperationException("No current token");
-
-    public JsoncToken LastToken => _lastToken ?? throw new InvalidOperationException("No last token");
-
-    public int Position => _position;
-
     public JsoncToken NextToken()
     {
         SkipWhitespace();
         if (_position >= _input.Length)
         {
-            _lastToken = _currentToken;
-            _currentToken = new JsoncToken
+            return new JsoncToken
             {
                 Type = JsoncTokenType.EOF,
                 Line = _line,
                 Column = _column
             };
-            return _currentToken;
         }
 
         char ch = _input[_position];
@@ -46,77 +36,88 @@ public class JsoncScanner
             return ScanComment();
         }
 
-        var token = ch switch
+        switch (ch)
         {
-            '{' => CreateToken(JsoncTokenType.LBrace),
-            '}' => CreateToken(JsoncTokenType.RBrace),
-            '[' => CreateToken(JsoncTokenType.LBracket),
-            ']' => CreateToken(JsoncTokenType.RBracket),
-            ':' => CreateToken(JsoncTokenType.Colon),
-            ',' => CreateToken(JsoncTokenType.Comma),
-            '"' => ScanString(),
-            _ when IsDigit(ch) || ch == '-' => ScanNumber(),
-            _ when IsLetter(ch) => ScanIdentifier(),
-            _ => throw new Exception($"Unexpected character: {ch} at line {_line}, column {_column}")
-        };
-
-        _lastToken = _currentToken;
-        _currentToken = token;
-        return token;
+            case '{':
+                Advance(1);
+                return NewToken(JsoncTokenType.LBrace);
+            case '}':
+                Advance(1);
+                return NewToken(JsoncTokenType.RBrace);
+            case '[':
+                Advance(1);
+                return NewToken(JsoncTokenType.LBracket);
+            case ']':
+                Advance(1);
+                return NewToken(JsoncTokenType.RBracket);
+            case ':':
+                Advance(1);
+                _newLine = false;
+                return NewToken(JsoncTokenType.Colon);
+            case ',':
+                Advance(1);
+                _newLine = false;
+                return NewToken(JsoncTokenType.Comma);
+            case '"':
+                return ScanString();
+            default:
+                if (IsDigit(ch) || ch == '-')
+                {
+                    return ScanNumber();
+                }
+                if (IsLetter(ch))
+                {
+                    return ScanIdentifier();
+                }
+                throw new Exception($"Unexpected character: {ch} at line {_line}, column {_column}");
+        }
     }
 
-    private JsoncToken CreateToken(JsoncTokenType type, string literal = "")
+    private JsoncToken NewToken(JsoncTokenType type, string literal = "")
     {
-        var token = new JsoncToken
+        return new JsoncToken
         {
             Type = type,
             Literal = literal,
             Line = _line,
             Column = _column
         };
-        Advance(1);
-        return token;
     }
 
     private JsoncToken ScanComment()
     {
         if (_input.Length <= _position + 1)
         {
-            return CreateToken(JsoncTokenType.LeadingComment, "/");
+            Advance(1);
+            return NewToken(JsoncTokenType.LeadingComment, "/");
         }
 
         char next = _input[_position + 1];
-        string comment;
-        bool isLeading = _newLine || _lastToken == null;
+        int startLine = _line;
+        int startColumn = _column;
 
         if (next == '/')
         {
-            int startPos = _position;
-            int startLine = _line;
-            int startColumn = _column;
             Advance(2);
+            int contentStart = _position;
             while (_position < _input.Length && _input[_position] != '\n')
             {
                 Advance(1);
             }
-            comment = _input.Substring(startPos, _position - startPos);
-            var token = new JsoncToken
+            string content = _input.Substring(contentStart, _position - contentStart).Trim();
+            return new JsoncToken
             {
-                Type = isLeading ? JsoncTokenType.LeadingComment : JsoncTokenType.TrailingComment,
-                Literal = comment,
+                Type = _newLine ? JsoncTokenType.LeadingComment : JsoncTokenType.TrailingComment,
+                Literal = content,
                 Line = startLine,
                 Column = startColumn
             };
-            _lastToken = _currentToken;
-            _currentToken = token;
-            return token;
         }
-        else if (next == '*')
+
+        if (next == '*')
         {
-            int startPos = _position;
-            int startLine = _line;
-            int startColumn = _column;
             Advance(2);
+            int contentStart = _position;
             while (_position < _input.Length - 1)
             {
                 if (_input[_position] == '*' && _input[_position + 1] == '/')
@@ -131,20 +132,19 @@ public class JsoncScanner
                 }
                 Advance(1);
             }
-            comment = _input.Substring(startPos, _position - startPos);
-            var token = new JsoncToken
+            string content = _input.Substring(contentStart, _position - contentStart - 2).Trim();
+            return new JsoncToken
             {
-                Type = isLeading ? JsoncTokenType.LeadingComment : JsoncTokenType.TrailingComment,
-                Literal = comment,
+                Type = _newLine ? JsoncTokenType.LeadingComment : JsoncTokenType.TrailingComment,
+                Literal = content,
+                IsBlock = true,
                 Line = startLine,
                 Column = startColumn
             };
-            _lastToken = _currentToken;
-            _currentToken = token;
-            return token;
         }
 
-        return CreateToken(JsoncTokenType.LeadingComment, "/");
+        Advance(1);
+        return NewToken(JsoncTokenType.LeadingComment, "/");
     }
 
     private JsoncToken ScanString()
@@ -157,55 +157,9 @@ public class JsoncScanner
         {
             if (_input[_position] == '\\' && _position + 1 < _input.Length)
             {
+                sb.Append('\\');
                 Advance(1);
-                char escaped = _input[_position];
-                switch (escaped)
-                {
-                    case 'n':
-                        sb.Append('\n');
-                        break;
-                    case 'r':
-                        sb.Append('\r');
-                        break;
-                    case 't':
-                        sb.Append('\t');
-                        break;
-                    case 'b':
-                        sb.Append('\b');
-                        break;
-                    case 'f':
-                        sb.Append('\f');
-                        break;
-                    case '"':
-                        sb.Append('"');
-                        break;
-                    case '\\':
-                        sb.Append('\\');
-                        break;
-                    case 'u':
-                        if (_position + 4 < _input.Length)
-                        {
-                            Advance(1);
-                            string hex = _input.Substring(_position, 4);
-                            if (int.TryParse(hex, System.Globalization.NumberStyles.HexNumber, null, out int unicode))
-                            {
-                                sb.Append((char)unicode);
-                                Advance(3);
-                            }
-                            else
-                            {
-                                sb.Append(escaped);
-                            }
-                        }
-                        else
-                        {
-                            sb.Append(escaped);
-                        }
-                        break;
-                    default:
-                        sb.Append(escaped);
-                        break;
-                }
+                sb.Append(_input[_position]);
             }
             else
             {
@@ -258,19 +212,6 @@ public class JsoncScanner
             Advance(1);
         }
 
-        bool isFloat = false;
-        if (_position < _input.Length && (_input[_position] == 'f' || _input[_position] == 'F'))
-        {
-            sb.Append(_input[_position]);
-            Advance(1);
-            isFloat = true;
-        }
-
-        if (!isFloat && sb.ToString().Contains('.'))
-        {
-            isFloat = true;
-        }
-
         return new JsoncToken
         {
             Type = JsoncTokenType.Number,
@@ -304,7 +245,6 @@ public class JsoncScanner
 
     private void SkipWhitespace()
     {
-        _newLine = false;
         while (_position < _input.Length && IsWhitespace(_input[_position]))
         {
             if (_input[_position] == '\n')

@@ -1,3 +1,5 @@
+using MetaMessage.Ir;
+using ValueType = MetaMessage.Ir.ValueType;
 namespace MetaMessage.Core;
 
 [AttributeUsage(AttributeTargets.Class | AttributeTargets.Property, AllowMultiple = false)]
@@ -8,57 +10,123 @@ public class MM : Attribute
     public string Type { get; set; } = string.Empty;
     public string ChildType { get; set; } = string.Empty;
     public bool Nullable { get; set; } = false;
-    public bool Raw { get; set; } = false;
+    public bool Deprecated { get; set; } = false;
     public bool AllowEmpty { get; set; } = false;
     public bool Unique { get; set; } = false;
     public string DefaultVal { get; set; } = string.Empty;
     public string Enums { get; set; } = string.Empty;
-    public int LocationHours { get; set; } = 0;
+    public int Location { get; set; } = 0;
     public int Version { get; set; } = 0;
     public string Mime { get; set; } = string.Empty;
     public string ChildDesc { get; set; } = string.Empty;
     public bool ChildNullable { get; set; } = false;
     public string ChildEnums { get; set; } = string.Empty;
-}
 
-public static class MmTagExtensions
-{
-    public static MmTag FromAttribute(MM attribute)
+    public MM()
     {
-        var tag = MmTag.Empty();
-        
-        if (!string.IsNullOrEmpty(attribute.Name))
-            tag.Name = attribute.Name;
-        if (!string.IsNullOrEmpty(attribute.Desc))
-            tag.Desc = attribute.Desc;
-        if (!string.IsNullOrEmpty(attribute.Type))
+    }
+
+    public MM(
+        string name = "",
+        string desc = "",
+        string type = "",
+        string childType = "",
+        bool nullable = false,
+        bool deprecated = false,
+        bool allowEmpty = false,
+        bool unique = false,
+        string defaultVal = "",
+        string enums = "",
+        int location = 0,
+        int version = 0,
+        string mime = "",
+        string childDesc = "",
+        bool childNullable = false,
+        string childEnums = "")
+    {
+        Name = name;
+        Desc = desc;
+        Type = type;
+        ChildType = childType;
+        Nullable = nullable;
+        Deprecated = deprecated;
+        AllowEmpty = allowEmpty;
+        Unique = unique;
+        DefaultVal = defaultVal;
+        Enums = enums;
+        Location = location;
+        Version = version;
+        Mime = mime;
+        ChildDesc = childDesc;
+        ChildNullable = childNullable;
+        ChildEnums = childEnums;
+    }
+
+    public Tag ToTag()
+    {
+        var tag = Tag.Empty();
+
+        if (!string.IsNullOrEmpty(Name))
+            tag.Name = Name;
+        if (!string.IsNullOrEmpty(Desc))
+            tag.Desc = Desc;
+        if (!string.IsNullOrEmpty(Type))
         {
-            if (Enum.TryParse<ValueType>(attribute.Type, true, out var type))
+            if (Enum.TryParse<ValueType>(Type, true, out var type))
                 tag.Type = type;
         }
-        if (!string.IsNullOrEmpty(attribute.ChildType))
+        if (!string.IsNullOrEmpty(ChildType))
         {
-            if (Enum.TryParse<ValueType>(attribute.ChildType, true, out var childType))
+            if (Enum.TryParse<ValueType>(ChildType, true, out var childType))
                 tag.ChildType = childType;
         }
-        tag.Nullable = attribute.Nullable;
-        tag.Deprecated = attribute.Deprecated;
-        tag.AllowEmpty = attribute.AllowEmpty;
-        tag.Unique = attribute.Unique;
-        if (!string.IsNullOrEmpty(attribute.DefaultVal))
-            tag.DefaultVal = attribute.DefaultVal;
-        if (!string.IsNullOrEmpty(attribute.Enums))
-            tag.Enums = attribute.Enums;
-        tag.LocationHours = attribute.LocationHours;
-        tag.Version = attribute.Version;
-        if (!string.IsNullOrEmpty(attribute.Mime))
-            tag.Mime = attribute.Mime;
-        if (!string.IsNullOrEmpty(attribute.ChildDesc))
-            tag.ChildDesc = attribute.ChildDesc;
-        tag.ChildNullable = attribute.ChildNullable;
-        if (!string.IsNullOrEmpty(attribute.ChildEnums))
-            tag.ChildEnums = attribute.ChildEnums;
-        
+        tag.Nullable = Nullable;
+        tag.Deprecated = Deprecated;
+        tag.AllowEmpty = AllowEmpty;
+        tag.Unique = Unique;
+        if (!string.IsNullOrEmpty(DefaultVal))
+            tag.DefaultVal = DefaultVal;
+        if (!string.IsNullOrEmpty(Enums))
+            tag.Enums = Enums;
+        tag.Location = Location;
+        tag.Version = Version;
+        if (!string.IsNullOrEmpty(Mime))
+            tag.Mime = Mime;
+        if (!string.IsNullOrEmpty(ChildDesc))
+            tag.ChildDesc = ChildDesc;
+        tag.ChildNullable = ChildNullable;
+        if (!string.IsNullOrEmpty(ChildEnums))
+            tag.ChildEnums = ChildEnums;
+
         return tag;
+    }
+
+    public static MM FromTag(Tag tag)
+    {
+        return new MM(
+            name: tag.Name,
+            desc: tag.Desc,
+            type: tag.Type != ValueType.Unknown ? tag.Type.ToString() : "",
+            childType: tag.ChildType != ValueType.Unknown ? tag.ChildType.ToString() : "",
+            nullable: tag.Nullable,
+            deprecated: tag.Deprecated,
+            allowEmpty: tag.AllowEmpty,
+            unique: tag.Unique,
+            defaultVal: tag.DefaultVal,
+            enums: tag.Enums,
+            location: tag.Location,
+            version: tag.Version,
+            mime: tag.Mime,
+            childDesc: tag.ChildDesc,
+            childNullable: tag.ChildNullable,
+            childEnums: tag.ChildEnums);
+    }
+}
+
+public static class TagExtensions
+{
+    public static Tag FromAttribute(MM attribute)
+    {
+        return attribute.ToTag();
     }
 }

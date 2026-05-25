@@ -1,7 +1,9 @@
-using System;
-using System.Collections.Generic;
+using System.Net;
+using System.Net.Sockets;
 using System.Numerics;
 using System.Text.RegularExpressions;
+using MetaMessage.Ir;
+using ValueType = MetaMessage.Ir.ValueType;
 
 namespace MetaMessage.Core;
 
@@ -25,7 +27,16 @@ public class ValidationResult
 
 public class MmValidator
 {
-    public ValidationResult Validate(dynamic value, MmTag tag)
+    private static readonly Regex EmailRegex = new Regex(@"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$");
+    private static readonly Regex DecimalRegex = new Regex(@"^-?\d+\.\d+$");
+    private static readonly Regex UuidRegex = new Regex(@"^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$");
+
+    private bool ShouldSkipValidate(Tag tag)
+    {
+        return tag.Example;
+    }
+
+    public ValidationResult Validate(dynamic value, Tag tag)
     {
         var result = new ValidationResult();
 
@@ -38,9 +49,14 @@ public class MmValidator
             return result;
         }
 
+        if (ShouldSkipValidate(tag))
+        {
+            return result;
+        }
+
         switch (tag.Type)
         {
-            case ValueType.BOOL:
+            case ValueType.Bool:
                 ValidateBool(value, tag, result);
                 break;
             case ValueType.I:
@@ -73,8 +89,8 @@ public class MmValidator
             case ValueType.U64:
                 ValidateU64(value, tag, result);
                 break;
-            case ValueType.BIGINT:
-                ValidateBiginteger(value, tag, result);
+            case ValueType.Bigint:
+                ValidateBigint(value, tag, result);
                 break;
             case ValueType.F32:
                 ValidateF32(value, tag, result);
@@ -82,95 +98,457 @@ public class MmValidator
             case ValueType.F64:
                 ValidateF64(value, tag, result);
                 break;
-            case ValueType.DECIMAL:
+            case ValueType.Decimal:
                 ValidateDecimal(value, tag, result);
                 break;
-            case ValueType.STR:
+            case ValueType.Str:
                 ValidateStr(value, tag, result);
                 break;
-            case ValueType.EMAIL:
+            case ValueType.Email:
                 ValidateEmail(value, tag, result);
                 break;
-            case ValueType.URL:
+            case ValueType.Url:
                 ValidateUrl(value, tag, result);
                 break;
-            case ValueType.BYTES:
+            case ValueType.Bytes:
                 ValidateBytes(value, tag, result);
                 break;
-            case ValueType.UUID:
+            case ValueType.Uuid:
                 ValidateUuid(value, tag, result);
                 break;
-            case ValueType.IP:
+            case ValueType.Ip:
                 ValidateIp(value, tag, result);
                 break;
-            case ValueType.IMAGE:
+            case ValueType.Image:
                 ValidateImage(value, tag, result);
                 break;
-            case ValueType.VIDEO:
+            case ValueType.Video:
                 ValidateVideo(value, tag, result);
                 break;
-            case ValueType.DATETIME:
-            case ValueType.DATE:
-            case ValueType.TIME:
+            case ValueType.Datetime:
+            case ValueType.Date:
+            case ValueType.Time:
                 ValidateDatetime(value, tag, result);
                 break;
-            case ValueType.ENUMS:
+            case ValueType.Enums:
                 ValidateEnum(value, tag, result);
                 break;
-            case ValueType.ARR:
-            case ValueType.VEC:
+            case ValueType.Arr:
+            case ValueType.Vec:
                 ValidateArr(value, tag, result);
                 break;
-            case ValueType.OBJ:
+            case ValueType.Obj:
                 ValidateObj(value, tag, result);
+                break;
+            case ValueType.Map:
+                ValidateMap(value, tag, result);
                 break;
         }
 
         return result;
     }
 
-    private void ValidateBool(dynamic value, MmTag tag, ValidationResult result)
+    public void ValidateVec(dynamic value, Tag tag, ValidationResult result)
     {
-        if (!(value is bool))
+        if (tag.Desc.Length > 65535)
+        {
+            result.AddError("desc length exceeds 65535 bytes");
+            return;
+        }
+
+        if (tag.Location != 0)
+        {
+            result.AddError($"type slice not support location UTC{tag.Location}");
+            return;
+        }
+
+        if (value is System.Collections.IEnumerable enumerable)
+        {
+            int count = 0;
+            foreach (var _ in enumerable)
+            {
+                count++;
+            }
+
+            if (count == 0)
+            {
+                if (tag.AllowEmpty)
+                {
+                    return;
+                }
+                result.AddError("type slice not allow empty");
+                return;
+            }
+
+            if (tag.ChildUnique)
+            {
+                var seen = new Dictionary<object, bool>();
+                int index = 0;
+                foreach (var item in enumerable)
+                {
+                    if (item != null)
+                    {
+                        if (seen.ContainsKey(item))
+                        {
+                            result.AddError($"vec duplicate value found: {item}, index: {index}");
+                            return;
+                        }
+                        seen[item] = true;
+                    }
+                    index++;
+                }
+            }
+        }
+        else
+        {
+            result.AddError("value must be an array");
+        }
+    }
+
+    public void ValidateArr(dynamic value, Tag tag, ValidationResult result)
+    {
+        if (tag.Desc.Length > 65535)
+        {
+            result.AddError("desc length exceeds 65535 bytes");
+            return;
+        }
+
+        if (tag.Location != 0)
+        {
+            result.AddError($"type array not support location UTC{tag.Location}");
+            return;
+        }
+
+        if (value is System.Collections.IEnumerable enumerable)
+        {
+            int count = 0;
+            foreach (var _ in enumerable)
+            {
+                count++;
+            }
+
+            if (count == 0)
+            {
+                if (tag.AllowEmpty)
+                {
+                    return;
+                }
+                result.AddError("type array not allow empty");
+                return;
+            }
+
+            if (tag.Size > 0 && count > tag.Size)
+            {
+                result.AddError("type array over size");
+                return;
+            }
+
+            if (tag.ChildUnique)
+            {
+                var seen = new Dictionary<object, bool>();
+                int index = 0;
+                foreach (var item in enumerable)
+                {
+                    if (item != null)
+                    {
+                        if (seen.ContainsKey(item))
+                        {
+                            result.AddError($"array duplicate value found: {item}, index: {index}");
+                            return;
+                        }
+                        seen[item] = true;
+                    }
+                    index++;
+                }
+            }
+        }
+        else
+        {
+            result.AddError("value must be an array");
+        }
+    }
+
+    public void ValidateObj(dynamic value, Tag tag, ValidationResult result)
+    {
+        if (tag.Desc.Length > 65535)
+        {
+            result.AddError("desc length exceeds 65535 bytes");
+            return;
+        }
+
+        if (tag.Location != 0)
+        {
+            result.AddError($"type struct not support location UTC{tag.Location}");
+            return;
+        }
+    }
+
+    public void ValidateMap(dynamic value, Tag tag, ValidationResult result)
+    {
+        if (tag.Desc.Length > 65535)
+        {
+            result.AddError("desc length exceeds 65535 bytes");
+            return;
+        }
+
+        if (tag.Location != 0)
+        {
+            result.AddError($"type map not support location UTC{tag.Location}");
+            return;
+        }
+    }
+
+    public void ValidateStr(dynamic value, Tag tag, ValidationResult result)
+    {
+        if (!(value is string strVal))
+        {
+            result.AddError("value must be a string");
+            return;
+        }
+
+        ValidateStr(strVal, tag, result);
+    }
+
+    private void ValidateStr(string val, Tag tag, ValidationResult result)
+    {
+        if (tag.Desc.Length > 65535)
+        {
+            result.AddError("desc length exceeds 65535 bytes");
+            return;
+        }
+
+        if (string.IsNullOrEmpty(val))
+        {
+            if (tag.AllowEmpty)
+            {
+                return;
+            }
+            result.AddError("not allow empty (add 'allow_empty' tag if empty is allowed)");
+            return;
+        }
+
+        if (!string.IsNullOrEmpty(tag.Pattern))
+        {
+            try
+            {
+                var re = new Regex(tag.Pattern);
+                if (!re.IsMatch(val))
+                {
+                    result.AddError($"value \"{val}\" does not match pattern {tag.Pattern}");
+                    return;
+                }
+            }
+            catch (Exception)
+            {
+                result.AddError($"pattern \"{tag.Pattern}\" compile error");
+                return;
+            }
+        }
+
+        int l = val.Length;
+
+        if (!string.IsNullOrEmpty(tag.Min))
+        {
+            if (int.TryParse(tag.Min, out int minVal))
+            {
+                if (l < minVal)
+                {
+                    result.AddError($"string length {l} is less than the minimum limit {minVal}");
+                    return;
+                }
+            }
+            else
+            {
+                result.AddError($"failed to parse tag.min as int: {tag.Min}");
+                return;
+            }
+        }
+
+        if (!string.IsNullOrEmpty(tag.Max))
+        {
+            if (int.TryParse(tag.Max, out int maxVal))
+            {
+                if (l > maxVal)
+                {
+                    result.AddError($"string length {l} exceeds the maximum limit {maxVal}");
+                    return;
+                }
+            }
+            else
+            {
+                result.AddError($"failed to parse tag.max as int: {tag.Max}");
+                return;
+            }
+        }
+
+        if (tag.Size != 0 && l != tag.Size)
+        {
+            result.AddError($"string length {l} != size {tag.Size}");
+            return;
+        }
+
+        if (tag.Location != 0)
+        {
+            result.AddError($"type string not support location UTC{tag.Location}");
+            return;
+        }
+    }
+
+    public void ValidateBytes(dynamic value, Tag tag, ValidationResult result)
+    {
+        if (!(value is byte[] bytesVal))
+        {
+            result.AddError("value must be a byte array");
+            return;
+        }
+
+        ValidateBytes(bytesVal, tag, result);
+    }
+
+    private void ValidateBytes(byte[] val, Tag tag, ValidationResult result)
+    {
+        if (tag.Desc.Length > 65535)
+        {
+            result.AddError("desc length exceeds 65535 bytes");
+            return;
+        }
+
+        int l = val.Length;
+
+        if (l == 0)
+        {
+            if (tag.AllowEmpty)
+            {
+                return;
+            }
+            result.AddError("not allow empty (add 'allow_empty' tag if empty is allowed)");
+            return;
+        }
+
+        if (!string.IsNullOrEmpty(tag.Min))
+        {
+            if (int.TryParse(tag.Min, out int minVal))
+            {
+                if (l < minVal)
+                {
+                    result.AddError($"[]byte length {l} is less than the minimum limit {minVal}");
+                    return;
+                }
+            }
+            else
+            {
+                result.AddError($"failed to parse tag.min as int: {tag.Min}");
+                return;
+            }
+        }
+
+        if (!string.IsNullOrEmpty(tag.Max))
+        {
+            if (int.TryParse(tag.Max, out int maxVal))
+            {
+                if (l > maxVal)
+                {
+                    result.AddError($"[]byte length {l} exceeds the maximum limit {maxVal}");
+                    return;
+                }
+            }
+            else
+            {
+                result.AddError($"failed to parse tag.max as int: {tag.Max}");
+                return;
+            }
+        }
+
+        if (tag.Size != 0 && l != tag.Size)
+        {
+            result.AddError($"[]byte length {l} != size {tag.Size}");
+            return;
+        }
+
+        if (tag.Location != 0)
+        {
+            result.AddError($"type []byte not support location UTC{tag.Location}");
+            return;
+        }
+    }
+
+    public void ValidateBool(dynamic value, Tag tag, ValidationResult result)
+    {
+        if (!(value is bool boolVal))
         {
             result.AddError("value must be a boolean");
             return;
         }
 
+        ValidateBool(boolVal, tag, result);
+    }
+
+    private void ValidateBool(bool val, Tag tag, ValidationResult result)
+    {
+        if (tag.Desc.Length > 65535)
+        {
+            result.AddError("desc length exceeds 65535 bytes");
+            return;
+        }
+
         if (tag.AllowEmpty)
         {
-            result.AddError("type bool not support allow empty");
+            result.AddError("type bool not support 'allow_empty' tag");
+            return;
+        }
+
+        if (tag.Location != 0)
+        {
+            result.AddError($"type bool not support location UTC{tag.Location}");
             return;
         }
     }
 
-    private void ValidateI(dynamic value, MmTag tag, ValidationResult result)
+    public void ValidateI(dynamic value, Tag tag, ValidationResult result)
     {
-        long longValue;
-        if (!TryGetInt64Value(value, out longValue))
+        if (!TryGetInt64Value(value, out long longVal))
         {
             result.AddError("value must be a number");
             return;
         }
 
-        if (longValue == 0)
+        ValidateI((int)longVal, tag, result);
+    }
+
+    private void ValidateI(int val, Tag tag, ValidationResult result)
+    {
+        if (tag.Desc.Length > 65535)
+        {
+            result.AddError("desc length exceeds 65535 bytes");
+            return;
+        }
+
+        if (val == 0)
         {
             if (tag.AllowEmpty)
             {
                 return;
             }
-            result.AddError("type int not allow empty value 0");
+            result.AddError("not allow empty (add 'allow_empty' tag if empty is allowed)");
             return;
         }
+
+        long val64 = val;
 
         if (!string.IsNullOrEmpty(tag.Min))
         {
             if (long.TryParse(tag.Min, out long minVal))
             {
-                if (longValue < minVal)
+                if (val64 < minVal)
                 {
-                    result.AddError($"value {longValue} is less than the minimum limit {minVal}");
+                    result.AddError($"value {val64} is less than the minimum limit {minVal}");
+                    return;
                 }
+            }
+            else
+            {
+                result.AddError($"failed to parse tag.min as int: {tag.Min}");
+                return;
             }
         }
 
@@ -178,55 +556,77 @@ public class MmValidator
         {
             if (long.TryParse(tag.Max, out long maxVal))
             {
-                if (longValue > maxVal)
+                if (val64 > maxVal)
                 {
-                    result.AddError($"value {longValue} exceeds the maximum limit {maxVal}");
+                    result.AddError($"value {val64} exceeds the maximum limit {maxVal}");
+                    return;
                 }
             }
+            else
+            {
+                result.AddError($"failed to parse tag.max as int: {tag.Max}");
+                return;
+            }
+        }
+
+        if (tag.Location != 0)
+        {
+            result.AddError($"type int not support location UTC{tag.Location}");
+            return;
         }
     }
 
-    private void ValidateI8(dynamic value, MmTag tag, ValidationResult result)
+    public void ValidateI8(dynamic value, Tag tag, ValidationResult result)
     {
-        long longValue;
-        if (!TryGetInt64Value(value, out longValue))
+        if (!TryGetInt64Value(value, out long longVal))
         {
             result.AddError("value must be a number");
             return;
         }
 
-        if (longValue == 0)
+        if (longVal < sbyte.MinValue || longVal > sbyte.MaxValue)
+        {
+            result.AddError($"value {longVal} out of range for int8 ({sbyte.MinValue} to {sbyte.MaxValue})");
+            return;
+        }
+
+        ValidateI8((sbyte)longVal, tag, result);
+    }
+
+    private void ValidateI8(sbyte val, Tag tag, ValidationResult result)
+    {
+        if (tag.Desc.Length > 65535)
+        {
+            result.AddError("desc length exceeds 65535 bytes");
+            return;
+        }
+
+        if (val == 0)
         {
             if (tag.AllowEmpty)
             {
                 return;
             }
-            result.AddError("type int8 not allow empty value 0");
+            result.AddError("not allow empty (add 'allow_empty' tag if empty is allowed)");
             return;
         }
 
-        if (longValue < sbyte.MinValue || longValue > sbyte.MaxValue)
-        {
-            result.AddError($"value {longValue} out of range for int8 ({sbyte.MinValue} to {sbyte.MaxValue})");
-            return;
-        }
+        long val64 = val;
 
         if (!string.IsNullOrEmpty(tag.Min))
         {
             if (long.TryParse(tag.Min, out long minVal))
             {
-                if (minVal < sbyte.MinValue || minVal > sbyte.MaxValue)
+                if (val64 < minVal)
                 {
-                    result.AddError($"tag.min {minVal} is out of int8 range [{sbyte.MinValue}, {sbyte.MaxValue}]");
-                }
-                else if (longValue < minVal)
-                {
-                    result.AddError($"value {longValue} is less than the minimum limit {minVal}");
+                    result.AddError($"value {val64} is less than the minimum limit {minVal}");
+                    return;
                 }
             }
             else
             {
                 result.AddError($"failed to parse tag.min as int8: {tag.Min}");
+                return;
             }
         }
 
@@ -234,63 +634,77 @@ public class MmValidator
         {
             if (long.TryParse(tag.Max, out long maxVal))
             {
-                if (maxVal < sbyte.MinValue || maxVal > sbyte.MaxValue)
+                if (val64 > maxVal)
                 {
-                    result.AddError($"tag.max {maxVal} is out of int8 range [{sbyte.MinValue}, {sbyte.MaxValue}]");
-                }
-                else if (longValue > maxVal)
-                {
-                    result.AddError($"value {longValue} exceeds the maximum limit {maxVal}");
+                    result.AddError($"value {val64} exceeds the maximum limit {maxVal}");
+                    return;
                 }
             }
             else
             {
                 result.AddError($"failed to parse tag.max as int8: {tag.Max}");
+                return;
             }
+        }
+
+        if (tag.Location != 0)
+        {
+            result.AddError($"type int8 not support location UTC{tag.Location}");
+            return;
         }
     }
 
-    private void ValidateI16(dynamic value, MmTag tag, ValidationResult result)
+    public void ValidateI16(dynamic value, Tag tag, ValidationResult result)
     {
-        long longValue;
-        if (!TryGetInt64Value(value, out longValue))
+        if (!TryGetInt64Value(value, out long longVal))
         {
             result.AddError("value must be a number");
             return;
         }
 
-        if (longValue == 0)
+        if (longVal < short.MinValue || longVal > short.MaxValue)
+        {
+            result.AddError($"value {longVal} out of range for int16 ({short.MinValue} to {short.MaxValue})");
+            return;
+        }
+
+        ValidateI16((short)longVal, tag, result);
+    }
+
+    private void ValidateI16(short val, Tag tag, ValidationResult result)
+    {
+        if (tag.Desc.Length > 65535)
+        {
+            result.AddError("desc length exceeds 65535 bytes");
+            return;
+        }
+
+        if (val == 0)
         {
             if (tag.AllowEmpty)
             {
                 return;
             }
-            result.AddError("type int16 not allow empty value 0");
+            result.AddError("not allow empty (add 'allow_empty' tag if empty is allowed)");
             return;
         }
 
-        if (longValue < short.MinValue || longValue > short.MaxValue)
-        {
-            result.AddError($"value {longValue} out of range for int16 ({short.MinValue} to {short.MaxValue})");
-            return;
-        }
+        long val64 = val;
 
         if (!string.IsNullOrEmpty(tag.Min))
         {
             if (long.TryParse(tag.Min, out long minVal))
             {
-                if (minVal < short.MinValue || minVal > short.MaxValue)
+                if (val64 < minVal)
                 {
-                    result.AddError($"tag.min {minVal} is out of int16 range [{short.MinValue}, {short.MaxValue}]");
-                }
-                else if (longValue < minVal)
-                {
-                    result.AddError($"value {longValue} is less than the minimum limit {minVal}");
+                    result.AddError($"value {val64} is less than the minimum limit {minVal}");
+                    return;
                 }
             }
             else
             {
                 result.AddError($"failed to parse tag.min as int16: {tag.Min}");
+                return;
             }
         }
 
@@ -298,63 +712,77 @@ public class MmValidator
         {
             if (long.TryParse(tag.Max, out long maxVal))
             {
-                if (maxVal < short.MinValue || maxVal > short.MaxValue)
+                if (val64 > maxVal)
                 {
-                    result.AddError($"tag.max {maxVal} is out of int16 range [{short.MinValue}, {short.MaxValue}]");
-                }
-                else if (longValue > maxVal)
-                {
-                    result.AddError($"value {longValue} exceeds the maximum limit {maxVal}");
+                    result.AddError($"value {val64} exceeds the maximum limit {maxVal}");
+                    return;
                 }
             }
             else
             {
                 result.AddError($"failed to parse tag.max as int16: {tag.Max}");
+                return;
             }
+        }
+
+        if (tag.Location != 0)
+        {
+            result.AddError($"type int16 not support location UTC{tag.Location}");
+            return;
         }
     }
 
-    private void ValidateI32(dynamic value, MmTag tag, ValidationResult result)
+    public void ValidateI32(dynamic value, Tag tag, ValidationResult result)
     {
-        long longValue;
-        if (!TryGetInt64Value(value, out longValue))
+        if (!TryGetInt64Value(value, out long longVal))
         {
             result.AddError("value must be a number");
             return;
         }
 
-        if (longValue == 0)
+        if (longVal < int.MinValue || longVal > int.MaxValue)
+        {
+            result.AddError($"value {longVal} out of range for int32 ({int.MinValue} to {int.MaxValue})");
+            return;
+        }
+
+        ValidateI32((int)longVal, tag, result);
+    }
+
+    private void ValidateI32(int val, Tag tag, ValidationResult result)
+    {
+        if (tag.Desc.Length > 65535)
+        {
+            result.AddError("desc length exceeds 65535 bytes");
+            return;
+        }
+
+        if (val == 0)
         {
             if (tag.AllowEmpty)
             {
                 return;
             }
-            result.AddError("type int32 not allow empty value 0");
+            result.AddError("not allow empty (add 'allow_empty' tag if empty is allowed)");
             return;
         }
 
-        if (longValue < int.MinValue || longValue > int.MaxValue)
-        {
-            result.AddError($"value {longValue} out of range for int32 ({int.MinValue} to {int.MaxValue})");
-            return;
-        }
+        long val64 = val;
 
         if (!string.IsNullOrEmpty(tag.Min))
         {
             if (long.TryParse(tag.Min, out long minVal))
             {
-                if (minVal < int.MinValue || minVal > int.MaxValue)
+                if (val64 < minVal)
                 {
-                    result.AddError($"tag.min {minVal} is out of int32 range [{int.MinValue}, {int.MaxValue}]");
-                }
-                else if (longValue < minVal)
-                {
-                    result.AddError($"value {longValue} is less than the minimum limit {minVal}");
+                    result.AddError($"value {val64} is less than the minimum limit {minVal}");
+                    return;
                 }
             }
             else
             {
                 result.AddError($"failed to parse tag.min as int32: {tag.Min}");
+                return;
             }
         }
 
@@ -362,38 +790,52 @@ public class MmValidator
         {
             if (long.TryParse(tag.Max, out long maxVal))
             {
-                if (maxVal < int.MinValue || maxVal > int.MaxValue)
+                if (val64 > maxVal)
                 {
-                    result.AddError($"tag.max {maxVal} is out of int32 range [{int.MinValue}, {int.MaxValue}]");
-                }
-                else if (longValue > maxVal)
-                {
-                    result.AddError($"value {longValue} exceeds the maximum limit {maxVal}");
+                    result.AddError($"value {val64} exceeds the maximum limit {maxVal}");
+                    return;
                 }
             }
             else
             {
                 result.AddError($"failed to parse tag.max as int32: {tag.Max}");
+                return;
             }
+        }
+
+        if (tag.Location != 0)
+        {
+            result.AddError($"type int32 not support location UTC{tag.Location}");
+            return;
         }
     }
 
-    private void ValidateI64(dynamic value, MmTag tag, ValidationResult result)
+    public void ValidateI64(dynamic value, Tag tag, ValidationResult result)
     {
-        long longValue;
-        if (!TryGetInt64Value(value, out longValue))
+        if (!TryGetInt64Value(value, out long longVal))
         {
             result.AddError("value must be a number");
             return;
         }
 
-        if (longValue == 0)
+        ValidateI64(longVal, tag, result);
+    }
+
+    private void ValidateI64(long val, Tag tag, ValidationResult result)
+    {
+        if (tag.Desc.Length > 65535)
+        {
+            result.AddError("desc length exceeds 65535 bytes");
+            return;
+        }
+
+        if (val == 0)
         {
             if (tag.AllowEmpty)
             {
                 return;
             }
-            result.AddError("type int64 not allow empty value 0");
+            result.AddError("not allow empty (add 'allow_empty' tag if empty is allowed)");
             return;
         }
 
@@ -401,18 +843,16 @@ public class MmValidator
         {
             if (long.TryParse(tag.Min, out long minVal))
             {
-                if (minVal < long.MinValue || minVal > long.MaxValue)
+                if (val < minVal)
                 {
-                    result.AddError($"tag.min {minVal} is out of int64 range [{long.MinValue}, {long.MaxValue}]");
-                }
-                else if (longValue < minVal)
-                {
-                    result.AddError($"value {longValue} is less than the minimum limit {minVal}");
+                    result.AddError($"value {val} is less than the minimum limit {minVal}");
+                    return;
                 }
             }
             else
             {
                 result.AddError($"failed to parse tag.min as int64: {tag.Min}");
+                return;
             }
         }
 
@@ -420,63 +860,77 @@ public class MmValidator
         {
             if (long.TryParse(tag.Max, out long maxVal))
             {
-                if (maxVal < long.MinValue || maxVal > long.MaxValue)
+                if (val > maxVal)
                 {
-                    result.AddError($"tag.max {maxVal} is out of int64 range [{long.MinValue}, {long.MaxValue}]");
-                }
-                else if (longValue > maxVal)
-                {
-                    result.AddError($"value {longValue} exceeds the maximum limit {maxVal}");
+                    result.AddError($"value {val} exceeds the maximum limit {maxVal}");
+                    return;
                 }
             }
             else
             {
                 result.AddError($"failed to parse tag.max as int64: {tag.Max}");
+                return;
             }
+        }
+
+        if (tag.Location != 0)
+        {
+            result.AddError($"type int64 not support location UTC{tag.Location}");
+            return;
         }
     }
 
-    private void ValidateU(dynamic value, MmTag tag, ValidationResult result)
+    public void ValidateU(dynamic value, Tag tag, ValidationResult result)
     {
-        ulong ulongValue;
-        if (!TryGetUInt64Value(value, out ulongValue))
+        if (!TryGetUInt64Value(value, out ulong ulongVal))
         {
             result.AddError("value must be a number");
             return;
         }
 
-        if (ulongValue == 0)
+        if (ulongVal > uint.MaxValue)
+        {
+            result.AddError($"value {ulongVal} out of range for uint (0 to {uint.MaxValue})");
+            return;
+        }
+
+        ValidateU((uint)ulongVal, tag, result);
+    }
+
+    private void ValidateU(uint val, Tag tag, ValidationResult result)
+    {
+        if (tag.Desc.Length > 65535)
+        {
+            result.AddError("desc length exceeds 65535 bytes");
+            return;
+        }
+
+        if (val == 0)
         {
             if (tag.AllowEmpty)
             {
                 return;
             }
-            result.AddError("type uint not allow empty value 0");
+            result.AddError("not allow empty (add 'allow_empty' tag if empty is allowed)");
             return;
         }
 
-        if (ulongValue < 0 || ulongValue > uint.MaxValue)
-        {
-            result.AddError($"value {ulongValue} out of range for uint (0 to {uint.MaxValue})");
-            return;
-        }
+        ulong val64 = val;
 
         if (!string.IsNullOrEmpty(tag.Min))
         {
             if (ulong.TryParse(tag.Min, out ulong minVal))
             {
-                if (minVal < 0 || minVal > uint.MaxValue)
+                if (val64 < minVal)
                 {
-                    result.AddError($"tag.min {minVal} is out of uint range [0, {uint.MaxValue}]");
-                }
-                else if (ulongValue < minVal)
-                {
-                    result.AddError($"value {ulongValue} is less than the minimum limit {minVal}");
+                    result.AddError($"value {val} is less than the minimum limit {minVal}");
+                    return;
                 }
             }
             else
             {
                 result.AddError($"failed to parse tag.min as uint: {tag.Min}");
+                return;
             }
         }
 
@@ -484,59 +938,77 @@ public class MmValidator
         {
             if (ulong.TryParse(tag.Max, out ulong maxVal))
             {
-                if (maxVal < 0 || maxVal > uint.MaxValue)
+                if (val64 > maxVal)
                 {
-                    result.AddError($"tag.max {maxVal} is out of uint range [0, {uint.MaxValue}]");
-                }
-                else if (ulongValue > maxVal)
-                {
-                    result.AddError($"value {ulongValue} exceeds the maximum limit {maxVal}");
+                    result.AddError($"value {val} exceeds the maximum limit {maxVal}");
+                    return;
                 }
             }
             else
             {
                 result.AddError($"failed to parse tag.max as uint: {tag.Max}");
+                return;
             }
+        }
+
+        if (tag.Location != 0)
+        {
+            result.AddError($"type uint not support location UTC{tag.Location}");
+            return;
         }
     }
 
-    private void ValidateU8(dynamic value, MmTag tag, ValidationResult result)
+    public void ValidateU8(dynamic value, Tag tag, ValidationResult result)
     {
-        ulong ulongValue;
-        if (!TryGetUInt64Value(value, out ulongValue))
+        if (!TryGetUInt64Value(value, out ulong ulongVal))
         {
             result.AddError("value must be a number");
             return;
         }
 
-        if (ulongValue == 0)
+        if (ulongVal > byte.MaxValue)
+        {
+            result.AddError($"value {ulongVal} out of range for uint8 (0 to {byte.MaxValue})");
+            return;
+        }
+
+        ValidateU8((byte)ulongVal, tag, result);
+    }
+
+    private void ValidateU8(byte val, Tag tag, ValidationResult result)
+    {
+        if (tag.Desc.Length > 65535)
+        {
+            result.AddError("desc length exceeds 65535 bytes");
+            return;
+        }
+
+        if (val == 0)
         {
             if (tag.AllowEmpty)
             {
                 return;
             }
-            result.AddError("type uint8 not allow empty value 0");
+            result.AddError("not allow empty (add 'allow_empty' tag if empty is allowed)");
             return;
         }
 
-        if (ulongValue > byte.MaxValue)
-        {
-            result.AddError($"value {ulongValue} out of range for uint8 (0 to {byte.MaxValue})");
-            return;
-        }
+        ulong val64 = val;
 
         if (!string.IsNullOrEmpty(tag.Min))
         {
             if (ulong.TryParse(tag.Min, out ulong minVal))
             {
-                if (ulongValue < minVal)
+                if (val64 < minVal)
                 {
-                    result.AddError($"value {ulongValue} is less than the minimum limit {minVal}");
+                    result.AddError($"value {val} is less than the minimum limit {minVal}");
+                    return;
                 }
             }
             else
             {
                 result.AddError($"failed to parse tag.min as uint8: {tag.Min}");
+                return;
             }
         }
 
@@ -544,63 +1016,77 @@ public class MmValidator
         {
             if (ulong.TryParse(tag.Max, out ulong maxVal))
             {
-                if (maxVal > byte.MaxValue)
+                if (val64 > maxVal)
                 {
-                    result.AddError($"tag.max {maxVal} is out of uint8 range [0, {byte.MaxValue}]");
-                }
-                else if (ulongValue > maxVal)
-                {
-                    result.AddError($"value {ulongValue} exceeds the maximum limit {maxVal}");
+                    result.AddError($"value {val} exceeds the maximum limit {maxVal}");
+                    return;
                 }
             }
             else
             {
                 result.AddError($"failed to parse tag.max as uint8: {tag.Max}");
+                return;
             }
+        }
+
+        if (tag.Location != 0)
+        {
+            result.AddError($"type uint8 not support location UTC{tag.Location}");
+            return;
         }
     }
 
-    private void ValidateU16(dynamic value, MmTag tag, ValidationResult result)
+    public void ValidateU16(dynamic value, Tag tag, ValidationResult result)
     {
-        ulong ulongValue;
-        if (!TryGetUInt64Value(value, out ulongValue))
+        if (!TryGetUInt64Value(value, out ulong ulongVal))
         {
             result.AddError("value must be a number");
             return;
         }
 
-        if (ulongValue == 0)
+        if (ulongVal > ushort.MaxValue)
+        {
+            result.AddError($"value {ulongVal} out of range for uint16 (0 to {ushort.MaxValue})");
+            return;
+        }
+
+        ValidateU16((ushort)ulongVal, tag, result);
+    }
+
+    private void ValidateU16(ushort val, Tag tag, ValidationResult result)
+    {
+        if (tag.Desc.Length > 65535)
+        {
+            result.AddError("desc length exceeds 65535 bytes");
+            return;
+        }
+
+        if (val == 0)
         {
             if (tag.AllowEmpty)
             {
                 return;
             }
-            result.AddError("type uint16 not allow empty value 0");
+            result.AddError("not allow empty (add 'allow_empty' tag if empty is allowed)");
             return;
         }
 
-        if (ulongValue < ushort.MinValue || ulongValue > ushort.MaxValue)
-        {
-            result.AddError($"value {ulongValue} out of range for uint16 ({ushort.MinValue} to {ushort.MaxValue})");
-            return;
-        }
+        ulong val64 = val;
 
         if (!string.IsNullOrEmpty(tag.Min))
         {
             if (ulong.TryParse(tag.Min, out ulong minVal))
             {
-                if (minVal < ushort.MinValue || minVal > ushort.MaxValue)
+                if (val64 < minVal)
                 {
-                    result.AddError($"tag.min {minVal} is out of uint16 range [{ushort.MinValue}, {ushort.MaxValue}]");
-                }
-                else if (ulongValue < minVal)
-                {
-                    result.AddError($"value {ulongValue} is less than the minimum limit {minVal}");
+                    result.AddError($"value {val} is less than the minimum limit {minVal}");
+                    return;
                 }
             }
             else
             {
                 result.AddError($"failed to parse tag.min as uint16: {tag.Min}");
+                return;
             }
         }
 
@@ -608,63 +1094,77 @@ public class MmValidator
         {
             if (ulong.TryParse(tag.Max, out ulong maxVal))
             {
-                if (maxVal < ushort.MinValue || maxVal > ushort.MaxValue)
+                if (val64 > maxVal)
                 {
-                    result.AddError($"tag.max {maxVal} is out of uint16 range [{ushort.MinValue}, {ushort.MaxValue}]");
-                }
-                else if (ulongValue > maxVal)
-                {
-                    result.AddError($"value {ulongValue} exceeds the maximum limit {maxVal}");
+                    result.AddError($"value {val} exceeds the maximum limit {maxVal}");
+                    return;
                 }
             }
             else
             {
                 result.AddError($"failed to parse tag.max as uint16: {tag.Max}");
+                return;
             }
+        }
+
+        if (tag.Location != 0)
+        {
+            result.AddError($"type uint16 not support location UTC{tag.Location}");
+            return;
         }
     }
 
-    private void ValidateU32(dynamic value, MmTag tag, ValidationResult result)
+    public void ValidateU32(dynamic value, Tag tag, ValidationResult result)
     {
-        ulong ulongValue;
-        if (!TryGetUInt64Value(value, out ulongValue))
+        if (!TryGetUInt64Value(value, out ulong ulongVal))
         {
             result.AddError("value must be a number");
             return;
         }
 
-        if (ulongValue == 0)
+        if (ulongVal > uint.MaxValue)
+        {
+            result.AddError($"value {ulongVal} out of range for uint32 (0 to {uint.MaxValue})");
+            return;
+        }
+
+        ValidateU32((uint)ulongVal, tag, result);
+    }
+
+    private void ValidateU32(uint val, Tag tag, ValidationResult result)
+    {
+        if (tag.Desc.Length > 65535)
+        {
+            result.AddError("desc length exceeds 65535 bytes");
+            return;
+        }
+
+        if (val == 0)
         {
             if (tag.AllowEmpty)
             {
                 return;
             }
-            result.AddError("type uint32 not allow empty value 0");
+            result.AddError("not allow empty (add 'allow_empty' tag if empty is allowed)");
             return;
         }
 
-        if (ulongValue < uint.MinValue || ulongValue > uint.MaxValue)
-        {
-            result.AddError($"value {ulongValue} out of range for uint32 ({uint.MinValue} to {uint.MaxValue})");
-            return;
-        }
+        ulong val64 = val;
 
         if (!string.IsNullOrEmpty(tag.Min))
         {
             if (ulong.TryParse(tag.Min, out ulong minVal))
             {
-                if (minVal < uint.MinValue || minVal > uint.MaxValue)
+                if (val64 < minVal)
                 {
-                    result.AddError($"tag.min {minVal} is out of uint32 range [{uint.MinValue}, {uint.MaxValue}]");
-                }
-                else if (ulongValue < minVal)
-                {
-                    result.AddError($"value {ulongValue} is less than the minimum limit {minVal}");
+                    result.AddError($"value {val} is less than the minimum limit {minVal}");
+                    return;
                 }
             }
             else
             {
                 result.AddError($"failed to parse tag.min as uint32: {tag.Min}");
+                return;
             }
         }
 
@@ -672,38 +1172,52 @@ public class MmValidator
         {
             if (ulong.TryParse(tag.Max, out ulong maxVal))
             {
-                if (maxVal < uint.MinValue || maxVal > uint.MaxValue)
+                if (val64 > maxVal)
                 {
-                    result.AddError($"tag.max {maxVal} is out of uint32 range [{uint.MinValue}, {uint.MaxValue}]");
-                }
-                else if (ulongValue > maxVal)
-                {
-                    result.AddError($"value {ulongValue} exceeds the maximum limit {maxVal}");
+                    result.AddError($"value {val} exceeds the maximum limit {maxVal}");
+                    return;
                 }
             }
             else
             {
                 result.AddError($"failed to parse tag.max as uint32: {tag.Max}");
+                return;
             }
+        }
+
+        if (tag.Location != 0)
+        {
+            result.AddError($"type uint32 not support location UTC{tag.Location}");
+            return;
         }
     }
 
-    private void ValidateU64(dynamic value, MmTag tag, ValidationResult result)
+    public void ValidateU64(dynamic value, Tag tag, ValidationResult result)
     {
-        ulong ulongValue;
-        if (!TryGetUInt64Value(value, out ulongValue))
+        if (!TryGetUInt64Value(value, out ulong ulongVal))
         {
             result.AddError("value must be a number");
             return;
         }
 
-        if (ulongValue == 0)
+        ValidateU64(ulongVal, tag, result);
+    }
+
+    private void ValidateU64(ulong val, Tag tag, ValidationResult result)
+    {
+        if (tag.Desc.Length > 65535)
+        {
+            result.AddError("desc length exceeds 65535 bytes");
+            return;
+        }
+
+        if (val == 0)
         {
             if (tag.AllowEmpty)
             {
                 return;
             }
-            result.AddError("type uint64 not allow empty value 0");
+            result.AddError("not allow empty (add 'allow_empty' tag if empty is allowed)");
             return;
         }
 
@@ -711,18 +1225,16 @@ public class MmValidator
         {
             if (ulong.TryParse(tag.Min, out ulong minVal))
             {
-                if (minVal < ulong.MinValue || minVal > ulong.MaxValue)
+                if (val < minVal)
                 {
-                    result.AddError($"tag.min {minVal} is out of uint64 range [{ulong.MinValue}, {ulong.MaxValue}]");
-                }
-                else if (ulongValue < minVal)
-                {
-                    result.AddError($"value {ulongValue} is less than the minimum limit {minVal}");
+                    result.AddError($"value {val} is less than the minimum limit {minVal}");
+                    return;
                 }
             }
             else
             {
                 result.AddError($"failed to parse tag.min as uint64: {tag.Min}");
+                return;
             }
         }
 
@@ -730,63 +1242,241 @@ public class MmValidator
         {
             if (ulong.TryParse(tag.Max, out ulong maxVal))
             {
-                if (maxVal < ulong.MinValue || maxVal > ulong.MaxValue)
+                if (val > maxVal)
                 {
-                    result.AddError($"tag.max {maxVal} is out of uint64 range [{ulong.MinValue}, {ulong.MaxValue}]");
-                }
-                else if (ulongValue > maxVal)
-                {
-                    result.AddError($"value {ulongValue} exceeds the maximum limit {maxVal}");
+                    result.AddError($"value {val} exceeds the maximum limit {maxVal}");
+                    return;
                 }
             }
             else
             {
                 result.AddError($"failed to parse tag.max as uint64: {tag.Max}");
+                return;
             }
+        }
+
+        if (tag.Location != 0)
+        {
+            result.AddError($"type uint64 not support location UTC{tag.Location}");
+            return;
         }
     }
 
-    private void ValidateBiginteger(dynamic value, MmTag tag, ValidationResult result)
+    public void ValidateF32(dynamic value, Tag tag, ValidationResult result)
     {
-        BigInteger bigIntValue;
-        if (value is BigInteger)
+        double doubleVal;
+        if (value is double d)
         {
-            bigIntValue = value;
+            doubleVal = d;
         }
-        else if (value is long)
+        else if (value is float f)
         {
-            bigIntValue = value;
+            doubleVal = f;
         }
-        else if (value is int)
+        else if (value is int || value is long || value is short || value is sbyte || value is byte)
         {
-            bigIntValue = value;
+            doubleVal = Convert.ToDouble(value);
         }
-        else if (value is short)
+        else
         {
-            bigIntValue = value;
+            result.AddError("value must be a float");
+            return;
         }
-        else if (value is byte)
+
+        if (doubleVal < float.MinValue || doubleVal > float.MaxValue)
         {
-            bigIntValue = value;
+            result.AddError($"value {doubleVal} out of range for float32 ({float.MinValue} to {float.MaxValue})");
+            return;
         }
-        else if (value is sbyte)
+
+        ValidateF32((float)doubleVal, tag, result);
+    }
+
+    private void ValidateF32(float val, Tag tag, ValidationResult result)
+    {
+        if (tag.Desc.Length > 65535)
         {
-            bigIntValue = value;
+            result.AddError("desc length exceeds 65535 bytes");
+            return;
         }
-        else if (value is ulong)
+
+        if (val == 0.0f)
         {
-            bigIntValue = value;
+            if (tag.AllowEmpty)
+            {
+                return;
+            }
+            result.AddError("not allow empty (add 'allow_empty' tag if empty is allowed)");
+            return;
         }
-        else if (value is uint)
+
+        double val64 = val;
+
+        if (!string.IsNullOrEmpty(tag.Min))
         {
-            bigIntValue = value;
+            if (double.TryParse(tag.Min, out double minVal))
+            {
+                if (val64 < minVal)
+                {
+                    result.AddError($"{val64} < min {minVal}");
+                    return;
+                }
+            }
+            else
+            {
+                result.AddError($"failed to parse tag.min as float32: {tag.Min}");
+                return;
+            }
         }
-        else if (value is ushort)
+
+        if (!string.IsNullOrEmpty(tag.Max))
         {
-            bigIntValue = value;
+            if (double.TryParse(tag.Max, out double maxVal))
+            {
+                if (val64 > maxVal)
+                {
+                    result.AddError($"{val64} > max {maxVal}");
+                    return;
+                }
+            }
+            else
+            {
+                result.AddError($"failed to parse tag.max as float32: {tag.Max}");
+                return;
+            }
         }
-        else if (value is string strVal && BigInteger.TryParse(strVal, out bigIntValue))
+
+        if (tag.Location != 0)
         {
+            result.AddError($"type float32 not support location UTC{tag.Location}");
+            return;
+        }
+    }
+
+    public void ValidateF64(dynamic value, Tag tag, ValidationResult result)
+    {
+        double doubleVal;
+        if (value is double d)
+        {
+            doubleVal = d;
+        }
+        else if (value is float f)
+        {
+            doubleVal = f;
+        }
+        else if (value is int || value is long || value is short || value is sbyte || value is byte)
+        {
+            doubleVal = Convert.ToDouble(value);
+        }
+        else
+        {
+            result.AddError("value must be a float");
+            return;
+        }
+
+        ValidateF64(doubleVal, tag, result);
+    }
+
+    private void ValidateF64(double val, Tag tag, ValidationResult result)
+    {
+        if (tag.Desc.Length > 65535)
+        {
+            result.AddError("desc length exceeds 65535 bytes");
+            return;
+        }
+
+        if (val == 0.0)
+        {
+            if (tag.AllowEmpty)
+            {
+                return;
+            }
+            result.AddError("not allow empty (add 'allow_empty' tag if empty is allowed)");
+            return;
+        }
+
+        if (!string.IsNullOrEmpty(tag.Min))
+        {
+            if (double.TryParse(tag.Min, out double minVal))
+            {
+                if (val < minVal)
+                {
+                    result.AddError($"{val} < min {minVal}");
+                    return;
+                }
+            }
+            else
+            {
+                result.AddError($"failed to parse tag.min as float64: {tag.Min}");
+                return;
+            }
+        }
+
+        if (!string.IsNullOrEmpty(tag.Max))
+        {
+            if (double.TryParse(tag.Max, out double maxVal))
+            {
+                if (val > maxVal)
+                {
+                    result.AddError($"{val} > max {maxVal}");
+                    return;
+                }
+            }
+            else
+            {
+                result.AddError($"failed to parse tag.max as float64: {tag.Max}");
+                return;
+            }
+        }
+
+        if (tag.Location != 0)
+        {
+            result.AddError($"type float64 not support location UTC{tag.Location}");
+            return;
+        }
+    }
+
+    public void ValidateBigint(dynamic value, Tag tag, ValidationResult result)
+    {
+        BigInteger bigIntVal;
+        if (value is BigInteger bi)
+        {
+            bigIntVal = bi;
+        }
+        else if (value is string strVal && BigInteger.TryParse(strVal, out bigIntVal))
+        {
+        }
+        else if (value is long l)
+        {
+            bigIntVal = new BigInteger(l);
+        }
+        else if (value is int i)
+        {
+            bigIntVal = new BigInteger(i);
+        }
+        else if (value is short s)
+        {
+            bigIntVal = new BigInteger(s);
+        }
+        else if (value is sbyte sb)
+        {
+            bigIntVal = new BigInteger(sb);
+        }
+        else if (value is byte b)
+        {
+            bigIntVal = new BigInteger(b);
+        }
+        else if (value is ulong ul)
+        {
+            bigIntVal = new BigInteger(ul);
+        }
+        else if (value is uint ui)
+        {
+            bigIntVal = new BigInteger(ui);
+        }
+        else if (value is ushort us)
+        {
+            bigIntVal = new BigInteger(us);
         }
         else
         {
@@ -794,13 +1484,19 @@ public class MmValidator
             return;
         }
 
-        if (bigIntValue == 0)
+        if (tag.Desc.Length > 65535)
+        {
+            result.AddError("desc length exceeds 65535 bytes");
+            return;
+        }
+
+        if (bigIntVal.IsZero)
         {
             if (tag.AllowEmpty)
             {
                 return;
             }
-            result.AddError("type big.Int not allow empty value 0");
+            result.AddError("not allow empty (add 'allow_empty' tag if empty is allowed)");
             return;
         }
 
@@ -808,10 +1504,16 @@ public class MmValidator
         {
             if (BigInteger.TryParse(tag.Min, out BigInteger minVal))
             {
-                if (bigIntValue < minVal)
+                if (bigIntVal < minVal)
                 {
-                    result.AddError($"big.Int value {bigIntValue} is less than the minimum limit {minVal}");
+                    result.AddError($"big.Int length {bigIntVal} < min {minVal}");
+                    return;
                 }
+            }
+            else
+            {
+                result.AddError($"invalid min \"{tag.Min}\" for big.Int");
+                return;
             }
         }
 
@@ -819,564 +1521,548 @@ public class MmValidator
         {
             if (BigInteger.TryParse(tag.Max, out BigInteger maxVal))
             {
-                if (bigIntValue > maxVal)
+                if (bigIntVal > maxVal)
                 {
-                    result.AddError($"big.Int value {bigIntValue} exceeds the maximum limit {maxVal}");
-                }
-            }
-        }
-    }
-
-    private void ValidateF32(dynamic value, MmTag tag, ValidationResult result)
-    {
-        double doubleValue;
-        if (value is double)
-        {
-            doubleValue = value;
-        }
-        else if (value is float)
-        {
-            doubleValue = value;
-        }
-        else if (value is decimal)
-        {
-            doubleValue = (double)value;
-        }
-        else if (value is int || value is long || value is short || value is byte || value is sbyte)
-        {
-            doubleValue = Convert.ToDouble(value);
-        }
-        else
-        {
-            result.AddError("value must be a float");
-            return;
-        }
-
-        if (doubleValue == 0.0)
-        {
-            if (tag.AllowEmpty)
-            {
-                return;
-            }
-            result.AddError("type float32 not allow empty value 0.0");
-            return;
-        }
-
-        if (doubleValue < float.MinValue || doubleValue > float.MaxValue)
-        {
-            result.AddError($"value {doubleValue} out of range for float32 ({float.MinValue} to {float.MaxValue})");
-            return;
-        }
-
-        if (!string.IsNullOrEmpty(tag.Min))
-        {
-            if (double.TryParse(tag.Min, out double minVal))
-            {
-                if (minVal < float.MinValue || minVal > float.MaxValue)
-                {
-                    result.AddError($"tag.min {minVal} is out of float32 range [{float.MinValue}, {float.MaxValue}]");
-                }
-                else if (doubleValue < minVal)
-                {
-                    result.AddError($"value {doubleValue} is less than the minimum limit {minVal}");
-                }
-            }
-            else
-            {
-                result.AddError($"failed to parse tag.min as float32: {tag.Min}");
-            }
-        }
-
-        if (!string.IsNullOrEmpty(tag.Max))
-        {
-            if (double.TryParse(tag.Max, out double maxVal))
-            {
-                if (maxVal < float.MinValue || maxVal > float.MaxValue)
-                {
-                    result.AddError($"tag.max {maxVal} is out of float32 range [{float.MinValue}, {float.MaxValue}]");
-                }
-                else if (doubleValue > maxVal)
-                {
-                    result.AddError($"value {doubleValue} exceeds the maximum limit {maxVal}");
-                }
-            }
-            else
-            {
-                result.AddError($"failed to parse tag.max as float32: {tag.Max}");
-            }
-        }
-    }
-
-    private void ValidateF64(dynamic value, MmTag tag, ValidationResult result)
-    {
-        double doubleValue;
-        if (value is double)
-        {
-            doubleValue = value;
-        }
-        else if (value is float)
-        {
-            doubleValue = value;
-        }
-        else if (value is decimal)
-        {
-            doubleValue = (double)value;
-        }
-        else if (value is int || value is long || value is short || value is byte || value is sbyte)
-        {
-            doubleValue = Convert.ToDouble(value);
-        }
-        else
-        {
-            result.AddError("value must be a float");
-            return;
-        }
-
-        if (doubleValue == 0.0)
-        {
-            if (tag.AllowEmpty)
-            {
-                return;
-            }
-            result.AddError("type float64 not allow empty value 0.0");
-            return;
-        }
-
-        if (!string.IsNullOrEmpty(tag.Min))
-        {
-            if (double.TryParse(tag.Min, out double minVal))
-            {
-                if (minVal < double.MinValue || minVal > double.MaxValue)
-                {
-                    result.AddError($"tag.min {minVal} is out of float64 range [{double.MinValue}, {double.MaxValue}]");
-                }
-                else if (doubleValue < minVal)
-                {
-                    result.AddError($"value {doubleValue} is less than the minimum limit {minVal}");
-                }
-            }
-            else
-            {
-                result.AddError($"failed to parse tag.min as float64: {tag.Min}");
-            }
-        }
-
-        if (!string.IsNullOrEmpty(tag.Max))
-        {
-            if (double.TryParse(tag.Max, out double maxVal))
-            {
-                if (maxVal < double.MinValue || maxVal > double.MaxValue)
-                {
-                    result.AddError($"tag.max {maxVal} is out of float64 range [{double.MinValue}, {double.MaxValue}]");
-                }
-                else if (doubleValue > maxVal)
-                {
-                    result.AddError($"value {doubleValue} exceeds the maximum limit {maxVal}");
-                }
-            }
-            else
-            {
-                result.AddError($"failed to parse tag.max as float64: {tag.Max}");
-            }
-        }
-    }
-
-    private void ValidateDecimal(dynamic value, MmTag tag, ValidationResult result)
-    {
-        if (value is decimal decimalVal)
-        {
-            if (decimalVal == 0)
-            {
-                if (tag.AllowEmpty)
-                {
+                    result.AddError($"big.Int length {bigIntVal} > max {maxVal}");
                     return;
                 }
-                result.AddError("type decimal not allow empty value 0");
+            }
+            else
+            {
+                result.AddError($"invalid max \"{tag.Max}\" for big.Int");
                 return;
             }
+        }
 
-            if (!string.IsNullOrEmpty(tag.Min))
-            {
-                if (decimal.TryParse(tag.Min, out decimal minVal))
-                {
-                    if (minVal < decimal.MinValue || minVal > decimal.MaxValue)
-                    {
-                        result.AddError($"tag.min {minVal} is out of decimal range [{decimal.MinValue}, {decimal.MaxValue}]");
-                    }
-                    else if (decimalVal < minVal)
-                    {
-                        result.AddError($"value {decimalVal} is less than the minimum limit {minVal}");
-                    }
-                }
-                else
-                {
-                    result.AddError($"failed to parse tag.min as decimal: {tag.Min}");
-                }
-            }
-
-            if (!string.IsNullOrEmpty(tag.Max))
-            {
-                if (decimal.TryParse(tag.Max, out decimal maxVal))
-                {
-                    if (maxVal < decimal.MinValue || maxVal > decimal.MaxValue)
-                    {
-                        result.AddError($"tag.max {maxVal} is out of decimal range [{decimal.MinValue}, {decimal.MaxValue}]");
-                    }
-                    else if (decimalVal > maxVal)
-                    {
-                        result.AddError($"value {decimalVal} exceeds the maximum limit {maxVal}");
-                    }
-                }
-                else
-                {
-                    result.AddError($"failed to parse tag.max as decimal: {tag.Max}");
-                }
-            }
-        }
-        else if (value is double doubleVal)
+        if (tag.Location != 0)
         {
-            ValidateF64(doubleVal, tag, result);
-        }
-        else if (value is float floatVal)
-        {
-            ValidateF32(floatVal, tag, result);
-        }
-        else
-        {
-            result.AddError("value must be a decimal");
+            result.AddError($"type big.Int not support location UTC{tag.Location}");
+            return;
         }
     }
 
-    private void ValidateStr(dynamic value, MmTag tag, ValidationResult result)
+    public void ValidateDatetime(dynamic value, Tag tag, ValidationResult result)
     {
-        if (!(value is string))
-        {
-            result.AddError("value must be a string");
-            return;
-        }
-
-        string strValue = value;
-
-        if (string.IsNullOrEmpty(strValue) && !tag.AllowEmpty)
-        {
-            result.AddError("value is empty");
-            return;
-        }
-
-        // Pattern validation
-        if (!string.IsNullOrEmpty(tag.Pattern) && !string.IsNullOrEmpty(strValue))
-        {
-            try
-            {
-                if (!Regex.IsMatch(strValue, tag.Pattern))
-                {
-                    result.AddError($"value \"{strValue}\" does not match pattern {tag.Pattern}");
-                }
-            }
-            catch (Exception)
-            {
-                result.AddError($"invalid pattern {tag.Pattern}");
-            }
-        }
-    }
-
-    private void ValidateEmail(dynamic value, MmTag tag, ValidationResult result)
-    {
-        if (!(value is string))
-        {
-            result.AddError("value must be a string");
-            return;
-        }
-
-        string email = value;
-
-        if (string.IsNullOrEmpty(email) && !tag.AllowEmpty)
-        {
-            result.AddError("value is empty");
-            return;
-        }
-
-        if (!string.IsNullOrEmpty(email))
-        {
-            string emailRegex = @"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$";
-            if (!Regex.IsMatch(email, emailRegex))
-            {
-                result.AddError("value is not a valid email");
-            }
-        }
-    }
-
-    private void ValidateUrl(dynamic value, MmTag tag, ValidationResult result)
-    {
-        if (!(value is string))
-        {
-            result.AddError("value must be a string");
-            return;
-        }
-
-        string url = value;
-
-        if (string.IsNullOrEmpty(url) && !tag.AllowEmpty)
-        {
-            result.AddError("value is empty");
-            return;
-        }
-
-        if (!string.IsNullOrEmpty(url))
-        {
-            if (!Uri.IsWellFormedUriString(url, UriKind.Absolute))
-            {
-                result.AddError("value is not a valid url");
-            }
-        }
-    }
-
-    private void ValidateBytes(dynamic value, MmTag tag, ValidationResult result)
-    {
-        if (!(value is byte[]))
-        {
-            result.AddError("value must be a byte array");
-            return;
-        }
-
-        byte[] bytes = value;
-
-        if (bytes.Length == 0 && !tag.AllowEmpty)
-        {
-            result.AddError("value is empty");
-        }
-    }
-
-    private void ValidateUuid(dynamic value, MmTag tag, ValidationResult result)
-    {
-        if (!(value is string))
-        {
-            result.AddError("value must be a string");
-            return;
-        }
-
-        string uuid = value;
-
-        if (string.IsNullOrEmpty(uuid) && !tag.AllowEmpty)
-        {
-            result.AddError("value is empty");
-            return;
-        }
-
-        if (!string.IsNullOrEmpty(uuid))
-        {
-            if (!Guid.TryParse(uuid, out var guid))
-            {
-                result.AddError("value is not a valid uuid");
-                return;
-            }
-
-            // Version check
-            if (tag.Version != 0)
-            {
-                var bytes = guid.ToByteArray();
-                int uuidVersion = (bytes[7] >> 4) & 0x0F;
-                if (tag.Version != uuidVersion)
-                {
-                    result.AddError($"invalid uuid version: expected {tag.Version}, got {uuidVersion}");
-                }
-            }
-        }
-    }
-
-    private void ValidateIp(dynamic value, MmTag tag, ValidationResult result)
-    {
-        if (!(value is string))
-        {
-            result.AddError("value must be a string");
-            return;
-        }
-
-        string ip = value;
-
-        if (string.IsNullOrEmpty(ip))
-        {
-            if (tag.AllowEmpty)
-            {
-                return;
-            }
-            result.AddError("type ip not allow empty value");
-            return;
-        }
-
-        if (!System.Net.IPAddress.TryParse(ip, out var parsedIp))
-        {
-            result.AddError("value is not a valid IP address");
-            return;
-        }
-
-        // IP version check using tag.Version (4 or 6)
-        if (tag.Version != 0)
-        {
-            if (tag.Version == 4 && parsedIp.AddressFamily != System.Net.Sockets.AddressFamily.InterNetwork)
-            {
-                result.AddError("expected IPv4 address");
-            }
-            else if (tag.Version == 6 && parsedIp.AddressFamily != System.Net.Sockets.AddressFamily.InterNetworkV6)
-            {
-                result.AddError("expected IPv6 address");
-            }
-        }
-    }
-
-    private void ValidateImage(dynamic value, MmTag tag, ValidationResult result)
-    {
-        byte[]? bytes = value is byte[] b ? b : null;
-        if (bytes == null)
-        {
-            result.AddError("value must be a byte array");
-            return;
-        }
-
-        if (bytes.Length == 0)
-        {
-            if (tag.AllowEmpty)
-            {
-                return;
-            }
-            result.AddError("type image not allow empty value");
-            return;
-        }
-
-        if (!string.IsNullOrEmpty(tag.Min))
-        {
-            if (int.TryParse(tag.Min, out int minVal) && bytes.Length < minVal)
-            {
-                result.AddError($"image byte length {bytes.Length} < min {minVal}");
-            }
-        }
-
-        if (!string.IsNullOrEmpty(tag.Max))
-        {
-            if (int.TryParse(tag.Max, out int maxVal) && bytes.Length > maxVal)
-            {
-                result.AddError($"image byte length {bytes.Length} > max {maxVal}");
-            }
-        }
-
-        if (tag.Size != 0 && bytes.Length != tag.Size)
-        {
-            result.AddError($"image byte length {bytes.Length} != size {tag.Size}");
-        }
-    }
-
-    private void ValidateVideo(dynamic value, MmTag tag, ValidationResult result)
-    {
-        byte[]? bytes = value is byte[] b ? b : null;
-        if (bytes == null)
-        {
-            result.AddError("value must be a byte array");
-            return;
-        }
-
-        if (bytes.Length == 0)
-        {
-            if (tag.AllowEmpty)
-            {
-                return;
-            }
-            result.AddError("type video not allow empty value");
-            return;
-        }
-
-        if (!string.IsNullOrEmpty(tag.Min))
-        {
-            if (int.TryParse(tag.Min, out int minVal) && bytes.Length < minVal)
-            {
-                result.AddError($"video byte length {bytes.Length} < min {minVal}");
-            }
-        }
-
-        if (!string.IsNullOrEmpty(tag.Max))
-        {
-            if (int.TryParse(tag.Max, out int maxVal) && bytes.Length > maxVal)
-            {
-                result.AddError($"video byte length {bytes.Length} > max {maxVal}");
-            }
-        }
-
-        if (tag.Size != 0 && bytes.Length != tag.Size)
-        {
-            result.AddError($"video byte length {bytes.Length} != size {tag.Size}");
-        }
-    }
-
-    private void ValidateDatetime(dynamic value, MmTag tag, ValidationResult result)
-    {
-        if (!(value is DateTime))
+        if (!(value is DateTime dt))
         {
             result.AddError("value must be a datetime");
             return;
         }
+
+        switch (tag.Type)
+        {
+            case ValueType.Datetime:
+                ValidateDatetime(dt, tag, result);
+                break;
+            case ValueType.Date:
+                ValidateDate(dt, tag, result);
+                break;
+            case ValueType.Time:
+                ValidateTime(dt, tag, result);
+                break;
+            default:
+                ValidateDatetime(dt, tag, result);
+                break;
+        }
     }
 
-    private void ValidateEnum(dynamic value, MmTag tag, ValidationResult result)
+    private void ValidateDatetime(DateTime val, Tag tag, ValidationResult result)
     {
-        if (!(value is string))
+        if (tag.Desc.Length > 65535)
+        {
+            result.AddError("desc length exceeds 65535 bytes");
+            return;
+        }
+
+        val = TruncateToSeconds(val);
+
+        if (TimeUtil.EpochSeconds(val) == 0)
+        {
+            if (tag.AllowEmpty)
+            {
+                return;
+            }
+            result.AddError("not allow empty (add 'allow_empty' tag if empty is allowed)");
+            return;
+        }
+    }
+
+    private void ValidateDate(DateTime val, Tag tag, ValidationResult result)
+    {
+        if (tag.Desc.Length > 65535)
+        {
+            result.AddError("desc length exceeds 65535 bytes");
+            return;
+        }
+
+        val = TruncateToSeconds(val);
+
+        if (TimeUtil.EpochSeconds(val) == 0)
+        {
+            if (tag.AllowEmpty)
+            {
+                return;
+            }
+            result.AddError("not allow empty (add 'allow_empty' tag if empty is allowed)");
+            return;
+        }
+    }
+
+    private void ValidateTime(DateTime val, Tag tag, ValidationResult result)
+    {
+        if (tag.Desc.Length > 65535)
+        {
+            result.AddError("desc length exceeds 65535 bytes");
+            return;
+        }
+
+        val = TruncateToSeconds(val);
+
+        if (TimeUtil.EpochSeconds(val) == 0)
+        {
+            if (tag.AllowEmpty)
+            {
+                return;
+            }
+            result.AddError("not allow empty (add 'allow_empty' tag if empty is allowed)");
+            return;
+        }
+    }
+
+    private static DateTime TruncateToSeconds(DateTime dt)
+    {
+        long ticks = dt.Ticks - (dt.Ticks % TimeSpan.TicksPerSecond);
+        return new DateTime(ticks, dt.Kind);
+    }
+
+    public void ValidateUuid(dynamic value, Tag tag, ValidationResult result)
+    {
+        if (!(value is string uuidStr))
         {
             result.AddError("value must be a string");
             return;
         }
 
-        string enumValue = value;
-
-        if (string.IsNullOrEmpty(enumValue) && !tag.AllowEmpty)
+        if (tag.Desc.Length > 65535)
         {
-            result.AddError("value is empty");
+            result.AddError("desc length exceeds 65535 bytes");
             return;
         }
 
-        if (!string.IsNullOrEmpty(enumValue) && !string.IsNullOrEmpty(tag.Enums))
+        if (string.IsNullOrEmpty(uuidStr))
         {
-            var enumValues = tag.Enums.Split('|');
-            if (!enumValues.Contains(enumValue))
+            if (tag.AllowEmpty)
             {
-                result.AddError("value is not in enum");
+                return;
             }
+            result.AddError("not allow empty (add 'allow_empty' tag if empty is allowed)");
+            return;
+        }
+
+        if (!UuidRegex.IsMatch(uuidStr))
+        {
+            result.AddError($"value '{uuidStr}' does not match UUID pattern");
+            return;
+        }
+
+        if (!Guid.TryParse(uuidStr, out var guid))
+        {
+            result.AddError($"invalid uuid: {uuidStr}");
+            return;
+        }
+
+        if (tag.Version != 0)
+        {
+            var bytes = guid.ToByteArray();
+            int uuidVersion = (bytes[7] >> 4) & 0x0F;
+            if (tag.Version != uuidVersion)
+            {
+                result.AddError("invalid uuid version");
+                return;
+            }
+        }
+
+        if (tag.Location != 0)
+        {
+            result.AddError($"type uuid not support location UTC{tag.Location}");
+            return;
         }
     }
 
-    private void ValidateArr(dynamic value, MmTag tag, ValidationResult result)
+    public void ValidateDecimal(dynamic value, Tag tag, ValidationResult result)
     {
-        if (!(value is System.Collections.IEnumerable))
+        if (!(value is string decimalStr))
         {
-            result.AddError("value must be an array");
+            result.AddError("value must be a string");
             return;
         }
 
-        System.Collections.IEnumerable array = value;
-        int count = 0;
-        foreach (var item in array)
+        if (tag.Desc.Length > 65535)
         {
-            count++;
-            var childTag = new MmTag();
-            childTag.InheritFromArrayParent(tag);
-            var itemResult = Validate(item, childTag);
-            if (!itemResult.IsValid)
+            result.AddError("desc length exceeds 65535 bytes");
+            return;
+        }
+
+        if (string.IsNullOrEmpty(decimalStr))
+        {
+            if (tag.AllowEmpty)
             {
-                foreach (var error in itemResult.Errors)
+                return;
+            }
+            result.AddError("not allow empty (add 'allow_empty' tag if empty is allowed)");
+            return;
+        }
+
+        if (!DecimalRegex.IsMatch(decimalStr))
+        {
+            result.AddError($"invalid decimal \"{decimalStr}\", must be like \"0.0\"");
+            return;
+        }
+
+        if (tag.Location != 0)
+        {
+            result.AddError($"type decimal not support location UTC{tag.Location}");
+            return;
+        }
+    }
+
+    public void ValidateIp(dynamic value, Tag tag, ValidationResult result)
+    {
+        if (!(value is IPAddress ipAddr))
+        {
+            if (value is string ipStr)
+            {
+                if (!IPAddress.TryParse(ipStr, out ipAddr))
                 {
-                    result.AddError($"item {count - 1}: {error}");
+                    result.AddError("value must be a valid IP address");
+                    return;
                 }
             }
+            else
+            {
+                result.AddError("value must be a IP address");
+                return;
+            }
         }
 
-        if (count == 0 && !tag.AllowEmpty)
+        if (tag.Desc.Length > 65535)
         {
-            result.AddError("value is empty");
+            result.AddError("desc length exceeds 65535 bytes");
+            return;
+        }
+
+        if (ipAddr == null || ipAddr.ToString() == "0.0.0.0" || ipAddr.ToString() == "::")
+        {
+            if (tag.AllowEmpty)
+            {
+                return;
+            }
+            result.AddError("not allow empty (add 'allow_empty' tag if empty is allowed)");
+            return;
+        }
+
+        if (tag.Version == 4)
+        {
+            if (ipAddr.AddressFamily != AddressFamily.InterNetwork)
+            {
+                result.AddError($"invalid ipv4: {ipAddr}");
+                return;
+            }
+        }
+
+        if (tag.Version == 6)
+        {
+            if (ipAddr.AddressFamily == AddressFamily.InterNetwork)
+            {
+                result.AddError($"invalid ipv6: {ipAddr}");
+                return;
+            }
+        }
+
+        if (tag.Location != 0)
+        {
+            result.AddError($"type ip not support location UTC{tag.Location}");
+            return;
         }
     }
 
-    private void ValidateObj(dynamic value, MmTag tag, ValidationResult result)
+    public void ValidateUrl(dynamic value, Tag tag, ValidationResult result)
     {
-        if (value == null)
+        if (!(value is Uri uri))
         {
-            result.AddError("value must be an object");
+            if (value is string uriStr)
+            {
+                if (!Uri.TryCreate(uriStr, UriKind.Absolute, out uri))
+                {
+                    result.AddError("value must be a valid URL");
+                    return;
+                }
+            }
+            else
+            {
+                result.AddError("value must be a URL");
+                return;
+            }
+        }
+
+        if (tag.Desc.Length > 65535)
+        {
+            result.AddError("desc length exceeds 65535 bytes");
+            return;
+        }
+
+        if (uri.ToString() == "")
+        {
+            if (tag.AllowEmpty)
+            {
+                return;
+            }
+            result.AddError("not allow empty (add 'allow_empty' tag if empty is allowed)");
+            return;
+        }
+
+        if (uri.Scheme != "http" && uri.Scheme != "https")
+        {
+            result.AddError($"invalid url: {uri}");
+            return;
+        }
+
+        if (string.IsNullOrEmpty(uri.Host))
+        {
+            result.AddError($"invalid url: {uri}");
+            return;
+        }
+
+        if (tag.Location != 0)
+        {
+            result.AddError($"type url not support location UTC{tag.Location}");
+            return;
+        }
+    }
+
+    public void ValidateEmail(dynamic value, Tag tag, ValidationResult result)
+    {
+        if (!(value is string emailStr))
+        {
+            result.AddError("value must be a string");
+            return;
+        }
+
+        if (tag.Desc.Length > 65535)
+        {
+            result.AddError("desc length exceeds 65535 bytes");
+            return;
+        }
+
+        if (string.IsNullOrEmpty(emailStr))
+        {
+            if (tag.AllowEmpty)
+            {
+                return;
+            }
+            result.AddError("not allow empty (add 'allow_empty' tag if empty is allowed)");
+            return;
+        }
+
+        if (!EmailRegex.IsMatch(emailStr))
+        {
+            result.AddError($"value '{emailStr}' does not match email pattern");
+            return;
+        }
+
+        if (tag.Location != 0)
+        {
+            result.AddError($"type email not support location UTC{tag.Location}");
+            return;
+        }
+    }
+
+    public void ValidateEnum(dynamic value, Tag tag, ValidationResult result)
+    {
+        if (!(value is string enumStr))
+        {
+            result.AddError("value must be a string");
+            return;
+        }
+
+        if (tag.Desc.Length > 65535)
+        {
+            result.AddError("desc length exceeds 65535 bytes");
+            return;
+        }
+
+        if (string.IsNullOrEmpty(enumStr))
+        {
+            if (tag.AllowEmpty)
+            {
+                return;
+            }
+            result.AddError("not allow empty (add 'allow_empty' tag if empty is allowed)");
+            return;
+        }
+
+        var enums = tag.Enums.Split('|');
+        int idx = -1;
+        for (int i = 0; i < enums.Length; i++)
+        {
+            if (enums[i].Trim() == enumStr)
+            {
+                idx = i;
+                break;
+            }
+        }
+
+        if (idx == -1)
+        {
+            result.AddError($"value '{enumStr}' not found in enums: {string.Join(", ", enums)}");
+            return;
+        }
+
+        if (tag.Location != 0)
+        {
+            result.AddError($"type enum not support location UTC{tag.Location}");
+            return;
+        }
+    }
+
+    public void ValidateImage(dynamic value, Tag tag, ValidationResult result)
+    {
+        if (!(value is byte[] imgBytes))
+        {
+            result.AddError("value must be a byte array");
+            return;
+        }
+
+        if (tag.Desc.Length > 65535)
+        {
+            result.AddError("desc length exceeds 65535 bytes");
+            return;
+        }
+
+        int l = imgBytes.Length;
+
+        if (l == 0)
+        {
+            if (tag.AllowEmpty)
+            {
+                return;
+            }
+            result.AddError("not allow empty (add 'allow_empty' tag if empty is allowed)");
+            return;
+        }
+
+        if (!string.IsNullOrEmpty(tag.Min))
+        {
+            if (int.TryParse(tag.Min, out int minVal))
+            {
+                if (l < minVal)
+                {
+                    result.AddError($"[]byte length {l} < min {minVal}");
+                    return;
+                }
+            }
+            else
+            {
+                return;
+            }
+        }
+
+        if (!string.IsNullOrEmpty(tag.Max))
+        {
+            if (int.TryParse(tag.Max, out int maxVal))
+            {
+                if (l > maxVal)
+                {
+                    result.AddError($"[]byte length {l} > max {maxVal}");
+                    return;
+                }
+            }
+            else
+            {
+                return;
+            }
+        }
+
+        if (tag.Size != 0 && l != tag.Size)
+        {
+            result.AddError($"[]byte length {l} != size {tag.Size}");
+            return;
+        }
+
+        if (tag.Location != 0)
+        {
+            result.AddError($"type image not support location UTC{tag.Location}");
+            return;
+        }
+    }
+
+    public void ValidateVideo(dynamic value, Tag tag, ValidationResult result)
+    {
+        if (!(value is byte[] vidBytes))
+        {
+            result.AddError("value must be a byte array");
+            return;
+        }
+
+        if (tag.Desc.Length > 65535)
+        {
+            result.AddError("desc length exceeds 65535 bytes");
+            return;
+        }
+
+        int l = vidBytes.Length;
+
+        if (l == 0)
+        {
+            if (tag.AllowEmpty)
+            {
+                return;
+            }
+            result.AddError("not allow empty (add 'allow_empty' tag if empty is allowed)");
+            return;
+        }
+
+        if (!string.IsNullOrEmpty(tag.Min))
+        {
+            if (int.TryParse(tag.Min, out int minVal))
+            {
+                if (l < minVal)
+                {
+                    result.AddError($"[]byte length {l} < min {minVal}");
+                    return;
+                }
+            }
+            else
+            {
+                return;
+            }
+        }
+
+        if (!string.IsNullOrEmpty(tag.Max))
+        {
+            if (int.TryParse(tag.Max, out int maxVal))
+            {
+                if (l > maxVal)
+                {
+                    result.AddError($"[]byte length {l} > max {maxVal}");
+                    return;
+                }
+            }
+            else
+            {
+                return;
+            }
+        }
+
+        if (tag.Size != 0 && l != tag.Size)
+        {
+            result.AddError($"[]byte length {l} != size {tag.Size}");
+            return;
+        }
+
+        if (tag.Location != 0)
+        {
+            result.AddError($"type video not support location UTC{tag.Location}");
             return;
         }
     }
@@ -1415,6 +2101,11 @@ public class MmValidator
             return true;
         }
         else if (value is ushort)
+        {
+            result = value;
+            return true;
+        }
+        else if (value is byte)
         {
             result = value;
             return true;
@@ -1473,7 +2164,7 @@ public static class Validator
 {
     private static readonly MmValidator _validator = new MmValidator();
 
-    public static ValidationResult Validate(dynamic value, MmTag tag)
+    public static ValidationResult Validate(dynamic value, Tag tag)
     {
         return _validator.Validate(value, tag);
     }

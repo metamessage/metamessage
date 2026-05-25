@@ -1,3 +1,4 @@
+using ValueType = MetaMessage.Ir.ValueType;
 namespace MetaMessage.Core;
 
 public static class TypeInference
@@ -6,7 +7,7 @@ public static class TypeInference
     {
         if (type == typeof(bool) || type == typeof(bool?))
         {
-            return ValueType.BOOL;
+            return ValueType.Bool;
         }
         else if (type == typeof(sbyte) || type == typeof(sbyte?))
         {
@@ -50,39 +51,39 @@ public static class TypeInference
         }
         else if (type == typeof(decimal) || type == typeof(decimal?))
         {
-            return ValueType.DECIMAL;
+            return ValueType.Decimal;
         }
         else if (type == typeof(string))
         {
-            return ValueType.STR;
+            return ValueType.Str;
         }
         else if (type == typeof(byte[]))
         {
-            return ValueType.BYTES;
+            return ValueType.Bytes;
         }
         else if (type == typeof(DateTime) || type == typeof(DateTime?))
         {
-            return ValueType.DATETIME;
+            return ValueType.Datetime;
         }
         else if (type.IsEnum)
         {
-            return ValueType.ENUMS;
+            return ValueType.Enums;
         }
         else if (type.IsArray)
         {
-            return ValueType.ARR;
+            return ValueType.Arr;
         }
         else if (type.IsGenericType && type.GetGenericTypeDefinition() == typeof(List<>))
         {
-            return ValueType.VEC;
+            return ValueType.Vec;
         }
         else if (type.IsGenericType && type.GetGenericTypeDefinition() == typeof(Dictionary<,>))
         {
-            return ValueType.MAP;
+            return ValueType.Map;
         }
         else
         {
-            return ValueType.OBJ;
+            return ValueType.Obj;
         }
     }
 

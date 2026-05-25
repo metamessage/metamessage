@@ -27,6 +27,7 @@ public class JsoncToken
     public string Literal { get; set; } = string.Empty;
     public int Line { get; set; }
     public int Column { get; set; }
+    public bool IsBlock { get; set; }
 
     public override string ToString()
     {

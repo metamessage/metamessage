@@ -1,359 +1,500 @@
+using MetaMessage.Ir;
+using ValueType = MetaMessage.Ir.ValueType;
+using System.Reflection;
+using System.Collections;
+
 namespace MetaMessage.Core;
 
 public static class ReflectMmEncoder
 {
-    public static byte[] Encode(object root)
+    private const int MaxDepth = 32;
+
+    public static IMmTree ValueToNode(object root, string tagStr)
     {
-        var encoder = new WireEncoder();
-        EncodeValue(encoder, root, RootTagForClass(root.GetType()));
-        return encoder.ToByteArray();
+        Tag tag = null;
+        if (!string.IsNullOrEmpty(tagStr))
+        {
+            tag = Tag.Parse(tagStr);
+        }
+
+        tag ??= Tag.NewTag();
+
+        return ValueToNodeRecursive(root, tag, 0, "", false);
     }
 
-    private static MmTag RootTagForClass(Type className)
+    private static IMmTree ValueToNodeRecursive(object v, Tag tag, int depth, string path, bool example)
     {
-        var attributes = className.GetCustomAttributes(typeof(MM), false);
-        MmTag tag;
-        if (attributes.Length > 0)
+        if (depth > MaxDepth)
         {
-            var mmAttribute = (MM)attributes[0];
-            tag = MmTagExtensions.FromAttribute(mmAttribute);
-        }
-        else
-        {
-            tag = MmTag.Empty();
+            throw new Exception($"max depth: {MaxDepth}");
         }
 
-        if (tag.Type == ValueType.UNKNOWN)
-        {
-            tag.Type = ValueType.OBJ;
-        }
-        if (string.IsNullOrEmpty(tag.Name))
-        {
-            tag.Name = CamelToSnake.Convert(className.Name);
-        }
-        return tag;
-    }
+        tag ??= Tag.NewTag();
 
-    private static void EncodeValue(WireEncoder encoder, object? value, MmTag tag)
-    {
-        var workTag = tag.Copy();
-        if (value == null)
+        if (v == null)
         {
-            if (!workTag.Nullable && !workTag.IsNull)
+            if (tag.Type == ValueType.Unknown)
             {
-                throw new Exception("Null for non-nullable");
+                throw new Exception("invalid input: v is null with unknown type");
             }
-            workTag.IsNull = true;
-            if (workTag.Type == ValueType.OBJ || workTag.Type == ValueType.VEC || workTag.Type == ValueType.ARR)
+            tag.IsNull = true;
+            return new MmScalar(null, "null", tag.Copy());
+        }
+
+        object data = null;
+        string text = "null";
+
+        var type = v.GetType();
+
+        if (type == typeof(byte[]))
+        {
+            var bytes = (byte[])v;
+            if (tag.Type == ValueType.Unknown)
             {
-                var inner = new WireEncoder();
-                inner.EncodeSimple(SimpleValue.NULL_STRING);
-                encoder.EncodeTaggedPayload(inner.ToByteArray(), workTag.ToBytes());
-                return;
-            }
-        }
-
-        if (workTag.Type == ValueType.OBJ)
-        {
-            if (value == null)
-            {
-                throw new Exception("Null struct");
-            }
-            EncodeObject(encoder, value, workTag);
-            return;
-        }
-
-        if (workTag.Type == ValueType.VEC || workTag.Type == ValueType.ARR)
-        {
-            EncodeList(encoder, value, workTag);
-            return;
-        }
-
-        if (workTag.Type == ValueType.UNKNOWN)
-        {
-            workTag.Type = InferTypeFromValue(value);
-        }
-
-        var payload = new WireEncoder();
-        EncodeScalarPayload(payload, value, workTag);
-        encoder.EncodeTaggedPayload(payload.ToByteArray(), workTag.ToBytes());
-    }
-
-    private static ValueType InferTypeFromValue(object? value)
-    {
-        if (value == null)
-        {
-            return ValueType.STR;
-        }
-
-        Type type = value.GetType();
-        return TypeInference.ValueTypeForType(type);
-    }
-
-    private static void EncodeObject(WireEncoder encoder, object obj, MmTag objTag)
-    {
-        var keysPacked = new GrowableByteBuf();
-        var valsPacked = new GrowableByteBuf();
-        var tmp = new WireEncoder();
-
-        var properties = obj.GetType().GetProperties();
-        foreach (var property in properties)
-        {
-            if (!property.CanRead)
-                continue;
-
-            var attributes = property.GetCustomAttributes(typeof(MM), false);
-            MM? mmAttribute = null;
-            if (attributes.Length > 0)
-            {
-                mmAttribute = (MM)attributes[0];
-                if (mmAttribute.Name == "-")
-                    continue;
+                tag.Type = ValueType.Vec;
             }
 
-            var fieldType = InferFieldType(property, mmAttribute);
-            var fieldValue = property.GetValue(obj);
-            var fieldKey = GetFieldKey(property, fieldType, mmAttribute);
-
-            tmp.Reset();
-            EncodeValue(tmp, fieldValue, fieldType);
-            valsPacked.WriteAll(tmp.ToByteArray());
-
-            tmp.Reset();
-            tmp.EncodeString(fieldKey);
-            keysPacked.WriteAll(tmp.ToByteArray());
-        }
-
-        tmp.Reset();
-        tmp.EncodeArrayPayload(keysPacked.ToArray());
-        var mapBody = new GrowableByteBuf();
-        mapBody.WriteAll(tmp.ToByteArray());
-        mapBody.WriteAll(valsPacked.ToArray());
-
-        tmp.Reset();
-        tmp.EncodeObjectPayload(mapBody.ToArray());
-        encoder.EncodeTaggedPayload(tmp.ToByteArray(), objTag.ToBytes());
-    }
-
-    private static MmTag InferFieldType(System.Reflection.PropertyInfo property, MM? attribute)
-    {
-        var fieldType = MmTag.Empty();
-        fieldType.Type = TypeInference.ValueTypeForType(property.PropertyType);
-
-        var propType = property.PropertyType;
-        if (propType.IsGenericType && propType.GetGenericTypeDefinition() == typeof(Nullable<>))
-        {
-            fieldType.Nullable = true;
-        }
-        else if (!propType.IsValueType)
-        {
-            fieldType.Nullable = true;
-        }
-
-        if (attribute != null)
-        {
-            var attrTag = MmTagExtensions.FromAttribute(attribute);
-            if (attrTag.Type != ValueType.UNKNOWN)
-            {
-                fieldType.Type = attrTag.Type;
-            }
-            if (attrTag.ChildType != ValueType.UNKNOWN)
-            {
-                fieldType.ChildType = attrTag.ChildType;
-            }
-            if (!string.IsNullOrEmpty(attrTag.Name))
-            {
-                fieldType.Name = attrTag.Name;
-            }
-            MergeAnnotations(fieldType, attrTag);
-        }
-
-        return fieldType;
-    }
-
-    private static void MergeAnnotations(MmTag dst, MmTag src)
-    {
-        if (!string.IsNullOrEmpty(src.Desc))
-            dst.Desc = src.Desc;
-        dst.Nullable |= src.Nullable;
-        dst.Deprecated |= src.Deprecated;
-        dst.AllowEmpty |= src.AllowEmpty;
-        dst.Unique |= src.Unique;
-        if (!string.IsNullOrEmpty(src.DefaultVal))
-            dst.DefaultVal = src.DefaultVal;
-        if (!string.IsNullOrEmpty(src.Enums))
-        {
-            dst.Enums = src.Enums;
-            dst.Type = ValueType.ENUMS;
-        }
-        dst.LocationHours = src.LocationHours;
-        dst.Version = src.Version;
-        if (!string.IsNullOrEmpty(src.Mime))
-            dst.Mime = src.Mime;
-        dst.ChildDesc = src.ChildDesc;
-        if (src.ChildType != ValueType.UNKNOWN)
-            dst.ChildType = src.ChildType;
-        dst.ChildNullable |= src.ChildNullable;
-        if (!string.IsNullOrEmpty(src.ChildEnums))
-        {
-            dst.ChildEnums = src.ChildEnums;
-            dst.ChildType = ValueType.ENUMS;
-        }
-    }
-
-    private static string GetFieldKey(System.Reflection.PropertyInfo property, MmTag fieldType, MM? attribute)
-    {
-        if (attribute != null && !string.IsNullOrEmpty(attribute.Name) && attribute.Name != "-")
-        {
-            return attribute.Name;
-        }
-        if (!string.IsNullOrEmpty(fieldType.Name) && fieldType.Name != "-")
-        {
-            return fieldType.Name;
-        }
-        return CamelToSnake.Convert(property.Name);
-    }
-
-    private static void EncodeScalarPayload(WireEncoder encoder, object? value, MmTag tag)
-    {
-        if (tag.IsNull)
-        {
             switch (tag.Type)
             {
-                case ValueType.BOOL:
-                    encoder.EncodeSimple(SimpleValue.NULL_BOOL);
-                    return;
-                case ValueType.I:
-                    encoder.EncodeSimple(SimpleValue.NULL_INT);
-                    return;
-                case ValueType.F64:
-                    encoder.EncodeSimple(SimpleValue.NULL_FLOAT);
-                    return;
-                case ValueType.STR:
-                    encoder.EncodeSimple(SimpleValue.NULL_STRING);
-                    return;
-                case ValueType.BYTES:
-                    encoder.EncodeSimple(SimpleValue.NULL_BYTES);
-                    return;
+                case ValueType.Bytes:
+                    data = bytes;
+                    text = Convert.ToBase64String(bytes);
+                    break;
+                case ValueType.Vec:
+                    return AnyToNode(v, tag, depth, path, false);
                 default:
-                    return;
+                    throw new Exception($"unsupported type: {tag.Type}");
             }
+
+            return new MmScalar(data, text, tag.Copy());
         }
 
-        switch (tag.Type)
+        if (type == typeof(bool))
         {
-            case ValueType.BOOL:
-                encoder.EncodeBool((bool)value!);
-                break;
-            case ValueType.I:
-            case ValueType.I8:
-            case ValueType.I16:
-            case ValueType.I32:
-            case ValueType.I64:
-            case ValueType.U:
-            case ValueType.U16:
-            case ValueType.U32:
-            case ValueType.U64:
-                long longVal;
-                if (value is ulong ul)
-                    longVal = unchecked((long)ul);
-                else if (value is uint ui)
-                    longVal = (long)ui;
-                else if (value is ushort us)
-                    longVal = (long)us;
-                else if (value is byte by)
-                    longVal = (long)by;
-                else
-                    longVal = Convert.ToInt64(value);
-                encoder.EncodeInt64(longVal);
-                break;
-            case ValueType.F32:
-                encoder.EncodeFloatString(value!.ToString()!);
-                break;
-            case ValueType.F64:
-            case ValueType.DECIMAL:
-                encoder.EncodeFloatString(value!.ToString()!);
-                break;
-            case ValueType.STR:
-            case ValueType.EMAIL:
-            case ValueType.URL:
-                encoder.EncodeString(value as string ?? "");
-                break;
-            case ValueType.BYTES:
-                encoder.EncodeBytes(value as byte[] ?? Array.Empty<byte>());
-                break;
-            case ValueType.BIGINT:
-                encoder.EncodeBigIntDecimal(value as string ?? "0");
-                break;
-            case ValueType.UUID:
-                encoder.EncodeBytes(UuidToBytes(value as string ?? ""));
-                break;
-            case ValueType.DATETIME:
-                var dateTime = (DateTime)value!;
-                encoder.EncodeInt64(TimeUtil.EpochSeconds(dateTime));
-                break;
-            case ValueType.DATE:
-                var date = (DateTime)value!;
-                encoder.EncodeInt64(TimeUtil.DaysSinceEpochUtc(date));
-                break;
-            case ValueType.TIME:
-                var time = (DateTime)value!;
-                encoder.EncodeInt64(TimeUtil.SecondsOfDay(time));
-                break;
-            case ValueType.ENUMS:
-                encoder.EncodeInt64(Convert.ToInt64(value));
-                break;
-            default:
-                throw new Exception($"Unsupported scalar type: {tag.Type}");
-        }
-    }
-
-    private static void EncodeList(WireEncoder encoder, object? list, MmTag tag)
-    {
-        if (list == null)
-        {
-            var nt = tag.Copy();
-            nt.IsNull = true;
-            encoder.EncodeTaggedPayload(Array.Empty<byte>(), nt.ToBytes());
-            return;
-        }
-
-        var body = new GrowableByteBuf();
-        var elementEncoder = new WireEncoder();
-
-        if (list is System.Collections.IEnumerable enumerable)
-        {
-            foreach (var item in enumerable)
+            var b = (bool)v;
+            if (tag.Type == ValueType.Unknown)
             {
-                elementEncoder.Reset();
-                var itemTag = MmTag.Empty();
-                itemTag.InheritFromArrayParent(tag);
-                if (itemTag.Type == ValueType.UNKNOWN && item != null)
-                {
-                    itemTag.Type = InferTypeFromValue(item);
-                    if (itemTag.Type == ValueType.UNKNOWN)
-                    {
-                        itemTag.Type = ValueType.OBJ;
-                    }
-                }
-                EncodeValue(elementEncoder, item, itemTag);
-                body.WriteAll(elementEncoder.ToByteArray());
+                tag.Type = ValueType.Bool;
+            }
+            switch (tag.Type)
+            {
+                case ValueType.Bool:
+                    data = b;
+                    text = b ? "true" : "false";
+                    break;
+                default:
+                    throw new Exception($"unsupported type: {tag.Type}");
+            }
+            return new MmScalar(data, text, tag.Copy());
+        }
+
+        if (type == typeof(int))
+        {
+            var val = (int)v;
+            if (tag.Type == ValueType.Unknown) tag.Type = ValueType.I;
+            switch (tag.Type)
+            {
+                case ValueType.I:
+                    data = val;
+                    text = val.ToString();
+                    break;
+                default:
+                    throw new Exception($"unsupported type: {tag.Type}");
+            }
+            return new MmScalar(data, text, tag.Copy());
+        }
+
+        if (type == typeof(long))
+        {
+            var val = (long)v;
+            if (tag.Type == ValueType.Unknown) tag.Type = ValueType.I64;
+            switch (tag.Type)
+            {
+                case ValueType.I64:
+                    data = val;
+                    text = val.ToString();
+                    break;
+                default:
+                    throw new Exception($"unsupported type: {tag.Type}");
+            }
+            return new MmScalar(data, text, tag.Copy());
+        }
+
+        if (type == typeof(short))
+        {
+            var val = (short)v;
+            if (tag.Type == ValueType.Unknown) tag.Type = ValueType.I16;
+            switch (tag.Type)
+            {
+                case ValueType.I16:
+                    data = val;
+                    text = val.ToString();
+                    break;
+                default:
+                    throw new Exception($"unsupported type: {tag.Type}");
+            }
+            return new MmScalar(data, text, tag.Copy());
+        }
+
+        if (type == typeof(sbyte))
+        {
+            var val = (sbyte)v;
+            if (tag.Type == ValueType.Unknown) tag.Type = ValueType.I8;
+            switch (tag.Type)
+            {
+                case ValueType.I8:
+                    data = val;
+                    text = val.ToString();
+                    break;
+                default:
+                    throw new Exception($"unsupported type: {tag.Type}");
+            }
+            return new MmScalar(data, text, tag.Copy());
+        }
+
+        if (type == typeof(uint))
+        {
+            var val = (uint)v;
+            if (tag.Type == ValueType.Unknown) tag.Type = ValueType.U;
+            switch (tag.Type)
+            {
+                case ValueType.U:
+                    data = val;
+                    text = val.ToString();
+                    break;
+                default:
+                    throw new Exception($"unsupported type: {tag.Type}");
+            }
+            return new MmScalar(data, text, tag.Copy());
+        }
+
+        if (type == typeof(ushort))
+        {
+            var val = (ushort)v;
+            if (tag.Type == ValueType.Unknown) tag.Type = ValueType.U16;
+            switch (tag.Type)
+            {
+                case ValueType.U16:
+                    data = val;
+                    text = val.ToString();
+                    break;
+                default:
+                    throw new Exception($"unsupported type: {tag.Type}");
+            }
+            return new MmScalar(data, text, tag.Copy());
+        }
+
+        if (type == typeof(ulong))
+        {
+            var val = (ulong)v;
+            if (tag.Type == ValueType.Unknown) tag.Type = ValueType.U64;
+            switch (tag.Type)
+            {
+                case ValueType.U64:
+                    data = val;
+                    text = val.ToString();
+                    break;
+                default:
+                    throw new Exception($"unsupported type: {tag.Type}");
+            }
+            return new MmScalar(data, text, tag.Copy());
+        }
+
+        if (type == typeof(float))
+        {
+            var val = (float)v;
+            if (tag.Type == ValueType.Unknown) tag.Type = ValueType.F32;
+            switch (tag.Type)
+            {
+                case ValueType.F32:
+                    if (float.IsInfinity(val) || float.IsNaN(val))
+                        throw new Exception($"unsupported float value: {val}");
+                    data = val;
+                    text = val.ToString("G");
+                    break;
+                default:
+                    throw new Exception($"unsupported type: {tag.Type}");
+            }
+            return new MmScalar(data, text, tag.Copy());
+        }
+
+        if (type == typeof(double))
+        {
+            var val = (double)v;
+            if (tag.Type == ValueType.Unknown) tag.Type = ValueType.F64;
+            switch (tag.Type)
+            {
+                case ValueType.F64:
+                    if (double.IsInfinity(val) || double.IsNaN(val))
+                        throw new Exception($"unsupported double value: {val}");
+                    data = val;
+                    text = val.ToString("G");
+                    break;
+                default:
+                    throw new Exception($"unsupported type: {tag.Type}");
+            }
+            return new MmScalar(data, text, tag.Copy());
+        }
+
+        if (type == typeof(decimal))
+        {
+            var val = (decimal)v;
+            if (tag.Type == ValueType.Unknown) tag.Type = ValueType.Decimal;
+            switch (tag.Type)
+            {
+                case ValueType.Decimal:
+                    data = val.ToString();
+                    text = val.ToString();
+                    break;
+                default:
+                    throw new Exception($"unsupported type: {tag.Type}");
+            }
+            return new MmScalar(data, text, tag.Copy());
+        }
+
+        if (type == typeof(string))
+        {
+            var val = (string)v;
+            if (tag.Type == ValueType.Unknown) tag.Type = ValueType.Str;
+            switch (tag.Type)
+            {
+                case ValueType.Str:
+                    data = val;
+                    text = val;
+                    break;
+                case ValueType.Email:
+                    data = val;
+                    text = val;
+                    break;
+                case ValueType.Url:
+                    data = val;
+                    text = val;
+                    break;
+                case ValueType.Enums:
+                    data = val;
+                    text = val;
+                    break;
+                case ValueType.Uuid:
+                    data = val;
+                    text = val;
+                    break;
+                case ValueType.Decimal:
+                    data = val;
+                    text = val;
+                    break;
+                default:
+                    throw new Exception($"unsupported type: {tag.Type}");
+            }
+            return new MmScalar(data, text, tag.Copy());
+        }
+
+        if (type == typeof(DateTime))
+        {
+            var val = (DateTime)v;
+            if (tag.Type == ValueType.Unknown) tag.Type = ValueType.Datetime;
+            switch (tag.Type)
+            {
+                case ValueType.Datetime:
+                    data = val;
+                    text = val.ToString("yyyy-MM-dd HH:mm:ss");
+                    break;
+                case ValueType.Date:
+                    data = val;
+                    text = val.ToString("yyyy-MM-dd");
+                    break;
+                case ValueType.Time:
+                    data = val;
+                    text = val.ToString("HH:mm:ss");
+                    break;
+                default:
+                    throw new Exception($"unsupported type: {tag.Type}");
+            }
+            return new MmScalar(data, text, tag.Copy());
+        }
+
+        return AnyToNode(v, tag, depth, path, false);
+    }
+
+    private static IMmTree AnyToNode(object obj, Tag tag, int depth, string path, bool example)
+    {
+        depth++;
+        if (depth > MaxDepth)
+        {
+            throw new Exception($"max depth: {MaxDepth}");
+        }
+
+        var val = obj;
+        var typ = obj.GetType();
+
+        if (tag == null)
+        {
+            tag = Tag.NewTag();
+        }
+
+        var valType = val.GetType();
+
+        if (valType.IsGenericType && valType.GetGenericTypeDefinition() == typeof(Nullable<>))
+        {
+            tag.Nullable = true;
+            var underlyingType = Nullable.GetUnderlyingType(valType);
+            var prop = valType.GetProperty("HasValue");
+            var hasValue = (bool)prop.GetValue(val);
+            if (!hasValue)
+            {
+                tag.IsNull = true;
+                var nullScalar = new MmScalar(null, "null", tag.Copy());
+                nullScalar.Tag.IsNull = true;
+                return nullScalar;
+            }
+            var getValue = valType.GetMethod("GetValueOrDefault", Type.EmptyTypes);
+            val = getValue.Invoke(val, null);
+            typ = underlyingType;
+        }
+
+        if (tag.ToString() == "")
+        {
+            var mmAttr = typ.GetCustomAttribute(typeof(MM), false) as MM;
+            if (mmAttr != null)
+            {
+                var tagNode = mmAttr.ToTag();
+                tag = Tag.MergeTag(tag, tagNode);
             }
         }
 
-        elementEncoder.Reset();
-        elementEncoder.EncodeArrayPayload(body.ToArray());
-        encoder.EncodeTaggedPayload(elementEncoder.ToByteArray(), tag.ToBytes());
-    }
-
-    private static byte[] UuidToBytes(string uuid)
-    {
-        uuid = uuid.Replace("-", "");
-        byte[] bytes = new byte[16];
-        for (int i = 0; i < 32; i += 2)
+        tag.Type = ValueType.Obj;
+        tag.Name = CamelToSnake.Convert(typ.Name);
+        if (!string.IsNullOrEmpty(tag.Name))
         {
-            bytes[i / 2] = Convert.ToByte(uuid.Substring(i, 2), 16);
+            if (string.IsNullOrEmpty(path))
+            {
+                path = tag.Name;
+            }
+            else
+            {
+                path = $"{path}.{tag.Name}";
+            }
         }
-        return bytes;
+
+        if (typ.IsGenericType && typ.GetGenericTypeDefinition() == typeof(Dictionary<,>))
+        {
+            tag.Type = ValueType.Map;
+            var dict = (IDictionary)val;
+            var entries = new List<KeyValuePair<MmScalar, IMmTree>>();
+
+            foreach (var key in dict.Keys)
+            {
+                var keyStr = key.ToString();
+                keyStr = CamelToSnake.Convert(keyStr);
+
+                var tagItem = Tag.NewTag();
+                tagItem.Inherit(tag);
+                tagItem.Name = keyStr;
+
+                var p = $"{path}[{keyStr}]";
+                var valNode = ValueToNodeRecursive(dict[key], tagItem, depth, p, false);
+
+                entries.Add(new KeyValuePair<MmScalar, IMmTree>(
+                    new MmScalar(keyStr, keyStr, Tag.Empty()),
+                    valNode));
+            }
+
+            return new MmMap(entries, tag.Copy());
+        }
+
+        if (val is IList list && !(val is byte[]))
+        {
+            tag.Type = ValueType.Vec;
+
+            var items = new List<IMmTree>();
+            foreach (var item in list)
+            {
+                var tagItem = Tag.NewTag();
+                tagItem.Inherit(tag);
+
+                var p = $"{path}[{items.Count}]";
+                var itemNode = ValueToNodeRecursive(item, tagItem, depth, p, false);
+                items.Add(itemNode);
+            }
+
+            return new MmArray(items, tag.Copy());
+        }
+
+        if (typ.IsArray && typ != typeof(byte[]))
+        {
+            tag.Type = ValueType.Arr;
+            var arr = (Array)val;
+            tag.Size = arr.Length;
+
+            var items = new List<IMmTree>();
+            for (int i = 0; i < arr.Length; i++)
+            {
+                var tagItem = Tag.NewTag();
+                tagItem.Inherit(tag);
+
+                var p = $"{path}[{i}]";
+                var itemNode = ValueToNodeRecursive(arr.GetValue(i), tagItem, depth, p, false);
+                items.Add(itemNode);
+            }
+
+            return new MmArray(items, tag.Copy());
+        }
+
+        if (typ.IsClass || (typ.IsValueType && !typ.IsPrimitive && !typ.IsEnum))
+        {
+            tag.Type = ValueType.Obj;
+
+            var fields = new List<KeyValuePair<MmScalar, IMmTree>>();
+            var properties = typ.GetProperties(BindingFlags.Public | BindingFlags.Instance);
+
+            foreach (var property in properties)
+            {
+                if (!property.CanRead)
+                    continue;
+
+                var mmAttr = property.GetCustomAttribute(typeof(MM), false) as MM;
+                if (mmAttr != null && mmAttr.Name == "-")
+                    continue;
+
+                var fieldKey = CamelToSnake.Convert(property.Name);
+                if (mmAttr != null && !string.IsNullOrEmpty(mmAttr.Name) && mmAttr.Name != "-")
+                {
+                    fieldKey = mmAttr.Name;
+                }
+
+                var tagItem = Tag.NewTag();
+                tagItem.Name = fieldKey;
+
+                if (mmAttr != null)
+                {
+                    var attrTag = mmAttr.ToTag();
+                    if (attrTag.Type != ValueType.Unknown)
+                        tagItem.Type = attrTag.Type;
+                    if (attrTag.ChildType != ValueType.Unknown)
+                        tagItem.ChildType = attrTag.ChildType;
+                    if (!string.IsNullOrEmpty(attrTag.Name))
+                        tagItem.Name = attrTag.Name;
+                    tagItem = Tag.MergeTag(tagItem, attrTag);
+                }
+
+                var p = $"{path}.{fieldKey}";
+                var propVal = property.GetValue(val);
+                var fieldNode = ValueToNodeRecursive(propVal, tagItem, depth, p, false);
+
+                fields.Add(new KeyValuePair<MmScalar, IMmTree>(
+                    new MmScalar(fieldKey, fieldKey, Tag.Empty()),
+                    fieldNode));
+            }
+
+            return new MmMap(fields, tag.Copy());
+        }
+
+        if (typ.IsEnum)
+        {
+            tag.Type = ValueType.Enums;
+            var intVal = Convert.ToInt64(val);
+            return new MmScalar(intVal, intVal.ToString(), tag.Copy());
+        }
+
+        throw new Exception($"unsupported type: {typ.FullName}");
     }
 }

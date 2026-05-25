@@ -1379,6 +1379,7 @@ func anyToJSONC(obj any, tag *ir.Tag, depth int, path string, example bool) (ir.
 				tag.IsNull = true
 			}
 			typ = typ.Elem()
+			example = true
 			elemVal, err := createExampleValue(typ)
 			if err != nil {
 				return nil, fmt.Errorf("%s create element %s err: %w", path, typ, err)

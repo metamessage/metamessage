@@ -1,6 +1,6 @@
 using MetaMessage.Core;
 using MetaMessage.Ir;
-using MmVT = MetaMessage.Core.ValueType;
+using ValueType = MetaMessage.Ir.ValueType;
 
 namespace MetaMessage.Jsonc;
 
@@ -17,8 +17,68 @@ public class JsoncParser
 
     public IJsoncNode Parse()
     {
-        NextToken();
-        return ParseValue();
+        IJsoncNode? result = null;
+
+        while (true)
+        {
+            var token = NextToken();
+
+            if (token.Type == JsoncTokenType.EOF)
+                break;
+
+            if (token.Type == JsoncTokenType.LeadingComment)
+            {
+                if (_pendingComments.Count > 0)
+                {
+                    var last = _pendingComments.Last();
+                    if (token.Line - last.Line > 1)
+                    {
+                        _pendingComments.Clear();
+                    }
+                }
+                _pendingComments.Add(token);
+                continue;
+            }
+
+            if (token.Type == JsoncTokenType.TrailingComment)
+            {
+                continue;
+            }
+
+            result = ParseValue();
+
+            while (true)
+            {
+                var next = PeekToken();
+                if (next.Type == JsoncTokenType.EOF)
+                    break;
+                if (next.Type == JsoncTokenType.TrailingComment)
+                {
+                    NextToken();
+                    var parsed = ParseCommentsToTag(next.Literal);
+                    if (parsed != null && result != null)
+                    {
+                        var existing = result.Tag;
+                        if (existing != null)
+                        {
+                            result.Tag = Tag.MergeTag(existing, parsed);
+                        }
+                        else
+                        {
+                            result.Tag = parsed;
+                        }
+                    }
+                }
+                else
+                {
+                    break;
+                }
+            }
+
+            break;
+        }
+
+        return result!;
     }
 
     private JsoncToken NextToken()
@@ -105,18 +165,25 @@ public class JsoncParser
                 Text = trailingToken.Literal,
                 Line = trailingToken.Line,
                 Column = trailingToken.Column,
-                IsBlock = trailingToken.Literal.StartsWith("/*")
+                IsBlock = trailingToken.IsBlock
             };
-            if (trailingToken.Literal.Contains("mm:") && valueNode.Tag == null)
+            var parsed = ParseCommentsToTag(trailingToken.Literal);
+            if (parsed != null)
             {
-                valueNode.Tag = Tag.Parse(trailingToken.Literal);
+                if (valueNode.Tag != null)
+                {
+                    valueNode.Tag = Tag.MergeTag(valueNode.Tag, parsed);
+                }
+                else
+                {
+                    valueNode.Tag = parsed;
+                }
             }
         }
 
         if (valueNode.Tag != null)
         {
-            var mmTag = ConvertTagToMmTag(valueNode.Tag);
-            // Convert string value to proper type for validation
+            var mmTag = valueNode.Tag;
             var validationValue = ConvertForValidation(valueNode.Value, mmTag.Type);
             if (validationValue != null || valueNode.Value == null)
             {
@@ -146,7 +213,7 @@ public class JsoncParser
 
         if (obj.Tag != null)
         {
-            var mmTag = ConvertTagToMmTag(obj.Tag);
+            var mmTag = obj.Tag;
             var result = Validator.Validate(obj, mmTag);
             if (!result.IsValid)
             {
@@ -206,18 +273,18 @@ public class JsoncParser
                             Text = trailingToken.Literal,
                             Line = trailingToken.Line,
                             Column = trailingToken.Column,
-                            IsBlock = trailingToken.Literal.StartsWith("/*")
+                            IsBlock = trailingToken.IsBlock
                         };
-                        if (trailingToken.Literal.Contains("mm:"))
+                        var parsed = ParseCommentsToTag(trailingToken.Literal);
+                        if (parsed != null)
                         {
-                            var trailingTag = Tag.Parse(trailingToken.Literal);
                             if (lastValue.Tag != null)
                             {
-                                MergeTag(lastValue.Tag, trailingTag);
+                                lastValue.Tag = Tag.MergeTag(lastValue.Tag, parsed);
                             }
                             else
                             {
-                                lastValue.Tag = trailingTag;
+                                lastValue.Tag = parsed;
                             }
                         }
                     }
@@ -239,7 +306,7 @@ public class JsoncParser
                 Text = trailingToken.Literal,
                 Line = trailingToken.Line,
                 Column = trailingToken.Column,
-                IsBlock = trailingToken.Literal.StartsWith("/*")
+                IsBlock = trailingToken.IsBlock
             };
         }
 
@@ -261,7 +328,7 @@ public class JsoncParser
 
         if (array.Tag != null)
         {
-            var mmTag = ConvertTagToMmTag(array.Tag);
+            var mmTag = array.Tag;
             var result = Validator.Validate(array, mmTag);
             if (!result.IsValid)
             {
@@ -306,18 +373,18 @@ public class JsoncParser
                             Text = trailingToken.Literal,
                             Line = trailingToken.Line,
                             Column = trailingToken.Column,
-                            IsBlock = trailingToken.Literal.StartsWith("/*")
+                            IsBlock = trailingToken.IsBlock
                         };
-                        if (trailingToken.Literal.Contains("mm:"))
+                        var parsed = ParseCommentsToTag(trailingToken.Literal);
+                        if (parsed != null)
                         {
-                            var trailingTag = Tag.Parse(trailingToken.Literal);
                             if (lastValue.Tag != null)
                             {
-                                MergeTag(lastValue.Tag, trailingTag);
+                                lastValue.Tag = Tag.MergeTag(lastValue.Tag, parsed);
                             }
                             else
                             {
-                                lastValue.Tag = trailingTag;
+                                lastValue.Tag = parsed;
                             }
                         }
                     }
@@ -339,11 +406,23 @@ public class JsoncParser
                 Text = trailingToken.Literal,
                 Line = trailingToken.Line,
                 Column = trailingToken.Column,
-                IsBlock = trailingToken.Literal.StartsWith("/*")
+                IsBlock = trailingToken.IsBlock
             };
         }
 
         return array;
+    }
+
+    private static Tag? ParseCommentsToTag(string cs)
+    {
+        if (string.IsNullOrWhiteSpace(cs))
+            return null;
+        var trimmed = cs.TrimStart();
+        if (trimmed.StartsWith("mm:"))
+        {
+            return Tag.Parse(cs);
+        }
+        return null;
     }
 
     private Tag? ConsumeCommentsFor(int anchorLine, JsoncNode? node = null)
@@ -367,23 +446,23 @@ public class JsoncParser
                 Text = _pendingComments[0].Literal,
                 Line = _pendingComments[0].Line,
                 Column = _pendingComments[0].Column,
-                IsBlock = _pendingComments[0].Literal.StartsWith("/*")
+                IsBlock = _pendingComments[0].IsBlock
             };
         }
 
         Tag? mergedTag = null;
         foreach (var commentToken in _pendingComments)
         {
-            if (commentToken.Literal.Contains("mm:"))
+            var parsed = ParseCommentsToTag(commentToken.Literal);
+            if (parsed != null)
             {
-                var tag = Tag.Parse(commentToken.Literal);
                 if (mergedTag == null)
                 {
-                    mergedTag = tag;
+                    mergedTag = parsed;
                 }
                 else
                 {
-                    MergeTag(mergedTag, tag);
+                    mergedTag = Tag.MergeTag(mergedTag, parsed);
                 }
             }
         }
@@ -392,173 +471,35 @@ public class JsoncParser
         return mergedTag;
     }
 
-    private static void MergeTag(Tag target, Tag source)
-    {
-        if (source.Type != ValueType.Unknown) target.Type = source.Type;
-        if (source.Desc != null) target.Desc = source.Desc;
-        if (source.Nullable) target.Nullable = true;
-        if (source.DefaultValue != null) target.DefaultValue = source.DefaultValue;
-        if (source.MinValue != null) target.MinValue = source.MinValue;
-        if (source.MaxValue != null) target.MaxValue = source.MaxValue;
-        if (source.Size != null) target.Size = source.Size;
-        if (source.EnumValues != null) target.EnumValues = source.EnumValues;
-        if (source.Pattern != null) target.Pattern = source.Pattern;
-        if (source.Location != null) target.Location = source.Location;
-        if (source.Version != null) target.Version = source.Version;
-        if (source.Mime != null) target.Mime = source.Mime;
-        if (source.ChildType.HasValue) target.ChildType = source.ChildType;
-        if (source.ChildDesc != null) target.ChildDesc = source.ChildDesc;
-        if (source.KeyDesc != null) target.KeyDesc = source.KeyDesc;
-        if (source.ValueDesc != null) target.ValueDesc = source.ValueDesc;
-        if (source.EleDesc != null) target.EleDesc = source.EleDesc;
-    }
-
-    private MmTag ConvertTagToMmTag(Tag jsoncTag)
-    {
-        var mmTag = new MmTag();
-
-        switch (jsoncTag.Type)
-        {
-            case ValueType.Str:
-                mmTag.Type = MmVT.STR;
-                break;
-            case ValueType.Bytes:
-                mmTag.Type = MmVT.BYTES;
-                break;
-            case ValueType.Bool:
-                mmTag.Type = MmVT.BOOL;
-                break;
-            case ValueType.I:
-                mmTag.Type = MmVT.I;
-                break;
-            case ValueType.I8:
-                mmTag.Type = MmVT.I8;
-                break;
-            case ValueType.I16:
-                mmTag.Type = MmVT.I16;
-                break;
-            case ValueType.I32:
-                mmTag.Type = MmVT.I32;
-                break;
-            case ValueType.I64:
-                mmTag.Type = MmVT.I64;
-                break;
-            case ValueType.U:
-                mmTag.Type = MmVT.U;
-                break;
-            case ValueType.U8:
-                mmTag.Type = MmVT.U8;
-                break;
-            case ValueType.U16:
-                mmTag.Type = MmVT.U16;
-                break;
-            case ValueType.U32:
-                mmTag.Type = MmVT.U32;
-                break;
-            case ValueType.U64:
-                mmTag.Type = MmVT.U64;
-                break;
-            case ValueType.F32:
-                mmTag.Type = MmVT.F32;
-                break;
-            case ValueType.F64:
-                mmTag.Type = MmVT.F64;
-                break;
-            case ValueType.Decimal:
-                mmTag.Type = MmVT.DECIMAL;
-                break;
-            case ValueType.Bigint:
-                mmTag.Type = MmVT.BIGINT;
-                break;
-            case ValueType.Datetime:
-                mmTag.Type = MmVT.DATETIME;
-                break;
-            case ValueType.Date:
-                mmTag.Type = MmVT.DATE;
-                break;
-            case ValueType.Time:
-                mmTag.Type = MmVT.TIME;
-                break;
-            case ValueType.Uuid:
-                mmTag.Type = MmVT.UUID;
-                break;
-            case ValueType.Ip:
-                mmTag.Type = MmVT.IP;
-                break;
-            case ValueType.Url:
-                mmTag.Type = MmVT.URL;
-                break;
-            case ValueType.Email:
-                mmTag.Type = MmVT.EMAIL;
-                break;
-            case ValueType.Enums:
-                mmTag.Type = MmVT.ENUMS;
-                break;
-            case ValueType.Image:
-                mmTag.Type = MmVT.IMAGE;
-                break;
-            case ValueType.Video:
-                mmTag.Type = MmVT.VIDEO;
-                break;
-            case ValueType.Doc:
-                mmTag.Type = MmVT.DOC;
-                break;
-            case ValueType.Obj:
-                mmTag.Type = MmVT.OBJ;
-                break;
-            case ValueType.Arr:
-                mmTag.Type = MmVT.ARR;
-                break;
-            case ValueType.Vec:
-                mmTag.Type = MmVT.VEC;
-                break;
-            case ValueType.Map:
-                mmTag.Type = MmVT.MAP;
-                break;
-            default:
-                mmTag.Type = MmVT.UNKNOWN;
-                break;
-        }
-
-        mmTag.Nullable = jsoncTag.Nullable;
-        mmTag.IsNull = jsoncTag.IsNull;
-        mmTag.Min = jsoncTag.MinValue ?? string.Empty;
-        mmTag.Max = jsoncTag.MaxValue ?? string.Empty;
-        mmTag.Enums = jsoncTag.EnumValues != null ? string.Join("|", jsoncTag.EnumValues) : string.Empty;
-        mmTag.DefaultVal = jsoncTag.DefaultValue ?? string.Empty;
-
-        return mmTag;
-    }
-
-    private static object? ConvertForValidation(object? value, MmVT type)
+    private static object? ConvertForValidation(object? value, ValueType type)
     {
         if (value == null) return null;
 
         switch (type)
         {
-            case MmVT.I:
-            case MmVT.I8:
-            case MmVT.I16:
-            case MmVT.I32:
+            case ValueType.I:
+            case ValueType.I8:
+            case ValueType.I16:
+            case ValueType.I32:
                 if (value is string s) return int.Parse(s);
                 return Convert.ToInt32(value);
-            case MmVT.I64:
+            case ValueType.I64:
                 if (value is string s64) return long.Parse(s64);
                 return Convert.ToInt64(value);
-            case MmVT.U:
-            case MmVT.U8:
-            case MmVT.U16:
-            case MmVT.U32:
+            case ValueType.U:
+            case ValueType.U8:
+            case ValueType.U16:
+            case ValueType.U32:
                 if (value is string us) return uint.Parse(us);
                 return Convert.ToUInt32(value);
-            case MmVT.U64:
+            case ValueType.U64:
                 if (value is string u64s) return ulong.Parse(u64s);
                 return Convert.ToUInt64(value);
-            case MmVT.F32:
-            case MmVT.F64:
+            case ValueType.F32:
+            case ValueType.F64:
                 if (value is string fs) return double.Parse(fs);
                 return Convert.ToDouble(value);
-            case MmVT.BOOL:
+            case ValueType.Bool:
                 return value;
             default:
                 return value;

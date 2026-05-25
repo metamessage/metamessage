@@ -75,42 +75,50 @@ public class WireEncoder
         }
         else
         {
-            long absValue = -value;
-            if (absValue <= WireConstants.INT_LEN_8 - 1)
+            ulong uv;
+            if (value == long.MinValue)
             {
-                _buf.Write(Prefix.NEGATIVE_INT | (int)absValue);
-            }
-            else if (absValue <= WireConstants.MAX_1)
-            {
-                _buf.Write(Prefix.NEGATIVE_INT | WireConstants.INT_LEN_1, (byte)absValue);
-            }
-            else if (absValue <= WireConstants.MAX_2)
-            {
-                _buf.Write(Prefix.NEGATIVE_INT | WireConstants.INT_LEN_2, (byte)(absValue >> 8), (byte)absValue);
-            }
-            else if (absValue <= WireConstants.MAX_3)
-            {
-                _buf.Write(Prefix.NEGATIVE_INT | WireConstants.INT_LEN_3, (byte)(absValue >> 16), (byte)(absValue >> 8), (byte)absValue);
-            }
-            else if (absValue <= WireConstants.MAX_4)
-            {
-                _buf.Write(Prefix.NEGATIVE_INT | WireConstants.INT_LEN_4, (byte)(absValue >> 24), (byte)(absValue >> 16), (byte)(absValue >> 8), (byte)absValue);
-            }
-            else if (absValue <= WireConstants.MAX_5)
-            {
-                _buf.Write(Prefix.NEGATIVE_INT | WireConstants.INT_LEN_5, (byte)(absValue >> 32), (byte)(absValue >> 24), (byte)(absValue >> 16), (byte)(absValue >> 8), (byte)absValue);
-            }
-            else if (absValue <= WireConstants.MAX_6)
-            {
-                _buf.Write(Prefix.NEGATIVE_INT | WireConstants.INT_LEN_6, (byte)(absValue >> 40), (byte)(absValue >> 32), (byte)(absValue >> 24), (byte)(absValue >> 16), (byte)(absValue >> 8), (byte)absValue);
-            }
-            else if (absValue <= WireConstants.MAX_7)
-            {
-                _buf.Write(Prefix.NEGATIVE_INT | WireConstants.INT_LEN_7, (byte)(absValue >> 48), (byte)(absValue >> 40), (byte)(absValue >> 32), (byte)(absValue >> 24), (byte)(absValue >> 16), (byte)(absValue >> 8), (byte)absValue);
+                uv = 9223372036854775808UL;
             }
             else
             {
-                _buf.Write(Prefix.NEGATIVE_INT | WireConstants.INT_LEN_8, (byte)(absValue >> 56), (byte)(absValue >> 48), (byte)(absValue >> 40), (byte)(absValue >> 32), (byte)(absValue >> 24), (byte)(absValue >> 16), (byte)(absValue >> 8), (byte)absValue);
+                uv = (ulong)(-value);
+            }
+            if (uv <= (ulong)(WireConstants.INT_LEN_8 - 1))
+            {
+                _buf.Write(Prefix.NEGATIVE_INT | (int)uv);
+            }
+            else if (uv <= WireConstants.MAX_1)
+            {
+                _buf.Write(Prefix.NEGATIVE_INT | WireConstants.INT_LEN_1, (byte)uv);
+            }
+            else if (uv <= WireConstants.MAX_2)
+            {
+                _buf.Write(Prefix.NEGATIVE_INT | WireConstants.INT_LEN_2, (byte)(uv >> 8), (byte)uv);
+            }
+            else if (uv <= WireConstants.MAX_3)
+            {
+                _buf.Write(Prefix.NEGATIVE_INT | WireConstants.INT_LEN_3, (byte)(uv >> 16), (byte)(uv >> 8), (byte)uv);
+            }
+            else if (uv <= WireConstants.MAX_4)
+            {
+                _buf.Write(Prefix.NEGATIVE_INT | WireConstants.INT_LEN_4, (byte)(uv >> 24), (byte)(uv >> 16), (byte)(uv >> 8), (byte)uv);
+            }
+            else if (uv <= WireConstants.MAX_5)
+            {
+                _buf.Write(Prefix.NEGATIVE_INT | WireConstants.INT_LEN_5, (byte)(uv >> 32), (byte)(uv >> 24), (byte)(uv >> 16), (byte)(uv >> 8), (byte)uv);
+            }
+            else if (uv <= WireConstants.MAX_6)
+            {
+                _buf.Write(Prefix.NEGATIVE_INT | WireConstants.INT_LEN_6, (byte)(uv >> 40), (byte)(uv >> 32), (byte)(uv >> 24), (byte)(uv >> 16), (byte)(uv >> 8), (byte)uv);
+            }
+            else if (uv <= WireConstants.MAX_7)
+            {
+                _buf.Write(Prefix.NEGATIVE_INT | WireConstants.INT_LEN_7, (byte)(uv >> 48), (byte)(uv >> 40), (byte)(uv >> 32), (byte)(uv >> 24), (byte)(uv >> 16), (byte)(uv >> 8), (byte)uv);
+            }
+            else
+            {
+                _buf.Write(Prefix.NEGATIVE_INT | WireConstants.INT_LEN_8, (byte)(uv >> 56), (byte)(uv >> 48), (byte)(uv >> 40), (byte)(uv >> 32), (byte)(uv >> 24), (byte)(uv >> 16), (byte)(uv >> 8), (byte)uv);
             }
         }
         return _buf.Length - start;

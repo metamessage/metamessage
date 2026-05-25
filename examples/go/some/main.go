@@ -21,7 +21,7 @@ func main() {
 	type APIResponse struct {
 		Code    int    `mm:"desc=狀態碼; allow_empty"`
 		Message string `mm:"desc=消息; allow_empty"`
-		Data    User   `mm:"desc=數據; allow_empty"`
+		Data    *User  `mm:"desc=數據; allow_empty"`
 	}
 
 	var users = []User{
@@ -36,9 +36,9 @@ func main() {
 	}
 
 	type CreateUserRequest struct {
-		Name  *string `mm:"desc=用戶名稱;min=1;max=50"`
-		Email string  `mm:"type=email;desc=電子郵箱"`
-		Age   uint8   `mm:"desc=年齡;min=0;max=150"`
+		Name  string `mm:"desc=用戶名稱; min=1; max=50"`
+		Email string `mm:"type=email; desc=電子郵箱"`
+		Age   uint8  `mm:"desc=年齡; min=0; max=150"`
 	}
 
 	// createReq := &CreateUserRequest{
@@ -46,23 +46,24 @@ func main() {
 	// 	Email: "david@example.com",
 	// 	Age:   28,
 	// }
-	var c CreateUserRequest
-	encodedReq, err := mm.EncodeFromValue(c, "example")
+
+	d := APIResponse{Code: 0, Message: "user deleted", Data: nil}
+	encodedReq, err := mm.EncodeFromValue(d, "")
 	fmt.Println("encodedReq", encodedReq, err)
 
-	var req CreateUserRequest
+	var req APIResponse
 
 	// var obj any
 	// obj = &req
 
 	e := mm.DecodeToValue(encodedReq, &req)
-	fmt.Println("err", e, req)
+	fmt.Println(e, req)
 
 	jc, _ := mm.DecodeToJsonc(encodedReq)
-	fmt.Println("err", jc)
+	fmt.Println("jc", jc)
 	return
 
-	data := APIResponse{Code: 0, Message: "success", Data: users[0]}
+	data := APIResponse{Code: 0, Message: "success", Data: &users[0]}
 
 	encoded, err := mm.EncodeFromValue(data, "")
 	if err != nil {

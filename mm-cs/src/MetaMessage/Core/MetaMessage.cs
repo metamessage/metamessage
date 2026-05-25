@@ -1,6 +1,8 @@
+using ValueType = MetaMessage.Ir.ValueType;
 using MetaMessage.Jsonc;
 using MetaMessage.Ir;
 using JsoncParser = MetaMessage.Jsonc.Jsonc;
+using System.Text.Json;
 
 namespace MetaMessage.Core;
 
@@ -8,7 +10,8 @@ public static class MetaMessage
 {
     public static byte[] Encode(object obj)
     {
-        return ReflectMmEncoder.Encode(obj);
+        var node = ReflectMmEncoder.ValueToNode(obj, "");
+        return EncodeTree(node);
     }
 
     public static void Decode(byte[] data, object target)
@@ -23,25 +26,73 @@ public static class MetaMessage
         return obj;
     }
 
-    public static IMmTree DecodeToTree(byte[] data)
+    public static IMmTree Decode(byte[] data)
     {
         var decoder = new WireDecoder(data);
         return decoder.Decode();
     }
 
+    public static IMmTree DecodeToTree(byte[] data)
+    {
+        return Decode(data);
+    }
+
+    public static IMmTree ParseFromJSONC(string input)
+    {
+        return JsoncToTree(input);
+    }
+
     public static byte[] EncodeTree(IMmTree tree)
     {
         var encoder = new WireEncoder();
-        EncodeTreeValue(encoder, tree, MmTag.Empty());
+        EncodeTreeValue(encoder, tree, Tag.Empty());
         return encoder.ToByteArray();
+    }
+
+    public static byte[] FromValue(object value, string tagString)
+    {
+        var node = ReflectMmEncoder.ValueToNode(value, tagString);
+        return EncodeTree(node);
+    }
+
+    public static byte[] FromJSONC(string jsonc)
+    {
+        return EncodeFromJsonc(jsonc);
+    }
+
+    public static void BindFromJSONC(string input, object output)
+    {
+        var tree = ParseFromJSONC(input);
+        var encoded = EncodeTree(tree);
+        ReflectMmBinder.Bind(encoded, output);
+    }
+
+    public static string ValueToJSONC(object value, string name)
+    {
+        var node = ReflectMmEncoder.ValueToNode(value, name);
+        return TreeToJsoncString(node);
+    }
+
+    public static string ValueToJsonc(object value)
+    {
+        return ValueToJSONC(value, "");
+    }
+
+    public static void PrintJSONC(IMmTree node)
+    {
+        Console.WriteLine(TreeToJsoncString(node));
+    }
+
+    public static string Dump(IMmTree node)
+    {
+        var options = new JsonSerializerOptions { WriteIndented = true };
+        return JsonSerializer.Serialize(node, options);
     }
 
     public static string DecodeToJsonc(byte[] data)
     {
         var tree = DecodeToTree(data);
-        var node = TreeToJsoncNode(tree);
-        var printer = new JsoncPrinter(prettyPrint: true);
-        return printer.Print(node);
+        return TreeToJsoncString(tree);
     }
 
     public static byte[] EncodeFromJsonc(string jsonc)
@@ -50,26 +101,94 @@ public static class MetaMessage
         return EncodeFromJsoncNode(node);
     }
 
-    public static string ValueToJsonc(object value)
-    {
-        var binder = new JsoncBinder();
-        var node = binder.StructToNode(value);
-        var printer = new JsoncPrinter(prettyPrint: true);
-        return printer.Print(node);
-    }
-
     public static object? JsoncToValue(string jsonc)
     {
         var node = JsoncParser.ParseFromString(jsonc);
         return ExtractValueFromJsoncNode(node);
     }
 
-    public static ValidationResult Validate(object value, MmTag tag)
+    public static ValidationResult Validate(object value, Tag tag)
     {
         return Validator.Validate(value, tag);
     }
 
-    private static void EncodeTreeValue(WireEncoder encoder, IMmTree tree, MmTag inherited)
+    private static string TreeToJsoncString(IMmTree tree)
+    {
+        var node = TreeToJsoncNode(tree);
+        var printer = new JsoncPrinter(prettyPrint: true);
+        return printer.Print(node);
+    }
+
+    private static IMmTree JsoncToTree(string input)
+    {
+        var jsoncNode = JsoncParser.ParseFromString(input);
+        return JsoncNodeToTree(jsoncNode);
+    }
+
+    private static IMmTree JsoncNodeToTree(IJsoncNode node)
+    {
+        switch (node)
+        {
+            case JsoncValue value:
+                return JsoncValueToScalar(value);
+            case JsoncArray array:
+                {
+                    var children = new List<IMmTree>();
+                    foreach (var element in array.Elements)
+                    {
+                        children.Add(JsoncNodeToTree(element));
+                    }
+                    return new MmArray(children, array.Tag?.Copy() ?? Tag.Empty());
+                }
+            case JsoncObject obj:
+                {
+                    var entries = new List<KeyValuePair<MmScalar, IMmTree>>();
+                    foreach (var kvp in obj.Fields)
+                    {
+                        var keyScalar = new MmScalar(kvp.Key, kvp.Key, Tag.Empty());
+                        entries.Add(new KeyValuePair<MmScalar, IMmTree>(keyScalar, JsoncNodeToTree(kvp.Value)));
+                    }
+                    return new MmMap(entries, obj.Tag?.Copy() ?? Tag.Empty());
+                }
+            default:
+                throw new Exception($"unsupported jsonc node type: {node?.GetType()}");
+        }
+    }
+
+    private static MmScalar JsoncValueToScalar(JsoncValue value)
+    {
+        object data = null;
+        string text = "null";
+
+        switch (value.TokenType)
+        {
+            case JsoncTokenType.Null:
+                data = null;
+                text = "null";
+                break;
+            case JsoncTokenType.True:
+                data = true;
+                text = "true";
+                break;
+            case JsoncTokenType.False:
+                data = false;
+                text = "false";
+                break;
+            case JsoncTokenType.Number:
+                data = value.Value;
+                text = value.Value?.ToString() ?? "0";
+                break;
+            case JsoncTokenType.String:
+            default:
+                data = value.Value?.ToString() ?? "";
+                text = value.Value?.ToString() ?? "";
+                break;
+        }
+
+        return new MmScalar(data, text, value.Tag?.Copy() ?? Tag.Empty());
+    }
+
+    private static void EncodeTreeValue(WireEncoder encoder, IMmTree tree, Tag inherited)
     {
         switch (tree)
         {
@@ -85,7 +204,7 @@ public static class MetaMessage
         }
     }
 
-    private static void EncodeScalarTree(WireEncoder encoder, MmScalar scalar, MmTag inherited)
+    private static void EncodeScalarTree(WireEncoder encoder, MmScalar scalar, Tag inherited)
     {
         var tag = scalar.Tag?.Copy() ?? inherited.Copy();
         if (scalar.Data == null || tag.IsNull)
@@ -102,11 +221,11 @@ public static class MetaMessage
         encoder.EncodeTaggedPayload(payload.ToByteArray(), tag.ToBytes());
     }
 
-    private static void EncodeNullScalarPayload(WireEncoder encoder, MmTag tag)
+    private static void EncodeNullScalarPayload(WireEncoder encoder, Tag tag)
     {
         switch (tag.Type)
         {
-            case ValueType.BOOL:
+            case ValueType.Bool:
                 encoder.EncodeSimple(SimpleValue.NULL_BOOL);
                 return;
             case ValueType.I:
@@ -122,15 +241,15 @@ public static class MetaMessage
                 return;
             case ValueType.F32:
             case ValueType.F64:
-            case ValueType.DECIMAL:
+            case ValueType.Decimal:
                 encoder.EncodeSimple(SimpleValue.NULL_FLOAT);
                 return;
-            case ValueType.STR:
-            case ValueType.EMAIL:
-            case ValueType.URL:
+            case ValueType.Str:
+            case ValueType.Email:
+            case ValueType.Url:
                 encoder.EncodeSimple(SimpleValue.NULL_STRING);
                 return;
-            case ValueType.BYTES:
+            case ValueType.Bytes:
                 encoder.EncodeSimple(SimpleValue.NULL_BYTES);
                 return;
             default:
@@ -139,11 +258,11 @@ public static class MetaMessage
         }
     }
 
-    private static void EncodeScalarPayload(WireEncoder encoder, object value, MmTag tag)
+    private static void EncodeScalarPayload(WireEncoder encoder, object value, Tag tag)
     {
         switch (tag.Type)
         {
-            case ValueType.BOOL:
+            case ValueType.Bool:
                 encoder.EncodeBool((bool)value);
                 break;
             case ValueType.I:
@@ -159,33 +278,33 @@ public static class MetaMessage
                 break;
             case ValueType.F32:
             case ValueType.F64:
-            case ValueType.DECIMAL:
+            case ValueType.Decimal:
                 encoder.EncodeFloatString(value.ToString()!);
                 break;
-            case ValueType.STR:
-            case ValueType.EMAIL:
-            case ValueType.URL:
+            case ValueType.Str:
+            case ValueType.Email:
+            case ValueType.Url:
                 encoder.EncodeString(value as string ?? value.ToString()!);
                 break;
-            case ValueType.BYTES:
+            case ValueType.Bytes:
                 encoder.EncodeBytes(value as byte[] ?? Array.Empty<byte>());
                 break;
-            case ValueType.BIGINT:
+            case ValueType.Bigint:
                 encoder.EncodeBigIntDecimal(value.ToString()!);
                 break;
-            case ValueType.UUID:
+            case ValueType.Uuid:
                 encoder.EncodeBytes(UuidToBytes(value.ToString()!));
                 break;
-            case ValueType.DATETIME:
+            case ValueType.Datetime:
                 encoder.EncodeInt64(TimeUtil.EpochSeconds((DateTime)value));
                 break;
-            case ValueType.DATE:
+            case ValueType.Date:
                 encoder.EncodeInt64(TimeUtil.DaysSinceEpochUtc((DateTime)value));
                 break;
-            case ValueType.TIME:
+            case ValueType.Time:
                 encoder.EncodeInt64(TimeUtil.SecondsOfDay((DateTime)value));
                 break;
-            case ValueType.ENUMS:
+            case ValueType.Enums:
                 encoder.EncodeInt64(Convert.ToInt64(value));
                 break;
             default:
@@ -213,7 +332,7 @@ public static class MetaMessage
         }
     }
 
-    private static void EncodeArrayTree(WireEncoder encoder, MmArray array, MmTag inherited)
+    private static void EncodeArrayTree(WireEncoder encoder, MmArray array, Tag inherited)
     {
         var tag = array.Tag?.Copy() ?? inherited.Copy();
         var body = new GrowableByteBuf();
@@ -222,7 +341,7 @@ public static class MetaMessage
         foreach (var child in array.Children)
         {
             elementEncoder.Reset();
-            var itemTag = MmTag.Empty();
+            var itemTag = Tag.Empty();
             itemTag.InheritFromArrayParent(tag);
             EncodeTreeValue(elementEncoder, child, itemTag);
             body.WriteAll(elementEncoder.ToByteArray());
@@ -233,7 +352,7 @@ public static class MetaMessage
         encoder.EncodeTaggedPayload(elementEncoder.ToByteArray(), tag.ToBytes());
     }
 
-    private static void EncodeMapTree(WireEncoder encoder, MmMap map, MmTag inherited)
+    private static void EncodeMapTree(WireEncoder encoder, MmMap map, Tag inherited)
     {
         var tag = map.Tag?.Copy() ?? inherited.Copy();
         var keysPacked = new GrowableByteBuf();
@@ -250,7 +369,7 @@ public static class MetaMessage
             keysPacked.WriteAll(tmp.ToByteArray());
 
             tmp.Reset();
-            var valueTag = MmTag.Empty();
+            var valueTag = Tag.Empty();
             EncodeTreeValue(tmp, entry.Value, valueTag);
             valsPacked.WriteAll(tmp.ToByteArray());
         }
@@ -305,41 +424,8 @@ public static class MetaMessage
                 break;
         }
 
-        var mmTag = MmTag.Empty();
-        if (node?.Tag != null)
-        {
-            mmTag = ConvertTagToMmTag(node.Tag);
-        }
+        var mmTag = node?.Tag ?? Tag.Empty();
         encoder.EncodeTaggedPayload(payload.ToByteArray(), mmTag.ToBytes());
-    }
-
-    private static MmTag ConvertTagToMmTag(Tag tag)
-    {
-        var mmTag = new MmTag();
-        mmTag.Type = (Core.ValueType)(int)tag.Type;
-        mmTag.Desc = tag.Desc ?? string.Empty;
-        mmTag.Nullable = tag.Nullable;
-        mmTag.IsNull = tag.IsNull;
-        mmTag.Min = tag.MinValue ?? string.Empty;
-        mmTag.Max = tag.MaxValue ?? string.Empty;
-        mmTag.DefaultVal = tag.DefaultValue ?? string.Empty;
-        return mmTag;
-    }
-
-    private static Tag ConvertMmTagToTag(MmTag mmTag)
-    {
-        var tag = new Tag();
-        tag.Type = (Jsonc.ValueType)(int)mmTag.Type;
-        tag.Desc = mmTag.Desc;
-        tag.Nullable = mmTag.Nullable;
-        tag.IsNull = mmTag.IsNull;
-        if (!string.IsNullOrEmpty(mmTag.Min) && mmTag.Min != "0")
-            tag.MinValue = mmTag.Min;
-        if (!string.IsNullOrEmpty(mmTag.Max) && mmTag.Max != "0")
-            tag.MaxValue = mmTag.Max;
-        if (!string.IsNullOrEmpty(mmTag.DefaultVal))
-            tag.DefaultValue = mmTag.DefaultVal;
-        return tag;
     }
 
     private static void EncodeJsoncScalarPayload(WireEncoder encoder, JsoncValue value)
@@ -463,7 +549,7 @@ public static class MetaMessage
         {
             switch (scalar.Tag.Type)
             {
-                case ValueType.BOOL:
+                case ValueType.Bool:
                     result = new JsoncValue { Value = false, TokenType = JsoncTokenType.False };
                     break;
                 case ValueType.I:
@@ -475,23 +561,23 @@ public static class MetaMessage
                 case ValueType.U16:
                 case ValueType.U32:
                 case ValueType.U64:
-                case ValueType.BIGINT:
+                case ValueType.Bigint:
                 case ValueType.F32:
                 case ValueType.F64:
-                case ValueType.DECIMAL:
+                case ValueType.Decimal:
                     result = new JsoncValue { Value = 0L, TokenType = JsoncTokenType.Number };
                     break;
-                case ValueType.STR:
-                case ValueType.EMAIL:
-                case ValueType.URL:
-                case ValueType.ENUMS:
-                case ValueType.DATETIME:
-                case ValueType.DATE:
-                case ValueType.TIME:
-                case ValueType.UUID:
+                case ValueType.Str:
+                case ValueType.Email:
+                case ValueType.Url:
+                case ValueType.Enums:
+                case ValueType.Datetime:
+                case ValueType.Date:
+                case ValueType.Time:
+                case ValueType.Uuid:
                     result = new JsoncValue { Value = "", TokenType = JsoncTokenType.String };
                     break;
-                case ValueType.BYTES:
+                case ValueType.Bytes:
                     result = new JsoncValue { Value = "", TokenType = JsoncTokenType.String };
                     break;
                 default:
@@ -507,7 +593,7 @@ public static class MetaMessage
         {
             switch (scalar.Tag.Type)
             {
-                case ValueType.BOOL:
+                case ValueType.Bool:
                     result = new JsoncValue
                     {
                         Value = scalar.Data,
@@ -527,27 +613,27 @@ public static class MetaMessage
                     break;
                 case ValueType.F32:
                 case ValueType.F64:
-                case ValueType.DECIMAL:
+                case ValueType.Decimal:
                     result = new JsoncValue { Value = scalar.Data, TokenType = JsoncTokenType.Number };
                     break;
-                case ValueType.BIGINT:
-                case ValueType.DATETIME:
-                case ValueType.DATE:
-                case ValueType.TIME:
-                case ValueType.UUID:
-                case ValueType.EMAIL:
-                case ValueType.URL:
-                case ValueType.STR:
+                case ValueType.Bigint:
+                case ValueType.Datetime:
+                case ValueType.Date:
+                case ValueType.Time:
+                case ValueType.Uuid:
+                case ValueType.Email:
+                case ValueType.Url:
+                case ValueType.Str:
                     result = new JsoncValue { Value = scalar.Data?.ToString(), TokenType = JsoncTokenType.String };
                     break;
-                case ValueType.BYTES:
+                case ValueType.Bytes:
                     result = new JsoncValue
                     {
                         Value = scalar.Data is byte[] b ? Convert.ToBase64String(b) : scalar.Data?.ToString(),
                         TokenType = JsoncTokenType.String
                     };
                     break;
-                case ValueType.ENUMS:
+                case ValueType.Enums:
                     result = new JsoncValue { Value = scalar.Data?.ToString(), TokenType = JsoncTokenType.String };
                     break;
                 default:
@@ -581,7 +667,7 @@ public static class MetaMessage
 
         if (scalar.Tag != null)
         {
-            result.Tag = ConvertMmTagToTag(scalar.Tag);
+            result.Tag = scalar.Tag;
         }
         return result;
     }
@@ -595,7 +681,7 @@ public static class MetaMessage
         }
         if (array.Tag != null)
         {
-            jsoncArray.Tag = ConvertMmTagToTag(array.Tag);
+            jsoncArray.Tag = array.Tag;
         }
         return jsoncArray;
     }

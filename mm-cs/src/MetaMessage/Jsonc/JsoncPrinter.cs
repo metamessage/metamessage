@@ -1,4 +1,5 @@
 using MetaMessage.Ir;
+using ValueType = MetaMessage.Ir.ValueType;
 
 namespace MetaMessage.Jsonc;
 
@@ -241,33 +242,14 @@ public class JsoncPrinter
     {
         if (comment.IsBlock)
         {
-            sb.Append("/*");
-            var commentText = comment.Text.TrimStart('/', '*').TrimEnd('*', '/');
-            if (commentText.StartsWith("mm:"))
-            {
-                sb.Append(commentText);
-            }
-            else
-            {
-                sb.Append(commentText.TrimStart('/', '*').TrimEnd('*', '/'));
-            }
-            sb.AppendLine("*/");
+            sb.Append("/* ");
+            sb.Append(comment.Text);
+            sb.AppendLine(" */");
         }
         else
         {
-            var commentText = comment.Text;
-            if (commentText.StartsWith("//"))
-            {
-                sb.AppendLine(commentText);
-            }
-            else if (commentText.StartsWith("mm:"))
-            {
-                sb.AppendLine("// " + commentText);
-            }
-            else
-            {
-                sb.AppendLine(commentText);
-            }
+            sb.Append("// ");
+            sb.AppendLine(comment.Text);
         }
     }
 

@@ -1,3 +1,6 @@
+using MetaMessage.Ir;
+using ValueType = MetaMessage.Ir.ValueType;
+
 namespace MetaMessage.Core;
 
 public class MmDecodeException : Exception
@@ -26,7 +29,7 @@ public class WireDecoder
         return DecodeNext(null);
     }
 
-    private IMmTree DecodeNext(MmTag? inherited)
+    private IMmTree DecodeNext(Tag? inherited)
     {
         if (_offset >= _data.Length)
         {
@@ -59,10 +62,10 @@ public class WireDecoder
         }
     }
 
-    private IMmTree DecodeSimple(int first, MmTag? inherited)
+    private IMmTree DecodeSimple(int first, Tag? inherited)
     {
         int val = first & Prefix.SUFFIX_MASK;
-        MmTag tag = inherited?.Copy() ?? MmTag.Empty();
+        Tag tag = inherited?.Copy() ?? Tag.Empty();
 
         switch (val)
         {
@@ -77,10 +80,10 @@ public class WireDecoder
             case SimpleValue.NULL_BYTES:
                 return NullBytes(tag);
             case SimpleValue.FALSE:
-                tag.Type = ValueType.BOOL;
+                tag.Type = ValueType.Bool;
                 return new MmScalar(false, "false", tag);
             case SimpleValue.TRUE:
-                tag.Type = ValueType.BOOL;
+                tag.Type = ValueType.Bool;
                 return new MmScalar(true, "true", tag);
             case SimpleValue.CODE:
             case SimpleValue.MESSAGE:
@@ -109,7 +112,7 @@ public class WireDecoder
             case SimpleValue.VAL:
                 {
                     string name = SimpleValue.NameOf(val);
-                    tag.Type = ValueType.STR;
+                    tag.Type = ValueType.Str;
                     return new MmScalar(name, name, tag);
                 }
             default:
@@ -117,13 +120,13 @@ public class WireDecoder
         }
     }
 
-    static private MmScalar NullBool(MmTag tag)
+    static private MmScalar NullBool(Tag tag)
     {
-        if (tag.Type == ValueType.UNKNOWN)
+        if (tag.Type == ValueType.Unknown)
         {
-            tag.Type = ValueType.BOOL;
+            tag.Type = ValueType.Bool;
         }
-        if (tag.Type != ValueType.BOOL)
+        if (tag.Type != ValueType.Bool)
         {
             throw new MmDecodeException("null_bool type mismatch");
         }
@@ -131,9 +134,9 @@ public class WireDecoder
         return new MmScalar(false, "false", tag);
     }
 
-    static private MmScalar NullInt(MmTag tag)
+    static private MmScalar NullInt(Tag tag)
     {
-        if (tag.Type == ValueType.UNKNOWN)
+        if (tag.Type == ValueType.Unknown)
         {
             tag.Type = ValueType.I;
         }
@@ -145,13 +148,13 @@ public class WireDecoder
         return new MmScalar(0L, "0", tag);
     }
 
-    static private MmScalar NullFloat(MmTag tag)
+    static private MmScalar NullFloat(Tag tag)
     {
-        if (tag.Type == ValueType.UNKNOWN)
+        if (tag.Type == ValueType.Unknown)
         {
             tag.Type = ValueType.F64;
         }
-        if (tag.Type != ValueType.F32 && tag.Type != ValueType.F64 && tag.Type != ValueType.DECIMAL)
+        if (tag.Type != ValueType.F32 && tag.Type != ValueType.F64 && tag.Type != ValueType.Decimal)
         {
             throw new MmDecodeException("null_float type mismatch");
         }
@@ -159,23 +162,23 @@ public class WireDecoder
         return new MmScalar(0.0, "0.0", tag);
     }
 
-    static private MmScalar NullString(MmTag tag)
+    static private MmScalar NullString(Tag tag)
     {
-        if (tag.Type == ValueType.UNKNOWN)
+        if (tag.Type == ValueType.Unknown)
         {
-            tag.Type = ValueType.STR;
+            tag.Type = ValueType.Str;
         }
         tag.IsNull = true;
         return new MmScalar("", "", tag);
     }
 
-    static private MmScalar NullBytes(MmTag tag)
+    static private MmScalar NullBytes(Tag tag)
     {
-        if (tag.Type == ValueType.UNKNOWN)
+        if (tag.Type == ValueType.Unknown)
         {
-            tag.Type = ValueType.BYTES;
+            tag.Type = ValueType.Bytes;
         }
-        if (tag.Type != ValueType.BYTES)
+        if (tag.Type != ValueType.Bytes)
         {
             throw new MmDecodeException("null_bytes type mismatch");
         }
@@ -183,54 +186,69 @@ public class WireDecoder
         return new MmScalar(Array.Empty<byte>(), "", tag);
     }
 
-    private IMmTree DecodePositiveInt(int first, MmTag? inherited)
+    private IMmTree DecodePositiveInt(int first, Tag? inherited)
     {
-        long v = ReadUintBody(first);
-        MmTag tag = inherited?.Copy() ?? MmTag.Empty();
-        if (tag.Type == ValueType.UNKNOWN)
+        ulong uv = ReadUintBody(first);
+        Tag tag = inherited?.Copy() ?? Tag.Empty();
+        if (tag.Type == ValueType.Unknown)
         {
             tag.Type = ValueType.I;
         }
 
-        (object data, string text) = ConvertIntValue(v, tag);
+        (object data, string text) = ConvertPositiveIntValue(uv, tag);
         return new MmScalar(data, text, tag);
     }
 
-    private IMmTree DecodeNegativeInt(int first, MmTag? inherited)
+    private IMmTree DecodeNegativeInt(int first, Tag? inherited)
     {
-        long v = ReadUintBody(first);
-        MmTag tag = inherited?.Copy() ?? MmTag.Empty();
-        if (tag.Type == ValueType.UNKNOWN)
+        ulong uv = ReadUintBody(first);
+        Tag tag = inherited?.Copy() ?? Tag.Empty();
+        if (tag.Type == ValueType.Unknown)
         {
             tag.Type = ValueType.I;
         }
 
-        (object data, string text) = ConvertIntValue(-v, tag);
+        (object data, string text) = ConvertNegativeIntValue(uv, tag);
         return new MmScalar(data, text, tag);
     }
 
-    private static (object data, string text) ConvertIntValue(long v, MmTag tag)
+    private static (object data, string text) ConvertPositiveIntValue(ulong uv, Tag tag)
     {
+        string text = uv.ToString();
         return tag.Type switch
         {
-            ValueType.DATETIME => DateTimeFromInt(v, tag),
-            ValueType.DATE => DateFromInt(v, tag),
-            ValueType.TIME => TimeFromInt(v, tag),
-            ValueType.ENUMS => EnumFromInt((int)v, tag),
-            ValueType.I8 => ((sbyte)v, v.ToString()),
-            ValueType.I16 => ((short)v, v.ToString()),
-            ValueType.I32 => ((int)v, v.ToString()),
-            ValueType.I64 => (v, v.ToString()),
-            ValueType.U => ((uint)v, v.ToString()),
-            ValueType.U8 => ((byte)v, v.ToString()),
-            ValueType.U16 => ((ushort)v, v.ToString()),
-            ValueType.U32 => ((uint)v, v.ToString()),
-            ValueType.U64 => ((ulong)v, v.ToString()),
-            _ => (v, v.ToString())
+            ValueType.Datetime => DateTimeFromInt((long)uv, tag),
+            ValueType.Date => DateFromInt((long)uv, tag),
+            ValueType.Time => TimeFromInt((long)uv, tag),
+            ValueType.Enums => EnumFromInt((int)uv, tag),
+            ValueType.I8 => ((sbyte)uv, text),
+            ValueType.I16 => ((short)uv, text),
+            ValueType.I32 => ((int)uv, text),
+            ValueType.I64 => ((long)uv, text),
+            ValueType.U => ((uint)uv, text),
+            ValueType.U8 => ((byte)uv, text),
+            ValueType.U16 => ((ushort)uv, text),
+            ValueType.U32 => ((uint)uv, text),
+            ValueType.U64 => (uv, text),
+            _ => ((long)uv, text)
         };
     }
 
-    private static (object data, string text) DateTimeFromInt(long v, MmTag tag)
+    private static (object data, string text) ConvertNegativeIntValue(ulong uv, Tag tag)
+    {
+        string text = "-" + uv.ToString();
+        return tag.Type switch
+        {
+            ValueType.I => (-(long)uv, text),
+            ValueType.I8 => ((sbyte)(-(long)uv), text),
+            ValueType.I16 => ((short)(-(long)uv), text),
+            ValueType.I32 => ((int)(-(long)uv), text),
+            ValueType.I64 => (-(long)uv, text),
+            _ => (-(long)uv, text)
+        };
+    }
+
+    private static (object data, string text) DateTimeFromInt(long v, Tag tag)
     {
         if (v < 0)
         {
@@ -240,13 +258,13 @@ public class WireDecoder
         return (dt, dt.ToString("yyyy-MM-dd HH:mm:ss"));
     }
 
-    private static (object data, string text) DateFromInt(long v, MmTag tag)
+    private static (object data, string text) DateFromInt(long v, Tag tag)
     {
         var dt = TimeUtil.FromDaysSinceEpoch(v);
         return (dt, dt.ToString("yyyy-MM-dd"));
     }
 
-    private static (object data, string text) TimeFromInt(long v, MmTag tag)
+    private static (object data, string text) TimeFromInt(long v, Tag tag)
     {
         if (v < 0 || v > 86399)
         {
@@ -256,7 +274,7 @@ public class WireDecoder
         return (dt, dt.ToString("HH:mm:ss"));
     }
 
-    private static (object data, string text) EnumFromInt(int v, MmTag tag)
+    private static (object data, string text) EnumFromInt(int v, Tag tag)
     {
         if (!string.IsNullOrEmpty(tag.Enums))
         {
@@ -270,10 +288,10 @@ public class WireDecoder
         return (v, v.ToString());
     }
 
-    private IMmTree DecodeFloat(int first, MmTag? inherited)
+    private IMmTree DecodeFloat(int first, Tag? inherited)
     {
-        MmTag tag = inherited?.Copy() ?? MmTag.Empty();
-        if (tag.Type == ValueType.UNKNOWN)
+        Tag tag = inherited?.Copy() ?? Tag.Empty();
+        if (tag.Type == ValueType.Unknown)
         {
             tag.Type = ValueType.F64;
         }
@@ -324,7 +342,7 @@ public class WireDecoder
         return new MmScalar(val, val.ToString(), tag);
     }
 
-    private IMmTree DecodeString(int first, MmTag? inherited)
+    private IMmTree DecodeString(int first, Tag? inherited)
     {
         var (l1, l2) = StringLen(first);
         if (l1 == 1)
@@ -353,22 +371,22 @@ public class WireDecoder
         string s = System.Text.Encoding.UTF8.GetString(_data, _offset, l2);
         _offset += l2;
 
-        MmTag tag = inherited?.Copy() ?? MmTag.Empty();
-        if (tag.Type == ValueType.UNKNOWN)
+        Tag tag = inherited?.Copy() ?? Tag.Empty();
+        if (tag.Type == ValueType.Unknown)
         {
-            tag.Type = ValueType.STR;
+            tag.Type = ValueType.Str;
         }
 
         // Type-specific string handling
         return tag.Type switch
         {
-            ValueType.EMAIL or ValueType.URL or ValueType.IP or ValueType.ENUMS =>
+            ValueType.Email or ValueType.Url or ValueType.Ip or ValueType.Enums =>
                 new MmScalar(s, s, tag),
             _ => new MmScalar(s, s, tag)
         };
     }
 
-    private IMmTree DecodeBytes(int first, MmTag? inherited)
+    private IMmTree DecodeBytes(int first, Tag? inherited)
     {
         var (l1, l2) = BytesLen(first);
         if (l1 == 1)
@@ -398,23 +416,23 @@ public class WireDecoder
         Array.Copy(_data, _offset, bytes, 0, l2);
         _offset += l2;
 
-        MmTag tag = inherited?.Copy() ?? MmTag.Empty();
-        if (tag.Type == ValueType.UNKNOWN)
+        Tag tag = inherited?.Copy() ?? Tag.Empty();
+        if (tag.Type == ValueType.Unknown)
         {
-            tag.Type = ValueType.BYTES;
+            tag.Type = ValueType.Bytes;
         }
 
         // Type-specific bytes handling
         return tag.Type switch
         {
-            ValueType.UUID => BytesToUuidResult(bytes, tag),
-            ValueType.IMAGE or ValueType.VIDEO =>
+            ValueType.Uuid => BytesToUuidResult(bytes, tag),
+            ValueType.Image or ValueType.Video =>
                 new MmScalar(bytes, Convert.ToBase64String(bytes), tag),
             _ => new MmScalar(bytes, Convert.ToBase64String(bytes), tag)
         };
     }
 
-    private static MmScalar BytesToUuidResult(byte[] bytes, MmTag tag)
+    private static MmScalar BytesToUuidResult(byte[] bytes, Tag tag)
     {
         if (bytes.Length != 16)
         {
@@ -424,7 +442,7 @@ public class WireDecoder
         return new MmScalar(bytes, guid.ToString(), tag);
     }
 
-    private IMmTree DecodeContainer(int first, MmTag? inherited)
+    private IMmTree DecodeContainer(int first, Tag? inherited)
     {
         int containerType = first & WireConstants.CONTAINER_MASK;
         var (l1, l2) = ContainerLen(first);
@@ -453,15 +471,15 @@ public class WireDecoder
             throw new MmDecodeException("Container data overflow");
         }
 
-        MmTag tag = inherited?.Copy() ?? MmTag.Empty();
+        Tag tag = inherited?.Copy() ?? Tag.Empty();
 
         if (containerType == WireConstants.CONTAINER_ARRAY)
         {
-            tag.Type = ValueType.VEC;
+            tag.Type = ValueType.Vec;
             var children = new List<IMmTree>();
             while (_offset < end)
             {
-                MmTag itemTag = MmTag.Empty();
+                Tag itemTag = Tag.Empty();
                 itemTag.InheritFromArrayParent(tag);
                 children.Add(DecodeNext(itemTag));
             }
@@ -469,10 +487,10 @@ public class WireDecoder
         }
         else // CONTAINER_MAP
         {
-            tag.Type = ValueType.MAP;
+            tag.Type = ValueType.Map;
             var entries = new List<KeyValuePair<MmScalar, IMmTree>>();
 
-            var firstElem = DecodeNext(null);
+            var firstElem = DecodeNext(tag);
             MmArray keyArray;
             if (firstElem is MmArray ka)
             {
@@ -487,7 +505,9 @@ public class WireDecoder
             while (_offset < end && keyIdx < keyArray.Children.Count)
             {
                 var key = (MmScalar)keyArray.Children[keyIdx];
-                var value = DecodeNext(null);
+                Tag valueTag = Tag.Empty();
+                valueTag.Inherit(tag);
+                var value = DecodeNext(valueTag);
                 entries.Add(new KeyValuePair<MmScalar, IMmTree>(key, value));
                 keyIdx++;
             }
@@ -497,7 +517,7 @@ public class WireDecoder
         }
     }
 
-    private IMmTree DecodeTagged(int first, MmTag? inherited)
+    private IMmTree DecodeTagged(int first, Tag? inherited)
     {
         var (l1, l2) = TagLen(first);
         if (l1 == 1)
@@ -552,23 +572,66 @@ public class WireDecoder
         Array.Copy(_data, _offset, tagBytes, 0, tagDataLen);
         _offset += tagDataLen;
 
-        MmTag tag = TagFieldParser.Parse(tagBytes);
+        Tag tag = TagFieldParser.Parse(tagBytes);
         if (inherited != null)
         {
+            tag.Inherit(inherited);
         }
 
-        int limitEnd = end;
+        if (tag.IsNull)
+        {
+            _offset = end;
+            return CreateNullValue(tag);
+        }
+
         return DecodeNext(tag);
     }
 
-    private long ReadUintBody(int first)
+    private static IMmTree CreateNullValue(Tag tag)
+    {
+        tag.Nullable = true;
+        switch (tag.Type)
+        {
+            case ValueType.Bool:
+                return new MmScalar(false, "false", tag);
+            case ValueType.I:
+            case ValueType.I8:
+            case ValueType.I16:
+            case ValueType.I32:
+            case ValueType.I64:
+                return new MmScalar(0L, "0", tag);
+            case ValueType.U:
+            case ValueType.U8:
+            case ValueType.U16:
+            case ValueType.U32:
+            case ValueType.U64:
+                return new MmScalar(0UL, "0", tag);
+            case ValueType.F32:
+                return new MmScalar(0.0f, "0.0", tag);
+            case ValueType.F64:
+            case ValueType.Decimal:
+                return new MmScalar(0.0, "0.0", tag);
+            case ValueType.Str:
+            case ValueType.Email:
+                return new MmScalar("", "", tag);
+            case ValueType.Bytes:
+                return new MmScalar(Array.Empty<byte>(), "", tag);
+            case ValueType.Datetime:
+                tag.Type = ValueType.Datetime;
+                return new MmScalar(DateTime.UnixEpoch, "0001-01-01 00:00:00", tag);
+            default:
+                return new MmScalar("", "", tag);
+        }
+    }
+
+    private ulong ReadUintBody(int first)
     {
         int len = first & WireConstants.INT_LEN_MASK;
-        long v = 0;
+        ulong v = 0;
 
         if (len < WireConstants.INT_LEN_1)
         {
-            v = len;
+            v = (ulong)len;
         }
         else if (len == WireConstants.INT_LEN_1)
         {
@@ -584,7 +647,7 @@ public class WireDecoder
             {
                 throw new MmDecodeException("Unexpected end of data");
             }
-            v = (_data[_offset] << 8) | _data[_offset + 1];
+            v = (ulong)((_data[_offset] << 8) | _data[_offset + 1]);
             _offset += 2;
         }
         else if (len == WireConstants.INT_LEN_3)
@@ -593,7 +656,7 @@ public class WireDecoder
             {
                 throw new MmDecodeException("Unexpected end of data");
             }
-            v = (_data[_offset] << 16) | (_data[_offset + 1] << 8) | _data[_offset + 2];
+            v = (ulong)((_data[_offset] << 16) | (_data[_offset + 1] << 8) | _data[_offset + 2]);
             _offset += 3;
         }
         else if (len == WireConstants.INT_LEN_4)
@@ -602,7 +665,7 @@ public class WireDecoder
             {
                 throw new MmDecodeException("Unexpected end of data");
             }
-            v = (_data[_offset] << 24) | (_data[_offset + 1] << 16) | (_data[_offset + 2] << 8) | _data[_offset + 3];
+            v = (ulong)((_data[_offset] << 24) | (_data[_offset + 1] << 16) | (_data[_offset + 2] << 8) | _data[_offset + 3]);
             _offset += 4;
         }
         else if (len == WireConstants.INT_LEN_5)
@@ -611,7 +674,7 @@ public class WireDecoder
             {
                 throw new MmDecodeException("Unexpected end of data");
             }
-            v = ((long)_data[_offset] << 32) | ((long)_data[_offset + 1] << 24) | ((long)_data[_offset + 2] << 16) | ((long)_data[_offset + 3] << 8) | _data[_offset + 4];
+            v = ((ulong)_data[_offset] << 32) | ((ulong)_data[_offset + 1] << 24) | ((ulong)_data[_offset + 2] << 16) | ((ulong)_data[_offset + 3] << 8) | _data[_offset + 4];
             _offset += 5;
         }
         else if (len == WireConstants.INT_LEN_6)
@@ -620,7 +683,7 @@ public class WireDecoder
             {
                 throw new MmDecodeException("Unexpected end of data");
             }
-            v = ((long)_data[_offset] << 40) | ((long)_data[_offset + 1] << 32) | ((long)_data[_offset + 2] << 24) | ((long)_data[_offset + 3] << 16) | ((long)_data[_offset + 4] << 8) | _data[_offset + 5];
+            v = ((ulong)_data[_offset] << 40) | ((ulong)_data[_offset + 1] << 32) | ((ulong)_data[_offset + 2] << 24) | ((ulong)_data[_offset + 3] << 16) | ((ulong)_data[_offset + 4] << 8) | _data[_offset + 5];
             _offset += 6;
         }
         else if (len == WireConstants.INT_LEN_7)
@@ -629,7 +692,7 @@ public class WireDecoder
             {
                 throw new MmDecodeException("Unexpected end of data");
             }
-            v = ((long)_data[_offset] << 48) | ((long)_data[_offset + 1] << 40) | ((long)_data[_offset + 2] << 32) | ((long)_data[_offset + 3] << 24) | ((long)_data[_offset + 4] << 16) | ((long)_data[_offset + 5] << 8) | _data[_offset + 6];
+            v = ((ulong)_data[_offset] << 48) | ((ulong)_data[_offset + 1] << 40) | ((ulong)_data[_offset + 2] << 32) | ((ulong)_data[_offset + 3] << 24) | ((ulong)_data[_offset + 4] << 16) | ((ulong)_data[_offset + 5] << 8) | _data[_offset + 6];
             _offset += 7;
         }
         else if (len == WireConstants.INT_LEN_8)
@@ -638,7 +701,7 @@ public class WireDecoder
             {
                 throw new MmDecodeException("Unexpected end of data");
             }
-            v = ((long)_data[_offset] << 56) | ((long)_data[_offset + 1] << 48) | ((long)_data[_offset + 2] << 40) | ((long)_data[_offset + 3] << 32) | ((long)_data[_offset + 4] << 24) | ((long)_data[_offset + 5] << 16) | ((long)_data[_offset + 6] << 8) | _data[_offset + 7];
+            v = ((ulong)_data[_offset] << 56) | ((ulong)_data[_offset + 1] << 48) | ((ulong)_data[_offset + 2] << 40) | ((ulong)_data[_offset + 3] << 32) | ((ulong)_data[_offset + 4] << 24) | ((ulong)_data[_offset + 5] << 16) | ((ulong)_data[_offset + 6] << 8) | _data[_offset + 7];
             _offset += 8;
         }
 

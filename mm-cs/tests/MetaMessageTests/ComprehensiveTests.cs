@@ -3,7 +3,8 @@ using MetaMessage.Core;
 using MetaMessage.Jsonc;
 using static MetaMessage.Core.MetaMessage;
 using JsoncParser = MetaMessage.Jsonc.Jsonc;
-using MmVT = MetaMessage.Core.ValueType;
+using ValueType = MetaMessage.Ir.ValueType;
+using MetaMessage.Ir;
 
 namespace MetaMessageTests;
 
@@ -86,7 +87,7 @@ public class ComprehensiveTests
         var dec = new WireDecoder(enc.ToByteArray());
         var result = (MmScalar)dec.Decode();
         Assert.Equal(true, result.Data);
-        Assert.Equal(MmVT.BOOL, result.Tag.Type);
+        Assert.Equal(ValueType.Bool, result.Tag.Type);
     }
 
     [Fact]
@@ -95,8 +96,8 @@ public class ComprehensiveTests
         var enc = new WireEncoder();
         enc.EncodeSimple(SimpleValue.NULL_BOOL);
         var inner = new WireEncoder();
-        var tag = MmTag.Empty();
-        tag.Type = MmVT.BOOL;
+        var tag = Tag.Empty();
+        tag.Type = ValueType.Bool;
         tag.IsNull = true;
         inner.EncodeTaggedPayload(enc.ToByteArray(), tag.ToBytes());
         var dec = new WireDecoder(inner.ToByteArray());
@@ -104,7 +105,7 @@ public class ComprehensiveTests
         Assert.Equal(false, result.Data);
         Assert.Equal("false", result.Text);
         Assert.True(result.Tag.IsNull);
-        Assert.Equal(MmVT.BOOL, result.Tag.Type);
+        Assert.Equal(ValueType.Bool, result.Tag.Type);
     }
 
     [Theory]
@@ -249,8 +250,8 @@ public class ComprehensiveTests
     public void TestWireEncodeDecode_TaggedInt()
     {
         var enc = new WireEncoder();
-        var tag = MmTag.Empty();
-        tag.Type = MmVT.I;
+        var tag = Tag.Empty();
+        tag.Type = ValueType.I;
         tag.Name = "count";
         enc.EncodeTaggedPayload(new WireEncoder().ToByteArray(), tag.ToBytes());
 
@@ -273,7 +274,7 @@ public class ComprehensiveTests
     [Fact]
     public void TestEncodeTree_DecodeToTree_Scalar()
     {
-        var scalar = new MmScalar("hello", "hello", new MmTag { Type = MmVT.STR });
+        var scalar = new MmScalar("hello", "hello", new Tag { Type = ValueType.Str });
         byte[] encoded = EncodeTree(scalar);
         var decoded = DecodeToTree(encoded);
         var resultScalar = Assert.IsType<MmScalar>(decoded);
@@ -285,11 +286,11 @@ public class ComprehensiveTests
     {
         var children = new List<IMmTree>
         {
-            new MmScalar(1L, "1", new MmTag { Type = MmVT.I }),
-            new MmScalar(2L, "2", new MmTag { Type = MmVT.I }),
-            new MmScalar(3L, "3", new MmTag { Type = MmVT.I }),
+            new MmScalar(1L, "1", new Tag { Type = ValueType.I }),
+            new MmScalar(2L, "2", new Tag { Type = ValueType.I }),
+            new MmScalar(3L, "3", new Tag { Type = ValueType.I }),
         };
-        var array = new MmArray(children, new MmTag { Type = MmVT.VEC });
+        var array = new MmArray(children, new Tag { Type = ValueType.Vec });
         byte[] encoded = EncodeTree(array);
         var decoded = DecodeToTree(encoded);
         var resultArray = Assert.IsType<MmArray>(decoded);
@@ -301,10 +302,10 @@ public class ComprehensiveTests
     {
         var entries = new List<KeyValuePair<MmScalar, IMmTree>>
         {
-            new(new MmScalar("name", "name", new MmTag { Type = MmVT.STR }),
-                new MmScalar("test", "test", new MmTag { Type = MmVT.STR })),
+            new(new MmScalar("name", "name", new Tag { Type = ValueType.Str }),
+                new MmScalar("test", "test", new Tag { Type = ValueType.Str })),
         };
-        var map = new MmMap(entries, new MmTag { Type = MmVT.MAP });
+        var map = new MmMap(entries, new Tag { Type = ValueType.Map });
         byte[] encoded = EncodeTree(map);
         var decoded = DecodeToTree(encoded);
         var resultMap = Assert.IsType<MmMap>(decoded);
@@ -314,7 +315,7 @@ public class ComprehensiveTests
     [Fact]
     public void TestEncodeTree_DecodeToTree_NullValues()
     {
-        var scalar = new MmScalar(null!, "null", new MmTag { Type = MmVT.I, IsNull = true });
+        var scalar = new MmScalar(null!, "null", new Tag { Type = ValueType.I, IsNull = true });
         byte[] encoded = EncodeTree(scalar);
         var decoded = DecodeToTree(encoded);
         var resultScalar = Assert.IsType<MmScalar>(decoded);
@@ -645,8 +646,8 @@ public class ComprehensiveTests
     [Fact]
     public void TestValidate_RequiredField()
     {
-        var tag = MmTag.Empty();
-        tag.Type = MmVT.STR;
+        var tag = Tag.Empty();
+        tag.Type = ValueType.Str;
         tag.Nullable = false;
 
         var validResult = Validator.Validate("hello", tag);

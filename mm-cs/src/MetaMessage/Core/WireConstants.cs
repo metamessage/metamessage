@@ -50,4 +50,7 @@ public static class WireConstants
     public const int TAG_LEN_MASK = 0b11111;
     public const int TAG_LEN_1 = TAG_LEN_MASK - 1;
     public const int TAG_LEN_2 = TAG_LEN_MASK;
+
+    public const int TAG_PAYLOAD_1 = BYTES_LEN_MASK - 1;
+    public const int TAG_PAYLOAD_2 = BYTES_LEN_MASK;
 }

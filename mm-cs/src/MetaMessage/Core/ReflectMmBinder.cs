@@ -1,3 +1,5 @@
+using MetaMessage.Ir;
+
 namespace MetaMessage.Core;
 
 public static class ReflectMmBinder
