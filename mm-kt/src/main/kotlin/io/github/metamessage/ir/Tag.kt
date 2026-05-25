@@ -17,7 +17,7 @@ class Tag(
         var example: Boolean = false,
         var desc: String = "",
         var type: ValueType = ValueType.UNKNOWN,
-        var raw: Boolean = false,
+        var deprecated: Boolean = false,
         var nullable: Boolean = false,
         var allowEmpty: Boolean = false,
         var unique: Boolean = false,
@@ -32,7 +32,6 @@ class Tag(
         var mime: String = "",
         var childDesc: String = "",
         var childType: ValueType = ValueType.UNKNOWN,
-        var childRaw: Boolean = false,
         var childNullable: Boolean = false,
         var childAllowEmpty: Boolean = false,
         var childUnique: Boolean = false,
@@ -45,6 +44,7 @@ class Tag(
         var childLocation: Int = 0,
         var childVersion: Int = DEFAULT_VERSION,
         var childMime: String = "",
+        var more: Int = 0,
         var isInherit: Boolean = false
 ) {
     fun copy(): Tag =
@@ -54,7 +54,7 @@ class Tag(
                     example,
                     desc,
                     type,
-                    raw,
+                    deprecated,
                     nullable,
                     allowEmpty,
                     unique,
@@ -69,7 +69,6 @@ class Tag(
                     mime,
                     childDesc,
                     childType,
-                    childRaw,
                     childNullable,
                     childAllowEmpty,
                     childUnique,
@@ -82,6 +81,7 @@ class Tag(
                     childLocation,
                     childVersion,
                     childMime,
+                    more,
                     isInherit
             )
 
@@ -96,10 +96,6 @@ class Tag(
 
         if (parent.childType != ValueType.UNKNOWN) {
             type = parent.childType
-        }
-
-        if (parent.childRaw) {
-            raw = parent.childRaw
         }
 
         if (parent.childNullable) {
@@ -193,8 +189,8 @@ class Tag(
             parts.add("${T_DESC}=${quote(desc)}")
         }
 
-        if (raw && !isInherit) {
-            parts.add(T_RAW)
+        if (deprecated && !isInherit) {
+            parts.add(T_DEPRECATED)
         }
 
         if (allowEmpty && !isInherit) {
@@ -259,10 +255,6 @@ class Tag(
                     parts.add("${T_CHILD_TYPE}=${childType.toString()}")
                 }
             }
-        }
-
-        if (childRaw) {
-            parts.add(T_CHILD_RAW)
         }
 
         if (childNullable) {
@@ -334,7 +326,7 @@ class Tag(
                 w.writeByte(type.code())
             }
         }
-        if (raw && !isInherit) w.writeByte((TagKey.K_RAW or 1).toByte())
+        if (deprecated && !isInherit) w.writeByte((TagKey.K_DEPRECATED or 1).toByte())
         if (allowEmpty && !isInherit) w.writeByte((TagKey.K_ALLOW_EMPTY or 1).toByte())
         if (unique && !isInherit) w.writeByte((TagKey.K_UNIQUE or 1).toByte())
         if (default_val.isNotEmpty() && !isInherit) {
@@ -368,7 +360,6 @@ class Tag(
                 w.writeByte(childType.code())
             }
         }
-        if (childRaw) w.writeByte((TagKey.K_CHILD_RAW or 1).toByte())
         if (childNullable) w.writeByte((TagKey.K_CHILD_NULLABLE or 1).toByte())
         if (childAllowEmpty) w.writeByte((TagKey.K_CHILD_ALLOW_EMPTY or 1).toByte())
         if (childUnique) w.writeByte((TagKey.K_CHILD_UNIQUE or 1).toByte())
@@ -397,6 +388,7 @@ class Tag(
                 w.writeBytes(childMime.toByteArray(charset("UTF-8")))
             }
         }
+        if (more != 0) encodeU64(w, TagKey.K_MORE, more.toLong())
         return w.toByteArray()
     }
 
@@ -535,14 +527,13 @@ class Tag(
         if (other !is Tag) return false
         return isNull == other.isNull &&
                 example == other.example &&
-                raw == other.raw &&
+                deprecated == other.deprecated &&
                 nullable == other.nullable &&
                 allowEmpty == other.allowEmpty &&
                 unique == other.unique &&
                 size == other.size &&
                 location == other.location &&
                 version == other.version &&
-                childRaw == other.childRaw &&
                 childNullable == other.childNullable &&
                 childAllowEmpty == other.childAllowEmpty &&
                 childUnique == other.childUnique &&
@@ -564,7 +555,8 @@ class Tag(
                 childMax == other.childMax &&
                 childEnums == other.childEnums &&
                 childPattern == other.childPattern &&
-                childMime == other.childMime
+                childMime == other.childMime &&
+                more == other.more
     }
 
     override fun hashCode(): Int {
@@ -574,7 +566,7 @@ class Tag(
                 example,
                 desc,
                 type,
-                raw,
+                deprecated,
                 nullable,
                 allowEmpty,
                 unique,
@@ -589,7 +581,6 @@ class Tag(
                 mime,
                 childDesc,
                 childType,
-                childRaw,
                 childNullable,
                 childAllowEmpty,
                 childUnique,
@@ -602,6 +593,7 @@ class Tag(
                 childLocation,
                 childVersion,
                 childMime,
+                more,
                 isInherit
         )
     }
@@ -644,7 +636,7 @@ class Tag(
         const val T_NAME = "name"
         const val T_DESC = "desc"
         const val T_TYPE = "type"
-        const val T_RAW = "raw"
+        const val T_DEPRECATED = "deprecated"
         const val T_NULLABLE = "nullable"
         const val T_ALLOW_EMPTY = "allow_empty"
         const val T_UNIQUE = "unique"
@@ -692,7 +684,7 @@ class Tag(
             t.example = ann.example
             t.desc = ann.desc
             t.type = ann.type
-            t.raw = ann.raw
+            t.deprecated = ann.deprecated
             t.nullable = ann.nullable
             t.allowEmpty = ann.allowEmpty
             t.unique = ann.unique
@@ -710,7 +702,6 @@ class Tag(
             t.mime = ann.mime
             t.childDesc = ann.childDesc
             t.childType = ann.childType
-            t.childRaw = ann.childRaw
             t.childNullable = ann.childNullable
             t.childAllowEmpty = ann.childAllowEmpty
             t.childUnique = ann.childUnique
@@ -736,7 +727,7 @@ class Tag(
             if (src.example) dst.example = src.example
             if (src.desc.isNotEmpty()) dst.desc = src.desc
             if (src.type != ValueType.UNKNOWN) dst.type = src.type
-            if (src.raw) dst.raw = true
+            if (src.deprecated) dst.deprecated = true
             if (src.nullable) dst.nullable = true
             if (src.allowEmpty) dst.allowEmpty = true
             if (src.unique) dst.unique = true
@@ -752,7 +743,6 @@ class Tag(
 
             if (src.childDesc.isNotEmpty()) dst.childDesc = src.childDesc
             if (src.childType != ValueType.UNKNOWN) dst.childType = src.childType
-            if (src.childRaw) dst.childRaw = true
             if (src.childNullable) dst.childNullable = true
             if (src.childAllowEmpty) dst.childAllowEmpty = true
             if (src.childUnique) dst.childUnique = true
@@ -806,7 +796,8 @@ class Tag(
                     T_EXAMPLE -> r.example = true
                     T_DESC -> r.desc = value
                     T_TYPE -> r.type = ValueType.parseWireName(value)
-                    T_RAW -> r.raw = true
+                    T_DEPRECATED -> r.deprecated = true
+                    "raw" -> r.deprecated = true
                     T_NULLABLE -> r.nullable = true
                     T_ALLOW_EMPTY -> r.allowEmpty = true
                     T_UNIQUE -> r.unique = true
@@ -839,7 +830,7 @@ class Tag(
                     T_MIME -> r.mime = value
                     T_CHILD_DESC -> r.childDesc = value
                     T_CHILD_TYPE -> r.childType = ValueType.parseWireName(value)
-                    T_CHILD_RAW -> r.childRaw = true
+                    T_CHILD_RAW -> {}
                     T_CHILD_NULLABLE -> r.childNullable = true
                     T_CHILD_ALLOW_EMPTY -> r.childAllowEmpty = true
                     T_CHILD_UNIQUE -> r.childUnique = true
@@ -2055,9 +2046,9 @@ class Tag(
     object TagKey {
         const val K_IS_NULL = 0 shl 3
         const val K_EXAMPLE = 1 shl 3
-        const val K_DESC = 2 shl 3
-        const val K_TYPE = 3 shl 3
-        const val K_RAW = 4 shl 3
+        const val K_DEPRECATED = 2 shl 3
+        const val K_DESC = 3 shl 3
+        const val K_TYPE = 4 shl 3
         const val K_NULLABLE = 5 shl 3
         const val K_ALLOW_EMPTY = 6 shl 3
         const val K_UNIQUE = 7 shl 3
@@ -2072,18 +2063,18 @@ class Tag(
         const val K_MIME = 16 shl 3
         const val K_CHILD_DESC = 17 shl 3
         const val K_CHILD_TYPE = 18 shl 3
-        const val K_CHILD_RAW = 19 shl 3
-        const val K_CHILD_NULLABLE = 20 shl 3
-        const val K_CHILD_ALLOW_EMPTY = 21 shl 3
-        const val K_CHILD_UNIQUE = 22 shl 3
-        const val K_CHILD_DEFAULT_VAL = 23 shl 3
-        const val K_CHILD_MIN = 24 shl 3
-        const val K_CHILD_MAX = 25 shl 3
-        const val K_CHILD_SIZE = 26 shl 3
-        const val K_CHILD_ENUMS = 27 shl 3
-        const val K_CHILD_PATTERN = 28 shl 3
-        const val K_CHILD_LOCATION = 29 shl 3
-        const val K_CHILD_VERSION = 30 shl 3
-        const val K_CHILD_MIME = 31 shl 3
+        const val K_CHILD_NULLABLE = 19 shl 3
+        const val K_CHILD_ALLOW_EMPTY = 20 shl 3
+        const val K_CHILD_UNIQUE = 21 shl 3
+        const val K_CHILD_DEFAULT_VAL = 22 shl 3
+        const val K_CHILD_MIN = 23 shl 3
+        const val K_CHILD_MAX = 24 shl 3
+        const val K_CHILD_SIZE = 25 shl 3
+        const val K_CHILD_ENUMS = 26 shl 3
+        const val K_CHILD_PATTERN = 27 shl 3
+        const val K_CHILD_LOCATION = 28 shl 3
+        const val K_CHILD_VERSION = 29 shl 3
+        const val K_CHILD_MIME = 30 shl 3
+        const val K_MORE = 31 shl 3
     }
 }

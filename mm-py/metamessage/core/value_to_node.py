@@ -157,8 +157,8 @@ class mm:
                 tag.is_null = bool(v)
             elif k == 'nullable':
                 tag.nullable = bool(v)
-            elif k == 'raw':
-                tag.raw = bool(v)
+            elif k == 'deprecated':
+                tag.deprecated = bool(v)
             elif k == 'example':
                 tag.example = bool(v)
             elif k == 'allow_empty':
@@ -190,8 +190,6 @@ class mm:
                 elif isinstance(v, str):
                     from ..ir.tag import parse_value_type
                     tag.child_type = parse_value_type(v)
-            elif k == 'child_raw':
-                tag.child_raw = bool(v)
             elif k == 'child_nullable':
                 tag.child_nullable = bool(v)
             elif k == 'child_allow_empty':
@@ -639,8 +637,7 @@ def _any_to_node_dict(value: dict, tag: Tag, depth: int, path: str) -> Obj:
             tag_item.desc = tag.child_desc
         if tag.child_type != ValueType(0):
             tag_item.type = tag.child_type
-        if tag.child_raw:
-            tag_item.raw = tag.child_raw
+        
         if tag.child_nullable:
             tag_item.nullable = tag.child_nullable
         if tag.child_allow_empty:
@@ -672,7 +669,6 @@ def _any_to_node_dict(value: dict, tag: Tag, depth: int, path: str) -> Obj:
         if not set_tag:
             tag.child_desc = tag_item.desc
             tag.child_type = tag_item.type
-            tag.child_raw = tag_item.raw
             tag.child_nullable = tag_item.nullable
             tag.child_allow_empty = tag_item.allow_empty
             tag.child_unique = tag_item.unique
@@ -724,7 +720,6 @@ def _any_to_node_list(value: list, tag: Tag, depth: int, path: str) -> Arr:
         if not set_tag:
             tag.child_desc = tag_item.desc
             tag.child_type = tag_item.type
-            tag.child_raw = tag_item.raw
             tag.child_nullable = tag_item.nullable
             tag.child_allow_empty = tag_item.allow_empty
             tag.child_unique = tag_item.unique

@@ -233,8 +233,8 @@ class WireDecoder
                 $tag->type = ValueType::fromCode($b2);
                 return 2;
 
-            case Tag::K_RAW:
-                $tag->raw = ($remain & 0x01) === 1;
+            case Tag::K_DEPRECATED:
+                $tag->deprecated = ($remain & 0x01) === 1;
                 return 1;
 
             case Tag::K_NULLABLE:
@@ -442,10 +442,6 @@ class WireDecoder
                 $b2 = $this->readByte();
                 $tag->childType = ValueType::fromCode($b2);
                 return 2;
-
-            case Tag::K_CHILD_RAW:
-                $tag->childRaw = ($remain & 0x01) === 1;
-                return 1;
 
             case Tag::K_CHILD_NULLABLE:
                 $tag->childNullable = ($remain & 0x01) === 1;

@@ -176,7 +176,7 @@ public static class ReflectMmEncoder
         if (!string.IsNullOrEmpty(src.Desc))
             dst.Desc = src.Desc;
         dst.Nullable |= src.Nullable;
-        dst.Raw |= src.Raw;
+        dst.Deprecated |= src.Deprecated;
         dst.AllowEmpty |= src.AllowEmpty;
         dst.Unique |= src.Unique;
         if (!string.IsNullOrEmpty(src.DefaultVal))

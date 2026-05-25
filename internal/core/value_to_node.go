@@ -7,6 +7,7 @@ import (
 	"net"
 	"net/url"
 	"reflect"
+	"strconv"
 	"time"
 
 	"github.com/metamessage/metamessage/internal/ir"
@@ -25,6 +26,101 @@ func NilToNode(valueType ir.ValueType) (*ir.Value, error) {
 	}, nil
 }
 
+func resolveDefaultValue(tag *ir.Tag) (data any, text string, ok bool) {
+	if tag.DefaultVal == "" {
+		return nil, "", false
+	}
+	text = tag.DefaultVal
+	switch tag.Type {
+	case ir.ValueTypeBytes, ir.ValueTypeImage:
+		data = []byte(tag.DefaultVal)
+	case ir.ValueTypeBool:
+		if tag.DefaultVal == "true" || tag.DefaultVal == "1" {
+			data = true
+			text = ir.True
+		} else {
+			data = false
+			text = ir.False
+		}
+	case ir.ValueTypeI:
+		if v, err := strconv.Atoi(tag.DefaultVal); err == nil {
+			data = v
+		}
+	case ir.ValueTypeI8:
+		if v, err := strconv.ParseInt(tag.DefaultVal, 10, 8); err == nil {
+			data = int8(v)
+		}
+	case ir.ValueTypeI16:
+		if v, err := strconv.ParseInt(tag.DefaultVal, 10, 16); err == nil {
+			data = int16(v)
+		}
+	case ir.ValueTypeI32:
+		if v, err := strconv.ParseInt(tag.DefaultVal, 10, 32); err == nil {
+			data = int32(v)
+		}
+	case ir.ValueTypeI64:
+		if v, err := strconv.ParseInt(tag.DefaultVal, 10, 64); err == nil {
+			data = v
+		}
+	case ir.ValueTypeU:
+		if v, err := strconv.ParseUint(tag.DefaultVal, 10, 64); err == nil {
+			data = uint(v)
+		}
+	case ir.ValueTypeU8:
+		if v, err := strconv.ParseUint(tag.DefaultVal, 10, 8); err == nil {
+			data = uint8(v)
+		}
+	case ir.ValueTypeU16:
+		if v, err := strconv.ParseUint(tag.DefaultVal, 10, 16); err == nil {
+			data = uint16(v)
+		}
+	case ir.ValueTypeU32:
+		if v, err := strconv.ParseUint(tag.DefaultVal, 10, 32); err == nil {
+			data = uint32(v)
+		}
+	case ir.ValueTypeU64:
+		if v, err := strconv.ParseUint(tag.DefaultVal, 10, 64); err == nil {
+			data = v
+		}
+	case ir.ValueTypeF32:
+		if v, err := strconv.ParseFloat(tag.DefaultVal, 32); err == nil {
+			data = float32(v)
+		}
+	case ir.ValueTypeF64:
+		if v, err := strconv.ParseFloat(tag.DefaultVal, 64); err == nil {
+			data = v
+		}
+	case ir.ValueTypeStr, ir.ValueTypeDecimal, ir.ValueTypeEmail, ir.ValueTypeUrl, ir.ValueTypeIp:
+		data = tag.DefaultVal
+	case ir.ValueTypeEnum:
+		data = -1
+	case ir.ValueTypeUuid:
+		data = [16]byte{}
+	case ir.ValueTypeBigint:
+		if v, ok := new(big.Int).SetString(tag.DefaultVal, 10); ok {
+			data = *v
+		}
+	case ir.ValueTypeDatetime:
+		if t, err := time.Parse(time.DateTime, tag.DefaultVal); err == nil {
+			data = t
+		}
+	case ir.ValueTypeDate:
+		if t, err := time.Parse(time.DateOnly, tag.DefaultVal); err == nil {
+			data = t
+		}
+	case ir.ValueTypeTime:
+		if t, err := time.Parse(time.TimeOnly, tag.DefaultVal); err == nil {
+			data = t
+		}
+	default:
+		data = tag.DefaultVal
+	}
+	if data == nil {
+		data = tag.DefaultVal
+	}
+	return data, text, true
+}
+
 func ValueToNode(v any, tagStr string) (node ir.Node, err error) {
 	var tag *ir.Tag
 	if tagStr != "" {
@@ -33,10 +129,16 @@ func ValueToNode(v any, tagStr string) (node ir.Node, err error) {
 		}
 	}
 
-	return valueToNode(v, tag, 0, "")
+	if tag == nil {
+		tag = ir.NewTag()
+	}
+
+	example := tag.Example
+
+	return valueToNode(v, tag, 0, "", example)
 }
 
-func valueToNode(v any, tag *ir.Tag, depth int, path string) (node ir.Node, err error) {
+func valueToNode(v any, tag *ir.Tag, depth int, path string, example bool) (node ir.Node, err error) {
 	if tag == nil {
 		tag = ir.NewTag()
 	}
@@ -61,13 +163,13 @@ func valueToNode(v any, tag *ir.Tag, depth int, path string) (node ir.Node, err 
 
 		switch tag.Type {
 		case ir.ValueTypeBytes:
-			data, text, err = tag.ValidateBytes(val)
+			data, text, err = tag.ValidateBytes(val, example)
 
 		case ir.ValueTypeImage:
-			data, text, err = tag.ValidateImage(val)
+			data, text, err = tag.ValidateImage(val, example)
 
 		case ir.ValueTypeVec:
-			return anyToJSONC(v, tag, depth, path)
+			return anyToJSONC(v, tag, depth, path, example)
 		default:
 			return nil, fmt.Errorf("%s unsupported type: %T", tag.Type.String(), val)
 		}
@@ -82,31 +184,41 @@ func valueToNode(v any, tag *ir.Tag, depth int, path string) (node ir.Node, err 
 		case ir.ValueTypeBytes:
 			if val == nil {
 				if !tag.Nullable {
-					err = fmt.Errorf("value is nil and not nullable")
+					err = fmt.Errorf("%s: value is nil and not nullable", path)
 					return
 				}
 				tag.IsNull = true
-				data = []byte{}
-				text = ""
+				if d, t, ok := resolveDefaultValue(tag); ok {
+					data = d
+					text = t
+				} else {
+					data = []byte{}
+					text = ""
+				}
 			} else {
-				data, text, err = tag.ValidateBytes(*val)
+				data, text, err = tag.ValidateBytes(*val, example)
 			}
 
 		case ir.ValueTypeImage:
 			if val == nil {
 				if !tag.Nullable {
-					err = fmt.Errorf("value is nil and not nullable")
+					err = fmt.Errorf("%s: value is nil and not nullable", path)
 					return
 				}
 				tag.IsNull = true
-				data = []byte{}
-				text = ""
+				if d, t, ok := resolveDefaultValue(tag); ok {
+					data = d
+					text = t
+				} else {
+					data = []byte{}
+					text = ""
+				}
 			} else {
-				data, text, err = tag.ValidateImage(*val)
+				data, text, err = tag.ValidateImage(*val, example)
 			}
 
 		case ir.ValueTypeVec:
-			return anyToJSONC(v, tag, depth, path)
+			return anyToJSONC(v, tag, depth, path, example)
 		default:
 			return nil, fmt.Errorf("%s unsupported type: %T", tag.Type.String(), val)
 		}
@@ -118,7 +230,7 @@ func valueToNode(v any, tag *ir.Tag, depth int, path string) (node ir.Node, err 
 
 		switch tag.Type {
 		case ir.ValueTypeBool:
-			data, text, err = tag.ValidateBool(val)
+			data, text, err = tag.ValidateBool(val, example)
 
 		default:
 			return nil, fmt.Errorf("%s unsupported type: %T", tag.Type.String(), val)
@@ -134,14 +246,19 @@ func valueToNode(v any, tag *ir.Tag, depth int, path string) (node ir.Node, err 
 		case ir.ValueTypeBool:
 			if val == nil {
 				if !tag.Nullable {
-					err = fmt.Errorf("value is nil and not nullable")
+					err = fmt.Errorf("%s: value is nil and not nullable", path)
 					return
 				}
 				tag.IsNull = true
-				data = false
-				text = ir.False
+				if d, t, ok := resolveDefaultValue(tag); ok {
+					data = d
+					text = t
+				} else {
+					data = false
+					text = ir.False
+				}
 			} else {
-				data, text, err = tag.ValidateBool(*val)
+				data, text, err = tag.ValidateBool(*val, example)
 			}
 
 		default:
@@ -155,7 +272,7 @@ func valueToNode(v any, tag *ir.Tag, depth int, path string) (node ir.Node, err 
 
 		switch tag.Type {
 		case ir.ValueTypeI:
-			data, text, err = tag.ValidateI(val)
+			data, text, err = tag.ValidateI(val, example)
 		default:
 			return nil, fmt.Errorf("%s unsupported type: %T", tag.Type.String(), val)
 		}
@@ -170,14 +287,19 @@ func valueToNode(v any, tag *ir.Tag, depth int, path string) (node ir.Node, err 
 		case ir.ValueTypeI:
 			if val == nil {
 				if !tag.Nullable {
-					err = fmt.Errorf("value is nil and not nullable")
+					err = fmt.Errorf("%s: value is nil and not nullable", path)
 					return
 				}
 				tag.IsNull = true
-				data = 0
-				text = "0"
+				if d, t, ok := resolveDefaultValue(tag); ok {
+					data = d
+					text = t
+				} else {
+					data = 0
+					text = "0"
+				}
 			} else {
-				data, text, err = tag.ValidateI(*val)
+				data, text, err = tag.ValidateI(*val, example)
 			}
 		default:
 			return nil, fmt.Errorf("%s unsupported type: %T", tag.Type.String(), val)
@@ -190,7 +312,7 @@ func valueToNode(v any, tag *ir.Tag, depth int, path string) (node ir.Node, err 
 
 		switch tag.Type {
 		case ir.ValueTypeI8:
-			data, text, err = tag.ValidateI8(val)
+			data, text, err = tag.ValidateI8(val, example)
 		default:
 			return nil, fmt.Errorf("%s unsupported type: %T", tag.Type.String(), val)
 		}
@@ -205,14 +327,19 @@ func valueToNode(v any, tag *ir.Tag, depth int, path string) (node ir.Node, err 
 		case ir.ValueTypeI8:
 			if val == nil {
 				if !tag.Nullable {
-					err = fmt.Errorf("value is nil and not nullable")
+					err = fmt.Errorf("%s: value is nil and not nullable", path)
 					return
 				}
 				tag.IsNull = true
-				data = int8(0)
-				text = "0"
+				if d, t, ok := resolveDefaultValue(tag); ok {
+					data = d
+					text = t
+				} else {
+					data = int8(0)
+					text = "0"
+				}
 			} else {
-				data, text, err = tag.ValidateI8(*val)
+				data, text, err = tag.ValidateI8(*val, example)
 			}
 		default:
 			return nil, fmt.Errorf("%s unsupported type: %T", tag.Type.String(), val)
@@ -225,7 +352,7 @@ func valueToNode(v any, tag *ir.Tag, depth int, path string) (node ir.Node, err 
 
 		switch tag.Type {
 		case ir.ValueTypeI16:
-			data, text, err = tag.ValidateI16(val)
+			data, text, err = tag.ValidateI16(val, example)
 		default:
 			return nil, fmt.Errorf("%s unsupported type: %T", tag.Type.String(), val)
 		}
@@ -240,14 +367,19 @@ func valueToNode(v any, tag *ir.Tag, depth int, path string) (node ir.Node, err 
 		case ir.ValueTypeI16:
 			if val == nil {
 				if !tag.Nullable {
-					err = fmt.Errorf("value is nil and not nullable")
+					err = fmt.Errorf("%s: value is nil and not nullable", path)
 					return
 				}
 				tag.IsNull = true
-				data = int16(0)
-				text = "0"
+				if d, t, ok := resolveDefaultValue(tag); ok {
+					data = d
+					text = t
+				} else {
+					data = int16(0)
+					text = "0"
+				}
 			} else {
-				data, text, err = tag.ValidateI16(*val)
+				data, text, err = tag.ValidateI16(*val, example)
 			}
 
 		default:
@@ -261,7 +393,7 @@ func valueToNode(v any, tag *ir.Tag, depth int, path string) (node ir.Node, err 
 
 		switch tag.Type {
 		case ir.ValueTypeI32:
-			data, text, err = tag.ValidateI32(val)
+			data, text, err = tag.ValidateI32(val, example)
 		default:
 			return nil, fmt.Errorf("%s unsupported type: %T", tag.Type.String(), val)
 		}
@@ -276,14 +408,19 @@ func valueToNode(v any, tag *ir.Tag, depth int, path string) (node ir.Node, err 
 		case ir.ValueTypeI32:
 			if val == nil {
 				if !tag.Nullable {
-					err = fmt.Errorf("value is nil and not nullable")
+					err = fmt.Errorf("%s: value is nil and not nullable", path)
 					return
 				}
 				tag.IsNull = true
-				data = int32(0)
-				text = "0"
+				if d, t, ok := resolveDefaultValue(tag); ok {
+					data = d
+					text = t
+				} else {
+					data = int32(0)
+					text = "0"
+				}
 			} else {
-				data, text, err = tag.ValidateI32(*val)
+				data, text, err = tag.ValidateI32(*val, example)
 			}
 		default:
 			return nil, fmt.Errorf("%s unsupported type: %T", tag.Type.String(), val)
@@ -296,7 +433,7 @@ func valueToNode(v any, tag *ir.Tag, depth int, path string) (node ir.Node, err 
 
 		switch tag.Type {
 		case ir.ValueTypeI64:
-			data, text, err = tag.ValidateI64(val)
+			data, text, err = tag.ValidateI64(val, example)
 		default:
 			return nil, fmt.Errorf("%s unsupported type: %T", tag.Type.String(), val)
 		}
@@ -311,14 +448,19 @@ func valueToNode(v any, tag *ir.Tag, depth int, path string) (node ir.Node, err 
 		case ir.ValueTypeI64:
 			if val == nil {
 				if !tag.Nullable {
-					err = fmt.Errorf("value is nil and not nullable")
+					err = fmt.Errorf("%s: value is nil and not nullable", path)
 					return
 				}
 				tag.IsNull = true
-				data = int64(0)
-				text = "0"
+				if d, t, ok := resolveDefaultValue(tag); ok {
+					data = d
+					text = t
+				} else {
+					data = int64(0)
+					text = "0"
+				}
 			} else {
-				data, text, err = tag.ValidateI64(*val)
+				data, text, err = tag.ValidateI64(*val, example)
 			}
 
 		default:
@@ -332,7 +474,7 @@ func valueToNode(v any, tag *ir.Tag, depth int, path string) (node ir.Node, err 
 
 		switch tag.Type {
 		case ir.ValueTypeU:
-			data, text, err = tag.ValidateU(val)
+			data, text, err = tag.ValidateU(val, example)
 		default:
 			return nil, fmt.Errorf("%s unsupported type: %T", tag.Type.String(), val)
 		}
@@ -347,14 +489,19 @@ func valueToNode(v any, tag *ir.Tag, depth int, path string) (node ir.Node, err 
 		case ir.ValueTypeU:
 			if val == nil {
 				if !tag.Nullable {
-					err = fmt.Errorf("value is nil and not nullable")
+					err = fmt.Errorf("%s: value is nil and not nullable", path)
 					return
 				}
 				tag.IsNull = true
-				data = uint(0)
-				text = "0"
+				if d, t, ok := resolveDefaultValue(tag); ok {
+					data = d
+					text = t
+				} else {
+					data = uint(0)
+					text = "0"
+				}
 			} else {
-				data, text, err = tag.ValidateU(*val)
+				data, text, err = tag.ValidateU(*val, example)
 			}
 		default:
 			return nil, fmt.Errorf("%s unsupported type: %T", tag.Type.String(), val)
@@ -367,7 +514,7 @@ func valueToNode(v any, tag *ir.Tag, depth int, path string) (node ir.Node, err 
 
 		switch tag.Type {
 		case ir.ValueTypeU8:
-			data, text, err = tag.ValidateU8(val)
+			data, text, err = tag.ValidateU8(val, example)
 		default:
 			return nil, fmt.Errorf("%s unsupported type: %T", tag.Type.String(), val)
 		}
@@ -382,14 +529,19 @@ func valueToNode(v any, tag *ir.Tag, depth int, path string) (node ir.Node, err 
 		case ir.ValueTypeU8:
 			if val == nil {
 				if !tag.Nullable {
-					err = fmt.Errorf("value is nil and not nullable")
+					err = fmt.Errorf("%s: value is nil and not nullable", path)
 					return
 				}
 				tag.IsNull = true
-				data = uint8(0)
-				text = "0"
+				if d, t, ok := resolveDefaultValue(tag); ok {
+					data = d
+					text = t
+				} else {
+					data = uint8(0)
+					text = "0"
+				}
 			} else {
-				data, text, err = tag.ValidateU8(*val)
+				data, text, err = tag.ValidateU8(*val, example)
 			}
 
 		default:
@@ -403,7 +555,7 @@ func valueToNode(v any, tag *ir.Tag, depth int, path string) (node ir.Node, err 
 
 		switch tag.Type {
 		case ir.ValueTypeU16:
-			data, text, err = tag.ValidateU16(val)
+			data, text, err = tag.ValidateU16(val, example)
 		default:
 			return nil, fmt.Errorf("%s unsupported type: %T", tag.Type.String(), val)
 		}
@@ -418,14 +570,19 @@ func valueToNode(v any, tag *ir.Tag, depth int, path string) (node ir.Node, err 
 		case ir.ValueTypeU16:
 			if val == nil {
 				if !tag.Nullable {
-					err = fmt.Errorf("value is nil and not nullable")
+					err = fmt.Errorf("%s: value is nil and not nullable", path)
 					return
 				}
 				tag.IsNull = true
-				data = uint16(0)
-				text = "0"
+				if d, t, ok := resolveDefaultValue(tag); ok {
+					data = d
+					text = t
+				} else {
+					data = uint16(0)
+					text = "0"
+				}
 			} else {
-				data, text, err = tag.ValidateU16(*val)
+				data, text, err = tag.ValidateU16(*val, example)
 			}
 
 		default:
@@ -438,7 +595,7 @@ func valueToNode(v any, tag *ir.Tag, depth int, path string) (node ir.Node, err 
 		}
 		switch tag.Type {
 		case ir.ValueTypeU32:
-			data, text, err = tag.ValidateU32(val)
+			data, text, err = tag.ValidateU32(val, example)
 		default:
 			return nil, fmt.Errorf("%s unsupported type: %T", tag.Type.String(), val)
 		}
@@ -453,14 +610,19 @@ func valueToNode(v any, tag *ir.Tag, depth int, path string) (node ir.Node, err 
 		case ir.ValueTypeU32:
 			if val == nil {
 				if !tag.Nullable {
-					err = fmt.Errorf("value is nil and not nullable")
+					err = fmt.Errorf("%s: value is nil and not nullable", path)
 					return
 				}
 				tag.IsNull = true
-				data = uint32(0)
-				text = "0"
+				if d, t, ok := resolveDefaultValue(tag); ok {
+					data = d
+					text = t
+				} else {
+					data = uint32(0)
+					text = "0"
+				}
 			} else {
-				data, text, err = tag.ValidateU32(*val)
+				data, text, err = tag.ValidateU32(*val, example)
 			}
 
 		default:
@@ -474,7 +636,7 @@ func valueToNode(v any, tag *ir.Tag, depth int, path string) (node ir.Node, err 
 
 		switch tag.Type {
 		case ir.ValueTypeU64:
-			data, text, err = tag.ValidateU64(val)
+			data, text, err = tag.ValidateU64(val, example)
 		default:
 			return nil, fmt.Errorf("%s unsupported type: %T", tag.Type.String(), val)
 		}
@@ -489,14 +651,19 @@ func valueToNode(v any, tag *ir.Tag, depth int, path string) (node ir.Node, err 
 		case ir.ValueTypeU64:
 			if val == nil {
 				if !tag.Nullable {
-					err = fmt.Errorf("value is nil and not nullable")
+					err = fmt.Errorf("%s: value is nil and not nullable", path)
 					return
 				}
 				tag.IsNull = true
-				data = uint64(0)
-				text = "0"
+				if d, t, ok := resolveDefaultValue(tag); ok {
+					data = d
+					text = t
+				} else {
+					data = uint64(0)
+					text = "0"
+				}
 			} else {
-				data, text, err = tag.ValidateU64(*val)
+				data, text, err = tag.ValidateU64(*val, example)
 			}
 
 		default:
@@ -517,7 +684,7 @@ func valueToNode(v any, tag *ir.Tag, depth int, path string) (node ir.Node, err 
 			} else if math.IsNaN(float64(val)) {
 				return nil, fmt.Errorf("%s unsupported value: NaN", tag.Type.String())
 			} else {
-				data, text, err = tag.ValidateF32(val)
+				data, text, err = tag.ValidateF32(val, example)
 			}
 		default:
 			return nil, fmt.Errorf("%s unsupported type: %T", tag.Type.String(), val)
@@ -533,12 +700,17 @@ func valueToNode(v any, tag *ir.Tag, depth int, path string) (node ir.Node, err 
 		case ir.ValueTypeF32:
 			if val == nil {
 				if !tag.Nullable {
-					err = fmt.Errorf("value is nil and not nullable")
+					err = fmt.Errorf("%s: value is nil and not nullable", path)
 					return
 				}
 				tag.IsNull = true
-				data = float32(0)
-				text = "0.0"
+				if d, t, ok := resolveDefaultValue(tag); ok {
+					data = d
+					text = t
+				} else {
+					data = float32(0)
+					text = "0.0"
+				}
 			} else if math.IsInf(float64(*val), +1) {
 				return nil, fmt.Errorf("%s unsupported value: +Inf", tag.Type.String())
 			} else if math.IsInf(float64(*val), -1) {
@@ -546,7 +718,7 @@ func valueToNode(v any, tag *ir.Tag, depth int, path string) (node ir.Node, err 
 			} else if math.IsNaN(float64(*val)) {
 				return nil, fmt.Errorf("%s unsupported value: NaN", tag.Type.String())
 			} else {
-				data, text, err = tag.ValidateF32(*val)
+				data, text, err = tag.ValidateF32(*val, example)
 			}
 		default:
 			return nil, fmt.Errorf("%s unsupported type: %T", tag.Type.String(), val)
@@ -566,7 +738,7 @@ func valueToNode(v any, tag *ir.Tag, depth int, path string) (node ir.Node, err 
 			} else if math.IsNaN(val) {
 				return nil, fmt.Errorf("%s unsupported value: NaN", tag.Type.String())
 			} else {
-				data, text, err = tag.ValidateF64(val)
+				data, text, err = tag.ValidateF64(val, example)
 			}
 		default:
 			return nil, fmt.Errorf("%s unsupported type: %T", tag.Type.String(), val)
@@ -582,12 +754,17 @@ func valueToNode(v any, tag *ir.Tag, depth int, path string) (node ir.Node, err 
 		case ir.ValueTypeF64:
 			if val == nil {
 				if !tag.Nullable {
-					err = fmt.Errorf("value is nil and not nullable")
+					err = fmt.Errorf("%s: value is nil and not nullable", path)
 					return
 				}
 				tag.IsNull = true
-				data = float64(0)
-				text = "0.0"
+				if d, t, ok := resolveDefaultValue(tag); ok {
+					data = d
+					text = t
+				} else {
+					data = float64(0)
+					text = "0.0"
+				}
 			} else if math.IsInf(*val, +1) {
 				return nil, fmt.Errorf("%s unsupported value: +Inf", tag.Type.String())
 			} else if math.IsInf(*val, -1) {
@@ -595,7 +772,7 @@ func valueToNode(v any, tag *ir.Tag, depth int, path string) (node ir.Node, err 
 			} else if math.IsNaN(*val) {
 				return nil, fmt.Errorf("%s unsupported value: NaN", tag.Type.String())
 			} else {
-				data, text, err = tag.ValidateF64(*val)
+				data, text, err = tag.ValidateF64(*val, example)
 			}
 
 		default:
@@ -609,19 +786,19 @@ func valueToNode(v any, tag *ir.Tag, depth int, path string) (node ir.Node, err 
 
 		switch tag.Type {
 		case ir.ValueTypeStr:
-			data, text, err = tag.ValidateStr(val)
+			data, text, err = tag.ValidateStr(val, example)
 
 		case ir.ValueTypeDecimal:
-			data, text, err = tag.ValidateDecimal(val)
+			data, text, err = tag.ValidateDecimal(val, example)
 
 		case ir.ValueTypeEmail:
-			data, text, err = tag.ValidateEmail(val)
+			data, text, err = tag.ValidateEmail(val, example)
 
 		case ir.ValueTypeEnum:
-			data, text, err = tag.ValidateEnum(val)
+			data, text, err = tag.ValidateEnum(val, example)
 
 		case ir.ValueTypeUuid:
-			data, text, err = tag.ValidateUuid(val)
+			data, text, err = tag.ValidateUuid(val, example)
 
 		default:
 			return nil, fmt.Errorf("%s unsupported type: %T", tag.Type.String(), val)
@@ -637,40 +814,55 @@ func valueToNode(v any, tag *ir.Tag, depth int, path string) (node ir.Node, err 
 		case ir.ValueTypeStr:
 			if val == nil {
 				if !tag.Nullable {
-					err = fmt.Errorf("value is nil and not nullable")
+					err = fmt.Errorf("%s: value is nil and not nullable", path)
 					return
 				}
 				tag.IsNull = true
-				data = ""
-				text = ""
+				if d, t, ok := resolveDefaultValue(tag); ok {
+					data = d
+					text = t
+				} else {
+					data = ""
+					text = ""
+				}
 			} else {
-				data, text, err = tag.ValidateStr(*val)
+				data, text, err = tag.ValidateStr(*val, example)
 			}
 
 		case ir.ValueTypeDecimal:
 			if val == nil {
 				if !tag.Nullable {
-					err = fmt.Errorf("value is nil and not nullable")
+					err = fmt.Errorf("%s: value is nil and not nullable", path)
 					return
 				}
 				tag.IsNull = true
-				data = ""
-				text = ""
+				if d, t, ok := resolveDefaultValue(tag); ok {
+					data = d
+					text = t
+				} else {
+					data = ""
+					text = ""
+				}
 			} else {
-				data, text, err = tag.ValidateDecimal(*val)
+				data, text, err = tag.ValidateDecimal(*val, example)
 			}
 
 		case ir.ValueTypeEmail:
 			if val == nil {
 				if !tag.Nullable {
-					err = fmt.Errorf("value is nil and not nullable")
+					err = fmt.Errorf("%s: value is nil and not nullable", path)
 					return
 				}
 				tag.IsNull = true
-				data = ""
-				text = ""
+				if d, t, ok := resolveDefaultValue(tag); ok {
+					data = d
+					text = t
+				} else {
+					data = ""
+					text = ""
+				}
 			} else {
-				data, text, err = tag.ValidateEmail(*val)
+				data, text, err = tag.ValidateEmail(*val, example)
 			}
 
 		case ir.ValueTypeEnum:
@@ -681,27 +873,37 @@ func valueToNode(v any, tag *ir.Tag, depth int, path string) (node ir.Node, err 
 
 			if val == nil {
 				if !tag.Nullable {
-					err = fmt.Errorf("value is nil and not nullable")
+					err = fmt.Errorf("%s: value is nil and not nullable", path)
 					return
 				}
 				tag.IsNull = true
-				data = -1
-				text = ""
+				if d, t, ok := resolveDefaultValue(tag); ok {
+					data = d
+					text = t
+				} else {
+					data = -1
+					text = ""
+				}
 			} else {
-				data, text, err = tag.ValidateEnum(*val)
+				data, text, err = tag.ValidateEnum(*val, example)
 			}
 
 		case ir.ValueTypeUuid:
 			if val == nil {
 				if !tag.Nullable {
-					err = fmt.Errorf("value is nil and not nullable")
+					err = fmt.Errorf("%s: value is nil and not nullable", path)
 					return
 				}
 				tag.IsNull = true
-				data = [16]byte{}
-				text = ""
+				if d, t, ok := resolveDefaultValue(tag); ok {
+					data = d
+					text = t
+				} else {
+					data = [16]byte{}
+					text = ""
+				}
 			} else {
-				data, text, err = tag.ValidateUuid(*val)
+				data, text, err = tag.ValidateUuid(*val, example)
 			}
 
 		default:
@@ -715,7 +917,7 @@ func valueToNode(v any, tag *ir.Tag, depth int, path string) (node ir.Node, err 
 
 		switch tag.Type {
 		case ir.ValueTypeBigint:
-			data, text, err = tag.ValidateBigint(val)
+			data, text, err = tag.ValidateBigint(val, example)
 
 		default:
 			return nil, fmt.Errorf("%s unsupported type: %T", tag.Type.String(), val)
@@ -731,14 +933,19 @@ func valueToNode(v any, tag *ir.Tag, depth int, path string) (node ir.Node, err 
 		case ir.ValueTypeBigint:
 			if val == nil {
 				if !tag.Nullable {
-					err = fmt.Errorf("value is nil and not nullable")
+					err = fmt.Errorf("%s: value is nil and not nullable", path)
 					return
 				}
 				tag.IsNull = true
-				data = big.Int{}
-				text = "0"
+				if d, t, ok := resolveDefaultValue(tag); ok {
+					data = d
+					text = t
+				} else {
+					data = big.Int{}
+					text = "0"
+				}
 			} else {
-				data, text, err = tag.ValidateBigint(*val)
+				data, text, err = tag.ValidateBigint(*val, example)
 			}
 
 		default:
@@ -752,7 +959,7 @@ func valueToNode(v any, tag *ir.Tag, depth int, path string) (node ir.Node, err 
 
 		switch tag.Type {
 		case ir.ValueTypeUrl:
-			data, text, err = tag.ValidateUrl(val)
+			data, text, err = tag.ValidateUrl(val, example)
 
 		default:
 			return nil, fmt.Errorf("%s unsupported type: %T", tag.Type.String(), val)
@@ -768,14 +975,19 @@ func valueToNode(v any, tag *ir.Tag, depth int, path string) (node ir.Node, err 
 		case ir.ValueTypeUrl:
 			if val == nil {
 				if !tag.Nullable {
-					err = fmt.Errorf("value is nil and not nullable")
+					err = fmt.Errorf("%s: value is nil and not nullable", path)
 					return
 				}
 				tag.IsNull = true
-				data = url.URL{}
-				text = ""
+				if d, t, ok := resolveDefaultValue(tag); ok {
+					data = d
+					text = t
+				} else {
+					data = url.URL{}
+					text = ""
+				}
 			} else {
-				data, text, err = tag.ValidateUrl(*val)
+				data, text, err = tag.ValidateUrl(*val, example)
 			}
 
 		default:
@@ -789,7 +1001,7 @@ func valueToNode(v any, tag *ir.Tag, depth int, path string) (node ir.Node, err 
 
 		switch tag.Type {
 		case ir.ValueTypeIp:
-			data, text, err = tag.ValidateIp(val)
+			data, text, err = tag.ValidateIp(val, example)
 
 		default:
 			return nil, fmt.Errorf("%s unsupported type: %T", tag.Type.String(), val)
@@ -805,14 +1017,19 @@ func valueToNode(v any, tag *ir.Tag, depth int, path string) (node ir.Node, err 
 		case ir.ValueTypeIp:
 			if val == nil {
 				if !tag.Nullable {
-					err = fmt.Errorf("value is nil and not nullable")
+					err = fmt.Errorf("%s: value is nil and not nullable", path)
 					return
 				}
 				tag.IsNull = true
-				data = net.IP{}
-				text = ""
+				if d, t, ok := resolveDefaultValue(tag); ok {
+					data = d
+					text = t
+				} else {
+					data = net.IP{}
+					text = ""
+				}
 			} else {
-				data, text, err = tag.ValidateIp(*val)
+				data, text, err = tag.ValidateIp(*val, example)
 			}
 
 		default:
@@ -826,13 +1043,13 @@ func valueToNode(v any, tag *ir.Tag, depth int, path string) (node ir.Node, err 
 
 		switch tag.Type {
 		case ir.ValueTypeDatetime:
-			data, text, err = tag.ValidateDatetime(val)
+			data, text, err = tag.ValidateDatetime(val, example)
 
 		case ir.ValueTypeDate:
-			data, text, err = tag.ValidateDate(val)
+			data, text, err = tag.ValidateDate(val, example)
 
 		case ir.ValueTypeTime:
-			data, text, err = tag.ValidateTime(val)
+			data, text, err = tag.ValidateTime(val, example)
 
 		default:
 			return nil, fmt.Errorf("%s unsupported type: %T", tag.Type.String(), val)
@@ -853,14 +1070,19 @@ func valueToNode(v any, tag *ir.Tag, depth int, path string) (node ir.Node, err 
 
 			if val == nil {
 				if !tag.Nullable {
-					err = fmt.Errorf("value is nil and not nullable")
+					err = fmt.Errorf("%s: value is nil and not nullable", path)
 					return
 				}
 				tag.IsNull = true
-				data = utils.DefaultTime
-				text = utils.DefaultTime.In(location).Format(time.DateTime)
+				if d, t, ok := resolveDefaultValue(tag); ok {
+					data = d
+					text = t
+				} else {
+					data = utils.DefaultTime
+					text = utils.DefaultTime.In(location).Format(time.DateTime)
+				}
 			} else {
-				data, text, err = tag.ValidateTime(*val)
+				data, text, err = tag.ValidateTime(*val, example)
 			}
 
 		case ir.ValueTypeDate:
@@ -871,14 +1093,19 @@ func valueToNode(v any, tag *ir.Tag, depth int, path string) (node ir.Node, err 
 
 			if val == nil {
 				if !tag.Nullable {
-					err = fmt.Errorf("value is nil and not nullable")
+					err = fmt.Errorf("%s: value is nil and not nullable", path)
 					return
 				}
 				tag.IsNull = true
-				data = utils.DefaultTime
-				text = utils.DefaultTime.In(location).Format(time.DateOnly)
+				if d, t, ok := resolveDefaultValue(tag); ok {
+					data = d
+					text = t
+				} else {
+					data = utils.DefaultTime
+					text = utils.DefaultTime.In(location).Format(time.DateOnly)
+				}
 			} else {
-				data, text, err = tag.ValidateTime(*val)
+				data, text, err = tag.ValidateTime(*val, example)
 			}
 
 		case ir.ValueTypeTime:
@@ -889,14 +1116,19 @@ func valueToNode(v any, tag *ir.Tag, depth int, path string) (node ir.Node, err 
 
 			if val == nil {
 				if !tag.Nullable {
-					err = fmt.Errorf("value is nil and not nullable")
+					err = fmt.Errorf("%s: value is nil and not nullable", path)
 					return
 				}
 				tag.IsNull = true
-				data = utils.DefaultTime
-				text = utils.DefaultTime.In(location).Format(time.TimeOnly)
+				if d, t, ok := resolveDefaultValue(tag); ok {
+					data = d
+					text = t
+				} else {
+					data = utils.DefaultTime
+					text = utils.DefaultTime.In(location).Format(time.TimeOnly)
+				}
 			} else {
-				data, text, err = tag.ValidateTime(*val)
+				data, text, err = tag.ValidateTime(*val, example)
 			}
 
 		default:
@@ -904,7 +1136,7 @@ func valueToNode(v any, tag *ir.Tag, depth int, path string) (node ir.Node, err 
 		}
 
 	default:
-		return anyToJSONC(v, tag, depth, path)
+		return anyToJSONC(v, tag, depth, path, example)
 	}
 
 	if err != nil {
@@ -1019,7 +1251,7 @@ func createExampleValue(elemType reflect.Type) (any, error) {
 	}
 }
 
-func anyToJSONC(obj any, tag *ir.Tag, depth int, path string) (ir.Node, error) {
+func anyToJSONC(obj any, tag *ir.Tag, depth int, path string, example bool) (ir.Node, error) {
 	depth++
 	if depth > maxDepth {
 		return nil, fmt.Errorf("max depth: %d", maxDepth)
@@ -1134,7 +1366,7 @@ func anyToJSONC(obj any, tag *ir.Tag, depth int, path string) (ir.Node, error) {
 				}
 
 				p := fmt.Sprintf("%s.%s", path, fieldKey)
-				fieldNode, err := valueToNode(fieldVal.Interface(), tagField, depth, p)
+				fieldNode, err := valueToNode(fieldVal.Interface(), tagField, depth, p, example)
 				if err != nil {
 					return nil, fmt.Errorf("%s: %w", p, err)
 				}
@@ -1145,10 +1377,12 @@ func anyToJSONC(obj any, tag *ir.Tag, depth int, path string) (ir.Node, error) {
 				})
 			}
 
-			err = tag.ValidateObj()
-			if err != nil {
-				err = fmt.Errorf("validate failed: %w", err)
-				return nil, err
+			if !example {
+				err = tag.ValidateObj()
+				if err != nil {
+					err = fmt.Errorf("validate failed: %w", err)
+					return nil, err
+				}
 			}
 
 			return objNode, nil
@@ -1183,7 +1417,7 @@ func anyToJSONC(obj any, tag *ir.Tag, depth int, path string) (ir.Node, error) {
 			tagItem.Name = keyStr
 
 			p := fmt.Sprintf("%s[%s]", path, keyStr)
-			valNode, err := valueToNode(val.MapIndex(key).Interface(), tagItem, depth, p)
+			valNode, err := valueToNode(val.MapIndex(key).Interface(), tagItem, depth, p, example)
 			if err != nil {
 				return nil, fmt.Errorf("%s: %w", p, err)
 			}
@@ -1193,7 +1427,6 @@ func anyToJSONC(obj any, tag *ir.Tag, depth int, path string) (ir.Node, error) {
 			if !setTag {
 				node.Tag.ChildDesc = tagItem.Desc
 				node.Tag.ChildType = tagItem.Type
-				node.Tag.ChildRaw = tagItem.Raw
 				node.Tag.ChildNullable = tagItem.Nullable
 				node.Tag.ChildAllowEmpty = tagItem.AllowEmpty
 				node.Tag.ChildUnique = tagItem.Unique
@@ -1238,7 +1471,7 @@ func anyToJSONC(obj any, tag *ir.Tag, depth int, path string) (ir.Node, error) {
 			tagItem.Example = true
 
 			p := fmt.Sprintf("%s[%s]", path, keyStr)
-			valNode, err := valueToNode(exampleVal, tagItem, depth, p)
+			valNode, err := valueToNode(exampleVal, tagItem, depth, p, true)
 			if err != nil {
 				return nil, fmt.Errorf("%s: %w", p, err)
 			}
@@ -1248,7 +1481,6 @@ func anyToJSONC(obj any, tag *ir.Tag, depth int, path string) (ir.Node, error) {
 			if !setTag {
 				node.Tag.ChildDesc = tagItem.Desc
 				node.Tag.ChildType = tagItem.Type
-				node.Tag.ChildRaw = tagItem.Raw
 				node.Tag.ChildNullable = tagItem.Nullable
 				node.Tag.ChildAllowEmpty = tagItem.AllowEmpty
 				node.Tag.ChildUnique = tagItem.Unique
@@ -1270,11 +1502,14 @@ func anyToJSONC(obj any, tag *ir.Tag, depth int, path string) (ir.Node, error) {
 			})
 		}
 
-		err = tag.ValidateMap()
-		if err != nil {
-			err = fmt.Errorf("validate failed: %w", err)
-			return nil, err
+		if !example {
+			err = tag.ValidateMap()
+			if err != nil {
+				err = fmt.Errorf("validate failed: %w", err)
+				return nil, err
+			}
 		}
+
 		return node, nil
 
 	case reflect.Slice:
@@ -1291,7 +1526,7 @@ func anyToJSONC(obj any, tag *ir.Tag, depth int, path string) (ir.Node, error) {
 			tagItem.Inherit(tag)
 
 			p := fmt.Sprintf("%s[%d]", path, i)
-			itemNode, err := valueToNode(val.Index(i).Interface(), tagItem, depth, p)
+			itemNode, err := valueToNode(val.Index(i).Interface(), tagItem, depth, p, example)
 			if err != nil {
 				return nil, fmt.Errorf("%s: %w", p, err)
 			}
@@ -1301,7 +1536,6 @@ func anyToJSONC(obj any, tag *ir.Tag, depth int, path string) (ir.Node, error) {
 			if !setTag {
 				node.Tag.ChildDesc = tagItem.Desc
 				node.Tag.ChildType = tagItem.Type
-				node.Tag.ChildRaw = tagItem.Raw
 				node.Tag.ChildNullable = tagItem.Nullable
 				node.Tag.ChildAllowEmpty = tagItem.AllowEmpty
 				node.Tag.ChildUnique = tagItem.Unique
@@ -1333,7 +1567,7 @@ func anyToJSONC(obj any, tag *ir.Tag, depth int, path string) (ir.Node, error) {
 			tagItem.Example = true
 
 			p := fmt.Sprintf("%s[%d]", path, 0)
-			itemNode, err := valueToNode(exampleVal, tagItem, depth, p)
+			itemNode, err := valueToNode(exampleVal, tagItem, depth, p, true)
 			if err != nil {
 				return nil, fmt.Errorf("%s: %w", p, err)
 			}
@@ -1343,7 +1577,6 @@ func anyToJSONC(obj any, tag *ir.Tag, depth int, path string) (ir.Node, error) {
 			if !setTag {
 				node.Tag.ChildDesc = tagItem.Desc
 				node.Tag.ChildType = tagItem.Type
-				node.Tag.ChildRaw = tagItem.Raw
 				node.Tag.ChildNullable = tagItem.Nullable
 				node.Tag.ChildAllowEmpty = tagItem.AllowEmpty
 				node.Tag.ChildUnique = tagItem.Unique
@@ -1362,10 +1595,12 @@ func anyToJSONC(obj any, tag *ir.Tag, depth int, path string) (ir.Node, error) {
 			node.Items = append(node.Items, itemNode)
 		}
 
-		err = tag.ValidateVec(node.Items)
-		if err != nil {
-			err = fmt.Errorf("validate failed: %w", err)
-			return nil, err
+		if !example {
+			err = tag.ValidateVec(node.Items)
+			if err != nil {
+				err = fmt.Errorf("validate failed: %w", err)
+				return nil, err
+			}
 		}
 
 		return node, nil
@@ -1385,7 +1620,7 @@ func anyToJSONC(obj any, tag *ir.Tag, depth int, path string) (ir.Node, error) {
 			tagItem.Inherit(tag)
 
 			p := fmt.Sprintf("%s[%d]", path, i)
-			itemNode, err := valueToNode(val.Index(i).Interface(), tagItem, depth, p)
+			itemNode, err := valueToNode(val.Index(i).Interface(), tagItem, depth, p, example)
 			if err != nil {
 				return nil, fmt.Errorf("%s: %w", p, err)
 			}
@@ -1395,7 +1630,6 @@ func anyToJSONC(obj any, tag *ir.Tag, depth int, path string) (ir.Node, error) {
 			if !setTag {
 				node.Tag.ChildDesc = tagItem.Desc
 				node.Tag.ChildType = tagItem.Type
-				node.Tag.ChildRaw = tagItem.Raw
 				node.Tag.ChildNullable = tagItem.Nullable
 				node.Tag.ChildAllowEmpty = tagItem.AllowEmpty
 				node.Tag.ChildUnique = tagItem.Unique
@@ -1427,7 +1661,7 @@ func anyToJSONC(obj any, tag *ir.Tag, depth int, path string) (ir.Node, error) {
 			tagItem.Example = true
 
 			p := fmt.Sprintf("%s[%d]", path, 0)
-			itemNode, err := valueToNode(exampleVal, tagItem, depth, p)
+			itemNode, err := valueToNode(exampleVal, tagItem, depth, p, true)
 			if err != nil {
 				return nil, fmt.Errorf("%s: %w", p, err)
 			}
@@ -1437,7 +1671,6 @@ func anyToJSONC(obj any, tag *ir.Tag, depth int, path string) (ir.Node, error) {
 			if !setTag {
 				node.Tag.ChildDesc = tagItem.Desc
 				node.Tag.ChildType = tagItem.Type
-				node.Tag.ChildRaw = tagItem.Raw
 				node.Tag.ChildNullable = tagItem.Nullable
 				node.Tag.ChildAllowEmpty = tagItem.AllowEmpty
 				node.Tag.ChildUnique = tagItem.Unique
@@ -1456,10 +1689,12 @@ func anyToJSONC(obj any, tag *ir.Tag, depth int, path string) (ir.Node, error) {
 			node.Items = append(node.Items, itemNode)
 		}
 
-		err = tag.ValidateArr(node.Items)
-		if err != nil {
-			err = fmt.Errorf("validate failed: %w", err)
-			return nil, err
+		if !example {
+			err = tag.ValidateArr(node.Items)
+			if err != nil {
+				err = fmt.Errorf("validate failed: %w", err)
+				return nil, err
+			}
 		}
 
 		return node, nil

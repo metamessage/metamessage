@@ -342,7 +342,7 @@ public class Decoder {
                 continue
             }
 
-            let isBooleanFlag = key == TagKey.isNull || key == TagKey.raw ||
+            let isBooleanFlag = key == TagKey.isNull || key == TagKey.deprecated ||
                                 key == TagKey.nullable || key == TagKey.allowEmpty ||
                                 key == TagKey.unique
             if isBooleanFlag {

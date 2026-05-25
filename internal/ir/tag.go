@@ -54,12 +54,12 @@ const (
 type TagKey uint8
 
 const (
-	KIsNull  TagKey = 0 << 3
-	KExample        = 1 << 3
+	KIsNull     TagKey = 0 << 3
+	KExample           = 1 << 3
+	KDeprecated        = 2 << 3
 
-	KDesc       = 2 << 3
-	KType       = 3 << 3
-	KRaw        = 4 << 3
+	KDesc       = 3 << 3
+	KType       = 4 << 3
 	KNullable   = 5 << 3
 	KAllowEmpty = 6 << 3
 	KUnique     = 7 << 3
@@ -75,19 +75,20 @@ const (
 
 	KChildDesc       = 17 << 3
 	KChildType       = 18 << 3
-	KChildRaw        = 19 << 3
-	KChildNullable   = 20 << 3
-	KChildAllowEmpty = 21 << 3
-	KChildUnique     = 22 << 3
-	KChildDefaultVal = 23 << 3
-	KChildMin        = 24 << 3
-	KChildMax        = 25 << 3
-	KChildSize       = 26 << 3
-	KChildEnums      = 27 << 3
-	KChildPattern    = 28 << 3
-	KChildLocation   = 29 << 3
-	KChildVersion    = 30 << 3
-	KChildMime       = 31 << 3
+	KChildNullable   = 19 << 3
+	KChildAllowEmpty = 20 << 3
+	KChildUnique     = 21 << 3
+	KChildDefaultVal = 22 << 3
+	KChildMin        = 23 << 3
+	KChildMax        = 24 << 3
+	KChildSize       = 25 << 3
+	KChildEnums      = 26 << 3
+	KChildPattern    = 27 << 3
+	KChildLocation   = 28 << 3
+	KChildVersion    = 29 << 3
+	KChildMime       = 30 << 3
+
+	KMore = 31 << 3
 )
 
 type Tag struct {
@@ -98,7 +99,7 @@ type Tag struct {
 
 	Desc       string         // desc=...
 	Type       ValueType      // type=...
-	Raw        bool           // raw
+	Deprecated bool           // deprecated
 	Nullable   bool           // nullable
 	AllowEmpty bool           // allow_empty
 	Unique     bool           // unique
@@ -111,10 +112,10 @@ type Tag struct {
 	Location   *time.Location // location=0  for time.Time [-12, +14]
 	Version    int            // version=0 for uuid/ip
 	Mime       string         // mime=...
+	More       int            // more
 
 	ChildDesc       string         // child_desc=...
 	ChildType       ValueType      // child_type=...
-	ChildRaw        bool           // child_raw
 	ChildNullable   bool           // child_nullable
 	ChildAllowEmpty bool           // child_allow_empty
 	ChildUnique     bool           // child_unique
@@ -155,10 +156,6 @@ func (t *Tag) Inherit(tag *Tag) {
 
 	if tag.ChildType != ValueTypeUnknown {
 		t.Type = tag.ChildType
-	}
-
-	if tag.ChildRaw {
-		t.Raw = tag.ChildRaw
 	}
 
 	if tag.ChildNullable {
@@ -272,8 +269,8 @@ func (t *Tag) ToString() string {
 		add(TDesc + "=" + strconv.Quote(t.Desc))
 	}
 
-	if t.Raw && !t.IsInherit {
-		add(TRaw)
+	if t.Deprecated && !t.IsInherit {
+		add("deprecated")
 	}
 
 	if t.AllowEmpty && !t.IsInherit {
@@ -340,10 +337,6 @@ func (t *Tag) ToString() string {
 				add(TChildType + "=" + t.ChildType.String())
 			}
 		}
-	}
-
-	if t.ChildRaw {
-		add(TChildRaw)
 	}
 
 	if t.ChildNullable {
@@ -454,8 +447,8 @@ func (t *Tag) Bytes() []byte {
 		}
 	}
 
-	if t.Raw && !t.IsInherit {
-		bs.WriteByte(byte(KRaw | 1))
+	if t.Deprecated && !t.IsInherit {
+		bs.WriteByte(byte(KDeprecated | 1))
 	}
 
 	if t.AllowEmpty && !t.IsInherit {
@@ -598,10 +591,6 @@ func (t *Tag) Bytes() []byte {
 		}
 	}
 
-	if t.ChildRaw {
-		bs.WriteByte(byte(KChildRaw | 1))
-	}
-
 	if t.ChildNullable {
 		bs.WriteByte(byte(KChildNullable | 1))
 	}
@@ -708,6 +697,10 @@ func (t *Tag) Bytes() []byte {
 			bs.WriteByte(byte(l))
 			bs.WriteString(t.ChildMime)
 		}
+	}
+
+	if t.More != 0 {
+		encodeU64(&bs, KMore, uint64(t.More))
 	}
 
 	return bs.Bytes()
@@ -826,8 +819,8 @@ func MergeTag(dst *Tag, src *Tag) *Tag {
 		dst.Type = src.Type
 	}
 
-	if src.Raw {
-		dst.Raw = true
+	if src.Deprecated {
+		dst.Deprecated = true
 	}
 
 	if src.Nullable {
@@ -884,10 +877,6 @@ func MergeTag(dst *Tag, src *Tag) *Tag {
 
 	if src.ChildType != ValueTypeUnknown {
 		dst.ChildType = src.ChildType
-	}
-
-	if src.ChildRaw {
-		dst.ChildRaw = true
 	}
 
 	if src.ChildNullable {
@@ -997,7 +986,7 @@ func ParseMMTag(tag string) (*Tag, error) {
 			r.Type = t
 
 		case TRaw:
-			r.Raw = true
+			r.Deprecated = true
 
 		case TNullable:
 			r.Nullable = true
@@ -1070,9 +1059,6 @@ func ParseMMTag(tag string) (*Tag, error) {
 				return nil, fmt.Errorf("parsing failed %v %w", v, err)
 			}
 			r.ChildType = t
-
-		case TChildRaw:
-			r.ChildRaw = true
 
 		case TChildNullable:
 			r.ChildNullable = true

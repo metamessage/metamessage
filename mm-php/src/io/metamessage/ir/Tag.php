@@ -14,7 +14,7 @@ class Tag
 
     public string $desc = '';
     public ValueType $type;
-    public bool $raw = false;
+    public bool $deprecated = false;
     public bool $nullable = false;
     public bool $allowEmpty = false;
     public bool $unique = false;
@@ -27,10 +27,10 @@ class Tag
     public int $locationHours = 0;
     public int $version = self::DEFAULT_VERSION;
     public string $mime = '';
+    public int $more = 0;
 
     public string $childDesc = '';
     public ValueType $childType;
-    public bool $childRaw = false;
     public bool $childNullable = false;
     public bool $childAllowEmpty = false;
     public bool $childUnique = false;
@@ -50,11 +50,11 @@ class Tag
 
     const T_IS_NULL = 'is_null';
     const T_EXAMPLE = 'example';
+    const T_DEPRECATED = 'deprecated';
 
     const T_NAME = 'name';
     const T_DESC = 'desc';
     const T_TYPE = 'type';
-    const T_RAW = 'raw';
     const T_NULLABLE = 'nullable';
     const T_ALLOW_EMPTY = 'allow_empty';
     const T_UNIQUE = 'unique';
@@ -70,7 +70,6 @@ class Tag
 
     const T_CHILD_DESC = 'child_desc';
     const T_CHILD_TYPE = 'child_type';
-    const T_CHILD_RAW = 'child_raw';
     const T_CHILD_NULLABLE = 'child_nullable';
     const T_CHILD_ALLOW_EMPTY = 'child_allow_empty';
     const T_CHILD_UNIQUE = 'child_unique';
@@ -86,9 +85,9 @@ class Tag
 
     const K_IS_NULL = 0 << 3;
     const K_EXAMPLE = 1 << 3;
-    const K_DESC = 2 << 3;
-    const K_TYPE = 3 << 3;
-    const K_RAW = 4 << 3;
+    const K_DEPRECATED = 2 << 3;
+    const K_DESC = 3 << 3;
+    const K_TYPE = 4 << 3;
     const K_NULLABLE = 5 << 3;
     const K_ALLOW_EMPTY = 6 << 3;
     const K_UNIQUE = 7 << 3;
@@ -103,19 +102,19 @@ class Tag
     const K_MIME = 16 << 3;
     const K_CHILD_DESC = 17 << 3;
     const K_CHILD_TYPE = 18 << 3;
-    const K_CHILD_RAW = 19 << 3;
-    const K_CHILD_NULLABLE = 20 << 3;
-    const K_CHILD_ALLOW_EMPTY = 21 << 3;
-    const K_CHILD_UNIQUE = 22 << 3;
-    const K_CHILD_DEFAULT_VAL = 23 << 3;
-    const K_CHILD_MIN = 24 << 3;
-    const K_CHILD_MAX = 25 << 3;
-    const K_CHILD_SIZE = 26 << 3;
-    const K_CHILD_ENUMS = 27 << 3;
-    const K_CHILD_PATTERN = 28 << 3;
-    const K_CHILD_LOCATION = 29 << 3;
-    const K_CHILD_VERSION = 30 << 3;
-    const K_CHILD_MIME = 31 << 3;
+    const K_CHILD_NULLABLE = 19 << 3;
+    const K_CHILD_ALLOW_EMPTY = 20 << 3;
+    const K_CHILD_UNIQUE = 21 << 3;
+    const K_CHILD_DEFAULT_VAL = 22 << 3;
+    const K_CHILD_MIN = 23 << 3;
+    const K_CHILD_MAX = 24 << 3;
+    const K_CHILD_SIZE = 25 << 3;
+    const K_CHILD_ENUMS = 26 << 3;
+    const K_CHILD_PATTERN = 27 << 3;
+    const K_CHILD_LOCATION = 28 << 3;
+    const K_CHILD_VERSION = 29 << 3;
+    const K_CHILD_MIME = 30 << 3;
+    const K_MORE = 31 << 3;
 
     const MAX_1_BYTE = 0xFF;
     const MAX_2_BYTE = 0xFFFF;
@@ -160,7 +159,9 @@ class Tag
         $t->example = $ann->example;
         $t->desc = $ann->desc;
         $t->type = $ann->type;
-        $t->raw = $ann->raw;
+        if ($ann->raw) {
+            $t->deprecated = true;
+        }
         $t->nullable = $ann->nullable;
         $t->allowEmpty = $ann->allowEmpty;
         $t->unique = $ann->unique;
@@ -178,7 +179,6 @@ class Tag
         $t->mime = $ann->mime;
         $t->childDesc = $ann->childDesc;
         $t->childType = $ann->childType;
-        $t->childRaw = $ann->childRaw;
         $t->childNullable = $ann->childNullable;
         $t->childAllowEmpty = $ann->childAllowEmpty;
         $t->childUnique = $ann->childUnique;
@@ -205,7 +205,7 @@ class Tag
         $copy->example = $this->example;
         $copy->desc = $this->desc;
         $copy->type = $this->type;
-        $copy->raw = $this->raw;
+        $copy->deprecated = $this->deprecated;
         $copy->nullable = $this->nullable;
         $copy->allowEmpty = $this->allowEmpty;
         $copy->unique = $this->unique;
@@ -220,7 +220,6 @@ class Tag
         $copy->mime = $this->mime;
         $copy->childDesc = $this->childDesc;
         $copy->childType = $this->childType;
-        $copy->childRaw = $this->childRaw;
         $copy->childNullable = $this->childNullable;
         $copy->childAllowEmpty = $this->childAllowEmpty;
         $copy->childUnique = $this->childUnique;
@@ -244,7 +243,6 @@ class Tag
         }
         $this->desc = $parent->childDesc;
         $this->type = $parent->childType;
-        $this->raw = $parent->childRaw;
         $this->nullable = $parent->childNullable;
         $this->allowEmpty = $parent->childAllowEmpty;
         $this->unique = $parent->childUnique;
@@ -275,10 +273,6 @@ class Tag
 
         if ($tag->childType !== ValueType::UNKNOWN) {
             $this->type = $tag->childType;
-        }
-
-        if ($tag->childRaw) {
-            $this->raw = $tag->childRaw;
         }
 
         if ($tag->childNullable) {
@@ -393,8 +387,8 @@ class Tag
             $add(self::T_DESC . '=' . $this->quote($this->desc));
         }
 
-        if ($this->raw && !$this->isInherit) {
-            $add(self::T_RAW);
+        if ($this->deprecated && !$this->isInherit) {
+            $add('deprecated');
         }
 
         if ($this->allowEmpty && !$this->isInherit) {
@@ -463,10 +457,6 @@ class Tag
                     $add(self::T_CHILD_TYPE . '=' . $this->childType->wireName());
                 }
             }
-        }
-
-        if ($this->childRaw) {
-            $add(self::T_CHILD_RAW);
         }
 
         if ($this->childNullable) {
@@ -577,8 +567,8 @@ class Tag
             }
         }
 
-        if ($this->raw && !$this->isInherit) {
-            $w->writeByte(self::K_RAW | 1);
+        if ($this->deprecated && !$this->isInherit) {
+            $w->writeByte(self::K_DEPRECATED | 1);
         }
 
         if ($this->allowEmpty && !$this->isInherit) {
@@ -714,10 +704,6 @@ class Tag
                     $w->writeByte($this->childType->code());
                 }
             }
-        }
-
-        if ($this->childRaw) {
-            $w->writeByte(self::K_CHILD_RAW | 1);
         }
 
         if ($this->childNullable) {
@@ -920,8 +906,8 @@ class Tag
             $dst->type = $src->type;
         }
 
-        if ($src->raw) {
-            $dst->raw = true;
+        if ($src->deprecated) {
+            $dst->deprecated = true;
         }
 
         if ($src->nullable) {
@@ -978,10 +964,6 @@ class Tag
 
         if ($src->childType !== ValueType::UNKNOWN) {
             $dst->childType = $src->childType;
-        }
-
-        if ($src->childRaw) {
-            $dst->childRaw = true;
         }
 
         if ($src->childNullable) {
@@ -1098,7 +1080,7 @@ class Tag
                     break;
 
                 case self::T_RAW:
-                    $r->raw = true;
+                    $r->deprecated = true;
                     break;
 
                 case self::T_NULLABLE:
@@ -1159,7 +1141,6 @@ class Tag
                     break;
 
                 case self::T_CHILD_RAW:
-                    $r->childRaw = true;
                     break;
 
                 case self::T_CHILD_NULLABLE:

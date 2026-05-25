@@ -510,9 +510,9 @@ public class Encoder {
 // Matches Go's internal/ir/tag.go TagKey
 enum TagKey {
     static let isNull: UInt8 = 0 << 3       // 0x00
-    static let desc: UInt8 = 2 << 3         // 0x10
-    static let type: UInt8 = 3 << 3         // 0x18
-    static let raw: UInt8 = 4 << 3          // 0x20
+    static let deprecated: UInt8 = 2 << 3    // 0x10
+    static let desc: UInt8 = 3 << 3         // 0x18
+    static let type: UInt8 = 4 << 3         // 0x20
     static let nullable: UInt8 = 5 << 3     // 0x28
     static let allowEmpty: UInt8 = 6 << 3   // 0x30
     static let unique: UInt8 = 7 << 3       // 0x38
@@ -525,6 +525,7 @@ enum TagKey {
     static let location: UInt8 = 14 << 3    // 0x70
     static let version: UInt8 = 15 << 3     // 0x78
     static let mime: UInt8 = 16 << 3        // 0x80
+    static let more: UInt8 = 31 << 3        // 0xF8
 }
 
 // MARK: - Node encoding
@@ -725,7 +726,7 @@ extension Encoder {
     }
 
     private func needsTagEncoding(_ tag: Tag) -> Bool {
-        return tag.type != .unknown || tag.name != "" || tag.desc != "" || tag.nullable || tag.isNull || tag.raw || tag.allowEmpty
+        return tag.type != .unknown || tag.name != "" || tag.desc != "" || tag.nullable || tag.isNull || tag.deprecated || tag.allowEmpty
     }
 
     private func encodeTagToBytes(_ tag: Tag) -> [UInt8] {
@@ -741,8 +742,8 @@ extension Encoder {
             bytes.append(TagKey.type)
             bytes.append(UInt8(tag.type.rawValue))
         }
-        if tag.raw {
-            bytes.append(TagKey.raw | 1)
+        if tag.deprecated {
+            bytes.append(TagKey.deprecated | 1)
         }
         if tag.nullable {
             bytes.append(TagKey.nullable | 1)
@@ -780,6 +781,9 @@ extension Encoder {
         }
         if !tag.mime.isEmpty {
             bytes.append(contentsOf: encodeTagString(TagKey.mime, value: tag.mime))
+        }
+        if tag.more != 0 {
+            bytes.append(contentsOf: encodeTagU64(TagKey.more, value: UInt64(tag.more)))
         }
         return bytes
     }

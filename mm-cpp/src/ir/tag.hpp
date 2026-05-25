@@ -16,9 +16,9 @@ enum TagKey : uint8_t {
   KIsNull = 0 << 3,
   KExample = 1 << 3,
 
-  KDesc = 2 << 3,
-  KType = 3 << 3,
-  KRaw = 4 << 3,
+  KDeprecated = 2 << 3,
+  KDesc = 3 << 3,
+  KType = 4 << 3,
   KNullable = 5 << 3,
   KAllowEmpty = 6 << 3,
   KUnique = 7 << 3,
@@ -34,19 +34,19 @@ enum TagKey : uint8_t {
 
   KChildDesc = 17 << 3,
   KChildType = 18 << 3,
-  KChildRaw = 19 << 3,
-  KChildNullable = 20 << 3,
-  KChildAllowEmpty = 21 << 3,
-  KChildUnique = 22 << 3,
-  KChildDefaultVal = 23 << 3,
-  KChildMin = 24 << 3,
-  KChildMax = 25 << 3,
-  KChildSize = 26 << 3,
-  KChildEnums = 27 << 3,
-  KChildPattern = 28 << 3,
-  KChildLocation = 29 << 3,
-  KChildVersion = 30 << 3,
-  KChildMime = 31 << 3
+  KChildNullable = 19 << 3,
+  KChildAllowEmpty = 20 << 3,
+  KChildUnique = 21 << 3,
+  KChildDefaultVal = 22 << 3,
+  KChildMin = 23 << 3,
+  KChildMax = 24 << 3,
+  KChildSize = 25 << 3,
+  KChildEnums = 26 << 3,
+  KChildPattern = 27 << 3,
+  KChildLocation = 28 << 3,
+  KChildVersion = 29 << 3,
+  KChildMime = 30 << 3,
+  KMore = 31 << 3
 };
 
 constexpr int DefaultVersion = 0;
@@ -60,7 +60,7 @@ struct Tag {
 
   std::string desc;
   ValueType type = ValueType::Unknown;
-  bool raw = false;
+  bool deprecated = false;
   bool nullable = false;
   bool allowEmpty = false;
   bool unique = false;
@@ -73,10 +73,10 @@ struct Tag {
   int locationOffset = DefaultLocationOffset;
   int version = DefaultVersion;
   std::string mime;
+  uint8_t more = 0;
 
   std::string childDesc;
   ValueType childType = ValueType::Unknown;
-  bool childRaw = false;
   bool childNullable = false;
   bool childAllowEmpty = false;
   bool childUnique = false;
@@ -100,8 +100,6 @@ struct Tag {
       desc = parent.childDesc;
     if (parent.childType != ValueType::Unknown)
       type = parent.childType;
-    if (parent.childRaw)
-      raw = parent.childRaw;
     if (parent.childNullable)
       nullable = parent.childNullable;
     if (parent.childAllowEmpty)
@@ -156,8 +154,8 @@ struct Tag {
       add("nullable");
     if (!desc.empty() && !isInherit)
       add("desc=\"" + desc + "\"");
-    if (raw && !isInherit)
-      add("raw");
+    if (deprecated && !isInherit)
+      add("deprecated");
     if (allowEmpty && !isInherit)
       add("allow_empty");
     if (unique && !isInherit)
@@ -184,8 +182,6 @@ struct Tag {
       add("child_desc=\"" + childDesc + "\"");
     if (childType != ValueType::Unknown)
       add("child_type=" + valueTypeToString(childType));
-    if (childRaw)
-      add("child_raw");
     if (childNullable)
       add("child_nullable");
     if (childAllowEmpty)
@@ -264,7 +260,7 @@ struct Tag {
       } else if (lower == "type") {
         r.type = parseValueType(v);
       } else if (lower == "raw") {
-        r.raw = true;
+        r.deprecated = true;
       } else if (lower == "nullable") {
         r.nullable = true;
       } else if (lower == "allow_empty") {
@@ -295,7 +291,6 @@ struct Tag {
       } else if (lower == "child_type") {
         r.childType = parseValueType(v);
       } else if (lower == "child_raw") {
-        r.childRaw = true;
       } else if (lower == "child_nullable") {
         r.childNullable = true;
       } else if (lower == "child_allow_empty") {
@@ -353,8 +348,8 @@ struct Tag {
         writeByte(static_cast<uint8_t>(type));
       }
     }
-    if (raw && !isInherit)
-      writeByte(static_cast<uint8_t>(KRaw | 1));
+    if (deprecated && !isInherit)
+      writeByte(static_cast<uint8_t>(KDeprecated | 1));
     if (allowEmpty && !isInherit)
       writeByte(static_cast<uint8_t>(KAllowEmpty | 1));
     if (unique && !isInherit)
@@ -388,8 +383,6 @@ struct Tag {
       writeByte(static_cast<uint8_t>(KChildType));
       writeByte(static_cast<uint8_t>(childType));
     }
-    if (childRaw)
-      writeByte(static_cast<uint8_t>(KChildRaw | 1));
     if (childNullable)
       writeByte(static_cast<uint8_t>(KChildNullable | 1));
     if (childAllowEmpty)
@@ -552,8 +545,8 @@ inline Tag mergeTag(const Tag *dst, const Tag *src) {
     r.desc = src->desc;
   if (src->type != ValueType::Unknown)
     r.type = src->type;
-  if (src->raw)
-    r.raw = true;
+  if (src->deprecated)
+    r.deprecated = true;
   if (src->nullable)
     r.nullable = true;
   if (src->allowEmpty)
@@ -582,8 +575,6 @@ inline Tag mergeTag(const Tag *dst, const Tag *src) {
     r.childDesc = src->childDesc;
   if (src->childType != ValueType::Unknown)
     r.childType = src->childType;
-  if (src->childRaw)
-    r.childRaw = true;
   if (src->childNullable)
     r.childNullable = true;
   if (src->childAllowEmpty)

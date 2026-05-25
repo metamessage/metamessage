@@ -10,7 +10,7 @@ annotation class MM(
         val isNull: Boolean = false,
         val example: Boolean = false,
         val desc: String = "",
-        val raw: Boolean = false,
+        val deprecated: Boolean = false,
         val nullable: Boolean = false,
         val allowEmpty: Boolean = false,
         val unique: Boolean = false,

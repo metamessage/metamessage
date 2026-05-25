@@ -889,7 +889,7 @@ class JsoncParser(private val tokens: List<JsoncToken>) {
                             }
                 }
                 "nullable" -> tag.nullable = true
-                "raw" -> tag.raw = true
+                "deprecated" -> tag.deprecated = true
                 "allow_empty" -> tag.allowEmpty = true
                 "unique" -> tag.unique = true
                 "default_val" -> tag.default_val = value

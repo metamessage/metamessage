@@ -1,5 +1,41 @@
 use crate::ir::value_type::ValueType;
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum TagKey {
+    IsNull = 0 << 3,
+    Example = 1 << 3,
+    Deprecated = 2 << 3,
+    Desc = 3 << 3,
+    Type = 4 << 3,
+    Nullable = 5 << 3,
+    AllowEmpty = 6 << 3,
+    Unique = 7 << 3,
+    Default = 8 << 3,
+    Min = 9 << 3,
+    Max = 10 << 3,
+    Size = 11 << 3,
+    Enum = 12 << 3,
+    Pattern = 13 << 3,
+    Location = 14 << 3,
+    Version = 15 << 3,
+    Mime = 16 << 3,
+    ChildDesc = 17 << 3,
+    ChildType = 18 << 3,
+    ChildNullable = 19 << 3,
+    ChildAllowEmpty = 20 << 3,
+    ChildUnique = 21 << 3,
+    ChildDefaultVal = 22 << 3,
+    ChildMin = 23 << 3,
+    ChildMax = 24 << 3,
+    ChildSize = 25 << 3,
+    ChildEnums = 26 << 3,
+    ChildPattern = 27 << 3,
+    ChildLocation = 28 << 3,
+    ChildVersion = 29 << 3,
+    ChildMime = 30 << 3,
+    More = 31 << 3,
+}
+
 #[derive(Debug, Clone)]
 pub struct Tag {
     pub value_type: ValueType,
@@ -8,7 +44,7 @@ pub struct Tag {
     pub is_null: bool,
     pub example: bool,
     pub nullable: bool,
-    pub raw: bool,
+    pub deprecated: bool,
     pub allow_empty: bool,
     pub unique: bool,
     pub is_inherit: bool,
@@ -27,7 +63,6 @@ pub struct Tag {
     pub child_desc: Option<String>,
     pub child_type: ValueType,
     pub child_nullable: bool,
-    pub child_raw: bool,
     pub child_allow_empty: bool,
     pub child_unique: bool,
     pub child_default_val: Option<String>,
@@ -39,6 +74,8 @@ pub struct Tag {
     pub child_location: Option<i32>,
     pub child_version: Option<i32>,
     pub child_mime: Option<String>,
+
+    pub more: u8,
 }
 
 impl Tag {
@@ -49,7 +86,7 @@ impl Tag {
             is_null: false,
             example: false,
             nullable: false,
-            raw: false,
+            deprecated: false,
             allow_empty: false,
             unique: false,
             is_inherit: false,
@@ -66,7 +103,6 @@ impl Tag {
             child_desc: None,
             child_type: ValueType::Unknown,
             child_nullable: false,
-            child_raw: false,
             child_allow_empty: false,
             child_unique: false,
             child_default_val: None,
@@ -78,6 +114,7 @@ impl Tag {
             child_location: None,
             child_version: None,
             child_mime: None,
+            more: 0,
         }
     }
 
@@ -94,10 +131,6 @@ impl Tag {
 
         if parent.child_nullable {
             self.nullable = true;
-        }
-
-        if parent.child_raw {
-            self.raw = true;
         }
 
         if parent.child_allow_empty {
@@ -157,16 +190,20 @@ impl Tag {
             dst.example = true;
         }
 
+        if src.deprecated {
+            dst.deprecated = true;
+        }
+
+        if src.more != 0 {
+            dst.more = src.more;
+        }
+
         if let Some(ref v) = src.desc {
             dst.desc = Some(v.clone());
         }
 
         if src.nullable {
             dst.nullable = true;
-        }
-
-        if src.raw {
-            dst.raw = true;
         }
 
         if src.allow_empty {
@@ -332,10 +369,13 @@ impl Tag {
                     }
                 }
                 "raw" => {
+                    // backward compatibility, no-op
+                }
+                "deprecated" => {
                     if let Some(ref v) = value {
-                        tag.raw = v == "true";
+                        tag.deprecated = v == "true";
                     } else {
-                        tag.raw = true;
+                        tag.deprecated = true;
                     }
                 }
                 "unique" => {
@@ -368,11 +408,7 @@ impl Tag {
                     }
                 }
                 "child_raw" => {
-                    if let Some(ref v) = value {
-                        tag.child_raw = v == "true";
-                    } else {
-                        tag.child_raw = true;
-                    }
+                    // backward compatibility, no-op
                 }
                 "child_allow_empty" => {
                     if let Some(ref v) = value {
@@ -482,8 +518,8 @@ impl Tag {
             }
         }
 
-        if self.raw && !self.is_inherit {
-            parts.push("raw".to_string());
+        if self.deprecated && !self.is_inherit {
+            parts.push("deprecated".to_string());
         }
 
         if self.allow_empty && !self.is_inherit {
@@ -570,10 +606,6 @@ impl Tag {
             }
         }
 
-        if self.child_raw {
-            parts.push("child_raw".to_string());
-        }
-
         if self.child_nullable {
             parts.push("child_nullable".to_string());
         }
@@ -630,107 +662,386 @@ impl Tag {
     }
 
     pub fn to_bytes(&self) -> Vec<u8> {
-        let mut parts = Vec::new();
+        let mut bs = Vec::new();
 
-        parts.push(format!("type={}", self.value_type.to_str()));
-
-        if let Some(ref desc) = self.desc {
-            parts.push(format!("desc={}", desc));
+        if self.example {
+            bs.push(TagKey::Example as u8 | 1);
         }
 
-        if self.nullable {
-            parts.push("nullable=true".to_string());
+        if self.is_null {
+            bs.push(TagKey::IsNull as u8 | 1);
+        }
+
+        if self.nullable && !self.is_inherit {
+            if !self.is_null {
+                bs.push(TagKey::Nullable as u8 | 1);
+            }
+        }
+
+        if self.deprecated && !self.is_inherit {
+            bs.push(TagKey::Deprecated as u8 | 1);
+        }
+
+        if let Some(ref desc) = self.desc {
+            if !self.is_inherit {
+                let l = desc.len();
+                if l <= 5 {
+                    bs.push(TagKey::Desc as u8 | l as u8);
+                    bs.extend_from_slice(desc.as_bytes());
+                } else if l <= 255 {
+                    bs.push(TagKey::Desc as u8 | 6);
+                    bs.push(l as u8);
+                    bs.extend_from_slice(desc.as_bytes());
+                } else if l <= 65535 {
+                    bs.push(TagKey::Desc as u8 | 7);
+                    bs.push((l >> 8) as u8);
+                    bs.push(l as u8);
+                    bs.extend_from_slice(desc.as_bytes());
+                }
+            }
+        }
+
+        if self.value_type != ValueType::Unknown && !self.is_inherit {
+            match self.value_type {
+                ValueType::Str
+                | ValueType::I
+                | ValueType::F64
+                | ValueType::Bool
+                | ValueType::Obj
+                | ValueType::Vec => {}
+                ValueType::Arr => if self.size.is_some() && self.size.unwrap_or(0) > 0 {},
+                ValueType::Enum => if self.enums.is_some() {},
+                _ => {
+                    bs.push(TagKey::Type as u8);
+                    bs.push(self.value_type as u8);
+                }
+            }
+        }
+
+        if self.allow_empty && !self.is_inherit {
+            bs.push(TagKey::AllowEmpty as u8 | 1);
+        }
+
+        if self.unique && !self.is_inherit {
+            bs.push(TagKey::Unique as u8 | 1);
         }
 
         if let Some(ref v) = self.default_val {
-            parts.push(format!("default_val={}", v));
+            if !self.is_inherit {
+                let l = v.len();
+                if l < 7 {
+                    bs.push(TagKey::Default as u8 | l as u8);
+                    bs.extend_from_slice(v.as_bytes());
+                } else {
+                    bs.push(TagKey::Default as u8 | 7);
+                    bs.push(l as u8);
+                    bs.extend_from_slice(v.as_bytes());
+                }
+            }
         }
 
         if let Some(ref v) = self.min {
-            parts.push(format!("min={}", v));
+            if !self.is_inherit {
+                let l = v.len();
+                if l < 7 {
+                    bs.push(TagKey::Min as u8 | l as u8);
+                    bs.extend_from_slice(v.as_bytes());
+                } else {
+                    bs.push(TagKey::Min as u8 | 7);
+                    bs.push(l as u8);
+                    bs.extend_from_slice(v.as_bytes());
+                }
+            }
         }
 
         if let Some(ref v) = self.max {
-            parts.push(format!("max={}", v));
+            if !self.is_inherit {
+                let l = v.len();
+                if l < 7 {
+                    bs.push(TagKey::Max as u8 | l as u8);
+                    bs.extend_from_slice(v.as_bytes());
+                } else {
+                    bs.push(TagKey::Max as u8 | 7);
+                    bs.push(l as u8);
+                    bs.extend_from_slice(v.as_bytes());
+                }
+            }
         }
 
         if let Some(v) = self.size {
-            parts.push(format!("size={}", v));
+            if !self.is_inherit {
+                Self::encode_u64(&mut bs, TagKey::Size as u8, v);
+            }
         }
 
         if let Some(ref v) = self.enums {
-            parts.push(format!("enums={}", v));
+            if !self.is_inherit {
+                let l = v.len();
+                if l <= 5 {
+                    bs.push(TagKey::Enum as u8 | l as u8);
+                    bs.extend_from_slice(v.as_bytes());
+                } else if l <= 255 {
+                    bs.push(TagKey::Enum as u8 | 6);
+                    bs.push(l as u8);
+                    bs.extend_from_slice(v.as_bytes());
+                } else if l <= 65535 {
+                    bs.push(TagKey::Enum as u8 | 7);
+                    bs.push((l >> 8) as u8);
+                    bs.push(l as u8);
+                    bs.extend_from_slice(v.as_bytes());
+                }
+            }
         }
 
         if let Some(ref v) = self.pattern {
-            parts.push(format!("pattern={}", v));
+            if !self.is_inherit {
+                let l = v.len();
+                if l < 7 {
+                    bs.push(TagKey::Pattern as u8 | l as u8);
+                    bs.extend_from_slice(v.as_bytes());
+                } else {
+                    bs.push(TagKey::Pattern as u8 | 7);
+                    bs.push(l as u8);
+                    bs.extend_from_slice(v.as_bytes());
+                }
+            }
         }
 
         if let Some(v) = self.location {
-            parts.push(format!("location={}", v));
+            if !self.is_inherit {
+                let s = v.to_string();
+                bs.push(TagKey::Location as u8 | s.len() as u8);
+                bs.extend_from_slice(s.as_bytes());
+            }
         }
 
         if let Some(v) = self.version {
-            parts.push(format!("version={}", v));
+            if !self.is_inherit {
+                Self::encode_u64(&mut bs, TagKey::Version as u8, v as u64);
+            }
         }
 
         if let Some(ref v) = self.mime {
-            parts.push(format!("mime={}", v));
+            if !self.is_inherit {
+                if let Ok(id) = v.parse::<u8>() {
+                    if id < 7 {
+                        bs.push(TagKey::Mime as u8 | id);
+                    } else {
+                        bs.push(TagKey::Mime as u8 | 7);
+                        bs.push(id);
+                    }
+                }
+            }
         }
 
         if let Some(ref v) = self.child_desc {
-            parts.push(format!("child_desc={}", v));
+            let l = v.len();
+            if l <= 5 {
+                bs.push(TagKey::ChildDesc as u8 | l as u8);
+                bs.extend_from_slice(v.as_bytes());
+            } else if l <= 255 {
+                bs.push(TagKey::ChildDesc as u8 | 6);
+                bs.push(l as u8);
+                bs.extend_from_slice(v.as_bytes());
+            } else if l <= 65535 {
+                bs.push(TagKey::ChildDesc as u8 | 7);
+                bs.push((l >> 8) as u8);
+                bs.push(l as u8);
+                bs.extend_from_slice(v.as_bytes());
+            }
         }
 
         if self.child_type != ValueType::Unknown {
-            parts.push(format!("child_type={}", self.child_type.to_str()));
-        }
-
-        if self.child_raw {
-            parts.push("child_raw=true".to_string());
+            match self.child_type {
+                ValueType::Str
+                | ValueType::I
+                | ValueType::F64
+                | ValueType::Bool
+                | ValueType::Obj
+                | ValueType::Vec => {}
+                ValueType::Arr => {
+                    if self.child_size.is_some() && self.child_size.unwrap_or(0) > 0 {}
+                }
+                ValueType::Enum => if self.child_enums.is_some() {},
+                _ => {
+                    bs.push(TagKey::ChildType as u8);
+                    bs.push(self.child_type as u8);
+                }
+            }
         }
 
         if self.child_nullable {
-            parts.push("child_nullable=true".to_string());
+            bs.push(TagKey::ChildNullable as u8 | 1);
+        }
+
+        if self.child_allow_empty {
+            bs.push(TagKey::ChildAllowEmpty as u8 | 1);
+        }
+
+        if self.child_unique {
+            bs.push(TagKey::ChildUnique as u8 | 1);
         }
 
         if let Some(ref v) = self.child_default_val {
-            parts.push(format!("child_default_val={}", v));
+            let l = v.len();
+            if l < 7 {
+                bs.push(TagKey::ChildDefaultVal as u8 | l as u8);
+                bs.extend_from_slice(v.as_bytes());
+            } else {
+                bs.push(TagKey::ChildDefaultVal as u8 | 7);
+                bs.push(l as u8);
+                bs.extend_from_slice(v.as_bytes());
+            }
         }
 
         if let Some(ref v) = self.child_min {
-            parts.push(format!("child_min={}", v));
+            let l = v.len();
+            if l < 7 {
+                bs.push(TagKey::ChildMin as u8 | l as u8);
+                bs.extend_from_slice(v.as_bytes());
+            } else {
+                bs.push(TagKey::ChildMin as u8 | 7);
+                bs.push(l as u8);
+                bs.extend_from_slice(v.as_bytes());
+            }
         }
 
         if let Some(ref v) = self.child_max {
-            parts.push(format!("child_max={}", v));
+            let l = v.len();
+            if l < 7 {
+                bs.push(TagKey::ChildMax as u8 | l as u8);
+                bs.extend_from_slice(v.as_bytes());
+            } else {
+                bs.push(TagKey::ChildMax as u8 | 7);
+                bs.push(l as u8);
+                bs.extend_from_slice(v.as_bytes());
+            }
         }
 
         if let Some(v) = self.child_size {
-            parts.push(format!("child_size={}", v));
+            Self::encode_u64(&mut bs, TagKey::ChildSize as u8, v);
         }
 
         if let Some(ref v) = self.child_enums {
-            parts.push(format!("child_enums={}", v));
+            let l = v.len();
+            if l <= 5 {
+                bs.push(TagKey::ChildEnums as u8 | l as u8);
+                bs.extend_from_slice(v.as_bytes());
+            } else if l <= 255 {
+                bs.push(TagKey::ChildEnums as u8 | 6);
+                bs.push(l as u8);
+                bs.extend_from_slice(v.as_bytes());
+            } else if l <= 65535 {
+                bs.push(TagKey::ChildEnums as u8 | 7);
+                bs.push((l >> 8) as u8);
+                bs.push(l as u8);
+                bs.extend_from_slice(v.as_bytes());
+            }
         }
 
         if let Some(ref v) = self.child_pattern {
-            parts.push(format!("child_pattern={}", v));
+            let l = v.len();
+            if l < 7 {
+                bs.push(TagKey::ChildPattern as u8 | l as u8);
+                bs.extend_from_slice(v.as_bytes());
+            } else {
+                bs.push(TagKey::ChildPattern as u8 | 7);
+                bs.push(l as u8);
+                bs.extend_from_slice(v.as_bytes());
+            }
         }
 
         if let Some(v) = self.child_location {
-            parts.push(format!("child_location={}", v));
+            let s = v.to_string();
+            bs.push(TagKey::ChildLocation as u8 | s.len() as u8);
+            bs.extend_from_slice(s.as_bytes());
         }
 
         if let Some(v) = self.child_version {
-            parts.push(format!("child_version={}", v));
+            Self::encode_u64(&mut bs, TagKey::ChildVersion as u8, v as u64);
         }
 
         if let Some(ref v) = self.child_mime {
-            parts.push(format!("child_mime={}", v));
+            if let Ok(id) = v.parse::<u8>() {
+                if id < 7 {
+                    bs.push(TagKey::ChildMime as u8 | id);
+                } else {
+                    bs.push(TagKey::ChildMime as u8 | 7);
+                    bs.push(id);
+                }
+            }
         }
 
-        parts.join(";").as_bytes().to_vec()
+        if self.more != 0 {
+            bs.push(TagKey::More as u8 | (self.more & 0x07));
+        }
+
+        bs
+    }
+
+    fn encode_u64(buf: &mut Vec<u8>, sign: u8, uv: u64) {
+        match uv {
+            0..=0xFF => {
+                buf.push(sign | 0);
+                buf.push(uv as u8);
+            }
+            0x100..=0xFFFF => {
+                buf.push(sign | 1);
+                buf.push((uv >> 8) as u8);
+                buf.push(uv as u8);
+            }
+            0x10000..=0xFFFFFF => {
+                buf.push(sign | 2);
+                buf.push((uv >> 16) as u8);
+                buf.push((uv >> 8) as u8);
+                buf.push(uv as u8);
+            }
+            0x1000000..=0xFFFFFFFF => {
+                buf.push(sign | 3);
+                buf.push((uv >> 24) as u8);
+                buf.push((uv >> 16) as u8);
+                buf.push((uv >> 8) as u8);
+                buf.push(uv as u8);
+            }
+            0x100000000..=0xFFFFFFFFFF => {
+                buf.push(sign | 4);
+                buf.push((uv >> 32) as u8);
+                buf.push((uv >> 24) as u8);
+                buf.push((uv >> 16) as u8);
+                buf.push((uv >> 8) as u8);
+                buf.push(uv as u8);
+            }
+            0x10000000000..=0xFFFFFFFFFFFF => {
+                buf.push(sign | 5);
+                buf.push((uv >> 40) as u8);
+                buf.push((uv >> 32) as u8);
+                buf.push((uv >> 24) as u8);
+                buf.push((uv >> 16) as u8);
+                buf.push((uv >> 8) as u8);
+                buf.push(uv as u8);
+            }
+            0x1000000000000..=0xFFFFFFFFFFFFFF => {
+                buf.push(sign | 6);
+                buf.push((uv >> 48) as u8);
+                buf.push((uv >> 40) as u8);
+                buf.push((uv >> 32) as u8);
+                buf.push((uv >> 24) as u8);
+                buf.push((uv >> 16) as u8);
+                buf.push((uv >> 8) as u8);
+                buf.push(uv as u8);
+            }
+            _ => {
+                buf.push(sign | 7);
+                buf.push((uv >> 56) as u8);
+                buf.push((uv >> 48) as u8);
+                buf.push((uv >> 40) as u8);
+                buf.push((uv >> 32) as u8);
+                buf.push((uv >> 24) as u8);
+                buf.push((uv >> 16) as u8);
+                buf.push((uv >> 8) as u8);
+                buf.push(uv as u8);
+            }
+        }
     }
 }
 

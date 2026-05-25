@@ -545,7 +545,6 @@ private fun convertVec(list: List<*>, tag: Tag, depth: Int, path: String): Node 
             node.tag?.apply {
                 childDesc = resultTag.desc
                 childType = resultTag.type
-                childRaw = resultTag.raw
                 childNullable = resultTag.nullable
                 childAllowEmpty = resultTag.allowEmpty
                 childUnique = resultTag.unique
@@ -579,7 +578,6 @@ private fun convertVec(list: List<*>, tag: Tag, depth: Int, path: String): Node 
             node.tag?.apply {
                 childDesc = resultTag.desc
                 childType = resultTag.type
-                childRaw = resultTag.raw
                 childNullable = resultTag.nullable
                 childAllowEmpty = resultTag.allowEmpty
                 childUnique = resultTag.unique
@@ -626,7 +624,6 @@ private fun convertMap(map: Map<*, *>, tag: Tag, depth: Int, path: String): Node
             node.tag?.apply {
                 childDesc = resultTag.desc
                 childType = resultTag.type
-                childRaw = resultTag.raw
                 childNullable = resultTag.nullable
                 childAllowEmpty = resultTag.allowEmpty
                 childUnique = resultTag.unique
@@ -661,7 +658,6 @@ private fun convertMap(map: Map<*, *>, tag: Tag, depth: Int, path: String): Node
             node.tag?.apply {
                 childDesc = resultTag.desc
                 childType = resultTag.type
-                childRaw = resultTag.raw
                 childNullable = resultTag.nullable
                 childAllowEmpty = resultTag.allowEmpty
                 childUnique = resultTag.unique
@@ -705,8 +701,8 @@ private fun mergeTag(dst: Tag, src: Tag) {
         dst.type = src.type
     }
 
-    if (src.raw) {
-        dst.raw = true
+    if (src.deprecated) {
+        dst.deprecated = true
     }
 
     if (src.nullable) {
@@ -763,10 +759,6 @@ private fun mergeTag(dst: Tag, src: Tag) {
 
     if (src.childType != ValueType.UNKNOWN) {
         dst.childType = src.childType
-    }
-
-    if (src.childRaw) {
-        dst.childRaw = true
     }
 
     if (src.childNullable) {

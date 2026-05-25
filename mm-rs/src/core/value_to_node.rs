@@ -1,5 +1,5 @@
-use crate::ir::{Tag, Node, Value, ValueData, Field, Object, Array, ValueType};
 use crate::core::utils::camel_to_snake;
+use crate::ir::{Array, Field, Node, Object, Tag, Value, ValueData, ValueType};
 use std::collections::HashMap;
 
 const MAX_DEPTH: usize = 32;
@@ -33,7 +33,8 @@ where
             text: "null".to_string(),
             tag,
             path: path.to_string(),
-        }.into();
+        }
+        .into();
     }
     v.to_node(tag)
 }
@@ -127,7 +128,11 @@ impl ToNode for bool {
         if tag.value_type == ValueType::Unknown {
             tag.value_type = ValueType::Bool;
         }
-        let text = if *self { "true".to_string() } else { "false".to_string() };
+        let text = if *self {
+            "true".to_string()
+        } else {
+            "false".to_string()
+        };
         Node::Value(Value {
             data: ValueData::Bool(*self),
             text,
@@ -191,7 +196,6 @@ impl<T: ToNode> ToNode for Vec<T> {
                     t.child_desc.clone_from(&item_tag.desc);
                     t.child_type = item_tag.value_type;
                     t.child_nullable = item_tag.nullable;
-                    t.child_raw = item_tag.raw;
                     t.child_allow_empty = item_tag.allow_empty;
                     t.child_unique = item_tag.unique;
                     t.child_default_val.clone_from(&item_tag.default_val);
@@ -219,7 +223,11 @@ impl<T: ToNode> ToNode for Vec<T> {
                 path: "[0]".to_string(),
             });
             let items = vec![empty_node];
-            return Node::Array(Array { items, tag: Some(tag), path: String::new() });
+            return Node::Array(Array {
+                items,
+                tag: Some(tag),
+                path: String::new(),
+            });
         }
 
         Node::Array(Array {
@@ -252,7 +260,6 @@ impl<T: ToNode> ToNode for HashMap<String, T> {
                     tag.child_desc.clone_from(&ct.desc);
                     tag.child_type = ct.value_type;
                     tag.child_nullable = ct.nullable;
-                    tag.child_raw = ct.raw;
                     tag.child_allow_empty = ct.allow_empty;
                     tag.child_unique = ct.unique;
                     tag.child_default_val.clone_from(&ct.default_val);

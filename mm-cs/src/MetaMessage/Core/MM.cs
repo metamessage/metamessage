@@ -42,7 +42,7 @@ public static class MmTagExtensions
                 tag.ChildType = childType;
         }
         tag.Nullable = attribute.Nullable;
-        tag.Raw = attribute.Raw;
+        tag.Deprecated = attribute.Deprecated;
         tag.AllowEmpty = attribute.AllowEmpty;
         tag.Unique = attribute.Unique;
         if (!string.IsNullOrEmpty(attribute.DefaultVal))

@@ -429,10 +429,6 @@ void mm_tag_inherit(mm_tag_t *tag, const mm_tag_t *parent) {
     tag->type = parent->child_type;
   }
 
-  if (parent->child_raw) {
-    tag->raw = parent->child_raw;
-  }
-
   if (parent->child_nullable) {
     tag->nullable = parent->child_nullable;
   }
@@ -547,10 +543,10 @@ char *mm_tag_to_string(const mm_tag_t *tag) {
     first = false;
   }
 
-  if (tag->raw && !tag->is_inherit) {
+  if (tag->deprecated && !tag->is_inherit) {
     if (!first)
       append_str(&buf, &cap, &len, "; ");
-    append_str(&buf, &cap, &len, "raw");
+    append_str(&buf, &cap, &len, "deprecated");
     first = false;
   }
 
@@ -662,13 +658,6 @@ char *mm_tag_to_string(const mm_tag_t *tag) {
         first = false;
       }
     }
-  }
-
-  if (tag->child_raw) {
-    if (!first)
-      append_str(&buf, &cap, &len, "; ");
-    append_str(&buf, &cap, &len, "child_raw");
-    first = false;
   }
 
   if (tag->child_nullable) {
@@ -902,8 +891,8 @@ mm_tag_t mm_tag_parse(const char *tag_str) {
       r.desc = strdup(val);
     } else if (strcmp(k, "type") == 0) {
       r.type = mm_value_type_parse(val);
-    } else if (strcmp(k, "raw") == 0) {
-      r.raw = true;
+    } else if (strcmp(k, "deprecated") == 0) {
+      r.deprecated = true;
     } else if (strcmp(k, "nullable") == 0) {
       r.nullable = true;
     } else if (strcmp(k, "allow_empty") == 0) {
@@ -952,8 +941,6 @@ mm_tag_t mm_tag_parse(const char *tag_str) {
       r.child_desc = strdup(val);
     } else if (strcmp(k, "child_type") == 0) {
       r.child_type = mm_value_type_parse(val);
-    } else if (strcmp(k, "child_raw") == 0) {
-      r.child_raw = true;
     } else if (strcmp(k, "child_nullable") == 0) {
       r.child_nullable = true;
     } else if (strcmp(k, "child_allow_empty") == 0) {
@@ -1059,12 +1046,12 @@ uint8_t *mm_tag_bytes(const mm_tag_t *tag, size_t *out_len) {
     }
   }
 
-  if (tag->raw && !tag->is_inherit) {
+  if (tag->deprecated && !tag->is_inherit) {
     if (len + 1 > cap) {
       cap = cap ? cap * 2 : 128;
       buf = (uint8_t *)realloc(buf, cap);
     }
-    buf[len++] = (uint8_t)(MM_TAG_KRAW | 1);
+    buf[len++] = (uint8_t)(MM_TAG_KDEPRECATED | 1);
   }
 
   if (tag->allow_empty && !tag->is_inherit) {
@@ -1164,14 +1151,6 @@ uint8_t *mm_tag_bytes(const mm_tag_t *tag, size_t *out_len) {
         buf[len++] = (uint8_t)(tag->child_type);
       }
     }
-  }
-
-  if (tag->child_raw) {
-    if (len + 1 > cap) {
-      cap = cap ? cap * 2 : 128;
-      buf = (uint8_t *)realloc(buf, cap);
-    }
-    buf[len++] = (uint8_t)(MM_TAG_KCHILDRAW | 1);
   }
 
   if (tag->child_nullable) {
@@ -1274,8 +1253,8 @@ void mm_tag_merge(mm_tag_t *dst, const mm_tag_t *src) {
     dst->type = src->type;
   }
 
-  if (src->raw) {
-    dst->raw = true;
+  if (src->deprecated) {
+    dst->deprecated = true;
   }
 
   if (src->nullable) {
@@ -1339,10 +1318,6 @@ void mm_tag_merge(mm_tag_t *dst, const mm_tag_t *src) {
 
   if (src->child_type != MM_VALUE_UNKNOWN) {
     dst->child_type = src->child_type;
-  }
-
-  if (src->child_raw) {
-    dst->child_raw = true;
   }
 
   if (src->child_nullable) {

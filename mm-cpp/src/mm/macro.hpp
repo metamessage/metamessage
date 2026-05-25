@@ -182,7 +182,7 @@ template <> inline double fromString<double>(const std::string &s) {
     const char *type;                                                          \
     struct TagInit {                                                           \
       bool nullable = false;                                                   \
-      bool raw = false;                                                        \
+      bool deprecated = false;                                                 \
       bool allow_empty = false;                                                \
       bool unique = false;                                                     \
       const char *desc = "";                                                   \
@@ -212,8 +212,8 @@ template <> inline double fromString<double>(const std::string &s) {
     tag.type = ir::parseValueType(fd.type);                                    \
     if (fd.tag.nullable)                                                       \
       tag.nullable = true;                                                     \
-    if (fd.tag.raw)                                                            \
-      tag.raw = true;                                                          \
+    if (fd.tag.deprecated)                                                     \
+      tag.deprecated = true;                                                   \
     if (fd.tag.allow_empty)                                                    \
       tag.allowEmpty = true;                                                   \
     if (fd.tag.unique)                                                         \
@@ -283,7 +283,7 @@ template <> inline double fromString<double>(const std::string &s) {
     const char *type;                                                          \
     struct TagInit {                                                           \
       bool nullable = false;                                                   \
-      bool raw = false;                                                        \
+      bool deprecated = false;                                                 \
       bool allow_empty = false;                                                \
       bool unique = false;                                                     \
       const char *desc = "";                                                   \
@@ -304,7 +304,6 @@ template <> inline double fromString<double>(const std::string &s) {
       const char *child_enum_val = "";                                         \
       const char *child_pattern = "";                                          \
       bool child_nullable = false;                                             \
-      bool child_raw = false;                                                  \
       bool child_allow_empty = false;                                          \
       bool child_unique = false;                                               \
       int child_version = 0;                                                   \
@@ -328,8 +327,8 @@ template <> inline double fromString<double>(const std::string &s) {
     tag.type = ir::parseValueType(fd.type);                                    \
     if (fd.tag.nullable)                                                       \
       tag.nullable = true;                                                     \
-    if (fd.tag.raw)                                                            \
-      tag.raw = true;                                                          \
+    if (fd.tag.deprecated)                                                     \
+      tag.deprecated = true;                                                   \
     if (fd.tag.allow_empty)                                                    \
       tag.allowEmpty = true;                                                   \
     if (fd.tag.unique)                                                         \
@@ -370,8 +369,6 @@ template <> inline double fromString<double>(const std::string &s) {
       tag.childPattern = fd.tag.child_pattern;                                 \
     if (fd.tag.child_nullable)                                                 \
       tag.childNullable = true;                                                \
-    if (fd.tag.child_raw)                                                      \
-      tag.childRaw = true;                                                     \
     if (fd.tag.child_allow_empty)                                              \
       tag.childAllowEmpty = true;                                              \
     if (fd.tag.child_unique)                                                   \

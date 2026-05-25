@@ -168,8 +168,8 @@ private:
         tag.nullable = true;
         return 1;
       }
-      if (b == (KRaw | 1)) {
-        tag.raw = true;
+      if (b == (KDeprecated | 1)) {
+        tag.deprecated = true;
         return 1;
       }
       if (b == (KAllowEmpty | 1)) {
@@ -178,10 +178,6 @@ private:
       }
       if (b == (KUnique | 1)) {
         tag.unique = true;
-        return 1;
-      }
-      if (b == (KChildRaw | 1)) {
-        tag.childRaw = true;
         return 1;
       }
       if (b == (KChildNullable | 1)) {

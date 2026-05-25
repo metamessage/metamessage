@@ -463,8 +463,8 @@ def _get_tag_str(tag) -> str:
         parts.append("nullable")
     if tag.desc:
         parts.append(f'desc="{tag.desc}"')
-    if tag.raw:
-        parts.append("raw")
+    if tag.deprecated:
+        parts.append("deprecated")
     if tag.allow_empty:
         parts.append("allow_empty")
     if tag.unique:
@@ -490,8 +490,6 @@ def _get_tag_str(tag) -> str:
         parts.append(f'child_desc="{tag.child_desc}"')
     if tag.child_type != ValueType.Unknown and tag.child_type not in _INFERRED_TYPES:
         parts.append(f"child_type={str(tag.child_type)}")
-    if tag.child_raw:
-        parts.append("child_raw")
     if tag.child_nullable:
         parts.append("child_nullable")
     if tag.child_allow_empty:

@@ -1,10 +1,10 @@
 use crate::core::constants::{
     CONTAINER_ARRAY, CONTAINER_LEN_MASK, TAG_ALLOW_EMPTY, TAG_CHILD_ALLOW_EMPTY,
     TAG_CHILD_DEFAULT_VAL, TAG_CHILD_DESC, TAG_CHILD_ENUMS, TAG_CHILD_LOCATION, TAG_CHILD_MAX,
-    TAG_CHILD_MIME, TAG_CHILD_MIN, TAG_CHILD_NULLABLE, TAG_CHILD_PATTERN, TAG_CHILD_RAW,
-    TAG_CHILD_SIZE, TAG_CHILD_TYPE, TAG_CHILD_UNIQUE, TAG_CHILD_VERSION, TAG_DEFAULT_VAL, TAG_DESC,
+    TAG_CHILD_MIME, TAG_CHILD_MIN, TAG_CHILD_NULLABLE, TAG_CHILD_PATTERN, TAG_CHILD_SIZE,
+    TAG_CHILD_TYPE, TAG_CHILD_UNIQUE, TAG_CHILD_VERSION, TAG_DEFAULT_VAL, TAG_DEPRECATED, TAG_DESC,
     TAG_ENUMS, TAG_EXAMPLE, TAG_IS_NULL, TAG_KEY_MASK, TAG_LOCATION, TAG_MAX, TAG_MIME, TAG_MIN,
-    TAG_NULLABLE, TAG_PATTERN, TAG_PAYLOAD_MASK, TAG_RAW, TAG_SIZE, TAG_TYPE, TAG_UNIQUE,
+    TAG_MORE, TAG_NULLABLE, TAG_PATTERN, TAG_PAYLOAD_MASK, TAG_SIZE, TAG_TYPE, TAG_UNIQUE,
     TAG_VERSION,
 };
 use crate::core::prefix::{Prefix, FLOAT_LEN_1, FLOAT_LEN_MASK, FLOAT_POSITIVE_NEGATIVE_MASK};
@@ -159,8 +159,8 @@ impl Decoder {
                 tag.value_type = ValueType::from_code(tb);
                 Ok(2)
             }
-            TAG_RAW => {
-                tag.raw = (payload & 1) == 1;
+            TAG_DEPRECATED => {
+                tag.deprecated = (payload & 1) == 1;
                 Ok(1)
             }
             TAG_NULLABLE => {
@@ -238,8 +238,8 @@ impl Decoder {
                 tag.child_type = ValueType::from_code(tb);
                 Ok(2)
             }
-            TAG_CHILD_RAW => {
-                tag.child_raw = (payload & 1) == 1;
+            TAG_MORE => {
+                tag.more = (payload & 0x07) as u8;
                 Ok(1)
             }
             TAG_CHILD_NULLABLE => {

@@ -449,8 +449,8 @@ static bool dec_parse_one_tag_entry(mm_decoder_t *d, mm_tag_t *tag) {
     tag->type = (mm_value_type_t)dec_read_byte(d);
     return true;
 
-  case MM_TAG_KRAW:
-    tag->raw = (payload & 0x01) != 0;
+  case MM_TAG_KDEPRECATED:
+    tag->deprecated = (payload & 0x01) != 0;
     return true;
 
   case MM_TAG_KNULLABLE:
@@ -622,10 +622,6 @@ static bool dec_parse_one_tag_entry(mm_decoder_t *d, mm_tag_t *tag) {
 
   case MM_TAG_KCHILDTYPE:
     tag->child_type = (mm_value_type_t)dec_read_byte(d);
-    return true;
-
-  case MM_TAG_KCHILDRAW:
-    tag->child_raw = (payload & 0x01) != 0;
     return true;
 
   case MM_TAG_KCHILDNULLABLE:

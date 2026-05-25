@@ -8,7 +8,7 @@ public class Tag {
 
     public var desc: String = ""
     public var type: ValueType = .unknown
-    public var raw: Bool = false
+    public var deprecated: Bool = false
     public var nullable: Bool = false
     public var allowEmpty: Bool = false
     public var unique: Bool = false
@@ -21,6 +21,7 @@ public class Tag {
     public var location: Int = 0
     public var version: Int = 0
     public var mime: String = ""
+    public var more: Int = 0
 
     public var childDesc: String = ""
     public var childType: ValueType = .unknown
@@ -45,7 +46,6 @@ public class Tag {
     public func inherit(from tag: Tag) {
         self.desc = tag.childDesc
         self.type = tag.childType
-        self.raw = tag.childRaw
         self.nullable = tag.childNullable
         self.allowEmpty = tag.childAllowEmpty
         self.unique = tag.childUnique
@@ -89,8 +89,8 @@ public class Tag {
             parts.append("desc=\"\(desc)\"")
         }
 
-        if raw && !isInherit {
-            parts.append("raw")
+        if deprecated && !isInherit {
+            parts.append("deprecated")
         }
 
         if allowEmpty && !isInherit {
@@ -149,10 +149,6 @@ public class Tag {
                     parts.append("child_type=\(childType.stringValue)")
                 }
             }
-        }
-
-        if childRaw {
-            parts.append("child_raw")
         }
 
         if childNullable {
@@ -260,7 +256,10 @@ public func parseMMTag(_ tagStr: String) -> Tag? {
             }
 
         case "raw":
-            result.raw = true
+            result.deprecated = true
+
+        case "deprecated":
+            result.deprecated = true
 
         case "nullable":
             result.nullable = true
@@ -314,7 +313,7 @@ public func parseMMTag(_ tagStr: String) -> Tag? {
             }
 
         case "child_raw":
-            result.childRaw = true
+            break
 
         case "child_nullable":
             result.childNullable = true

@@ -11,9 +11,9 @@ class MM
     public string $name = '';
     public bool $isNull = false;
     public bool $example = false;
+    public bool $deprecated = false;
     public string $desc = '';
     public ValueType $type;
-    public bool $raw = false;
     public bool $nullable = false;
     public bool $allowEmpty = false;
     public bool $unique = false;
@@ -29,7 +29,6 @@ class MM
 
     public string $childDesc = '';
     public ValueType $childType;
-    public bool $childRaw = false;
     public bool $childNullable = false;
     public bool $childAllowEmpty = false;
     public bool $childUnique = false;
@@ -42,14 +41,15 @@ class MM
     public int $childLocation = 0;
     public int $childVersion = 0;
     public string $childMime = '';
+    public int $more = 0;
 
     public function __construct(
         string $name = '',
         bool $isNull = false,
         bool $example = false,
+        bool $deprecated = false,
         string $desc = '',
         ValueType $type = ValueType::UNKNOWN,
-        bool $raw = false,
         bool $nullable = false,
         bool $allowEmpty = false,
         bool $unique = false,
@@ -64,7 +64,6 @@ class MM
         string $mime = '',
         string $childDesc = '',
         ValueType $childType = ValueType::UNKNOWN,
-        bool $childRaw = false,
         bool $childNullable = false,
         bool $childAllowEmpty = false,
         bool $childUnique = false,
@@ -77,13 +76,14 @@ class MM
         int $childLocation = 0,
         int $childVersion = 0,
         string $childMime = '',
+        int $more = 0,
     ) {
         $this->name = $name;
         $this->isNull = $isNull;
         $this->example = $example;
         $this->desc = $desc;
         $this->type = $type;
-        $this->raw = $raw;
+        $this->deprecated = $deprecated;
         $this->nullable = $nullable;
         $this->allowEmpty = $allowEmpty;
         $this->unique = $unique;
@@ -98,7 +98,6 @@ class MM
         $this->mime = $mime;
         $this->childDesc = $childDesc;
         $this->childType = $childType;
-        $this->childRaw = $childRaw;
         $this->childNullable = $childNullable;
         $this->childAllowEmpty = $childAllowEmpty;
         $this->childUnique = $childUnique;
@@ -111,5 +110,6 @@ class MM
         $this->childLocation = $childLocation;
         $this->childVersion = $childVersion;
         $this->childMime = $childMime;
+        $this->more = $more;
     }
 }

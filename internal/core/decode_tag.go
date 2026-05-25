@@ -88,8 +88,8 @@ func (d *decoder) decodeTagBytes(tag *ir.Tag) (length int, err error) {
 		tag.Type = ir.ValueType(b)
 		length = 1 + 1
 
-	case ir.KRaw:
-		tag.Raw = l&0x01 == 1
+	case ir.KDeprecated:
+		tag.Deprecated = l&0x01 == 1
 		length = 1
 
 	case ir.KNullable:
@@ -363,10 +363,6 @@ func (d *decoder) decodeTagBytes(tag *ir.Tag) (length int, err error) {
 		tag.ChildType = ir.ValueType(b)
 		length = 1 + 1
 
-	case ir.KChildRaw:
-		tag.ChildRaw = l&0x01 == 1
-		length = 1
-
 	case ir.KChildNullable:
 		tag.ChildNullable = l&0x01 == 1
 		length = 1
@@ -576,6 +572,22 @@ func (d *decoder) decodeTagBytes(tag *ir.Tag) (length int, err error) {
 			tag.ChildMime = ir.MIME(uint8(l2)).String()
 			length = 1 + 1
 		}
+
+	case ir.KMore:
+		if l < 8 {
+			for i := 0; i < l+1; i++ {
+				var b byte
+				b, err = d.ReadByte()
+				if err != nil {
+					return
+				}
+				tag.More = tag.More<<8 | int(b)
+			}
+			length = 2 + l
+			return
+		}
+		err = fmt.Errorf("more is too large")
+		return
 
 	default:
 		err = fmt.Errorf("invalid tag %d", ir.TagKey(prefix))

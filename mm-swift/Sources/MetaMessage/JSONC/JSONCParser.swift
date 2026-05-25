@@ -66,7 +66,7 @@ public class JSONCParser {
         if src.example { merged.example = src.example }
         if !src.desc.isEmpty { merged.desc = src.desc }
         if src.type != .unknown { merged.type = src.type }
-        if src.raw { merged.raw = src.raw }
+        if src.deprecated { merged.deprecated = src.deprecated }
         if src.nullable { merged.nullable = src.nullable }
         if src.allowEmpty { merged.allowEmpty = src.allowEmpty }
         if src.unique { merged.unique = src.unique }
@@ -82,7 +82,6 @@ public class JSONCParser {
 
         if !src.childDesc.isEmpty { merged.childDesc = src.childDesc }
         if src.childType != .unknown { merged.childType = src.childType }
-        if src.childRaw { merged.childRaw = src.childRaw }
         if src.childNullable { merged.childNullable = src.childNullable }
         if src.childAllowEmpty { merged.childAllowEmpty = src.childAllowEmpty }
         if src.childUnique { merged.childUnique = src.childUnique }

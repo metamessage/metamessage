@@ -19,6 +19,47 @@ var emailRegex = regexp.MustCompile(`^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]
 var decimalRegex = regexp.MustCompile(`^-?\d+\.\d+$`)
 var uuidRegex = regexp.MustCompile(`^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$`)
 
+func (t *Tag) ValidateVec(value []Node) (err error) {
+	if len(t.Desc) > 65535 {
+		err = fmt.Errorf("desc length exceeds 65535 bytes")
+		return
+	}
+
+	location := utils.GetLocationOffsetHour(t.Location)
+	if location != 0 {
+		err = fmt.Errorf("type slice not support location UTC%d", location)
+		return
+	}
+
+	l := len(value)
+
+	if l == 0 {
+		if t.AllowEmpty {
+			return
+		}
+		err = fmt.Errorf("type slice not allow empty")
+		return
+	}
+
+	if value[0].GetType() != NodeTypeValue {
+		return
+	}
+
+	if t.ChildUnique {
+		seen := make(map[any]bool)
+
+		for i, node := range value {
+			data := node.(*Value).Data
+			if seen[data] {
+				return fmt.Errorf("vec duplicate value found: %v, index: %d", data, i)
+			}
+			seen[data] = true
+		}
+	}
+
+	return
+}
+
 func (t *Tag) ValidateArr(value []Node) (err error) {
 	if len(t.Desc) > 65535 {
 		err = fmt.Errorf("desc length exceeds 65535 bytes")
@@ -95,7 +136,7 @@ func (t *Tag) ValidateMap() (err error) {
 	return
 }
 
-func (t *Tag) ValidateStr(val string) (data any, text string, err error) {
+func (t *Tag) ValidateStr(val string, example bool) (data any, text string, err error) {
 	if val == "" {
 		if t.AllowEmpty {
 			data = val
@@ -177,7 +218,7 @@ func (t *Tag) ValidateStr(val string) (data any, text string, err error) {
 	return
 }
 
-func (t *Tag) ValidateBytes(val []byte) (data any, text string, err error) {
+func (t *Tag) ValidateBytes(val []byte, example bool) (data any, text string, err error) {
 	l := len(val)
 
 	if l == 0 {
@@ -240,7 +281,7 @@ func (t *Tag) ValidateBytes(val []byte) (data any, text string, err error) {
 	return
 }
 
-func (t *Tag) ValidateBool(val bool) (data any, text string, err error) {
+func (t *Tag) ValidateBool(val bool, example bool) (data any, text string, err error) {
 	if len(t.Desc) > 65535 {
 		err = fmt.Errorf("desc length exceeds 65535 bytes")
 		return
@@ -263,48 +304,7 @@ func (t *Tag) ValidateBool(val bool) (data any, text string, err error) {
 	return
 }
 
-func (t *Tag) ValidateVec(value []Node) (err error) {
-	if len(t.Desc) > 65535 {
-		err = fmt.Errorf("desc length exceeds 65535 bytes")
-		return
-	}
-
-	location := utils.GetLocationOffsetHour(t.Location)
-	if location != 0 {
-		err = fmt.Errorf("type slice not support location UTC%d", location)
-		return
-	}
-
-	l := len(value)
-
-	if l == 0 {
-		if t.AllowEmpty {
-			return
-		}
-		err = fmt.Errorf("type slice not allow empty")
-		return
-	}
-
-	if value[0].GetType() != NodeTypeValue {
-		return
-	}
-
-	if t.ChildUnique {
-		seen := make(map[any]bool)
-
-		for i, node := range value {
-			data := node.(*Value).Data
-			if seen[data] {
-				return fmt.Errorf("vec duplicate value found: %v, index: %d", data, i)
-			}
-			seen[data] = true
-		}
-	}
-
-	return
-}
-
-func (t *Tag) ValidateI(val int) (data any, text string, err error) {
+func (t *Tag) ValidateI(val int, example bool) (data any, text string, err error) {
 	if val == 0 {
 		if t.AllowEmpty {
 			data = val
@@ -360,7 +360,7 @@ func (t *Tag) ValidateI(val int) (data any, text string, err error) {
 	return
 }
 
-func (t *Tag) ValidateI8(val int8) (data any, text string, err error) {
+func (t *Tag) ValidateI8(val int8, example bool) (data any, text string, err error) {
 	if val == 0 {
 		if t.AllowEmpty {
 			data = val
@@ -415,7 +415,7 @@ func (t *Tag) ValidateI8(val int8) (data any, text string, err error) {
 	return
 }
 
-func (t *Tag) ValidateI16(val int16) (data any, text string, err error) {
+func (t *Tag) ValidateI16(val int16, example bool) (data any, text string, err error) {
 	if val == 0 {
 		if t.AllowEmpty {
 			data = val
@@ -471,7 +471,7 @@ func (t *Tag) ValidateI16(val int16) (data any, text string, err error) {
 	return
 }
 
-func (t *Tag) ValidateI32(val int32) (data any, text string, err error) {
+func (t *Tag) ValidateI32(val int32, example bool) (data any, text string, err error) {
 	if val == 0 {
 		if t.AllowEmpty {
 			data = val
@@ -527,7 +527,7 @@ func (t *Tag) ValidateI32(val int32) (data any, text string, err error) {
 	return
 }
 
-func (t *Tag) ValidateI64(val int64) (data any, text string, err error) {
+func (t *Tag) ValidateI64(val int64, example bool) (data any, text string, err error) {
 	if val == 0 {
 		if t.AllowEmpty {
 			data = val
@@ -581,7 +581,7 @@ func (t *Tag) ValidateI64(val int64) (data any, text string, err error) {
 	return
 }
 
-func (t *Tag) ValidateU(val uint) (data any, text string, err error) {
+func (t *Tag) ValidateU(val uint, example bool) (data any, text string, err error) {
 	if val == 0 {
 		if t.AllowEmpty {
 			data = val
@@ -637,7 +637,7 @@ func (t *Tag) ValidateU(val uint) (data any, text string, err error) {
 	return
 }
 
-func (t *Tag) ValidateU8(val uint8) (data any, text string, err error) {
+func (t *Tag) ValidateU8(val uint8, example bool) (data any, text string, err error) {
 	if val == 0 {
 		if t.AllowEmpty {
 			data = val
@@ -693,7 +693,7 @@ func (t *Tag) ValidateU8(val uint8) (data any, text string, err error) {
 	return
 }
 
-func (t *Tag) ValidateU16(val uint16) (data any, text string, err error) {
+func (t *Tag) ValidateU16(val uint16, example bool) (data any, text string, err error) {
 	if val == 0 {
 		if t.AllowEmpty {
 			data = val
@@ -749,7 +749,7 @@ func (t *Tag) ValidateU16(val uint16) (data any, text string, err error) {
 	return
 }
 
-func (t *Tag) ValidateU32(val uint32) (data any, text string, err error) {
+func (t *Tag) ValidateU32(val uint32, example bool) (data any, text string, err error) {
 	if val == 0 {
 		if t.AllowEmpty {
 			data = val
@@ -805,7 +805,7 @@ func (t *Tag) ValidateU32(val uint32) (data any, text string, err error) {
 	return
 }
 
-func (t *Tag) ValidateU64(val uint64) (data any, text string, err error) {
+func (t *Tag) ValidateU64(val uint64, example bool) (data any, text string, err error) {
 	if val == 0 {
 		if t.AllowEmpty {
 			data = val
@@ -859,7 +859,7 @@ func (t *Tag) ValidateU64(val uint64) (data any, text string, err error) {
 	return
 }
 
-func (t *Tag) ValidateF32(val float32) (data any, text string, err error) {
+func (t *Tag) ValidateF32(val float32, example bool) (data any, text string, err error) {
 	if val == 0.0 {
 		if t.AllowEmpty {
 			data = val
@@ -915,7 +915,7 @@ func (t *Tag) ValidateF32(val float32) (data any, text string, err error) {
 	return
 }
 
-func (t *Tag) ValidateF64(val float64) (data any, text string, err error) {
+func (t *Tag) ValidateF64(val float64, example bool) (data any, text string, err error) {
 	if val == 0.0 {
 		if t.AllowEmpty {
 			data = val
@@ -969,7 +969,7 @@ func (t *Tag) ValidateF64(val float64) (data any, text string, err error) {
 	return
 }
 
-func (t *Tag) ValidateBigint(val big.Int) (data any, text string, err error) {
+func (t *Tag) ValidateBigint(val big.Int, example bool) (data any, text string, err error) {
 	if val.Sign() == 0 {
 		if t.AllowEmpty {
 			data = val
@@ -1021,7 +1021,7 @@ func (t *Tag) ValidateBigint(val big.Int) (data any, text string, err error) {
 	return
 }
 
-func (t *Tag) ValidateDatetime(val time.Time) (data any, text string, err error) {
+func (t *Tag) ValidateDatetime(val time.Time, example bool) (data any, text string, err error) {
 	location := time.UTC
 	if t.Location != nil {
 		location = t.Location
@@ -1050,7 +1050,7 @@ func (t *Tag) ValidateDatetime(val time.Time) (data any, text string, err error)
 	return
 }
 
-func (t *Tag) ValidateDate(val time.Time) (data any, text string, err error) {
+func (t *Tag) ValidateDate(val time.Time, example bool) (data any, text string, err error) {
 	location := time.UTC
 	if t.Location != nil {
 		location = t.Location
@@ -1079,7 +1079,7 @@ func (t *Tag) ValidateDate(val time.Time) (data any, text string, err error) {
 	return
 }
 
-func (t *Tag) ValidateTime(val time.Time) (data any, text string, err error) {
+func (t *Tag) ValidateTime(val time.Time, example bool) (data any, text string, err error) {
 	location := time.UTC
 	if t.Location != nil {
 		location = t.Location
@@ -1108,7 +1108,7 @@ func (t *Tag) ValidateTime(val time.Time) (data any, text string, err error) {
 	return
 }
 
-func (t *Tag) ValidateUuid(val string) (data any, text string, err error) {
+func (t *Tag) ValidateUuid(val string, example bool) (data any, text string, err error) {
 	if val == "" {
 		if t.AllowEmpty {
 			data = [16]byte{}
@@ -1153,7 +1153,7 @@ func (t *Tag) ValidateUuid(val string) (data any, text string, err error) {
 	return
 }
 
-func (t *Tag) ValidateDecimal(val string) (data any, text string, err error) {
+func (t *Tag) ValidateDecimal(val string, example bool) (data any, text string, err error) {
 	if val == "" {
 		if t.AllowEmpty {
 			data = val
@@ -1186,7 +1186,7 @@ func (t *Tag) ValidateDecimal(val string) (data any, text string, err error) {
 	return
 }
 
-func (t *Tag) ValidateIp(val net.IP) (data any, text string, err error) {
+func (t *Tag) ValidateIp(val net.IP, example bool) (data any, text string, err error) {
 	if val.String() == "<nil>" {
 		if t.AllowEmpty {
 			data = val
@@ -1228,7 +1228,7 @@ func (t *Tag) ValidateIp(val net.IP) (data any, text string, err error) {
 	return
 }
 
-func (t *Tag) ValidateUrl(val url.URL) (data any, text string, err error) {
+func (t *Tag) ValidateUrl(val url.URL, example bool) (data any, text string, err error) {
 	if val.String() == "" {
 		if t.AllowEmpty {
 			data = val
@@ -1266,7 +1266,7 @@ func (t *Tag) ValidateUrl(val url.URL) (data any, text string, err error) {
 	return
 }
 
-func (t *Tag) ValidateEmail(val string) (data any, text string, err error) {
+func (t *Tag) ValidateEmail(val string, example bool) (data any, text string, err error) {
 	if val == "" {
 		if t.AllowEmpty {
 			data = val
@@ -1299,7 +1299,7 @@ func (t *Tag) ValidateEmail(val string) (data any, text string, err error) {
 	return
 }
 
-func (t *Tag) ValidateEnum(val string) (data any, text string, err error) {
+func (t *Tag) ValidateEnum(val string, example bool) (data any, text string, err error) {
 	if val == "" {
 		if t.AllowEmpty {
 			data = -1
@@ -1341,7 +1341,7 @@ func (t *Tag) ValidateEnum(val string) (data any, text string, err error) {
 	return
 }
 
-func (t *Tag) ValidateImage(val []byte) (data any, text string, err error) {
+func (t *Tag) ValidateImage(val []byte, example bool) (data any, text string, err error) {
 	l := len(val)
 
 	if l == 0 {

@@ -392,8 +392,8 @@ class Decoder:
             tb = self._read_byte()
             tag.type = ValueType(tb)
             return 2
-        elif p == TagKey.Raw:
-            tag.raw = (l & 0x01) == 1
+        elif p == TagKey.Deprecated:
+            tag.deprecated = (l & 0x01) == 1
             return 1
         elif p == TagKey.Nullable:
             tag.nullable = (l & 0x01) == 1
@@ -451,9 +451,7 @@ class Decoder:
             tb = self._read_byte()
             tag.child_type = ValueType(tb)
             return 2
-        elif p == TagKey.ChildRaw:
-            tag.child_raw = (l & 0x01) == 1
-            return 1
+        
         elif p == TagKey.ChildNullable:
             tag.child_nullable = (l & 0x01) == 1
             return 1

@@ -56,7 +56,7 @@ mm_node_t *mm_value_create_str(const char *text, mm_value_type_t type,
   }
 
   node->data.value.tag.nullable = attr.nullable;
-  node->data.value.tag.raw = attr.raw;
+  node->data.value.tag.deprecated = attr.deprecated;
   node->data.value.tag.allow_empty = attr.allow_empty;
   node->data.value.tag.unique = attr.unique;
 
@@ -115,7 +115,7 @@ void mm_container_apply_attr(mm_node_t *container, mm_container_attr_t attr) {
     tag->location_offset = attr.location;
   }
   tag->nullable = attr.nullable;
-  tag->raw = attr.raw;
+  tag->deprecated = attr.deprecated;
   tag->allow_empty = attr.allow_empty;
   tag->unique = attr.unique;
   if (attr.version > 0) {
@@ -146,7 +146,6 @@ void mm_container_apply_attr(mm_node_t *container, mm_container_attr_t attr) {
     tag->child_size = attr.child_size;
   }
   tag->child_nullable = attr.child_nullable;
-  tag->child_raw = attr.child_raw;
   tag->child_allow_empty = attr.child_allow_empty;
   tag->child_unique = attr.child_unique;
   if (attr.child_version > 0) {

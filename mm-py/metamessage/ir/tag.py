@@ -104,9 +104,9 @@ def parse_value_type(s: str) -> ValueType:
 class TagKey(IntEnum):
     IsNull = 0 << 3
     Example = 1 << 3
-    Desc = 2 << 3
-    Type = 3 << 3
-    Raw = 4 << 3
+    Deprecated = 2 << 3
+    Desc = 3 << 3
+    Type = 4 << 3
     Nullable = 5 << 3
     AllowEmpty = 6 << 3
     Unique = 7 << 3
@@ -121,19 +121,19 @@ class TagKey(IntEnum):
     Mime = 16 << 3
     ChildDesc = 17 << 3
     ChildType = 18 << 3
-    ChildRaw = 19 << 3
-    ChildNullable = 20 << 3
-    ChildAllowEmpty = 21 << 3
-    ChildUnique = 22 << 3
-    ChildDefault = 23 << 3
-    ChildMin = 24 << 3
-    ChildMax = 25 << 3
-    ChildSize = 26 << 3
-    ChildEnum = 27 << 3
-    ChildPattern = 28 << 3
-    ChildLocation = 29 << 3
-    ChildVersion = 30 << 3
-    ChildMime = 31 << 3
+    ChildNullable = 19 << 3
+    ChildAllowEmpty = 20 << 3
+    ChildUnique = 21 << 3
+    ChildDefault = 22 << 3
+    ChildMin = 23 << 3
+    ChildMax = 24 << 3
+    ChildSize = 25 << 3
+    ChildEnum = 26 << 3
+    ChildPattern = 27 << 3
+    ChildLocation = 28 << 3
+    ChildVersion = 29 << 3
+    ChildMime = 30 << 3
+    More = 31 << 3
 
 
 _MAX1BYTE = 0xFF
@@ -188,7 +188,7 @@ class Tag:
     example: bool = False
     desc: str = ""
     type: ValueType = ValueType.Unknown
-    raw: bool = False
+    deprecated: bool = False
     nullable: bool = False
     allow_empty: bool = False
     unique: bool = False
@@ -201,9 +201,9 @@ class Tag:
     location: Any = None
     version: int = 0
     mime: str = ""
+    more: int = 0
     child_desc: str = ""
     child_type: ValueType = ValueType.Unknown
-    child_raw: bool = False
     child_nullable: bool = False
     child_allow_empty: bool = False
     child_unique: bool = False
@@ -226,8 +226,6 @@ class Tag:
             self.desc = tag.child_desc
         if tag.child_type != ValueType.Unknown:
             self.type = tag.child_type
-        if tag.child_raw:
-            self.raw = tag.child_raw
         if tag.child_nullable:
             self.nullable = tag.child_nullable
         if tag.child_allow_empty:
@@ -289,8 +287,8 @@ class Tag:
                     buf.append(TagKey.Type)
                     buf.append(self.type)
 
-        if self.raw and not self.is_inherit:
-            buf.append(TagKey.Raw | 1)
+        if self.deprecated and not self.is_inherit:
+            buf.append(TagKey.Deprecated | 1)
 
         if self.allow_empty and not self.is_inherit:
             buf.append(TagKey.AllowEmpty | 1)
@@ -397,9 +395,6 @@ class Tag:
                     buf.append(TagKey.ChildType)
                     buf.append(self.child_type)
 
-        if self.child_raw:
-            buf.append(TagKey.ChildRaw | 1)
-
         if self.child_nullable:
             buf.append(TagKey.ChildNullable | 1)
 
@@ -485,6 +480,9 @@ class Tag:
                 buf.append(TagKey.ChildMime | 7)
                 buf.append(l)
 
+        if self.more != 0:
+            _encode_u64(buf, TagKey.More, self.more)
+
         return bytes(buf)
 
     def __str__(self) -> str:
@@ -512,8 +510,8 @@ class Tag:
         if self.desc and not self.is_inherit:
             parts.append('desc="%s"' % self.desc)
 
-        if self.raw and not self.is_inherit:
-            parts.append("raw")
+        if self.deprecated:
+            parts.append("deprecated")
 
         if self.allow_empty and not self.is_inherit:
             parts.append("allow_empty")
@@ -563,9 +561,6 @@ class Tag:
                 if not (self.child_type == ValueType.Arr and self.child_size > 0) and not (
                         self.child_type == ValueType.Enums and self.child_enums):
                     parts.append("child_type=%s" % str(self.child_type))
-
-        if self.child_raw:
-            parts.append("child_raw")
 
         if self.child_nullable:
             parts.append("child_nullable")
@@ -707,7 +702,7 @@ def mm_tag(tag_str: str) -> Tag:
         elif k == "type":
             tag.type = parse_value_type(v)
         elif k == "raw":
-            tag.raw = True
+            tag.deprecated = True
         elif k == "nullable":
             tag.nullable = True
         elif k == "allow_empty":
@@ -746,8 +741,6 @@ def mm_tag(tag_str: str) -> Tag:
             tag.child_desc = v
         elif k == "child_type":
             tag.child_type = parse_value_type(v)
-        elif k == "child_raw":
-            tag.child_raw = True
         elif k == "child_nullable":
             tag.child_nullable = True
         elif k == "child_allow_empty":
@@ -804,8 +797,8 @@ def MergeTag(dst: Tag, src: Tag) -> Tag:
         dst.desc = src.desc
     if src.type != ValueType.Unknown:
         dst.type = src.type
-    if src.raw:
-        dst.raw = True
+    if src.deprecated:
+        dst.deprecated = True
     if src.nullable:
         dst.nullable = True
     if src.allow_empty:
@@ -834,8 +827,6 @@ def MergeTag(dst: Tag, src: Tag) -> Tag:
         dst.child_desc = src.child_desc
     if src.child_type != ValueType.Unknown:
         dst.child_type = src.child_type
-    if src.child_raw:
-        dst.child_raw = True
     if src.child_nullable:
         dst.child_nullable = True
     if src.child_allow_empty:

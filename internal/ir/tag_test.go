@@ -73,20 +73,20 @@ func TestParseMMTag_QuotedAndSemicolon(t *testing.T) {
 
 func TestTagValidate_NumericRange(t *testing.T) {
 	tag := &Tag{Min: "1", Max: "10"}
-	_, _, err := tag.ValidateI(5)
+	_, _, err := tag.ValidateI(5, false)
 	if err != nil {
 		t.Fatalf("expected valid for 5, got %v", err)
 	}
-	_, _, err = tag.ValidateI(0)
+	_, _, err = tag.ValidateI(0, false)
 	if err == nil {
 		t.Fatalf("expected invalid for 0")
 	}
-	_, _, err = tag.ValidateI(11)
+	_, _, err = tag.ValidateI(11, false)
 	if err == nil {
 		t.Fatalf("expected invalid for 11")
 	}
 	// floats
-	_, _, err = tag.ValidateF64(3.14)
+	_, _, err = tag.ValidateF64(3.14, false)
 	if err != nil {
 		t.Fatalf("expected valid for 3.14, got  %v", err)
 	}
@@ -95,11 +95,11 @@ func TestTagValidate_NumericRange(t *testing.T) {
 func TestTagValidate_StringRuneLength(t *testing.T) {
 	tag := &Tag{Min: "2", Max: "4"}
 	// multibyte characters
-	_, _, err := tag.ValidateStr("你好") // 2 runes
+	_, _, err := tag.ValidateStr("你好", false) // 2 runes
 	if err != nil {
 		t.Fatalf("expected valid for 你好, got %v", err)
 	}
-	_, _, err = tag.ValidateStr("😀😀😀😀😀") // 5 runes
+	_, _, err = tag.ValidateStr("😀😀😀😀😀", false) // 5 runes
 	if err == nil {
 		t.Fatalf("expected invalid for 5 runes")
 	}
@@ -107,21 +107,21 @@ func TestTagValidate_StringRuneLength(t *testing.T) {
 
 func TestTagValidate_PatternAndEnum(t *testing.T) {
 	tag := &Tag{Pattern: `^\d{3}$`}
-	_, _, err := tag.ValidateStr("123")
+	_, _, err := tag.ValidateStr("123", false)
 	if err != nil {
 		t.Fatalf("expected pattern match for 123, got  %v", err)
 	}
-	_, _, err = tag.ValidateStr("12a")
+	_, _, err = tag.ValidateStr("12a", false)
 	if err == nil {
 		t.Fatalf("expected pattern mismatch for 12a")
 	}
 
 	etag := &Tag{Enums: "a|b|c"}
-	_, _, err = etag.ValidateEnum("b")
+	_, _, err = etag.ValidateEnum("b", false)
 	if err != nil {
 		t.Fatalf("expected enum match for b")
 	}
-	_, _, err = etag.ValidateEnum("z")
+	_, _, err = etag.ValidateEnum("z", false)
 	if err == nil {
 		t.Fatalf("expected enum mismatch for z")
 	}
@@ -129,12 +129,12 @@ func TestTagValidate_PatternAndEnum(t *testing.T) {
 
 func TestTagValidate_NilPointerNullable(t *testing.T) {
 	tag := &Tag{AllowEmpty: true}
-	_, _, err := tag.ValidateI(0)
+	_, _, err := tag.ValidateI(0, false)
 	if err != nil {
 		t.Fatalf("expected 0 accepted when allow_empty: %v", err)
 	}
 	tag.AllowEmpty = false
-	_, _, err = tag.ValidateI(0)
+	_, _, err = tag.ValidateI(0, false)
 	if err == nil {
 		t.Fatalf("expected 0 rejected when not allow_empty")
 	}
@@ -142,52 +142,52 @@ func TestTagValidate_NilPointerNullable(t *testing.T) {
 
 func TestTagValidate_TypeSpecificWrappers(t *testing.T) {
 	intTag := &Tag{Min: "1", Max: "10"}
-	_, _, err := intTag.ValidateI(5)
+	_, _, err := intTag.ValidateI(5, false)
 	if err != nil {
 		t.Fatalf("expected valid int value")
 	}
-	_, _, err = intTag.ValidateI(0)
+	_, _, err = intTag.ValidateI(0, false)
 	if err == nil {
 		t.Fatalf("expected invalid int value below min")
 	}
 
 	urlTag := &Tag{Type: ValueTypeUrl, AllowEmpty: true}
 	u, _ := url.Parse("https://example.com")
-	_, _, err = urlTag.ValidateUrl(*u)
+	_, _, err = urlTag.ValidateUrl(*u, false)
 	if err != nil {
 		t.Fatalf("expected valid url value, got %v", err)
 	}
 
 	emailTag := &Tag{Type: ValueTypeEmail}
-	_, _, err = emailTag.ValidateEmail("a@b.com")
+	_, _, err = emailTag.ValidateEmail("a@b.com", false)
 	if err != nil {
 		t.Fatalf("expected valid email value, got %v", err)
 	}
 
 	ipTag := &Tag{Type: ValueTypeIp, Version: 4}
 	ip := net.ParseIP("127.0.0.1")
-	_, _, err = ipTag.ValidateIp(ip)
+	_, _, err = ipTag.ValidateIp(ip, false)
 	if err != nil {
 		t.Fatalf("expected valid ipv4 value, got %v", err)
 	}
 
 	bigTag := &Tag{Type: ValueTypeBigint}
 	bi, _ := new(big.Int).SetString("12345678901234567890", 10)
-	_, _, err = bigTag.ValidateBigint(*bi)
+	_, _, err = bigTag.ValidateBigint(*bi, false)
 	if err != nil {
 		t.Fatalf("expected valid big.Int value, got %v", err)
 	}
 	b2 := big.NewInt(42)
-	if _, _, err := bigTag.ValidateBigint(*b2); err != nil {
+	if _, _, err := bigTag.ValidateBigint(*b2, false); err != nil {
 		t.Fatalf("expected valid big.Int value object, got %v", err)
 	}
 
 	enumTag := &Tag{Enums: "a|b|c"}
-	_, _, err = enumTag.ValidateEnum("b")
+	_, _, err = enumTag.ValidateEnum("b", false)
 	if err != nil {
 		t.Fatalf("expected valid enum value, got %v", err)
 	}
-	_, _, err = enumTag.ValidateEnum("d")
+	_, _, err = enumTag.ValidateEnum("d", false)
 	if err == nil {
 		t.Fatalf("expected invalid enum value")
 	}

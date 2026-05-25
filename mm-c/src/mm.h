@@ -25,7 +25,7 @@ typedef struct {
   const char *enums;
   const char *pattern;
   bool nullable;
-  bool raw;
+  bool deprecated;
   bool allow_empty;
   bool unique;
   int location;
@@ -42,7 +42,7 @@ typedef struct {
   const char *enums;
   const char *pattern;
   bool nullable;
-  bool raw;
+  bool deprecated;
   bool allow_empty;
   bool unique;
   int location;
@@ -53,7 +53,6 @@ typedef struct {
   int64_t child_max;
   int child_size;
   bool child_nullable;
-  bool child_raw;
   bool child_allow_empty;
   bool child_unique;
   const char *child_default_val;
@@ -105,10 +104,10 @@ mm_node_t *mm_video_create(const char *val, mm_field_attr_t attr);
                                                   .location = INT_MIN,         \
                                                   .desc = NULL,                \
                                                   .default_val = NULL,         \
-                                                  .enums = NULL,            \
+                                                  .enums = NULL,               \
                                                   .pattern = NULL,             \
                                                   .nullable = false,           \
-                                                  .raw = false,                \
+                                                  .deprecated = false,         \
                                                   .allow_empty = false,        \
                                                   .unique = false,             \
                                                   .mime = NULL,                \
@@ -121,10 +120,10 @@ mm_node_t *mm_video_create(const char *val, mm_field_attr_t attr);
                                                        .location = INT_MIN,    \
                                                        .desc = NULL,           \
                                                        .default_val = NULL,    \
-                                                       .enums = NULL,       \
+                                                       .enums = NULL,          \
                                                        .pattern = NULL,        \
                                                        .nullable = false,      \
-                                                       .raw = false,           \
+                                                       .deprecated = false,    \
                                                        .allow_empty = false,   \
                                                        .unique = false,        \
                                                        .mime = NULL,           \
@@ -137,10 +136,10 @@ mm_node_t *mm_video_create(const char *val, mm_field_attr_t attr);
                                                 .location = INT_MIN,           \
                                                 .desc = NULL,                  \
                                                 .default_val = NULL,           \
-                                                .enums = NULL,              \
+                                                .enums = NULL,                 \
                                                 .pattern = NULL,               \
                                                 .nullable = false,             \
-                                                .raw = false,                  \
+                                                .deprecated = false,           \
                                                 .allow_empty = false,          \
                                                 .unique = false,               \
                                                 .mime = NULL,                  \
@@ -153,10 +152,10 @@ mm_node_t *mm_video_create(const char *val, mm_field_attr_t attr);
                                                    .location = INT_MIN,        \
                                                    .desc = NULL,               \
                                                    .default_val = NULL,        \
-                                                   .enums = NULL,           \
+                                                   .enums = NULL,              \
                                                    .pattern = NULL,            \
                                                    .nullable = false,          \
-                                                   .raw = false,               \
+                                                   .deprecated = false,        \
                                                    .allow_empty = false,       \
                                                    .unique = false,            \
                                                    .mime = NULL,               \
@@ -169,10 +168,10 @@ mm_node_t *mm_video_create(const char *val, mm_field_attr_t attr);
                                                  .location = INT_MIN,          \
                                                  .desc = NULL,                 \
                                                  .default_val = NULL,          \
-                                                 .enums = NULL,             \
+                                                 .enums = NULL,                \
                                                  .pattern = NULL,              \
                                                  .nullable = false,            \
-                                                 .raw = false,                 \
+                                                 .deprecated = false,          \
                                                  .allow_empty = false,         \
                                                  .unique = false,              \
                                                  .mime = NULL,                 \
@@ -185,10 +184,10 @@ mm_node_t *mm_video_create(const char *val, mm_field_attr_t attr);
                                                   .location = INT_MIN,         \
                                                   .desc = NULL,                \
                                                   .default_val = NULL,         \
-                                                  .enums = NULL,            \
+                                                  .enums = NULL,               \
                                                   .pattern = NULL,             \
                                                   .nullable = false,           \
-                                                  .raw = false,                \
+                                                  .deprecated = false,         \
                                                   .allow_empty = false,        \
                                                   .unique = false,             \
                                                   .mime = NULL,                \
@@ -201,10 +200,10 @@ mm_node_t *mm_video_create(const char *val, mm_field_attr_t attr);
                                                   .location = INT_MIN,         \
                                                   .desc = NULL,                \
                                                   .default_val = NULL,         \
-                                                  .enums = NULL,            \
+                                                  .enums = NULL,               \
                                                   .pattern = NULL,             \
                                                   .nullable = false,           \
-                                                  .raw = false,                \
+                                                  .deprecated = false,         \
                                                   .allow_empty = false,        \
                                                   .unique = false,             \
                                                   .mime = NULL,                \
@@ -217,10 +216,10 @@ mm_node_t *mm_video_create(const char *val, mm_field_attr_t attr);
                                                   .location = INT_MIN,         \
                                                   .desc = NULL,                \
                                                   .default_val = NULL,         \
-                                                  .enums = NULL,            \
+                                                  .enums = NULL,               \
                                                   .pattern = NULL,             \
                                                   .nullable = false,           \
-                                                  .raw = false,                \
+                                                  .deprecated = false,         \
                                                   .allow_empty = false,        \
                                                   .unique = false,             \
                                                   .mime = NULL,                \
@@ -233,10 +232,10 @@ mm_node_t *mm_video_create(const char *val, mm_field_attr_t attr);
                                                     .location = INT_MIN,       \
                                                     .desc = NULL,              \
                                                     .default_val = NULL,       \
-                                                    .enums = NULL,          \
+                                                    .enums = NULL,             \
                                                     .pattern = NULL,           \
                                                     .nullable = false,         \
-                                                    .raw = false,              \
+                                                    .deprecated = false,       \
                                                     .allow_empty = false,      \
                                                     .unique = false,           \
                                                     .mime = NULL,              \
@@ -249,10 +248,10 @@ mm_node_t *mm_video_create(const char *val, mm_field_attr_t attr);
                                                   .location = INT_MIN,         \
                                                   .desc = NULL,                \
                                                   .default_val = NULL,         \
-                                                  .enums = NULL,            \
+                                                  .enums = NULL,               \
                                                   .pattern = NULL,             \
                                                   .nullable = false,           \
-                                                  .raw = false,                \
+                                                  .deprecated = false,         \
                                                   .allow_empty = false,        \
                                                   .unique = false,             \
                                                   .mime = NULL,                \
@@ -265,10 +264,10 @@ mm_node_t *mm_video_create(const char *val, mm_field_attr_t attr);
                                                    .location = INT_MIN,        \
                                                    .desc = NULL,               \
                                                    .default_val = NULL,        \
-                                                   .enums = NULL,           \
+                                                   .enums = NULL,              \
                                                    .pattern = NULL,            \
                                                    .nullable = false,          \
-                                                   .raw = false,               \
+                                                   .deprecated = false,        \
                                                    .allow_empty = false,       \
                                                    .unique = false,            \
                                                    .mime = NULL,               \
@@ -281,10 +280,10 @@ mm_node_t *mm_video_create(const char *val, mm_field_attr_t attr);
                                                    .location = INT_MIN,        \
                                                    .desc = NULL,               \
                                                    .default_val = NULL,        \
-                                                   .enums = NULL,           \
+                                                   .enums = NULL,              \
                                                    .pattern = NULL,            \
                                                    .nullable = false,          \
-                                                   .raw = false,               \
+                                                   .deprecated = false,        \
                                                    .allow_empty = false,       \
                                                    .unique = false,            \
                                                    .mime = NULL,               \
@@ -297,10 +296,10 @@ mm_node_t *mm_video_create(const char *val, mm_field_attr_t attr);
                                                    .location = INT_MIN,        \
                                                    .desc = NULL,               \
                                                    .default_val = NULL,        \
-                                                   .enums = NULL,           \
+                                                   .enums = NULL,              \
                                                    .pattern = NULL,            \
                                                    .nullable = false,          \
-                                                   .raw = false,               \
+                                                   .deprecated = false,        \
                                                    .allow_empty = false,       \
                                                    .unique = false,            \
                                                    .mime = NULL,               \
@@ -313,10 +312,10 @@ mm_node_t *mm_video_create(const char *val, mm_field_attr_t attr);
                                                  .location = INT_MIN,          \
                                                  .desc = NULL,                 \
                                                  .default_val = NULL,          \
-                                                 .enums = NULL,             \
+                                                 .enums = NULL,                \
                                                  .pattern = NULL,              \
                                                  .nullable = false,            \
-                                                 .raw = false,                 \
+                                                 .deprecated = false,          \
                                                  .allow_empty = false,         \
                                                  .unique = false,              \
                                                  .mime = NULL,                 \
@@ -329,10 +328,10 @@ mm_node_t *mm_video_create(const char *val, mm_field_attr_t attr);
                                                          .location = INT_MIN,  \
                                                          .desc = NULL,         \
                                                          .default_val = NULL,  \
-                                                         .enums = NULL,     \
+                                                         .enums = NULL,        \
                                                          .pattern = NULL,      \
                                                          .nullable = false,    \
-                                                         .raw = false,         \
+                                                         .deprecated = false,  \
                                                          .allow_empty = false, \
                                                          .unique = false,      \
                                                          .mime = NULL,         \
@@ -346,10 +345,10 @@ mm_node_t *mm_video_create(const char *val, mm_field_attr_t attr);
                                      .location = INT_MIN,                      \
                                      .desc = NULL,                             \
                                      .default_val = NULL,                      \
-                                     .enums = NULL,                         \
+                                     .enums = NULL,                            \
                                      .pattern = NULL,                          \
                                      .nullable = false,                        \
-                                     .raw = false,                             \
+                                     .deprecated = false,                      \
                                      .allow_empty = false,                     \
                                      .unique = false,                          \
                                      .mime = NULL,                             \
@@ -363,10 +362,10 @@ mm_node_t *mm_video_create(const char *val, mm_field_attr_t attr);
                                        .location = INT_MIN,                    \
                                        .desc = NULL,                           \
                                        .default_val = NULL,                    \
-                                       .enums = NULL,                       \
+                                       .enums = NULL,                          \
                                        .pattern = NULL,                        \
                                        .nullable = false,                      \
-                                       .raw = false,                           \
+                                       .deprecated = false,                    \
                                        .allow_empty = false,                   \
                                        .unique = false,                        \
                                        .mime = NULL,                           \
@@ -379,10 +378,10 @@ mm_node_t *mm_video_create(const char *val, mm_field_attr_t attr);
                                                         .location = INT_MIN,   \
                                                         .desc = NULL,          \
                                                         .default_val = NULL,   \
-                                                        .enums = NULL,      \
+                                                        .enums = NULL,         \
                                                         .pattern = NULL,       \
                                                         .nullable = false,     \
-                                                        .raw = false,          \
+                                                        .deprecated = false,   \
                                                         .allow_empty = false,  \
                                                         .unique = false,       \
                                                         .mime = NULL,          \
@@ -395,10 +394,10 @@ mm_node_t *mm_video_create(const char *val, mm_field_attr_t attr);
                                                         .location = INT_MIN,   \
                                                         .desc = NULL,          \
                                                         .default_val = NULL,   \
-                                                        .enums = NULL,      \
+                                                        .enums = NULL,         \
                                                         .pattern = NULL,       \
                                                         .nullable = false,     \
-                                                        .raw = false,          \
+                                                        .deprecated = false,   \
                                                         .allow_empty = false,  \
                                                         .unique = false,       \
                                                         .mime = NULL,          \
@@ -411,10 +410,10 @@ mm_node_t *mm_video_create(const char *val, mm_field_attr_t attr);
                                                         .location = INT_MIN,   \
                                                         .desc = NULL,          \
                                                         .default_val = NULL,   \
-                                                        .enums = NULL,      \
+                                                        .enums = NULL,         \
                                                         .pattern = NULL,       \
                                                         .nullable = false,     \
-                                                        .raw = false,          \
+                                                        .deprecated = false,   \
                                                         .allow_empty = false,  \
                                                         .unique = false,       \
                                                         .mime = NULL,          \
@@ -428,10 +427,10 @@ mm_node_t *mm_video_create(const char *val, mm_field_attr_t attr);
                                       .location = INT_MIN,                     \
                                       .desc = NULL,                            \
                                       .default_val = NULL,                     \
-                                      .enums = NULL,                        \
+                                      .enums = NULL,                           \
                                       .pattern = NULL,                         \
                                       .nullable = false,                       \
-                                      .raw = false,                            \
+                                      .deprecated = false,                     \
                                       .allow_empty = false,                    \
                                       .unique = false,                         \
                                       .mime = NULL,                            \
@@ -444,10 +443,10 @@ mm_node_t *mm_video_create(const char *val, mm_field_attr_t attr);
                                                       .location = INT_MIN,     \
                                                       .desc = NULL,            \
                                                       .default_val = NULL,     \
-                                                      .enums = NULL,        \
+                                                      .enums = NULL,           \
                                                       .pattern = NULL,         \
                                                       .nullable = false,       \
-                                                      .raw = false,            \
+                                                      .deprecated = false,     \
                                                       .allow_empty = false,    \
                                                       .unique = false,         \
                                                       .mime = NULL,            \
@@ -460,10 +459,10 @@ mm_node_t *mm_video_create(const char *val, mm_field_attr_t attr);
                                                        .location = INT_MIN,    \
                                                        .desc = NULL,           \
                                                        .default_val = NULL,    \
-                                                       .enums = NULL,       \
+                                                       .enums = NULL,          \
                                                        .pattern = NULL,        \
                                                        .nullable = false,      \
-                                                       .raw = false,           \
+                                                       .deprecated = false,    \
                                                        .allow_empty = false,   \
                                                        .unique = false,        \
                                                        .mime = NULL,           \
@@ -476,10 +475,10 @@ mm_node_t *mm_video_create(const char *val, mm_field_attr_t attr);
                                                          .location = INT_MIN,  \
                                                          .desc = NULL,         \
                                                          .default_val = NULL,  \
-                                                         .enums = NULL,     \
+                                                         .enums = NULL,        \
                                                          .pattern = NULL,      \
                                                          .nullable = false,    \
-                                                         .raw = false,         \
+                                                         .deprecated = false,  \
                                                          .allow_empty = false, \
                                                          .unique = false,      \
                                                          .mime = NULL,         \
@@ -492,10 +491,10 @@ mm_node_t *mm_video_create(const char *val, mm_field_attr_t attr);
                                                         .location = INT_MIN,   \
                                                         .desc = NULL,          \
                                                         .default_val = NULL,   \
-                                                        .enums = NULL,      \
+                                                        .enums = NULL,         \
                                                         .pattern = NULL,       \
                                                         .nullable = false,     \
-                                                        .raw = false,          \
+                                                        .deprecated = false,   \
                                                         .allow_empty = false,  \
                                                         .unique = false,       \
                                                         .mime = NULL,          \
@@ -508,10 +507,10 @@ mm_node_t *mm_video_create(const char *val, mm_field_attr_t attr);
                                                          .location = INT_MIN,  \
                                                          .desc = NULL,         \
                                                          .default_val = NULL,  \
-                                                         .enums = NULL,     \
+                                                         .enums = NULL,        \
                                                          .pattern = NULL,      \
                                                          .nullable = false,    \
-                                                         .raw = false,         \
+                                                         .deprecated = false,  \
                                                          .allow_empty = false, \
                                                          .unique = false,      \
                                                          .mime = NULL,         \
@@ -524,10 +523,10 @@ mm_node_t *mm_video_create(const char *val, mm_field_attr_t attr);
                                                          .location = INT_MIN,  \
                                                          .desc = NULL,         \
                                                          .default_val = NULL,  \
-                                                         .enums = NULL,     \
+                                                         .enums = NULL,        \
                                                          .pattern = NULL,      \
                                                          .nullable = false,    \
-                                                         .raw = false,         \
+                                                         .deprecated = false,  \
                                                          .allow_empty = false, \
                                                          .unique = false,      \
                                                          .mime = NULL,         \

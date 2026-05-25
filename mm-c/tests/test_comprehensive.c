@@ -410,13 +410,13 @@ static void test_tag_attributes_roundtrip(void) {
     mm_buffer_free(enc);
   }
 
-  printf("  raw: ");
+  printf("  deprecated: ");
   {
-    mm_node_t *v = mm_str("rawdata", .raw = true);
+    mm_node_t *v = mm_str("rawdata", .deprecated = true);
     mm_buffer_t *enc = mm_encode(v);
     mm_node_t *dec = mm_decode(enc);
     if (dec) {
-      TEST("raw preserved", dec->data.value.tag.raw == true);
+      TEST("deprecated preserved", dec->data.value.tag.deprecated == true);
     }
     mm_node_free(v);
     if (dec)

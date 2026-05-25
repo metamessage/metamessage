@@ -104,9 +104,9 @@ fn build_tag_code(pairs: &[(String, String)]) -> proc_macro2::TokenStream {
             }
             "raw" => {
                 if value.is_empty() || value == "true" {
-                    setters.push(quote! { tag.raw = true; });
+                    setters.push(quote! { tag.deprecated = true; });
                 } else {
-                    setters.push(quote! { tag.raw = false; });
+                    setters.push(quote! { tag.deprecated = false; });
                 }
             }
             "default_val" => {

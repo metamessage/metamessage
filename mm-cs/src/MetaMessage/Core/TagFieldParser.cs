@@ -52,8 +52,8 @@ public static class TagFieldParser
                     tag.Nullable = true;
                     break;
 
-                case 6: // Raw
-                    tag.Raw = true;
+                case 6: // Deprecated
+                    tag.Deprecated = true;
                     break;
 
                 case 7: // AllowEmpty

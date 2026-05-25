@@ -7,7 +7,7 @@ public class MmTag
     public ValueType Type { get; set; } = ValueType.UNKNOWN;
     public ValueType ChildType { get; set; } = ValueType.UNKNOWN;
     public bool Nullable { get; set; } = false;
-    public bool Raw { get; set; } = false;
+    public bool Deprecated { get; set; } = false;
     public bool AllowEmpty { get; set; } = false;
     public bool Unique { get; set; } = false;
     public string DefaultVal { get; set; } = string.Empty;
@@ -51,7 +51,7 @@ public class MmTag
             Type = Type,
             ChildType = ChildType,
             Nullable = Nullable,
-            Raw = Raw,
+            Deprecated = Deprecated,
             AllowEmpty = AllowEmpty,
             Unique = Unique,
             DefaultVal = DefaultVal,
@@ -95,11 +95,6 @@ public class MmTag
         if (parent.ChildType != ValueType.UNKNOWN)
         {
             Type = parent.ChildType;
-        }
-
-        if (parent.ChildRaw)
-        {
-            Raw = parent.ChildRaw;
         }
 
         if (parent.ChildNullable)
@@ -200,7 +195,7 @@ public class MmTag
             result.Add(5);
         }
 
-        if (Raw)
+        if (Deprecated)
         {
             result.Add(6);
         }

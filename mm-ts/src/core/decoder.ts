@@ -29,7 +29,6 @@ import {
   KChildMin,
   KChildNullable,
   KChildPattern,
-  KChildRaw,
   KChildSize,
   KChildType,
   KChildUnique,
@@ -45,7 +44,7 @@ import {
   KMin,
   KNullable,
   KPattern,
-  KRaw,
+  KDeprecated,
   KSize,
   KType,
   KUnique,
@@ -288,8 +287,8 @@ export class MMDecoder {
         tag.type = typeB;
         return 1 + 1;
 
-      case KRaw:
-        tag.raw = (l & 0x01) === 1;
+      case KDeprecated:
+        tag.deprecated = (l & 0x01) === 1;
         return 1;
 
       case KNullable:
@@ -442,10 +441,6 @@ export class MMDecoder {
         const childTypeB = this.readByte();
         tag.childType = childTypeB;
         return 1 + 1;
-
-      case KChildRaw:
-        tag.childRaw = (l & 0x01) === 1;
-        return 1;
 
       case KChildNullable:
         tag.childNullable = (l & 0x01) === 1;

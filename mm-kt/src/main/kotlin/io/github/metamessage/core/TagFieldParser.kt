@@ -19,7 +19,7 @@ object TagFieldParser {
             Tag.TagKey.K_EXAMPLE -> tag.example = (low and 1) == 1
             Tag.TagKey.K_DESC -> readSizedUtf8(c, tag, low, 0)
             Tag.TagKey.K_TYPE -> tag.type = ValueType.fromCode(c.read())
-            Tag.TagKey.K_RAW -> tag.raw = (low and 1) == 1
+            Tag.TagKey.K_DEPRECATED -> tag.deprecated = (low and 1) == 1
             Tag.TagKey.K_NULLABLE -> tag.nullable = (low and 1) == 1
             Tag.TagKey.K_ALLOW_EMPTY -> tag.allowEmpty = (low and 1) == 1
             Tag.TagKey.K_UNIQUE -> tag.unique = (low and 1) == 1
@@ -37,7 +37,6 @@ object TagFieldParser {
             Tag.TagKey.K_MIME -> readMime(c, tag, low, true)
             Tag.TagKey.K_CHILD_DESC -> readSizedUtf8(c, tag, low, 1)
             Tag.TagKey.K_CHILD_TYPE -> tag.childType = ValueType.fromCode(c.read())
-            Tag.TagKey.K_CHILD_RAW -> tag.childRaw = (low and 1) == 1
             Tag.TagKey.K_CHILD_NULLABLE -> tag.childNullable = (low and 1) == 1
             Tag.TagKey.K_CHILD_ALLOW_EMPTY -> tag.childAllowEmpty = (low and 1) == 1
             Tag.TagKey.K_CHILD_UNIQUE -> tag.childUnique = (low and 1) == 1

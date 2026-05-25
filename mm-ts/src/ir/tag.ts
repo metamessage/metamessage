@@ -3,9 +3,9 @@ import { ValueType, stringToType, typeToString } from './value-type';
 
 export const KIsNull = 0 << 3;
 export const KExample = 1 << 3;
-export const KDesc = 2 << 3;
-export const KType = 3 << 3;
-export const KRaw = 4 << 3;
+export const KDeprecated = 2 << 3;
+export const KDesc = 3 << 3;
+export const KType = 4 << 3;
 export const KNullable = 5 << 3;
 export const KAllowEmpty = 6 << 3;
 export const KUnique = 7 << 3;
@@ -20,19 +20,19 @@ export const KVersion = 15 << 3;
 export const KMime = 16 << 3;
 export const KChildDesc = 17 << 3;
 export const KChildType = 18 << 3;
-export const KChildRaw = 19 << 3;
-export const KChildNullable = 20 << 3;
-export const KChildAllowEmpty = 21 << 3;
-export const KChildUnique = 22 << 3;
-export const KChildDefault = 23 << 3;
-export const KChildMin = 24 << 3;
-export const KChildMax = 25 << 3;
-export const KChildSize = 26 << 3;
-export const KChildEnum = 27 << 3;
-export const KChildPattern = 28 << 3;
-export const KChildLocation = 29 << 3;
-export const KChildVersion = 30 << 3;
-export const KChildMime = 31 << 3;
+export const KChildNullable = 19 << 3;
+export const KChildAllowEmpty = 20 << 3;
+export const KChildUnique = 21 << 3;
+export const KChildDefault = 22 << 3;
+export const KChildMin = 23 << 3;
+export const KChildMax = 24 << 3;
+export const KChildSize = 25 << 3;
+export const KChildEnum = 26 << 3;
+export const KChildPattern = 27 << 3;
+export const KChildLocation = 28 << 3;
+export const KChildVersion = 29 << 3;
+export const KChildMime = 30 << 3;
+export const KMore = 31 << 3;
 
 const Max1Byte = 0xff;
 const Max2Byte = 0xffff;
@@ -60,7 +60,7 @@ export class Tag {
   example?: boolean;
   desc: string = '';
   type: ValueType = ValueType.Unknown;
-  raw: boolean = false;
+  deprecated: boolean = false;
   nullable: boolean = false;
   allowEmpty: boolean = false;
   unique: boolean = false;
@@ -73,9 +73,9 @@ export class Tag {
   location: number = 0;
   version: number = 0;
   mime: string = '';
+  more: number = 0;
   childDesc: string = '';
   childType: ValueType = ValueType.Unknown;
-  childRaw: boolean = false;
   childNullable: boolean = false;
   childAllowEmpty: boolean = false;
   childUnique: boolean = false;
@@ -180,8 +180,8 @@ export class Tag {
       parts.push(`desc=${this.desc}`);
     }
 
-    if (this.raw) {
-      parts.push('raw');
+    if (this.deprecated) {
+      parts.push('deprecated');
     }
 
     if (this.allowEmpty) {
@@ -252,10 +252,6 @@ export class Tag {
           parts.push(`child_type=${this.childType}`);
         }
       }
-    }
-
-    if (this.childRaw) {
-      parts.push('child_raw');
     }
 
     if (this.childNullable) {
@@ -452,8 +448,8 @@ export class Tag {
       }
     }
 
-    if (this.raw && !this.isInherit) {
-      buf.push(KRaw | 1);
+    if (this.deprecated) {
+      buf.push(KDeprecated | 1);
     }
 
     if (this.allowEmpty && !this.isInherit) {
@@ -612,10 +608,6 @@ export class Tag {
       }
     }
 
-    if (this.childRaw) {
-      buf.push(KChildRaw | 1);
-    }
-
     if (this.childNullable) {
       buf.push(KChildNullable | 1);
     }
@@ -735,6 +727,10 @@ export class Tag {
         buf.push(KChildMime | 7);
         buf.push(l);
       }
+    }
+
+    if (this.more !== 0) {
+      this.encodeU64(buf, KMore, BigInt(this.more));
     }
 
     return new Uint8Array(buf);
@@ -1814,7 +1810,7 @@ export function parseMMTag(tagStr: string): Tag {
         tag.nullable = true;
         break;
       case 'raw':
-        tag.raw = true;
+        tag.deprecated = true;
         break;
       case 'allow_empty':
         tag.allowEmpty = true;
@@ -1857,7 +1853,6 @@ export function parseMMTag(tagStr: string): Tag {
         tag.childType = stringToType(value);
         break;
       case 'child_raw':
-        tag.childRaw = true;
         break;
       case 'child_nullable':
         tag.childNullable = true;
