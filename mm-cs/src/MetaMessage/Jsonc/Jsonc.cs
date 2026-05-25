@@ -1,7 +1,11 @@
+using MetaMessage.Ir;
+
 namespace MetaMessage.Jsonc;
 
 public static class Jsonc
 {
+    private static readonly JsoncPrinter DefaultPrinter = new(prettyPrint: true);
+
     public static IJsoncNode ParseFromString(string input)
     {
         var parser = new JsoncParser(input);
@@ -12,6 +16,22 @@ public static class Jsonc
     {
         var jsoncString = System.Text.Encoding.UTF8.GetString(input);
         return ParseFromString(jsoncString);
+    }
+
+    public static IMmTree ParseFromJSONC(string input)
+    {
+        var node = ParseFromString(input);
+        var binder = new JsoncBinder();
+        return binder.ToMmTree(node);
+    }
+
+    public static string ToJSONC(IMmTree tree)
+    {
+        if (tree == null)
+            return "";
+        var binder = new JsoncBinder();
+        var node = binder.FromMmTree(tree);
+        return DefaultPrinter.Print(node);
     }
 
     public static T BindFromString<T>(string input) where T : new()
@@ -85,6 +105,15 @@ public static class Jsonc
                 list.Add(ExtractValue(element));
             }
             return list;
+        }
+        if (node is JsoncDoc doc)
+        {
+            var dict = new Dictionary<string, object?>();
+            foreach (var kvp in doc.Fields)
+            {
+                dict[kvp.Key] = ExtractValue(kvp.Value);
+            }
+            return dict;
         }
         return null;
     }

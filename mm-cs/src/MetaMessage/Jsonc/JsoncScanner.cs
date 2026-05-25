@@ -277,4 +277,16 @@ public class JsoncScanner
     {
         return (ch >= 'a' && ch <= 'z') || (ch >= 'A' && ch <= 'Z');
     }
+
+    public void Unread()
+    {
+        if (_position > 0)
+        {
+            _position--;
+            if (_position > 0 && _input[_position] == '\n')
+            {
+                _line--;
+            }
+        }
+    }
 }

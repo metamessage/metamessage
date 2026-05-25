@@ -1,3 +1,6 @@
+using MetaMessage.Ir;
+using ValueType = MetaMessage.Ir.ValueType;
+
 namespace MetaMessage.Jsonc;
 
 public class JsoncBinder
@@ -37,7 +40,6 @@ public class JsoncBinder
         if (type.IsArray)
         {
             var array = new JsoncArray();
-            var elementType = type.GetElementType()!;
             var arr = (Array)value;
             for (int i = 0; i < arr.Length; i++)
             {
@@ -68,27 +70,27 @@ public class JsoncBinder
 
         if (value is int intVal)
         {
-            return new JsoncValue { Value = intVal, TokenType = JsoncTokenType.Number };
+            return new JsoncValue { Value = intVal.ToString(), TokenType = JsoncTokenType.Number };
         }
 
         if (value is long longVal)
         {
-            return new JsoncValue { Value = longVal, TokenType = JsoncTokenType.Number };
+            return new JsoncValue { Value = longVal.ToString(), TokenType = JsoncTokenType.Number };
         }
 
         if (value is double doubleVal)
         {
-            return new JsoncValue { Value = doubleVal, TokenType = JsoncTokenType.Number };
+            return new JsoncValue { Value = doubleVal.ToString("G"), TokenType = JsoncTokenType.Number };
         }
 
         if (value is float floatVal)
         {
-            return new JsoncValue { Value = floatVal, TokenType = JsoncTokenType.Number };
+            return new JsoncValue { Value = floatVal.ToString("G"), TokenType = JsoncTokenType.Number };
         }
 
         if (value is System.DateTime dt)
         {
-            return new JsoncValue { Value = dt.ToString("o"), TokenType = JsoncTokenType.String };
+            return new JsoncValue { Value = dt.ToString("yyyy-MM-dd HH:mm:ss"), TokenType = JsoncTokenType.String };
         }
 
         if (value is byte[] bytes)
@@ -101,9 +103,7 @@ public class JsoncBinder
         foreach (var prop in properties)
         {
             if (!prop.CanRead)
-            {
                 continue;
-            }
 
             var propValue = prop.GetValue(value);
             var propNode = StructToNode(propValue!);
@@ -111,6 +111,138 @@ public class JsoncBinder
         }
 
         return obj;
+    }
+
+    /// <summary>
+    /// Convert JsoncNode tree to IMmTree for use with the MetaMessage IR layer.
+    /// </summary>
+    public IMmTree ToMmTree(IJsoncNode node)
+    {
+        if (node is JsoncObject obj)
+        {
+            var fields = new List<KeyValuePair<MmScalar, IMmTree>>();
+            foreach (var kvp in obj.Fields)
+            {
+                var keyNode = new MmScalar(kvp.Key, kvp.Key, Tag.NewTag());
+                var valNode = ToMmTree(kvp.Value);
+                fields.Add(new KeyValuePair<MmScalar, IMmTree>(keyNode, valNode));
+            }
+            return new MmMap(fields, obj.Tag ?? Tag.NewTag()) { Path = obj.Path };
+        }
+
+        if (node is JsoncArray arr)
+        {
+            var children = new List<IMmTree>();
+            foreach (var item in arr.Elements)
+            {
+                children.Add(ToMmTree(item));
+            }
+            return new MmArray(children, arr.Tag ?? Tag.NewTag()) { Path = arr.Path };
+        }
+
+        if (node is JsoncDoc doc)
+        {
+            var fields = new List<KeyValuePair<MmScalar, IMmTree>>();
+            foreach (var kvp in doc.Fields)
+            {
+                var keyNode = new MmScalar(kvp.Key, kvp.Key, Tag.NewTag());
+                var valNode = ToMmTree(kvp.Value);
+                fields.Add(new KeyValuePair<MmScalar, IMmTree>(keyNode, valNode));
+            }
+            return new MmDoc(fields, doc.Tag ?? Tag.NewTag()) { Path = doc.Path };
+        }
+
+        if (node is JsoncValue val)
+        {
+            var text = val.Value?.ToString() ?? "";
+            var tag = val.Tag ?? Tag.NewTag();
+            return new MmScalar(val.Value, text, tag) { Path = val.Path };
+        }
+
+        throw new Exception($"Unknown node type: {node.GetType()}");
+    }
+
+    /// <summary>
+    /// Convert IMmTree to JsoncNode tree for serialization.
+    /// </summary>
+    public IJsoncNode FromMmTree(IMmTree tree)
+    {
+        if (tree is MmMap mmMap)
+        {
+            var obj = new JsoncObject { Tag = mmMap.Tag, Path = mmMap.Path };
+            foreach (var entry in mmMap.Entries)
+            {
+                var key = entry.Key.Text;
+                var valNode = FromMmTree(entry.Value);
+                obj.Add(key, valNode);
+            }
+            return obj;
+        }
+
+        if (tree is MmDoc mmDoc)
+        {
+            var doc = new JsoncDoc { Tag = mmDoc.Tag, Path = mmDoc.Path };
+            foreach (var entry in mmDoc.Fields)
+            {
+                var key = entry.Key.Text;
+                var valNode = FromMmTree(entry.Value);
+                doc.Add(key, valNode);
+            }
+            return doc;
+        }
+
+        if (tree is MmArray mmArray)
+        {
+            var arr = new JsoncArray { Tag = mmArray.Tag, Path = mmArray.Path };
+            foreach (var child in mmArray.Children)
+            {
+                arr.Add(FromMmTree(child));
+            }
+            return arr;
+        }
+
+        if (tree is MmScalar mmScalar)
+        {
+            JsoncTokenType tokenType;
+            if (mmScalar.Tag != null)
+            {
+                switch (mmScalar.Tag.Type)
+                {
+                    case ValueType.Str:
+                    case ValueType.Bytes:
+                    case ValueType.Datetime:
+                    case ValueType.Date:
+                    case ValueType.Time:
+                    case ValueType.Uuid:
+                    case ValueType.Ip:
+                    case ValueType.Url:
+                    case ValueType.Email:
+                    case ValueType.Enums:
+                        tokenType = JsoncTokenType.String;
+                        break;
+                    case ValueType.Bool:
+                        tokenType = mmScalar.Text == "true" ? JsoncTokenType.True : JsoncTokenType.False;
+                        break;
+                    default:
+                        tokenType = JsoncTokenType.Number;
+                        break;
+                }
+            }
+            else
+            {
+                tokenType = JsoncTokenType.String;
+            }
+
+            return new JsoncValue
+            {
+                Value = mmScalar.Data,
+                TokenType = tokenType,
+                Tag = mmScalar.Tag,
+                Path = mmScalar.Path
+            };
+        }
+
+        throw new Exception($"Unknown IMmTree type: {tree.GetType()}");
     }
 
     private void BindObject(JsoncObject obj, object target)
@@ -121,15 +253,11 @@ public class JsoncBinder
         foreach (var prop in properties)
         {
             if (!prop.CanWrite)
-            {
                 continue;
-            }
 
             var key = GetJsonKey(prop.Name);
             if (!obj.Fields.TryGetValue(key, out var node))
-            {
                 continue;
-            }
 
             BindNodeToProperty(node, prop, target);
         }
@@ -183,11 +311,6 @@ public class JsoncBinder
         if (node is JsoncValue value)
         {
             BindValue(value, prop, target);
-            return;
-        }
-
-        if (node is JsoncArray)
-        {
             return;
         }
     }
@@ -287,91 +410,63 @@ public class JsoncBinder
         if (propType == typeof(bool))
         {
             if (rawValue is bool b)
-            {
                 prop.SetValue(target, b);
-            }
             else if (bool.TryParse(rawValue.ToString(), out bool result))
-            {
                 prop.SetValue(target, result);
-            }
             return;
         }
 
         if (propType == typeof(int))
         {
             if (rawValue is int i)
-            {
                 prop.SetValue(target, i);
-            }
             else if (rawValue is double d)
-            {
                 prop.SetValue(target, (int)d);
-            }
             else if (int.TryParse(rawValue.ToString(), out int result))
-            {
                 prop.SetValue(target, result);
-            }
             return;
         }
 
         if (propType == typeof(long))
         {
             if (rawValue is long l)
-            {
                 prop.SetValue(target, l);
-            }
             else if (rawValue is double d)
-            {
                 prop.SetValue(target, (long)d);
-            }
             else if (long.TryParse(rawValue.ToString(), out long result))
-            {
                 prop.SetValue(target, result);
-            }
             return;
         }
 
         if (propType == typeof(double))
         {
             if (rawValue is double d)
-            {
                 prop.SetValue(target, d);
-            }
             else if (double.TryParse(rawValue.ToString(), out double result))
-            {
                 prop.SetValue(target, result);
-            }
             return;
         }
 
         if (propType == typeof(float))
         {
             if (rawValue is float f)
-            {
                 prop.SetValue(target, f);
-            }
             else if (float.TryParse(rawValue.ToString(), out float result))
-            {
                 prop.SetValue(target, result);
-            }
             return;
         }
 
         if (propType == typeof(byte[]))
         {
             if (rawValue is string str)
-            {
                 prop.SetValue(target, Convert.FromBase64String(str));
-            }
             return;
         }
 
         if (propType == typeof(System.DateTime))
         {
             if (rawValue is string str && System.DateTime.TryParse(str, out var dt))
-            {
                 prop.SetValue(target, dt);
-            }
             return;
         }
     }

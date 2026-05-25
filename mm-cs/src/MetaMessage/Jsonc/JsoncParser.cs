@@ -7,8 +7,9 @@ namespace MetaMessage.Jsonc;
 public class JsoncParser
 {
     private readonly JsoncScanner _scanner;
-    private JsoncToken? _currentToken;
     private readonly List<JsoncToken> _pendingComments = new();
+    private int _depth;
+    private const int MaxDepth = 32;
 
     public JsoncParser(string input)
     {
@@ -17,400 +18,72 @@ public class JsoncParser
 
     public IJsoncNode Parse()
     {
-        IJsoncNode? result = null;
-
         while (true)
         {
-            var token = NextToken();
+            var tok = _scanner.NextToken();
+            if (tok.Type == JsoncTokenType.EOF)
+                return new JsoncValue { TokenType = JsoncTokenType.Null };
 
-            if (token.Type == JsoncTokenType.EOF)
-                break;
-
-            if (token.Type == JsoncTokenType.LeadingComment)
+            if (tok.Type == JsoncTokenType.LeadingComment)
             {
                 if (_pendingComments.Count > 0)
                 {
                     var last = _pendingComments.Last();
-                    if (token.Line - last.Line > 1)
+                    if (tok.Line - last.Line > 1)
                     {
                         _pendingComments.Clear();
                     }
                 }
-                _pendingComments.Add(token);
+                _pendingComments.Add(tok);
                 continue;
             }
 
-            if (token.Type == JsoncTokenType.TrailingComment)
+            if (tok.Type == JsoncTokenType.TrailingComment)
             {
                 continue;
             }
 
-            result = ParseValue();
-
-            while (true)
-            {
-                var next = PeekToken();
-                if (next.Type == JsoncTokenType.EOF)
-                    break;
-                if (next.Type == JsoncTokenType.TrailingComment)
-                {
-                    NextToken();
-                    var parsed = ParseCommentsToTag(next.Literal);
-                    if (parsed != null && result != null)
-                    {
-                        var existing = result.Tag;
-                        if (existing != null)
-                        {
-                            result.Tag = Tag.MergeTag(existing, parsed);
-                        }
-                        else
-                        {
-                            result.Tag = parsed;
-                        }
-                    }
-                }
-                else
-                {
-                    break;
-                }
-            }
-
-            break;
-        }
-
-        return result!;
-    }
-
-    private JsoncToken NextToken()
-    {
-        _currentToken = _scanner.NextToken();
-        return _currentToken;
-    }
-
-    private JsoncToken PeekToken()
-    {
-        return _currentToken ?? throw new Exception("No current token");
-    }
-
-    private JsoncNode ParseValue()
-    {
-        var token = PeekToken();
-
-        switch (token.Type)
-        {
-            case JsoncTokenType.LBrace:
-                return ParseObject();
-            case JsoncTokenType.LBracket:
-                return ParseArray();
-            case JsoncTokenType.String:
-            case JsoncTokenType.Number:
-            case JsoncTokenType.True:
-            case JsoncTokenType.False:
-            case JsoncTokenType.Null:
-                return ParsePrimitive();
-            default:
-                throw new Exception($"Unexpected token: {token.Type} at line {token.Line}, column {token.Column}");
+            var val = ParseValue("", tok, false);
+            return val;
         }
     }
 
-    private JsoncNode ParsePrimitive()
+    private JsoncToken Advance()
     {
-        var token = PeekToken();
-        var valueNode = new JsoncValue();
+        return _scanner.NextToken();
+    }
 
-        switch (token.Type)
+    private JsoncToken Peek()
+    {
+        var tok = _scanner.NextToken();
+        _scanner.Unread();
+        return tok;
+    }
+
+    private Tag? ConsumeCommentsFor(int anchorLine)
+    {
+        if (_pendingComments.Count == 0)
+            return null;
+
+        var last = _pendingComments.Last();
+        if (anchorLine - last.Line > 1)
         {
-            case JsoncTokenType.String:
-                valueNode.TokenType = JsoncTokenType.String;
-                valueNode.Value = token.Literal;
-                break;
-            case JsoncTokenType.Number:
-                valueNode.TokenType = JsoncTokenType.Number;
-                if (double.TryParse(token.Literal, out double numValue))
-                {
-                    valueNode.Value = numValue;
-                }
-                else
-                {
-                    valueNode.Value = token.Literal;
-                }
-                break;
-            case JsoncTokenType.True:
-                valueNode.TokenType = JsoncTokenType.True;
-                valueNode.Value = true;
-                break;
-            case JsoncTokenType.False:
-                valueNode.TokenType = JsoncTokenType.False;
-                valueNode.Value = false;
-                break;
-            case JsoncTokenType.Null:
-                valueNode.TokenType = JsoncTokenType.Null;
-                valueNode.Value = null;
-                break;
+            _pendingComments.Clear();
+            return null;
         }
 
-        NextToken();
-
-        var tag = ConsumeCommentsFor(token.Line, valueNode);
-        if (tag != null)
+        Tag? outTag = null;
+        foreach (var ct in _pendingComments)
         {
-            valueNode.Tag = tag;
-        }
-
-        if (PeekToken().Type == JsoncTokenType.TrailingComment)
-        {
-            var trailingToken = NextToken();
-            valueNode.TrailingComment = new JsoncComment
-            {
-                Text = trailingToken.Literal,
-                Line = trailingToken.Line,
-                Column = trailingToken.Column,
-                IsBlock = trailingToken.IsBlock
-            };
-            var parsed = ParseCommentsToTag(trailingToken.Literal);
+            var parsed = ParseCommentsToTag(ct.Literal);
             if (parsed != null)
             {
-                if (valueNode.Tag != null)
-                {
-                    valueNode.Tag = Tag.MergeTag(valueNode.Tag, parsed);
-                }
-                else
-                {
-                    valueNode.Tag = parsed;
-                }
+                outTag = Tag.MergeTag(outTag, parsed);
             }
         }
 
-        if (valueNode.Tag != null)
-        {
-            var mmTag = valueNode.Tag;
-            var validationValue = ConvertForValidation(valueNode.Value, mmTag.Type);
-            if (validationValue != null || valueNode.Value == null)
-            {
-                var result = Validator.Validate(validationValue!, mmTag);
-                if (!result.IsValid)
-                {
-                    throw new Exception(string.Join(", ", result.Errors) ?? "Value validation failed");
-                }
-            }
-        }
-
-        return valueNode;
-    }
-
-    private JsoncObject ParseObject()
-    {
-        var openingBrace = PeekToken();
-        int openingBraceLine = openingBrace.Line;
-        NextToken();
-        var obj = new JsoncObject();
-
-        var tag = ConsumeCommentsFor(openingBraceLine, obj);
-        if (tag != null)
-        {
-            obj.Tag = tag;
-        }
-
-        if (obj.Tag != null)
-        {
-            var mmTag = obj.Tag;
-            var result = Validator.Validate(obj, mmTag);
-            if (!result.IsValid)
-            {
-                throw new Exception(string.Join(", ", result.Errors) ?? "Struct validation failed");
-            }
-        }
-
-        IJsoncNode? lastValue = null;
-
-        while (PeekToken().Type != JsoncTokenType.RBrace && PeekToken().Type != JsoncTokenType.EOF)
-        {
-            if (PeekToken().Type == JsoncTokenType.LeadingComment)
-            {
-                var commentToken = PeekToken();
-                NextToken();
-                if (_pendingComments.Count > 0)
-                {
-                    var lastPending = _pendingComments.Last();
-                    if (commentToken.Line - lastPending.Line > 1)
-                    {
-                        _pendingComments.Clear();
-                    }
-                }
-                _pendingComments.Add(commentToken);
-                continue;
-            }
-
-            if (PeekToken().Type != JsoncTokenType.String)
-            {
-                throw new Exception($"Expected string key at line {PeekToken().Line}, column {PeekToken().Column}");
-            }
-
-            var keyToken = PeekToken();
-            var key = keyToken.Literal;
-            NextToken();
-
-            if (PeekToken().Type != JsoncTokenType.Colon)
-            {
-                throw new Exception($"Expected colon at line {PeekToken().Line}, column {PeekToken().Column}");
-            }
-            NextToken();
-
-            var value = ParseValue();
-            obj.Add(key, value);
-            lastValue = value;
-
-            if (PeekToken().Type == JsoncTokenType.Comma)
-            {
-                NextToken();
-                if (PeekToken().Type == JsoncTokenType.TrailingComment)
-                {
-                    var trailingToken = NextToken();
-                    if (lastValue != null)
-                    {
-                        lastValue.TrailingComment = new JsoncComment
-                        {
-                            Text = trailingToken.Literal,
-                            Line = trailingToken.Line,
-                            Column = trailingToken.Column,
-                            IsBlock = trailingToken.IsBlock
-                        };
-                        var parsed = ParseCommentsToTag(trailingToken.Literal);
-                        if (parsed != null)
-                        {
-                            if (lastValue.Tag != null)
-                            {
-                                lastValue.Tag = Tag.MergeTag(lastValue.Tag, parsed);
-                            }
-                            else
-                            {
-                                lastValue.Tag = parsed;
-                            }
-                        }
-                    }
-                }
-            }
-        }
-
-        if (PeekToken().Type != JsoncTokenType.RBrace)
-        {
-            throw new Exception($"Expected closing brace at line {PeekToken().Line}, column {PeekToken().Column}");
-        }
-        NextToken();
-
-        if (PeekToken().Type == JsoncTokenType.TrailingComment)
-        {
-            var trailingToken = NextToken();
-            obj.TrailingComment = new JsoncComment
-            {
-                Text = trailingToken.Literal,
-                Line = trailingToken.Line,
-                Column = trailingToken.Column,
-                IsBlock = trailingToken.IsBlock
-            };
-        }
-
-        return obj;
-    }
-
-    private JsoncArray ParseArray()
-    {
-        var openingBracket = PeekToken();
-        int openingBracketLine = openingBracket.Line;
-        NextToken();
-        var array = new JsoncArray();
-
-        var tag = ConsumeCommentsFor(openingBracketLine, array);
-        if (tag != null)
-        {
-            array.Tag = tag;
-        }
-
-        if (array.Tag != null)
-        {
-            var mmTag = array.Tag;
-            var result = Validator.Validate(array, mmTag);
-            if (!result.IsValid)
-            {
-                throw new Exception(string.Join(", ", result.Errors) ?? "Array validation failed");
-            }
-        }
-
-        IJsoncNode? lastValue = null;
-
-        while (PeekToken().Type != JsoncTokenType.RBracket && PeekToken().Type != JsoncTokenType.EOF)
-        {
-            if (PeekToken().Type == JsoncTokenType.LeadingComment)
-            {
-                var commentToken = PeekToken();
-                NextToken();
-                if (_pendingComments.Count > 0)
-                {
-                    var lastPending = _pendingComments.Last();
-                    if (commentToken.Line - lastPending.Line > 1)
-                    {
-                        _pendingComments.Clear();
-                    }
-                }
-                _pendingComments.Add(commentToken);
-                continue;
-            }
-
-            var value = ParseValue();
-            array.Add(value);
-            lastValue = value;
-
-            if (PeekToken().Type == JsoncTokenType.Comma)
-            {
-                NextToken();
-                if (PeekToken().Type == JsoncTokenType.TrailingComment)
-                {
-                    var trailingToken = NextToken();
-                    if (lastValue != null)
-                    {
-                        lastValue.TrailingComment = new JsoncComment
-                        {
-                            Text = trailingToken.Literal,
-                            Line = trailingToken.Line,
-                            Column = trailingToken.Column,
-                            IsBlock = trailingToken.IsBlock
-                        };
-                        var parsed = ParseCommentsToTag(trailingToken.Literal);
-                        if (parsed != null)
-                        {
-                            if (lastValue.Tag != null)
-                            {
-                                lastValue.Tag = Tag.MergeTag(lastValue.Tag, parsed);
-                            }
-                            else
-                            {
-                                lastValue.Tag = parsed;
-                            }
-                        }
-                    }
-                }
-            }
-        }
-
-        if (PeekToken().Type != JsoncTokenType.RBracket)
-        {
-            throw new Exception($"Expected closing bracket at line {PeekToken().Line}, column {PeekToken().Column}");
-        }
-        NextToken();
-
-        if (PeekToken().Type == JsoncTokenType.TrailingComment)
-        {
-            var trailingToken = NextToken();
-            array.TrailingComment = new JsoncComment
-            {
-                Text = trailingToken.Literal,
-                Line = trailingToken.Line,
-                Column = trailingToken.Column,
-                IsBlock = trailingToken.IsBlock
-            };
-        }
-
-        return array;
+        _pendingComments.Clear();
+        return outTag;
     }
 
     private static Tag? ParseCommentsToTag(string cs)
@@ -425,84 +98,441 @@ public class JsoncParser
         return null;
     }
 
-    private Tag? ConsumeCommentsFor(int anchorLine, JsoncNode? node = null)
+    private static void MergeNodeTag(IJsoncNode n, Tag parsed)
     {
-        if (_pendingComments.Count == 0)
-        {
-            return null;
-        }
+        if (n == null || parsed == null)
+            return;
+        var existing = n.Tag;
+        n.Tag = Tag.MergeTag(existing, parsed);
+    }
 
-        var lastPending = _pendingComments.Last();
-        if (anchorLine - lastPending.Line > 1)
+    private IJsoncNode ParseValue(string path, JsoncToken firstTok, bool example)
+    {
+        var tok = firstTok;
+        while (true)
         {
-            _pendingComments.Clear();
-            return null;
-        }
-
-        if (node != null)
-        {
-            node.LeadingComment = new JsoncComment
+            switch (tok.Type)
             {
-                Text = _pendingComments[0].Literal,
-                Line = _pendingComments[0].Line,
-                Column = _pendingComments[0].Column,
-                IsBlock = _pendingComments[0].IsBlock
-            };
+                case JsoncTokenType.EOF:
+                    return new JsoncValue { TokenType = JsoncTokenType.Null };
+
+                case JsoncTokenType.LeadingComment:
+                    {
+                        if (_pendingComments.Count > 0)
+                        {
+                            var last = _pendingComments.Last();
+                            if (tok.Line - last.Line > 1)
+                            {
+                                _pendingComments.Clear();
+                            }
+                        }
+                        _pendingComments.Add(tok);
+                        tok = Advance();
+                        continue;
+                    }
+
+                case JsoncTokenType.TrailingComment:
+                    tok = Advance();
+                    continue;
+
+                case JsoncTokenType.LBrace:
+                    return ParseObject(tok.Line, path);
+
+                case JsoncTokenType.LBracket:
+                    return ParseArray(tok.Line, path);
+
+                case JsoncTokenType.String:
+                    return ParseString(tok, path, example);
+
+                case JsoncTokenType.Number:
+                    return ParseNumber(tok, path, example);
+
+                case JsoncTokenType.True:
+                case JsoncTokenType.False:
+                    return ParseBool(tok, path, example);
+
+                case JsoncTokenType.Null:
+                    return ParseNull(path, example);
+
+                default:
+                    throw new Exception($"unexpected token {tok.Type} at line {tok.Line}");
+            }
+        }
+    }
+
+    private IJsoncNode ParseString(JsoncToken tok, string path, bool example)
+    {
+        var tag = ConsumeCommentsFor(tok.Line);
+        var text = tok.Literal;
+
+        if (tag == null)
+            tag = Tag.NewTag();
+
+        if (tag.Type == ValueType.Unknown)
+            tag.Type = ValueType.Str;
+
+        switch (text)
+        {
+            case "code":
+            case "message":
+            case "data":
+            case "success":
+            case "error":
+            case "unknown":
+            case "page":
+            case "limit":
+            case "offset":
+            case "total":
+            case "id":
+            case "name":
+            case "description":
+            case "type":
+            case "version":
+            case "status":
+            case "url":
+            case "create_time":
+            case "update_time":
+            case "delete_time":
+            case "account":
+            case "token":
+            case "expire_time":
+            case "key":
+            case "value":
+                tag.Type = ValueType.Str;
+                break;
+
+            default:
+                // type-specific parsing handled by tag type
+                break;
         }
 
-        Tag? mergedTag = null;
-        foreach (var commentToken in _pendingComments)
+        var val = new JsoncValue
         {
-            var parsed = ParseCommentsToTag(commentToken.Literal);
+            Value = text,
+            TokenType = JsoncTokenType.String,
+            Tag = tag,
+            Path = path
+        };
+
+        // Handle trailing comments
+        var next = Peek();
+        if (next.Type == JsoncTokenType.TrailingComment)
+        {
+            var trailing = Advance();
+            var parsed = ParseCommentsToTag(trailing.Literal);
             if (parsed != null)
             {
-                if (mergedTag == null)
-                {
-                    mergedTag = parsed;
-                }
-                else
-                {
-                    mergedTag = Tag.MergeTag(mergedTag, parsed);
-                }
+                MergeNodeTag(val, parsed);
             }
         }
 
-        _pendingComments.Clear();
-        return mergedTag;
+        return val;
     }
 
-    private static object? ConvertForValidation(object? value, ValueType type)
+    private IJsoncNode ParseNumber(JsoncToken tok, string path, bool example)
     {
-        if (value == null) return null;
+        var tag = ConsumeCommentsFor(tok.Line);
+        var text = tok.Literal;
 
-        switch (type)
+        if (tag == null)
+            tag = Tag.NewTag();
+
+        if (text.Contains("."))
         {
-            case ValueType.I:
-            case ValueType.I8:
-            case ValueType.I16:
-            case ValueType.I32:
-                if (value is string s) return int.Parse(s);
-                return Convert.ToInt32(value);
-            case ValueType.I64:
-                if (value is string s64) return long.Parse(s64);
-                return Convert.ToInt64(value);
-            case ValueType.U:
-            case ValueType.U8:
-            case ValueType.U16:
-            case ValueType.U32:
-                if (value is string us) return uint.Parse(us);
-                return Convert.ToUInt32(value);
-            case ValueType.U64:
-                if (value is string u64s) return ulong.Parse(u64s);
-                return Convert.ToUInt64(value);
-            case ValueType.F32:
-            case ValueType.F64:
-                if (value is string fs) return double.Parse(fs);
-                return Convert.ToDouble(value);
-            case ValueType.Bool:
-                return value;
-            default:
-                return value;
+            if (tag.Type == ValueType.Unknown)
+                tag.Type = ValueType.F64;
         }
+        else
+        {
+            if (tag.Type == ValueType.Unknown)
+                tag.Type = ValueType.I;
+        }
+
+        var val = new JsoncValue
+        {
+            Value = double.Parse(text, System.Globalization.CultureInfo.InvariantCulture),
+            TokenType = JsoncTokenType.Number,
+            Tag = tag,
+            Path = path
+        };
+
+        var next = Peek();
+        if (next.Type == JsoncTokenType.TrailingComment)
+        {
+            var trailing = Advance();
+            var parsed = ParseCommentsToTag(trailing.Literal);
+            if (parsed != null)
+            {
+                MergeNodeTag(val, parsed);
+            }
+        }
+
+        return val;
+    }
+
+    private IJsoncNode ParseBool(JsoncToken tok, string path, bool example)
+    {
+        var tag = ConsumeCommentsFor(tok.Line);
+
+        if (tag == null)
+            tag = Tag.NewTag();
+        if (tag.Type == ValueType.Unknown)
+            tag.Type = ValueType.Bool;
+
+        bool boolVal = tok.Type == JsoncTokenType.True;
+
+        var val = new JsoncValue
+        {
+            Value = boolVal,
+            TokenType = tok.Type,
+            Tag = tag,
+            Path = path
+        };
+
+        var next = Peek();
+        if (next.Type == JsoncTokenType.TrailingComment)
+        {
+            var trailing = Advance();
+            var parsed = ParseCommentsToTag(trailing.Literal);
+            if (parsed != null)
+            {
+                MergeNodeTag(val, parsed);
+            }
+        }
+
+        return val;
+    }
+
+    private IJsoncNode ParseNull(string path, bool example)
+    {
+        var tag = ConsumeCommentsFor(0);
+        if (tag == null)
+            tag = Tag.NewTag();
+        tag.Nullable = true;
+
+        var val = new JsoncValue
+        {
+            Value = null,
+            TokenType = JsoncTokenType.Null,
+            Tag = tag,
+            Path = path
+        };
+
+        return val;
+    }
+
+    private IJsoncNode ParseObject(int openLine, string path)
+    {
+        _depth++;
+        if (_depth > MaxDepth)
+            throw new Exception($"max depth: {MaxDepth}");
+
+        var tag = ConsumeCommentsFor(openLine);
+        if (tag == null)
+            tag = Tag.NewTag();
+        if (tag.Type == ValueType.Unknown)
+            tag.Type = ValueType.Obj;
+
+        if (!string.IsNullOrEmpty(tag.Name))
+        {
+            path = string.IsNullOrEmpty(path) ? tag.Name : $"{path}.{tag.Name}";
+        }
+
+        var obj = new JsoncObject
+        {
+            Tag = tag,
+            Path = path
+        };
+
+        IJsoncNode? lastValue = null;
+
+        while (true)
+        {
+            var tok = Advance();
+            if (tok.Type == JsoncTokenType.EOF)
+                break;
+            if (tok.Type == JsoncTokenType.RBrace)
+                break;
+
+            if (tok.Type == JsoncTokenType.LeadingComment)
+            {
+                if (_pendingComments.Count > 0)
+                {
+                    var last = _pendingComments.Last();
+                    if (tok.Line - last.Line > 1)
+                    {
+                        _pendingComments.Clear();
+                    }
+                }
+                _pendingComments.Add(tok);
+                continue;
+            }
+
+            if (tok.Type == JsoncTokenType.TrailingComment)
+            {
+                if (lastValue != null)
+                {
+                    var parsed = ParseCommentsToTag(tok.Literal);
+                    if (parsed != null)
+                    {
+                        MergeNodeTag(lastValue, parsed);
+                    }
+                }
+                continue;
+            }
+
+            if (tok.Type != JsoncTokenType.String)
+                throw new Exception($"expect string key at line {tok.Line}");
+
+            var keyStr = CamelToSnake.Convert(tok.Literal);
+
+            var colonTok = Advance();
+            if (colonTok.Type != JsoncTokenType.Colon)
+                throw new Exception("expect colon");
+
+            var fieldPath = tag.Type == ValueType.Map
+                ? $"{path}[{keyStr}]"
+                : $"{path}.{keyStr}";
+
+            var exampleMode = tag.Example;
+            var val = ParseValue(fieldPath, Advance(), exampleMode);
+            if (val == null)
+                continue;
+
+            // for map
+            var childTag = val.Tag;
+            if (childTag != null && tag != null && childTag.Type == ValueType.Map)
+            {
+                childTag.Inherit(tag);
+            }
+
+            obj.Add(keyStr, val);
+            lastValue = val;
+
+            var nextTok = Peek();
+            if (nextTok.Type == JsoncTokenType.Comma)
+            {
+                Advance();
+            }
+        }
+
+        if (!tag.Example)
+        {
+            switch (tag.Type)
+            {
+                case ValueType.Map:
+                    Validator.Validate(obj, tag);
+                    break;
+                case ValueType.Obj:
+                    Validator.Validate(obj, tag);
+                    break;
+            }
+        }
+
+        _depth--;
+        return obj;
+    }
+
+    private IJsoncNode ParseArray(int openLine, string path)
+    {
+        _depth++;
+        if (_depth > MaxDepth)
+            throw new Exception($"max depth: {MaxDepth}");
+
+        var tag = ConsumeCommentsFor(openLine);
+        if (tag == null)
+            tag = Tag.NewTag();
+        if (tag.Type == ValueType.Unknown)
+        {
+            tag.Type = tag.Size > 0 ? ValueType.Arr : ValueType.Vec;
+        }
+
+        if (!string.IsNullOrEmpty(tag.Name))
+        {
+            path = $"{path}.{tag.Name}";
+        }
+
+        var arr = new JsoncArray
+        {
+            Tag = tag,
+            Path = path
+        };
+
+        IJsoncNode? lastItem = null;
+        int i = 0;
+
+        while (true)
+        {
+            var tok = Advance();
+            if (tok.Type == JsoncTokenType.EOF)
+                break;
+            if (tok.Type == JsoncTokenType.RBracket)
+                break;
+
+            if (tok.Type == JsoncTokenType.LeadingComment)
+            {
+                if (_pendingComments.Count > 0)
+                {
+                    var last = _pendingComments.Last();
+                    if (tok.Line - last.Line > 1)
+                    {
+                        _pendingComments.Clear();
+                    }
+                }
+                _pendingComments.Add(tok);
+                continue;
+            }
+
+            if (tok.Type == JsoncTokenType.TrailingComment)
+            {
+                if (lastItem != null)
+                {
+                    var parsed = ParseCommentsToTag(tok.Literal);
+                    if (parsed != null)
+                    {
+                        MergeNodeTag(lastItem, parsed);
+                    }
+                }
+                continue;
+            }
+
+            var itemPath = $"{path}[{i}]";
+            var exampleMode = tag.Example;
+            var item = ParseValue(itemPath, tok, exampleMode);
+            if (item == null)
+                continue;
+
+            var childTag = item.Tag;
+            if (childTag != null && tag != null)
+            {
+                childTag.Inherit(tag);
+            }
+
+            arr.Add(item);
+            lastItem = item;
+            i++;
+
+            var nextTok = Peek();
+            if (nextTok.Type == JsoncTokenType.Comma)
+            {
+                Advance();
+            }
+        }
+
+        if (!tag.Example)
+        {
+            switch (tag.Type)
+            {
+                case ValueType.Arr:
+                    Validator.Validate(arr, tag);
+                    break;
+                case ValueType.Vec:
+                    Validator.Validate(arr, tag);
+                    break;
+            }
+        }
+
+        _depth--;
+        return arr;
     }
 }

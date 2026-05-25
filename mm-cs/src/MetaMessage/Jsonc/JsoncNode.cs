@@ -6,8 +6,7 @@ public interface IJsoncNode
 {
     JsoncTokenType TokenType { get; }
     Tag? Tag { get; set; }
-    JsoncComment? LeadingComment { get; set; }
-    JsoncComment? TrailingComment { get; set; }
+    string Path { get; set; }
 }
 
 public class JsoncComment
@@ -22,8 +21,7 @@ public abstract class JsoncNode : IJsoncNode
 {
     public JsoncTokenType TokenType { get; set; }
     public Tag? Tag { get; set; }
-    public JsoncComment? LeadingComment { get; set; }
-    public JsoncComment? TrailingComment { get; set; }
+    public string Path { get; set; } = "";
 }
 
 public class JsoncValue : JsoncNode
@@ -157,5 +155,30 @@ public class JsoncArray : JsoncNode
     public JsoncArray? GetArray(int index)
     {
         return Get(index) as JsoncArray;
+    }
+}
+
+public class JsoncDoc : JsoncNode
+{
+    public List<KeyValuePair<string, IJsoncNode>> Fields { get; set; } = new();
+
+    public JsoncDoc()
+    {
+        TokenType = JsoncTokenType.LBrace;
+    }
+
+    public void Add(string key, IJsoncNode node)
+    {
+        Fields.Add(new KeyValuePair<string, IJsoncNode>(key, node));
+    }
+
+    public IJsoncNode? Get(string key)
+    {
+        foreach (var kvp in Fields)
+        {
+            if (kvp.Key == key)
+                return kvp.Value;
+        }
+        return null;
     }
 }

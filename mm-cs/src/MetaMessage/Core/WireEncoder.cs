@@ -124,6 +124,15 @@ public class WireEncoder
         return _buf.Length - start;
     }
 
+    public int EncodeUInt64(ulong value)
+    {
+        int start = _buf.Length;
+        _buf.Write(Prefix.POSITIVE_INT | WireConstants.INT_LEN_8,
+            (byte)(value >> 56), (byte)(value >> 48), (byte)(value >> 40), (byte)(value >> 32),
+            (byte)(value >> 24), (byte)(value >> 16), (byte)(value >> 8), (byte)value);
+        return _buf.Length - start;
+    }
+
     public int EncodeFloatString(string s)
     {
         var (negative, exponent, mantissa) = FloatCodec.ParseDecimalString(s);

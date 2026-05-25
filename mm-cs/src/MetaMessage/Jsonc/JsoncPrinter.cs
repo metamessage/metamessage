@@ -6,262 +6,201 @@ namespace MetaMessage.Jsonc;
 public class JsoncPrinter
 {
     private readonly bool _prettyPrint;
-    private readonly int _indentSize;
-    private int _currentIndent;
+    private const string IndentUnit = "\t";
 
-    public JsoncPrinter(bool prettyPrint = true, int indentSize = 1)
+    public JsoncPrinter(bool prettyPrint = true)
     {
         _prettyPrint = prettyPrint;
-        _indentSize = indentSize;
     }
 
     public string Print(IJsoncNode node)
     {
         var sb = new System.Text.StringBuilder();
-        PrintNode(node, sb);
+        WriteLeadingComments(sb, node.Tag, 0);
+        PrintNode(node, sb, 0);
         return sb.ToString();
     }
 
-    private void PrintNode(IJsoncNode node, System.Text.StringBuilder sb)
+    private void PrintNode(IJsoncNode node, System.Text.StringBuilder sb, int indent)
     {
-        if (node is JsoncObject obj)
+        if (node is JsoncDoc doc)
         {
-            PrintObject(obj, sb);
+            WriteObjectJSONC(sb, doc.Fields.Select(f => new KeyValuePair<string, IJsoncNode>(f.Key, f.Value)).ToList(), doc.Tag, indent);
+        }
+        else if (node is JsoncObject obj)
+        {
+            WriteObjectJSONC(sb, obj.Fields.ToList(), obj.Tag, indent);
         }
         else if (node is JsoncArray array)
         {
-            PrintArray(array, sb);
+            WriteArrayJSONC(sb, array.Elements, array.Tag, indent);
         }
         else if (node is JsoncValue value)
         {
-            PrintValue(value, sb);
+            WriteValueJSONC(sb, value, indent);
         }
     }
 
-    private void PrintTag(Tag? tag, System.Text.StringBuilder sb)
+    private void WriteLeadingComments(System.Text.StringBuilder b, Tag? tag, int indent)
     {
         if (tag == null) return;
         var tagStr = tag.ToString();
         if (string.IsNullOrEmpty(tagStr)) return;
-        sb.AppendLine();
-        AppendIndent(sb);
-        sb.Append(tagStr);
-        sb.AppendLine();
+        b.Append('\n');
+        WriteIndent(b, indent);
+        b.Append(tagStr);
+        b.Append('\n');
     }
 
-    private void PrintObject(JsoncObject obj, System.Text.StringBuilder sb)
+    private void WriteIndent(System.Text.StringBuilder b, int indent)
     {
-        if (obj.Tag != null)
+        for (int i = 0; i < indent; i++)
         {
-            PrintTag(obj.Tag, sb);
+            b.Append(IndentUnit);
         }
-        else if (obj.LeadingComment != null)
-        {
-            PrintComment(obj.LeadingComment, sb);
-        }
-
-        sb.Append('{');
-
-        var fields = obj.Fields;
-        if (fields.Count == 0)
-        {
-            sb.Append('}');
-            return;
-        }
-
-        if (_prettyPrint)
-        {
-            sb.AppendLine();
-            _currentIndent += _indentSize;
-        }
-
-        int index = 0;
-        foreach (var kvp in fields)
-        {
-            if (kvp.Value.Tag != null)
-            {
-                PrintTag(kvp.Value.Tag, sb);
-            }
-            else if (kvp.Value.LeadingComment != null)
-            {
-                PrintComment(kvp.Value.LeadingComment, sb);
-                if (_prettyPrint)
-                {
-                    AppendIndent(sb);
-                }
-            }
-
-            if (_prettyPrint)
-            {
-                AppendIndent(sb);
-            }
-
-            sb.Append('"');
-            sb.Append(kvp.Key);
-            sb.Append('"');
-            sb.Append(':');
-
-            if (_prettyPrint)
-            {
-                sb.Append(' ');
-            }
-
-            PrintNode(kvp.Value, sb);
-
-            index++;
-            if (index < fields.Count)
-            {
-                sb.Append(',');
-            }
-
-            if (_prettyPrint)
-            {
-                sb.AppendLine();
-            }
-        }
-
-        if (_prettyPrint)
-        {
-            sb.AppendLine();
-            _currentIndent -= _indentSize;
-            AppendIndent(sb);
-        }
-
-        sb.Append('}');
     }
 
-    private void PrintArray(JsoncArray array, System.Text.StringBuilder sb)
+    private void WriteValueJSONC(System.Text.StringBuilder b, JsoncValue v, int indent)
     {
-        if (array.Tag != null)
+        if (v.Tag != null)
         {
-            PrintTag(array.Tag, sb);
-        }
-        else if (array.LeadingComment != null)
-        {
-            PrintComment(array.LeadingComment, sb);
-        }
-
-        sb.Append('[');
-
-        if (array.Elements.Count == 0)
-        {
-            sb.Append(']');
-            return;
-        }
-
-        if (_prettyPrint)
-        {
-            sb.AppendLine();
-            _currentIndent += _indentSize;
-        }
-
-        for (int i = 0; i < array.Elements.Count; i++)
-        {
-            var element = array.Elements[i];
-            if (element.Tag != null)
+            switch (v.Tag.Type)
             {
-                PrintTag(element.Tag, sb);
-            }
-            else if (element.LeadingComment != null)
-            {
-                PrintComment(element.LeadingComment, sb);
-                if (_prettyPrint)
-                {
-                    AppendIndent(sb);
-                }
-            }
+                case ValueType.Str:
+                case ValueType.Bytes:
+                case ValueType.Datetime:
+                case ValueType.Date:
+                case ValueType.Time:
+                case ValueType.Uuid:
+                case ValueType.Ip:
+                case ValueType.Url:
+                case ValueType.Email:
+                case ValueType.Enums:
+                    b.Append('"');
+                    b.Append(EscapeString(v.Value?.ToString() ?? ""));
+                    b.Append('"');
+                    return;
 
-            if (_prettyPrint)
-            {
-                AppendIndent(sb);
-            }
+                case ValueType.I:
+                case ValueType.I8:
+                case ValueType.I16:
+                case ValueType.I32:
+                case ValueType.I64:
+                case ValueType.U:
+                case ValueType.U8:
+                case ValueType.U16:
+                case ValueType.U32:
+                case ValueType.U64:
+                case ValueType.Bigint:
+                case ValueType.Decimal:
+                case ValueType.Bool:
+                    if (v.Value is bool bVal)
+                    {
+                        b.Append(bVal ? "true" : "false");
+                    }
+                    else
+                    {
+                        b.Append(v.Value?.ToString() ?? "null");
+                    }
+                    return;
 
-            PrintNode(element, sb);
+                case ValueType.F32:
+                case ValueType.F64:
+                    b.Append(v.Value?.ToString() ?? "null");
+                    return;
 
-            if (i < array.Elements.Count - 1)
-            {
-                sb.Append(',');
-            }
-
-            if (_prettyPrint)
-            {
-                sb.AppendLine();
+                default:
+                    b.Append(v.Value?.ToString() ?? "null");
+                    return;
             }
         }
 
-        if (_prettyPrint)
-        {
-            sb.AppendLine();
-            _currentIndent -= _indentSize;
-            AppendIndent(sb);
-        }
-
-        sb.Append(']');
-    }
-
-    private void PrintValue(JsoncValue value, System.Text.StringBuilder sb)
-    {
-        switch (value.TokenType)
+        switch (v.TokenType)
         {
             case JsoncTokenType.String:
-                sb.Append('"');
-                sb.Append(EscapeString(value.GetString() ?? ""));
-                sb.Append('"');
+                b.Append('"');
+                b.Append(EscapeString(v.Value?.ToString() ?? ""));
+                b.Append('"');
                 break;
             case JsoncTokenType.Number:
-                sb.Append(value.Value?.ToString() ?? "null");
+                b.Append(v.Value?.ToString() ?? "null");
                 break;
             case JsoncTokenType.True:
-                sb.Append("true");
+                b.Append("true");
                 break;
             case JsoncTokenType.False:
-                sb.Append("false");
+                b.Append("false");
                 break;
             case JsoncTokenType.Null:
-                sb.Append("null");
+                b.Append("null");
                 break;
             default:
-                var type = value.Tag?.Type ?? ValueType.Unknown;
-                bool needsQuotes = type.NeedsQuotes();
-                var text = value.Value?.ToString() ?? "";
-                if (needsQuotes)
-                {
-                    sb.Append('"');
-                    sb.Append(EscapeString(text));
-                    sb.Append('"');
-                }
-                else
-                {
-                    sb.Append(text);
-                }
+                b.Append(v.Value?.ToString() ?? "null");
                 break;
         }
     }
 
-    private void PrintComment(JsoncComment comment, System.Text.StringBuilder sb)
+    private void WriteObjectJSONC(System.Text.StringBuilder b, List<KeyValuePair<string, IJsoncNode>> fields, Tag? tag, int indent)
     {
-        if (comment.IsBlock)
+        WriteLeadingComments(b, tag, indent);
+        b.Append('{');
+        if (!_prettyPrint)
         {
-            sb.Append("/* ");
-            sb.Append(comment.Text);
-            sb.AppendLine(" */");
+            foreach (var field in fields)
+            {
+                b.Append('"');
+                b.Append(field.Key);
+                b.Append("\":");
+                PrintNode(field.Value, b, indent);
+                b.Append(',');
+            }
+            b.Append('}');
+            return;
         }
-        else
+
+        b.Append('\n');
+        foreach (var field in fields)
         {
-            sb.Append("// ");
-            sb.AppendLine(comment.Text);
+            WriteLeadingComments(b, field.Value.Tag, indent + 1);
+            WriteIndent(b, indent + 1);
+            b.Append('"');
+            b.Append(field.Key);
+            b.Append("\": ");
+            PrintNode(field.Value, b, indent + 1);
+            b.Append(",\n");
         }
+        WriteIndent(b, indent);
+        b.Append('}');
     }
 
-    private void AppendIndent(System.Text.StringBuilder sb)
+    private void WriteArrayJSONC(System.Text.StringBuilder b, List<IJsoncNode> items, Tag? tag, int indent)
     {
-        for (int i = 0; i < _currentIndent; i++)
+        WriteLeadingComments(b, tag, indent);
+        b.Append('[');
+        if (!_prettyPrint)
         {
-            sb.Append('\t');
+            foreach (var item in items)
+            {
+                PrintNode(item, b, indent);
+                b.Append(',');
+            }
+            b.Append(']');
+            return;
         }
+
+        b.Append('\n');
+        foreach (var item in items)
+        {
+            WriteLeadingComments(b, item.Tag, indent + 1);
+            WriteIndent(b, indent + 1);
+            PrintNode(item, b, indent + 1);
+            b.Append(",\n");
+        }
+        WriteIndent(b, indent);
+        b.Append(']');
     }
 
-    private string EscapeString(string s)
+    private static string EscapeString(string s)
     {
         var sb = new System.Text.StringBuilder();
         foreach (char c in s)

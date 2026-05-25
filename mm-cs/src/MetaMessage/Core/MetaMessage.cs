@@ -273,8 +273,17 @@ public static class MetaMessage
             case ValueType.U:
             case ValueType.U16:
             case ValueType.U32:
-            case ValueType.U64:
                 encoder.EncodeInt64(Convert.ToInt64(value));
+                break;
+            case ValueType.U64:
+                if (value is ulong ulVal && ulVal > long.MaxValue)
+                {
+                    encoder.EncodeUInt64(ulVal);
+                }
+                else
+                {
+                    encoder.EncodeInt64(Convert.ToInt64(value));
+                }
                 break;
             case ValueType.F32:
             case ValueType.F64:

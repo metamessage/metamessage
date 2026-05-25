@@ -580,6 +580,12 @@ public class WireDecoder
 
         if (tag.IsNull)
         {
+            if (tag.Type == ValueType.Unknown)
+            {
+                var payloadTree = DecodeNext(tag);
+                _offset = end;
+                return payloadTree;
+            }
             _offset = end;
             return CreateNullValue(tag);
         }
