@@ -171,8 +171,7 @@ inline void printArray(std::ostringstream &os, std::shared_ptr<ir::Array> arr,
       break;
     }
 
-    if (i < arr->items.size() - 1)
-      os << ",";
+    os << ",";
     if (multiline)
       os << "\n";
   }
@@ -242,8 +241,7 @@ inline void printObject(std::ostringstream &os, std::shared_ptr<ir::Object> obj,
       break;
     }
 
-    if (i < obj->fields.size() - 1)
-      os << ",";
+    os << ",";
     if (multiline)
       os << "\n";
   }

@@ -202,7 +202,7 @@ class Tag(
         }
 
         if (default_val.isNotEmpty() && !isInherit) {
-            parts.add("${T_DEFAULT}=${default_val}")
+            parts.add("${T_DEFAULT_VAL}=${default_val}")
         }
 
         if (min.isNotEmpty() && !isInherit) {
@@ -270,7 +270,7 @@ class Tag(
         }
 
         if (childDefaultVal.isNotEmpty()) {
-            parts.add("${T_CHILD_DEFAULT}=${childDefaultVal}")
+            parts.add("${T_CHILD_DEFAULT_VAL}=${childDefaultVal}")
         }
 
         if (childMin.isNotEmpty()) {
@@ -640,7 +640,7 @@ class Tag(
         const val T_NULLABLE = "nullable"
         const val T_ALLOW_EMPTY = "allow_empty"
         const val T_UNIQUE = "unique"
-        const val T_DEFAULT = "default_val"
+        const val T_DEFAULT_VAL = "default_val"
         const val T_MIN = "min"
         const val T_MAX = "max"
         const val T_SIZE = "size"
@@ -656,7 +656,7 @@ class Tag(
         const val T_CHILD_NULLABLE = "child_nullable"
         const val T_CHILD_ALLOW_EMPTY = "child_allow_empty"
         const val T_CHILD_UNIQUE = "child_unique"
-        const val T_CHILD_DEFAULT = "child_default_val"
+        const val T_CHILD_DEFAULT_VAL = "child_default_val"
         const val T_CHILD_MIN = "child_min"
         const val T_CHILD_MAX = "child_max"
         const val T_CHILD_SIZE = "child_size"
@@ -801,7 +801,7 @@ class Tag(
                     T_NULLABLE -> r.nullable = true
                     T_ALLOW_EMPTY -> r.allowEmpty = true
                     T_UNIQUE -> r.unique = true
-                    T_DEFAULT -> r.default_val = value
+                    T_DEFAULT_VAL -> r.default_val = value
                     T_MIN -> r.min = value
                     T_MAX -> r.max = value
                     T_SIZE -> {
@@ -834,7 +834,7 @@ class Tag(
                     T_CHILD_NULLABLE -> r.childNullable = true
                     T_CHILD_ALLOW_EMPTY -> r.childAllowEmpty = true
                     T_CHILD_UNIQUE -> r.childUnique = true
-                    T_CHILD_DEFAULT -> r.childDefaultVal = value
+                    T_CHILD_DEFAULT_VAL -> r.childDefaultVal = value
                     T_CHILD_MIN -> r.childMin = value
                     T_CHILD_MAX -> r.childMax = value
                     T_CHILD_SIZE -> {

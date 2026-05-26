@@ -413,11 +413,7 @@ class Parser:
                 tag.type = ValueType.Bool
             return Val(data=False, text="false", tag=tag, path=path)
         elif tok.type == TOKEN_NULL:
-            tag.is_null = True
-            tag.nullable = True
-            if tag.type == ValueType.Unknown:
-                tag.type = ValueType.Str
-            return Val(data=None, text="null", tag=tag, path=path)
+            raise Exception("null is not supported")
         else:
             return Val(data=None, text="", tag=tag, path=path)
 

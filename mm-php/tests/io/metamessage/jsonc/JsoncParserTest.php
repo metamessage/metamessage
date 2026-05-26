@@ -57,7 +57,7 @@ class JsoncParserTest extends TestCase
     public function testParseNullThrowsException(): void
     {
         $this->expectException(\Exception::class);
-        $this->expectExceptionMessage('null literal is not supported');
+        $this->expectExceptionMessage('null is not supported');
         parseJsonc("null");
     }
 

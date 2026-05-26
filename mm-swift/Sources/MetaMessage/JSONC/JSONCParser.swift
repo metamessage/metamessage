@@ -159,9 +159,15 @@ public class JSONCParser {
                     tag.type = .str
                 }
                 let text = tok.literal
-                
+
+                if tag.isNull {
+                    if text != "" {
+                        throw JSONCParserError.invalidData("invalid string: \(text), valid: \"\"")
+                    }
+                    return Value(data: "", text: "", tag: tag, path: path)
+                }
+
                 let value = Value(data: text, text: text, tag: tag, path: path)
-                // 验证值
                 let stringResult = validator.validate(text, tag: tag)
                 if !stringResult.isValid {
                     throw JSONCParserError.invalidData(stringResult.errors.joined(separator: ", "))
@@ -177,6 +183,20 @@ public class JSONCParser {
                     tag.type = .i
                 } else {
                     tag.type = .i
+                }
+            }
+
+            if tag.isNull {
+                if tok.literal.contains(".") {
+                    if tok.literal != "0.0" {
+                        throw JSONCParserError.invalidData("invalid float: \(tok.literal), valid: 0.0")
+                    }
+                    return Value(data: tag.type == .f32 ? Float(0.0) : Double(0.0), text: tok.literal, tag: tag, path: path)
+                } else {
+                    if tok.literal != "0" {
+                        throw JSONCParserError.invalidData("invalid int: \(tok.literal), valid: 0")
+                    }
+                    return Value(data: Int(0), text: tok.literal, tag: tag, path: path)
                 }
             }
 
@@ -200,7 +220,6 @@ public class JSONCParser {
             }
 
             let value = Value(data: data, text: tok.literal, tag: tag, path: path)
-            // 验证值
             let numberResult = validator.validate(data, tag: tag)
             if !numberResult.isValid {
                 throw JSONCParserError.invalidData(numberResult.errors.joined(separator: ", "))
@@ -212,8 +231,10 @@ public class JSONCParser {
             if tag.type == .unknown {
                 tag.type = .bool
             }
+            if tag.isNull {
+                throw JSONCParserError.invalidData("bool must false when bool is null")
+            }
             let value = Value(data: true, text: "true", tag: tag, path: path)
-            // 验证值
             let trueResult = validator.validate(true, tag: tag)
             if !trueResult.isValid {
                 throw JSONCParserError.invalidData(trueResult.errors.joined(separator: ", "))
@@ -225,8 +246,10 @@ public class JSONCParser {
             if tag.type == .unknown {
                 tag.type = .bool
             }
+            if tag.isNull {
+                return Value(data: false, text: "false", tag: tag, path: path)
+            }
             let value = Value(data: false, text: "false", tag: tag, path: path)
-            // 验证值
             let falseResult = validator.validate(false, tag: tag)
             if !falseResult.isValid {
                 throw JSONCParserError.invalidData(falseResult.errors.joined(separator: ", "))
@@ -234,16 +257,7 @@ public class JSONCParser {
             return value
 
         case .nullValue:
-            let tag = consumeCommentsFor(tok.line) ?? Tag()
-            tag.nullable = true
-            tag.isNull = true
-            let value = Value(data: nil, text: "null", tag: tag, path: path)
-            // 验证值
-            let nullResult = validator.validate(nil, tag: tag)
-            if !nullResult.isValid {
-                throw JSONCParserError.invalidData(nullResult.errors.joined(separator: ", "))
-            }
-            return value
+            throw JSONCParserError.invalidData("null is not supported")
 
         default:
             throw JSONCParserError.unexpectedToken("Unexpected token: \(tok.type)")

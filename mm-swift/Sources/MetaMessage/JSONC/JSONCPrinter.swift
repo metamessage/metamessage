@@ -59,12 +59,16 @@ public class JSONCPrinter {
         var result = "{\n"
         increaseIndent()
 
-        for (index, field) in obj.fields.enumerated() {
+        for (_, field) in obj.fields.enumerated() {
+            if let tag = field.value.getTag() {
+                    let tagStr = tag.stringValue()
+                    if !tagStr.isEmpty {
+                        result += indent()
+                        result += "// mm: \(tagStr)\n"
+                    }
+                }
+
             result += indent()
-
-            if let tag = obj.tag, !useIndent {
-            }
-
             result += "\"\(field.key)\": "
 
             switch field.value.getType() {
@@ -80,9 +84,7 @@ public class JSONCPrinter {
                 result += "null"
             }
 
-            if index < obj.fields.count - 1 {
-                result += ","
-            }
+            result += ","
             result += "\n"
         }
 
@@ -100,7 +102,7 @@ public class JSONCPrinter {
         var result = "[\n"
         increaseIndent()
 
-        for (index, item) in arr.items.enumerated() {
+        for (_, item) in arr.items.enumerated() {
             result += indent()
 
             switch item.getType() {
@@ -116,9 +118,7 @@ public class JSONCPrinter {
                 result += "null"
             }
 
-            if index < arr.items.count - 1 {
-                result += ","
-            }
+            result += ","
             result += "\n"
         }
 
@@ -129,10 +129,6 @@ public class JSONCPrinter {
     }
 
     private func printValue(_ value: Value) -> String {
-        if let tag = value.tag, tag.isNull {
-            return "null"
-        }
-
         if let boolVal = value.data as? Bool {
             return boolVal ? "true" : "false"
         }
@@ -298,10 +294,6 @@ public class JSONCPrinter {
     }
 
     private func printValueCompact(_ value: Value) -> String {
-        if let tag = value.tag, tag.isNull {
-            return "null"
-        }
-
         if let boolVal = value.data as? Bool {
             return boolVal ? "true" : "false"
         }

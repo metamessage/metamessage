@@ -18,7 +18,7 @@ class Tag
     public bool $nullable = false;
     public bool $allowEmpty = false;
     public bool $unique = false;
-    public string $defaultValue = '';
+    public string $defaultVal = '';
     public string $min = '';
     public string $max = '';
     public int $size = 0;
@@ -58,7 +58,7 @@ class Tag
     const T_NULLABLE = 'nullable';
     const T_ALLOW_EMPTY = 'allow_empty';
     const T_UNIQUE = 'unique';
-    const T_DEFAULT = 'default';
+    const T_DEFAULT_VAL = 'default_val';
     const T_MIN = 'min';
     const T_MAX = 'max';
     const T_SIZE = 'size';
@@ -73,7 +73,7 @@ class Tag
     const T_CHILD_NULLABLE = 'child_nullable';
     const T_CHILD_ALLOW_EMPTY = 'child_allow_empty';
     const T_CHILD_UNIQUE = 'child_unique';
-    const T_CHILD_DEFAULT = 'child_default_val';
+    const T_CHILD_DEFAULT_VAL = 'child_default_val';
     const T_CHILD_MIN = 'child_min';
     const T_CHILD_MAX = 'child_max';
     const T_CHILD_SIZE = 'child_size';
@@ -159,13 +159,13 @@ class Tag
         $t->example = $ann->example;
         $t->desc = $ann->desc;
         $t->type = $ann->type;
-        if ($ann->raw) {
+        if ($ann->deprecated) {
             $t->deprecated = true;
         }
         $t->nullable = $ann->nullable;
         $t->allowEmpty = $ann->allowEmpty;
         $t->unique = $ann->unique;
-        $t->defaultValue = $ann->defaultValue;
+        $t->defaultVal = $ann->defaultVal;
         $t->min = $ann->min;
         $t->max = $ann->max;
         $t->size = $ann->size;
@@ -209,7 +209,7 @@ class Tag
         $copy->nullable = $this->nullable;
         $copy->allowEmpty = $this->allowEmpty;
         $copy->unique = $this->unique;
-        $copy->defaultValue = $this->defaultValue;
+        $copy->defaultVal = $this->defaultVal;
         $copy->min = $this->min;
         $copy->max = $this->max;
         $copy->size = $this->size;
@@ -246,7 +246,7 @@ class Tag
         $this->nullable = $parent->childNullable;
         $this->allowEmpty = $parent->childAllowEmpty;
         $this->unique = $parent->childUnique;
-        $this->defaultValue = $parent->childDefaultVal;
+        $this->defaultVal = $parent->childDefaultVal;
         $this->min = $parent->childMin;
         $this->max = $parent->childMax;
         $this->size = $parent->childSize;
@@ -288,7 +288,7 @@ class Tag
         }
 
         if ($tag->childDefaultVal !== '') {
-            $this->defaultValue = $tag->childDefaultVal;
+            $this->defaultVal = $tag->childDefaultVal;
         }
 
         if ($tag->childMin !== '') {
@@ -399,8 +399,8 @@ class Tag
             $add(self::T_UNIQUE);
         }
 
-        if ($this->defaultValue !== '' && !$this->isInherit) {
-            $add(self::T_DEFAULT . '=' . $this->defaultValue);
+        if ($this->defaultVal !== '' && !$this->isInherit) {
+            $add(self::T_DEFAULT_VAL . '=' . $this->defaultVal);
         }
 
         if ($this->min !== '' && !$this->isInherit) {
@@ -472,7 +472,7 @@ class Tag
         }
 
         if ($this->childDefaultVal !== '') {
-            $add(self::T_CHILD_DEFAULT . '=' . $this->childDefaultVal);
+            $add(self::T_CHILD_DEFAULT_VAL . '=' . $this->childDefaultVal);
         }
 
         if ($this->childMin !== '') {
@@ -579,15 +579,15 @@ class Tag
             $w->writeByte(self::K_UNIQUE | 1);
         }
 
-        if ($this->defaultValue !== '' && !$this->isInherit) {
-            $l = strlen($this->defaultValue);
+        if ($this->defaultVal !== '' && !$this->isInherit) {
+            $l = strlen($this->defaultVal);
             if ($l < 7) {
                 $w->writeByte(self::K_DEFAULT_VAL | $l);
-                $w->writeAscii($this->defaultValue);
+                $w->writeAscii($this->defaultVal);
             } else {
                 $w->writeByte(self::K_DEFAULT_VAL | 7);
                 $w->writeByte($l);
-                $w->writeAscii($this->defaultValue);
+                $w->writeAscii($this->defaultVal);
             }
         }
 
@@ -922,8 +922,8 @@ class Tag
             $dst->unique = true;
         }
 
-        if ($src->defaultValue !== '') {
-            $dst->defaultValue = $src->defaultValue;
+        if ($src->defaultVal !== '') {
+            $dst->defaultVal = $src->defaultVal;
         }
 
         if ($src->min !== '') {
@@ -1079,7 +1079,7 @@ class Tag
                     $r->type = ValueType::parseWireName($v);
                     break;
 
-                case self::T_RAW:
+                case self::T_DEPRECATED:
                     $r->deprecated = true;
                     break;
 
@@ -1095,8 +1095,8 @@ class Tag
                     $r->unique = true;
                     break;
 
-                case self::T_DEFAULT:
-                    $r->defaultValue = $v;
+                case self::T_DEFAULT_VAL:
+                    $r->defaultVal = $v;
                     break;
 
                 case self::T_PATTERN:
@@ -1140,9 +1140,6 @@ class Tag
                     $r->childType = ValueType::parseWireName($v);
                     break;
 
-                case self::T_CHILD_RAW:
-                    break;
-
                 case self::T_CHILD_NULLABLE:
                     $r->childNullable = true;
                     break;
@@ -1155,7 +1152,7 @@ class Tag
                     $r->childUnique = true;
                     break;
 
-                case self::T_CHILD_DEFAULT:
+                case self::T_CHILD_DEFAULT_VAL:
                     $r->childDefaultVal = $v;
                     break;
 

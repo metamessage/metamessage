@@ -35,7 +35,7 @@ def test_parse_basic_json():
 def test_parse_null_with_tag():
     """Test parsing null with is_null tag (no bare null values in MM)."""
     jsonc = '''{
-        "data": null // mm: is_null
+        "data": "" // mm: is_null
     }'''
     node = parse_jsonc(jsonc)
     assert node.fields[0].value.tag.is_null == True
@@ -94,7 +94,7 @@ def test_roundtrip_keeps_structure():
         "a": 1,
         "b": "hello",
         "c": true,
-        "d": null // mm: is_null
+        "d": "" // mm: is_null
     }'''
     node = parse_jsonc(jsonc)
     enc = Encoder()

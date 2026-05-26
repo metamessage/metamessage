@@ -531,16 +531,8 @@ export class JSONCParser {
           return falseValue;
 
         case TokenType.NULL:
-          let nullTag = this.consumeCommentsFor(tok.line);
-          if (!nullTag) {
-            nullTag = new Tag();
-          }
-          nullTag.isNull = true;
-
-          const nullValue = new MMValue(null, nullTag);
-          nullValue.setPath(path);
           this.depth--;
-          return nullValue;
+          throw new Error(`null is not supported`);
 
         default:
           this.depth--;

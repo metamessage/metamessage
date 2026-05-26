@@ -44,20 +44,20 @@ public class Tag {
     public init() {}
 
     public func inherit(from tag: Tag) {
-        self.desc = tag.childDesc
-        self.type = tag.childType
-        self.nullable = tag.childNullable
-        self.allowEmpty = tag.childAllowEmpty
-        self.unique = tag.childUnique
-        self.defaultVal = tag.childDefaultVal
-        self.min = tag.childMin
-        self.max = tag.childMax
-        self.size = tag.childSize
-        self.enums = tag.childEnums
-        self.pattern = tag.childPattern
-        self.location = tag.childLocation
-        self.version = tag.childVersion
-        self.mime = tag.childMime
+        if !tag.childDesc.isEmpty { self.desc = tag.childDesc }
+        if tag.childType != .unknown { self.type = tag.childType }
+        if tag.childNullable { self.nullable = true }
+        if tag.childAllowEmpty { self.allowEmpty = true }
+        if tag.childUnique { self.unique = true }
+        if !tag.childDefaultVal.isEmpty { self.defaultVal = tag.childDefaultVal }
+        if !tag.childMin.isEmpty { self.min = tag.childMin }
+        if !tag.childMax.isEmpty { self.max = tag.childMax }
+        if tag.childSize != 0 { self.size = tag.childSize }
+        if !tag.childEnums.isEmpty { self.enums = tag.childEnums }
+        if !tag.childPattern.isEmpty { self.pattern = tag.childPattern }
+        if tag.childLocation != 0 { self.location = tag.childLocation }
+        if tag.childVersion != 0 { self.version = tag.childVersion }
+        if !tag.childMime.isEmpty { self.mime = tag.childMime }
     }
 
     public func stringValue() -> String {

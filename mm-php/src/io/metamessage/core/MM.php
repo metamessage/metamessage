@@ -17,7 +17,7 @@ class MM
     public bool $nullable = false;
     public bool $allowEmpty = false;
     public bool $unique = false;
-    public string $defaultValue = '';
+    public string $defaultVal = '';
     public string $min = '';
     public string $max = '';
     public int $size = 0;
@@ -53,7 +53,7 @@ class MM
         bool $nullable = false,
         bool $allowEmpty = false,
         bool $unique = false,
-        string $defaultValue = '',
+        string $defaultVal = '',
         string $min = '',
         string $max = '',
         int $size = 0,
@@ -87,7 +87,7 @@ class MM
         $this->nullable = $nullable;
         $this->allowEmpty = $allowEmpty;
         $this->unique = $unique;
-        $this->defaultValue = $defaultValue;
+        $this->defaultVal = $defaultVal;
         $this->min = $min;
         $this->max = $max;
         $this->size = $size;

@@ -789,7 +789,7 @@ class JsoncParser
                     return $value;
 
                 case JsoncTokenType::Null:
-                    throw new \Exception('null literal is not supported');
+                    throw new \Exception('null is not supported');
 
                 default:
                     throw new \Exception(sprintf('unexpected token %s', $tok->type));

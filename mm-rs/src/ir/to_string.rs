@@ -1,7 +1,7 @@
 use std::fmt::Write;
 use crate::ir::ast::{Node, Object, Array, Value, ValueData};
 
-const INDENT_UNIT: &str = "  ";
+const INDENT_UNIT: &str = "\t";
 
 pub fn to_string(node: &Node) -> String {
     let mut buf = String::new();
@@ -68,26 +68,23 @@ fn write_quoted_string(buf: &mut String, s: &str) {
 fn write_object(buf: &mut String, obj: &Object, indent: usize) {
     buf.push_str("{\n");
 
-    for (i, field) in obj.fields.iter().enumerate() {
-        write_indent(buf, indent + 1);
-
+    for (_i, field) in obj.fields.iter().enumerate() {
         if let Some(tag) = field.value.get_tag() {
             let tag_str = tag.to_string();
             if !tag_str.is_empty() {
-                buf.push_str("// ");
+                write_indent(buf, indent + 1);
+                buf.push_str("// mm: ");
                 buf.push_str(&tag_str);
                 buf.push('\n');
-                write_indent(buf, indent + 1);
             }
         }
 
+        write_indent(buf, indent + 1);
         write_quoted_string(buf, &field.key);
         buf.push_str(": ");
         write_node(buf, &field.value, indent + 1);
 
-        if i < obj.fields.len() - 1 {
-            buf.push(',');
-        }
+        buf.push(',');
         buf.push('\n');
     }
 
@@ -98,13 +95,11 @@ fn write_object(buf: &mut String, obj: &Object, indent: usize) {
 fn write_array(buf: &mut String, arr: &Array, indent: usize) {
     buf.push_str("[\n");
 
-    for (i, item) in arr.items.iter().enumerate() {
+    for (_i, item) in arr.items.iter().enumerate() {
         write_indent(buf, indent + 1);
         write_node(buf, item, indent + 1);
 
-        if i < arr.items.len() - 1 {
-            buf.push(',');
-        }
+        buf.push(',');
         buf.push('\n');
     }
 

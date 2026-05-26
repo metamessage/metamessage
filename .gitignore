@@ -85,3 +85,5 @@ __pycache__/
 coverage/
 .nyc_output/
 .build/
+
+*.rlib

@@ -119,7 +119,22 @@ impl Tag {
     }
 
     pub fn inherit(&mut self, parent: &Tag) {
-        self.is_inherit = true;
+        let has_child_props = parent.child_type != ValueType::Unknown
+            || parent.child_desc.is_some()
+            || parent.child_nullable
+            || parent.child_allow_empty
+            || parent.child_unique
+            || parent.child_default_val.is_some()
+            || parent.child_min.is_some()
+            || parent.child_max.is_some()
+            || parent.child_size.is_some()
+            || parent.child_enums.is_some()
+            || parent.child_pattern.is_some()
+            || parent.child_location.is_some()
+            || parent.child_version.is_some()
+            || parent.child_mime.is_some();
+
+        self.is_inherit = has_child_props;
 
         if parent.child_type != ValueType::Unknown {
             self.value_type = parent.child_type;

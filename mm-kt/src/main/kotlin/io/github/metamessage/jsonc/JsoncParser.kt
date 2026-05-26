@@ -187,6 +187,7 @@ class JsoncParser(private val tokens: List<JsoncToken>) {
 
                     return Value(data = false, text = "false", tag = tag, path = path)
                 }
+                JsoncTokenType.Null -> throw JsoncException("null is not supported")
                 else -> throw JsoncException("unexpected token ${tok.type}")
             }
         }

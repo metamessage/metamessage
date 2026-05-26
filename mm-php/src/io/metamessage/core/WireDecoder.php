@@ -257,7 +257,7 @@ class WireDecoder
                         $default .= chr($this->readByte());
                         $n++;
                     }
-                    $tag->defaultValue = $default;
+                    $tag->defaultVal = $default;
                 } else {
                     $l = $this->readByte();
                     $n++;
@@ -266,7 +266,7 @@ class WireDecoder
                         $default .= chr($this->readByte());
                         $n++;
                     }
-                    $tag->defaultValue = $default;
+                    $tag->defaultVal = $default;
                 }
                 return $n;
 

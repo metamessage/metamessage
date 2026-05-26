@@ -124,7 +124,7 @@ kt_run() {
 sw_build() {
     cd "$SCRIPT_DIR/harness/swift" && swift build --quiet 2>/dev/null
 }
-sw_run() { swift run --package-path "$SCRIPT_DIR/harness/swift" --skip-build "$1" 2>/dev/null; }
+sw_run() { swift run --package-path "$SCRIPT_DIR/harness/swift" --skip-build mm-harness-swift "$1" 2>/dev/null; }
 
 # Ordered list of language keys
 LANGS="go py php ts rs c cpp cs kt sw"

@@ -863,7 +863,7 @@ func (p *Parser) parse(path string, example bool) (val ir.Node, err error) {
 			}, nil
 
 		case token.Null:
-			return nil, fmt.Errorf("null literal is not supported")
+			return nil, fmt.Errorf("null is not supported")
 
 		default:
 			return nil, fmt.Errorf("unexpected token %s", tok.Type)

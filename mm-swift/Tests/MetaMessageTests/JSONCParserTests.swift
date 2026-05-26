@@ -82,16 +82,9 @@ final class JSONCParserTests: XCTestCase {
     }
 
     func testParseNull() throws {
-        let result = try parseJSONC("{\"null\": null}")
-        XCTAssertNotNil(result)
-
-        guard let obj = result as? MMObject else {
-            XCTFail("Expected MMObject")
-            return
+        XCTAssertThrowsError(try parseJSONC("{\"null\": null}")) { error in
+            // null is not supported
         }
-
-        let nullField = obj.fields.first { $0.key == "null" }
-        XCTAssertNotNil(nullField)
     }
 
     func testParseNestedObject() throws {

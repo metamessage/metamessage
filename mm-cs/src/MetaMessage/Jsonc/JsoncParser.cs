@@ -152,7 +152,7 @@ public class JsoncParser
                     return ParseBool(tok, path, example);
 
                 case JsoncTokenType.Null:
-                    return ParseNull(path, example);
+                    throw new Exception("null is not supported");
 
                 default:
                     throw new Exception($"unexpected token {tok.Type} at line {tok.Line}");
@@ -299,24 +299,6 @@ public class JsoncParser
                 MergeNodeTag(val, parsed);
             }
         }
-
-        return val;
-    }
-
-    private IJsoncNode ParseNull(string path, bool example)
-    {
-        var tag = ConsumeCommentsFor(0);
-        if (tag == null)
-            tag = Tag.NewTag();
-        tag.Nullable = true;
-
-        var val = new JsoncValue
-        {
-            Value = null,
-            TokenType = JsoncTokenType.Null,
-            Tag = tag,
-            Path = path
-        };
 
         return val;
     }

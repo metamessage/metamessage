@@ -148,8 +148,8 @@ export class Binder {
     target.length = 0;
 
     for (const el of elements) {
-      const defaultValue = this.createDefaultValue(el.getTag());
-      const { value, error } = this.bindNode(el, defaultValue);
+      const defaultVal = this.createDefaultValue(el.getTag());
+      const { value, error } = this.bindNode(el, defaultVal);
       if (error) {
         return { value: target, error };
       }

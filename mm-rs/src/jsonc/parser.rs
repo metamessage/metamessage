@@ -190,16 +190,7 @@ impl Parser {
                 Ok(Some(value))
             }
             TokenType::Null => {
-                let mut tag = self.consume_comments_for(tok.line).unwrap_or_default();
-                tag.nullable = true;
-                tag.is_null = true;
-                let value = Node::Value(Value {
-                    data: ValueData::Null,
-                    text: "null".to_string(),
-                    tag: Some(tag),
-                    path: path.to_string(),
-                });
-                Ok(Some(value))
+                Err("null is not supported".to_string())
             }
             TokenType::TrailingComment => Ok(None),
             _ => Err(format!("unexpected token: {:?}", tok.token_type)),

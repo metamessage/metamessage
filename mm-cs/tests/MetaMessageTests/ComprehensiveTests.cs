@@ -338,10 +338,6 @@ public class ComprehensiveTests
         val = (JsoncValue)node;
         Assert.Equal(JsoncTokenType.False, val.TokenType);
 
-        node = JsoncParser.ParseFromString("null");
-        val = (JsoncValue)node;
-        Assert.Equal(JsoncTokenType.Null, val.TokenType);
-
         node = JsoncParser.ParseFromString("42");
         val = (JsoncValue)node;
         Assert.Equal(JsoncTokenType.Number, val.TokenType);
@@ -450,14 +446,13 @@ public class ComprehensiveTests
     [Fact]
     public void TestJsoncExtractValue_Array()
     {
-        var node = JsoncParser.ParseFromString("[1, \"two\", true, null]");
+        var node = JsoncParser.ParseFromString("[1, \"two\", true]");
         var result = JsoncParser.ExtractValue(node);
         var list = Assert.IsType<List<object?>>(result);
-        Assert.Equal(4, list.Count);
+        Assert.Equal(3, list.Count);
         Assert.Equal(1.0, list[0]);
         Assert.Equal("two", list[1]);
         Assert.Equal(true, list[2]);
-        Assert.Null(list[3]);
     }
 
     // ========== MetaMessage JSONC API Tests ==========
