@@ -71,15 +71,13 @@ MetaMessage 天生適合 AI 的理解和交互場景，解決了理解歧義、�
 
 ## 數據類型
 
-通过标签`type=`定義數據類型，格式`type=类型标识`，例如`type=i`表示整形
+通过标签`type=`定義數據類型，格式`type=类型标识`，例如`type=i8`表示int8類型
 
 - doc: 文檔類型，未來為附加文檔預留，暫未啟用
-- vec: 動態數組/切片，不允許復合類型
-- arr: array，定長數組，不允許復合類型
 - obj: object，對象/結構體，複合結構，對應多語言struct/object
 - map: map，键值映射，鍵：僅字符串，值：不允許復合類型
-- str: string，字符串
-- bytes: 字節數組
+- vec: 動態數組/切片，不允許復合類型
+- arr: array，定長數組，不允許復合類型
 - bool: 布爾值，取值：true/false，全小寫
 - i: int，字面量不能包含小數點
 - i8: int8
@@ -91,14 +89,16 @@ MetaMessage 天生適合 AI 的理解和交互場景，解決了理解歧義、�
 - u16: uint16
 - u32: uint32
 - u64: uint64
+- bigint: bigint
 - f32: float32，不支持 NaN / Inf / -0; 字面量必須帶小數點, 比如 0.0
 - f64: float64，不支持 NaN / Inf / -0; 字面量必須帶小數點, 比如 0.0
-- bigint: bigint
+- decimal: 十進制小數，需傳入小數, 比如 0.0
 - datetime: 默認utc 1970-01-01 00:00:00
 - date: 1970-01-01
 - time: 00:00:00
 - uuid: 唯一標識
-- decimal: 十進制小數，需傳入字符串
+- str: string，字符串
+- bytes: 字節數組
 - ip: IP，支持 IPv4/IPv6
 - url: 网址，符合标准URL格式
 - email: 邮箱，符合标准邮箱格式
@@ -106,19 +106,149 @@ MetaMessage 天生適合 AI 的理解和交互場景，解決了理解歧義、�
 - image: 圖片，底層是bytes
 - video: 視頻，底層是bytes
 
+### jsonc 示例
+
+标量
+
+```jsonc
+
+// doc TODO
+
+// obj，對象/結構體，複合結構，對應多語言struct/object，不需要標注類型
+// mm: desc=對象/結構體
+{
+    "name": "Ed",
+    "age": 30
+}
+
+// map，键值映射，鍵：僅字符串，值：不允許復合類型
+// mm: desc=map映射; type=map
+{
+    "name": "Ed",
+    "age": "30"
+}
+
+// vec，動態數組，不需要標注類型
+// mm: desc=動態數組
+[1, 2, 3]
+
+// arr，定長數組，需要標注類型
+// mm: desc=定長數組; type=arr
+[1, 2, 3]
+
+// 只允許小寫false、true
+// mm: desc=布爾值
+false
+
+// 數字；數字不能帶點；默認是int，不需要標注類型
+// mm: desc=int
+0
+
+// mm: desc=int8; type=i8
+0
+
+// mm: desc=int16; type=i16
+0
+
+// mm: desc=int32; type=i32
+0
+
+// mm: desc=int64; type=i64
+0
+
+// mm: desc=uint; type=u
+0
+
+// mm: desc=uint8; type=u8
+0
+
+// mm: desc=uint16; type=u16
+0
+
+// mm: desc=uint32; type=u32
+0
+
+// mm: desc=uint64; type=u64
+0
+
+// 表現為數字，但需要標注類型；
+// mm: desc=bigint; type=bigint
+0
+
+// mm: desc=float32; type=f32
+0.0
+
+// 數字帶點；float必須帶點；默認是float64，不需要標注類型；
+// mm: desc=float64
+0.0
+
+// 表現為小數，但需要標注類型；
+// mm: desc=decimal; type=decimal
+0.0
+
+// 雙引號包裹，默認是字符串，不需要標注類型；
+// mm: desc=字符串
+""
+
+// 表現為字符串，但需要標注類型；
+// mm: desc=字節數組; type=bytes
+""
+
+// 表現為字符串，但需要標注類型；
+// mm: desc=datetime; type=datetime
+""
+
+// 表現為字符串，但需要標注類型；
+// mm: desc=date; type=date
+""
+
+// 表現為字符串，但需要標注類型；
+// mm: desc=time; type=time
+""
+
+// 表現為字符串，但需要標注類型；
+// mm: desc=uuid; type=uuid
+""
+
+// 表現為字符串，但需要標注類型；
+// mm: desc=ip; type=ip
+""
+
+// 表現為字符串，但需要標注類型；
+// mm: desc=url; type=url
+""
+
+// 表現為字符串，但需要標注類型；
+// mm: desc=email; type=email
+""
+
+// 表現為字符串，但需要標注類型；
+// mm: desc=enums; type=enums
+""
+
+// 表現為字符串，但需要標注類型；
+// mm: desc=image; type=image
+""
+
+// 表現為字符串，但需要標注類型；
+// mm: desc=video; type=video
+""
+```
+
 ## 標籤
 
 標籤是编程语言结构体的注解、标签或属性，或是文本格式的注释
 
-- is_null: 值為null，並使用空值佔位
+- is_null: 值為null，並使用零值佔位。在jsonc等文本格式中，使用零值佔位
+- example: 示例數據，用於數組、切片、map 類型為空時，自動生成的一個空值示例
+- deprecated: 廢棄，不建議使用
+- name: 僅用於各語言的數據對象，用於命名。在jsonc等文本格式中，此標籤無效，不建議使用。
 - desc: 摘要，適用所有類型。最大長度 65535 比特
 - type: 數據類型。在文本格式中，字符串、整數（int）、小數（float64）、切片、對象（或類似結構）等沒有歧義時可以不用標注類型，比如當數組 size > 0 時不需要標記類型。在編程語言中，若數組、map 等可以判斷出來的類型，那麼也可以不用標注類型
-- raw: 在一些編程語言中，數據類型通常使用包裝類型，如java。默認使用包裝類型，若不希望使用，可以設置為raw。待定，後續可能刪除此標籤
 - nullable: 是否可為null，適用所有類型
 - allow_empty: 除布爾類型外，其他類型默認不允許為空，當設置allow_empty後，可以為空，並允許通過一些規則。
 - unique: 僅適用切片或數組，表示元素不可重複
 - default_val: 默認值，尚未啟用
-- example: 示例數據，用於數組、切片、map 類型為空時，自動生成的一個空值示例
 - min: 在數組中表示最小容量，在字符串、字節數組中表示最小長度，在數字類型（整數、小數、bigint）種表示最小值
 - max: 在數組中表示最大容量，在字符串、字節數組中表示最大長度，在數字類型（整數、小數、bigint）種表示最大值
 - size: 在數組中表示容量，在字符串、字節數組中表示固定長度
@@ -127,6 +257,20 @@ MetaMessage 天生適合 AI 的理解和交互場景，解決了理解歧義、�
 - location: 時區偏移量，默認值 0，僅適用於時間類型，取值範圍：-12 ～ 14
 - version: 在uuid中限定版本；在ip中可以限制ipv4或ipv6
 - mime: 文檔類型，尚未啟用
+- child_desc:
+- child_type:
+- child_nullable:
+- child_allow_empty:
+- child_unique:
+- child_default_val:
+- child_min:
+- child_max:
+- child_size:
+- child_enums:
+- child_pattern:
+- child_location:
+- child_version:
+- child_mime:
 
 ## 使用方法
 
@@ -413,13 +557,7 @@ const decoded = decode(wire);
 
 [NuGet](https://www.nuget.org/packages/MetaMessage)
 
-```csharp
-using MetaMessage;
-
-var person = new Person { Name = "Ed", Age = 30 };
-byte[] wire = MetaMessage.Encode(person);
-var decoded = MetaMessage.Decode<Person>(wire);
-```
+[mm-cs](./mm-cs)
 
 #### Rust
 
@@ -441,15 +579,72 @@ let decoded = try MetaMessage.decodeToValue(wire)
 
 [packagist.org](https://packagist.org/packages/metamessage/metamessage)
 
-```php
-<?php
-use io\metamessage\mm\MetaMessage;
-
-$person = new Person();
-$wire = MetaMessage::encode($person);
-$decoded = MetaMessage::decode($wire, Person::class);
-```
+[mm-php](./mm-php)
 
 ### 示例
 
 查看 `examples/` 目錄中的示例代碼。
+
+## 測試
+
+### 跨語言一致性測試
+
+運行所有可用語言的 harness 對全部 fixtures 進行解析，並比較輸出是否一致：
+
+```bash
+./tests/run_cross_lang.sh
+```
+
+### 單個語言測試
+
+運行某個語言的 harness 對單個 fixture 進行解析測試：
+
+```bash
+# Go（無需構建）
+go run ./tests/harness/go/harness.go tests/fixtures/01_primitive/boolean.jsonc
+
+# Python（無需構建）
+python3 ./tests/harness/python/harness.py tests/fixtures/01_primitive/boolean.jsonc
+
+# TypeScript（需先構建）
+cd mm-ts && npm run build --silent && cd - && \
+node ./tests/harness/typescript/harness.cjs tests/fixtures/01_primitive/boolean.jsonc
+
+# Rust
+cd tests/harness/rust && cargo run -- ../../fixtures/01_primitive/boolean.jsonc
+
+# C（需先構建）
+mkdir -p tests/harness/c/build && cd tests/harness/c/build && \
+cmake .. -DCMAKE_BUILD_TYPE=Release >/dev/null && make -j4 >/dev/null && \
+./mm_harness_c ../../../fixtures/01_primitive/boolean.jsonc
+
+# C++（需先構建）
+g++ -std=c++17 -I mm-cpp/src -o tests/harness/cpp/build/mm_harness_cpp \
+  tests/harness/cpp/harness.cpp mm-cpp/src/jsonc/scanner.cpp && \
+./tests/harness/cpp/build/mm_harness_cpp tests/fixtures/01_primitive/boolean.jsonc
+
+# C#（需先構建）
+dotnet build tests/harness/csharp/harness.csproj --nologo -v q && \
+dotnet run --project tests/harness/csharp/harness.csproj --no-build -- \
+  tests/fixtures/01_primitive/boolean.jsonc
+
+# Kotlin（需先構建 mm-kt）
+cd mm-kt && mvn compile -q -DskipTests && cd - && \
+java -cp "$HOME/.m2/repository/org/jetbrains/kotlin/kotlin-compiler/1.9.22/kotlin-compiler-1.9.22.jar:\
+$HOME/.m2/repository/org/jetbrains/kotlin/kotlin-stdlib/1.9.22/kotlin-stdlib-1.9.22.jar:\
+$HOME/.m2/repository/org/jetbrains/kotlin/kotlin-reflect/1.9.22/kotlin-reflect-1.9.22.jar:\
+$HOME/.m2/repository/org/jetbrains/intellij/deps/trove4j/1.0.20221201/trove4j-1.0.20221201.jar:\
+$HOME/.m2/repository/org/jetbrains/annotations/13.0/annotations-13.0.jar" \
+  org.jetbrains.kotlin.cli.jvm.K2JVMCompiler \
+  tests/harness/kotlin/harness.kt \
+  -cp "mm-kt/target/classes:\
+$HOME/.m2/repository/org/jetbrains/kotlin/kotlin-stdlib/1.9.22/kotlin-stdlib-1.9.22.jar:\
+$HOME/.m2/repository/org/jetbrains/kotlin/kotlin-reflect/1.9.22/kotlin-reflect-1.9.22.jar" \
+  -d /tmp/harness.jar -no-stdlib -no-reflect && \
+java -cp "/tmp/harness.jar:mm-kt/target/classes:\
+$HOME/.m2/repository/org/jetbrains/kotlin/kotlin-stdlib/1.9.22/kotlin-stdlib-1.9.22.jar" \
+  HarnessKt tests/fixtures/01_primitive/boolean.jsonc
+
+# Swift
+cd tests/harness/swift && swift run ../../fixtures/01_primitive/boolean.jsonc
+```

@@ -327,9 +327,7 @@ public class JsoncParser
         if (_depth > MaxDepth)
             throw new Exception($"max depth: {MaxDepth}");
 
-        var tag = ConsumeCommentsFor(openLine);
-        if (tag == null)
-            tag = Tag.NewTag();
+        Tag tag = ConsumeCommentsFor(openLine) ?? Tag.NewTag();
         if (tag.Type == ValueType.Unknown)
             tag.Type = ValueType.Obj;
 
@@ -390,11 +388,11 @@ public class JsoncParser
             if (colonTok.Type != JsoncTokenType.Colon)
                 throw new Exception("expect colon");
 
-            var fieldPath = tag.Type == ValueType.Map
+            var fieldPath = tag!.Type == ValueType.Map
                 ? $"{path}[{keyStr}]"
                 : $"{path}.{keyStr}";
 
-            var exampleMode = tag.Example;
+            var exampleMode = tag!.Example;
             var val = ParseValue(fieldPath, Advance(), exampleMode);
             if (val == null)
                 continue;
@@ -416,9 +414,9 @@ public class JsoncParser
             }
         }
 
-        if (!tag.Example)
+        if (!tag!.Example)
         {
-            switch (tag.Type)
+            switch (tag!.Type)
             {
                 case ValueType.Map:
                     Validator.Validate(obj, tag);
@@ -439,9 +437,7 @@ public class JsoncParser
         if (_depth > MaxDepth)
             throw new Exception($"max depth: {MaxDepth}");
 
-        var tag = ConsumeCommentsFor(openLine);
-        if (tag == null)
-            tag = Tag.NewTag();
+        Tag tag = ConsumeCommentsFor(openLine) ?? Tag.NewTag();
         if (tag.Type == ValueType.Unknown)
         {
             tag.Type = tag.Size > 0 ? ValueType.Arr : ValueType.Vec;
@@ -497,7 +493,7 @@ public class JsoncParser
             }
 
             var itemPath = $"{path}[{i}]";
-            var exampleMode = tag.Example;
+            var exampleMode = tag!.Example;
             var item = ParseValue(itemPath, tok, exampleMode);
             if (item == null)
                 continue;
@@ -519,9 +515,9 @@ public class JsoncParser
             }
         }
 
-        if (!tag.Example)
+        if (!tag!.Example)
         {
-            switch (tag.Type)
+            switch (tag!.Type)
             {
                 case ValueType.Arr:
                     Validator.Validate(arr, tag);

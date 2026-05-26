@@ -14,17 +14,17 @@ import (
 )
 
 const (
-	TIsNull  = "is_null"
-	TExample = "example"
+	TIsNull     = "is_null"
+	TExample    = "example"
+	TDeprecated = "deprecated"
 
 	TName       = "name"
 	TDesc       = "desc"
 	TType       = "type"
-	TRaw        = "raw"
 	TNullable   = "nullable"
 	TAllowEmpty = "allow_empty"
 	TUnique     = "unique"
-	TDefault    = "default_val"
+	TDefaultVal = "default_val"
 	TMin        = "min"
 	TMax        = "max"
 	TSize       = "size"
@@ -36,7 +36,6 @@ const (
 
 	TChildDesc       = "child_desc"
 	TChildType       = "child_type"
-	TChildRaw        = "child_raw"
 	TChildNullable   = "child_nullable"
 	TChildAllowEmpty = "child_allow_empty"
 	TChildUnique     = "child_unique"
@@ -282,7 +281,7 @@ func (t *Tag) ToString() string {
 	}
 
 	if t.DefaultVal != "" && !t.IsInherit {
-		add(TDefault + "=" + t.DefaultVal)
+		add(TDefaultVal + "=" + t.DefaultVal)
 	}
 
 	if t.Min != "" && !t.IsInherit {
@@ -985,7 +984,7 @@ func ParseMMTag(tag string) (*Tag, error) {
 			}
 			r.Type = t
 
-		case TRaw:
+		case TDeprecated:
 			r.Deprecated = true
 
 		case TNullable:
@@ -997,7 +996,7 @@ func ParseMMTag(tag string) (*Tag, error) {
 		case TUnique:
 			r.Unique = true
 
-		case TDefault:
+		case TDefaultVal:
 			r.DefaultVal = v
 
 		case TPattern:

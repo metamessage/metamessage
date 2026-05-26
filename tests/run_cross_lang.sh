@@ -94,17 +94,27 @@ cs_run() { dotnet run --project "$SCRIPT_DIR/harness/csharp/harness.csproj" --no
 
 # --- Kotlin ---
 kt_build() {
-    # Require Kotlin 1.9+ (mm-kt was compiled with 1.9)
-    local kt_ver=$(kotlin -version 2>/dev/null | grep -oE '[0-9]+\.[0-9]+' | head -1)
-    if [ -z "$kt_ver" ] || [ "$(printf '%s\n' "1.9" "$kt_ver" | sort -V | head -1)" != "1.9" ]; then
-        return 1
-    fi
     cd "$PROJECT_DIR/mm-kt" && mvn compile -q -DskipTests 2>/dev/null
 }
 kt_run() {
     local tmpdir=$(mktemp -d)
-    kotlinc "$SCRIPT_DIR/harness/kotlin/harness.kt" -cp "$PROJECT_DIR/mm-kt/target/classes" -d "$tmpdir/harness.jar" 2>/dev/null && \
-    kotlin -cp "$tmpdir/harness.jar:$PROJECT_DIR/mm-kt/target/classes" HarnessKt "$1" 2>/dev/null
+    local trove4j="$HOME/.m2/repository/org/jetbrains/intellij/deps/trove4j/1.0.20221201/trove4j-1.0.20221201.jar"
+    local annotations="$HOME/.m2/repository/org/jetbrains/annotations/13.0/annotations-13.0.jar"
+    local kotlin_compiler="$HOME/.m2/repository/org/jetbrains/kotlin/kotlin-compiler/1.9.22/kotlin-compiler-1.9.22.jar"
+    local kotlin_stdlib="$HOME/.m2/repository/org/jetbrains/kotlin/kotlin-stdlib/1.9.22/kotlin-stdlib-1.9.22.jar"
+    local kotlin_reflect="$HOME/.m2/repository/org/jetbrains/kotlin/kotlin-reflect/1.9.22/kotlin-reflect-1.9.22.jar"
+    if [ ! -f "$kotlin_compiler" ] || [ ! -f "$kotlin_stdlib" ] || [ ! -f "$trove4j" ]; then
+        rm -rf "$tmpdir"
+        return 1
+    fi
+    local compiler_cp="$kotlin_compiler:$kotlin_stdlib:$kotlin_reflect:$annotations:$trove4j"
+    local mm_classes="$PROJECT_DIR/mm-kt/target/classes"
+    java -cp "$compiler_cp" org.jetbrains.kotlin.cli.jvm.K2JVMCompiler \
+        "$SCRIPT_DIR/harness/kotlin/harness.kt" \
+        -cp "$mm_classes:$kotlin_stdlib:$kotlin_reflect" \
+        -d "$tmpdir/harness.jar" \
+        -no-stdlib -no-reflect 2>/dev/null && \
+    java -cp "$tmpdir/harness.jar:$mm_classes:$kotlin_stdlib" HarnessKt "$1" 2>/dev/null
     local rc=$?
     rm -rf "$tmpdir"
     return $rc
@@ -156,6 +166,12 @@ done < <(find "$FIXTURES_DIR" -name "*.jsonc" -type f -print0 | sort -z)
 mkdir -p "$RESULTS_DIR"
 
 echo -e "${CYAN}=== Running cross-language tests (${#FIXTURES[@]} fixtures x ${#AVAILABLE[@]} languages) ===${NC}"
+echo ""
+
+printf "%-45s" ""
+for _lang in "${AVAILABLE[@]}"; do
+    printf " ${CYAN}%-6s${NC}" "$_lang"
+done
 echo ""
 
 for fixture in "${FIXTURES[@]}"; do

@@ -157,7 +157,7 @@ public static class MetaMessage
 
     private static MmScalar JsoncValueToScalar(JsoncValue value)
     {
-        object data = null;
+        object? data = null;
         string text = "null";
 
         switch (value.TokenType)

@@ -6,15 +6,15 @@ public static class TagConstants
 {
     public const string TIsNull = "is_null";
     public const string TExample = "example";
+    public const string TDeprecated = "deprecated";
 
     public const string TName = "name";
     public const string TDesc = "desc";
     public const string TType = "type";
-    public const string TRaw = "raw";
     public const string TNullable = "nullable";
     public const string TAllowEmpty = "allow_empty";
     public const string TUnique = "unique";
-    public const string TDefault = "default_val";
+    public const string TDefaultVal = "default_val";
     public const string TMin = "min";
     public const string TMax = "max";
     public const string TSize = "size";
@@ -399,7 +399,7 @@ public class Tag
 
         if (!string.IsNullOrEmpty(DefaultVal) && !IsInherit)
         {
-            Add($"{TagConstants.TDefault}={DefaultVal}");
+            Add($"{TagConstants.TDefaultVal}={DefaultVal}");
         }
 
         if (!string.IsNullOrEmpty(Min) && !IsInherit)
@@ -614,7 +614,7 @@ public class Tag
                     r.Type = ValueTypeExtensions.ParseValueType(v);
                     break;
 
-                case TagConstants.TRaw:
+                case TagConstants.TDeprecated:
                     r.Deprecated = true;
                     break;
 
@@ -630,7 +630,7 @@ public class Tag
                     r.Unique = true;
                     break;
 
-                case TagConstants.TDefault:
+                case TagConstants.TDefaultVal:
                     r.DefaultVal = v;
                     break;
 
@@ -1304,181 +1304,181 @@ public class Tag
                     break;
 
                 case TagKey.KDesc:
-                {
-                    int strLen = DecodeStringLength(data, ref offset, lenInfo);
-                    tag.Desc = Encoding.UTF8.GetString(data, offset, strLen);
-                    offset += strLen;
-                    break;
-                }
+                    {
+                        int strLen = DecodeStringLength(data, ref offset, lenInfo);
+                        tag.Desc = Encoding.UTF8.GetString(data, offset, strLen);
+                        offset += strLen;
+                        break;
+                    }
 
                 case TagKey.KType:
-                {
-                    tag.Type = (ValueType)data[offset];
-                    offset++;
-                    break;
-                }
+                    {
+                        tag.Type = (ValueType)data[offset];
+                        offset++;
+                        break;
+                    }
 
                 case TagKey.KDefault:
-                {
-                    int strLen = DecodeStringLengthSimple(data, ref offset, lenInfo);
-                    tag.DefaultVal = Encoding.UTF8.GetString(data, offset, strLen);
-                    offset += strLen;
-                    break;
-                }
+                    {
+                        int strLen = DecodeStringLengthSimple(data, ref offset, lenInfo);
+                        tag.DefaultVal = Encoding.UTF8.GetString(data, offset, strLen);
+                        offset += strLen;
+                        break;
+                    }
 
                 case TagKey.KMin:
-                {
-                    int strLen = DecodeStringLengthSimple(data, ref offset, lenInfo);
-                    tag.Min = Encoding.UTF8.GetString(data, offset, strLen);
-                    offset += strLen;
-                    break;
-                }
+                    {
+                        int strLen = DecodeStringLengthSimple(data, ref offset, lenInfo);
+                        tag.Min = Encoding.UTF8.GetString(data, offset, strLen);
+                        offset += strLen;
+                        break;
+                    }
 
                 case TagKey.KMax:
-                {
-                    int strLen = DecodeStringLengthSimple(data, ref offset, lenInfo);
-                    tag.Max = Encoding.UTF8.GetString(data, offset, strLen);
-                    offset += strLen;
-                    break;
-                }
+                    {
+                        int strLen = DecodeStringLengthSimple(data, ref offset, lenInfo);
+                        tag.Max = Encoding.UTF8.GetString(data, offset, strLen);
+                        offset += strLen;
+                        break;
+                    }
 
                 case TagKey.KSize:
-                {
-                    int byteCount = lenInfo + 1;
-                    tag.Size = (int)DecodeU64(data, ref offset, byteCount);
-                    break;
-                }
+                    {
+                        int byteCount = lenInfo + 1;
+                        tag.Size = (int)DecodeU64(data, ref offset, byteCount);
+                        break;
+                    }
 
                 case TagKey.KEnum:
-                {
-                    int strLen = DecodeStringLength(data, ref offset, lenInfo);
-                    tag.Enums = Encoding.UTF8.GetString(data, offset, strLen);
-                    offset += strLen;
-                    break;
-                }
+                    {
+                        int strLen = DecodeStringLength(data, ref offset, lenInfo);
+                        tag.Enums = Encoding.UTF8.GetString(data, offset, strLen);
+                        offset += strLen;
+                        break;
+                    }
 
                 case TagKey.KPattern:
-                {
-                    int strLen = DecodeStringLengthSimple(data, ref offset, lenInfo);
-                    tag.Pattern = Encoding.UTF8.GetString(data, offset, strLen);
-                    offset += strLen;
-                    break;
-                }
+                    {
+                        int strLen = DecodeStringLengthSimple(data, ref offset, lenInfo);
+                        tag.Pattern = Encoding.UTF8.GetString(data, offset, strLen);
+                        offset += strLen;
+                        break;
+                    }
 
                 case TagKey.KLocation:
-                {
-                    int strLen = lenInfo;
-                    tag.Location = int.Parse(Encoding.UTF8.GetString(data, offset, strLen));
-                    offset += strLen;
-                    break;
-                }
+                    {
+                        int strLen = lenInfo;
+                        tag.Location = int.Parse(Encoding.UTF8.GetString(data, offset, strLen));
+                        offset += strLen;
+                        break;
+                    }
 
                 case TagKey.KVersion:
-                {
-                    int byteCount = lenInfo + 1;
-                    tag.Version = (int)DecodeU64(data, ref offset, byteCount);
-                    break;
-                }
+                    {
+                        int byteCount = lenInfo + 1;
+                        tag.Version = (int)DecodeU64(data, ref offset, byteCount);
+                        break;
+                    }
 
                 case TagKey.KMime:
-                {
-                    int strLen = DecodeStringLengthSimple(data, ref offset, lenInfo);
-                    tag.Mime = Encoding.UTF8.GetString(data, offset, strLen);
-                    offset += strLen;
-                    break;
-                }
+                    {
+                        int strLen = DecodeStringLengthSimple(data, ref offset, lenInfo);
+                        tag.Mime = Encoding.UTF8.GetString(data, offset, strLen);
+                        offset += strLen;
+                        break;
+                    }
 
                 case TagKey.KChildDesc:
-                {
-                    int strLen = DecodeStringLength(data, ref offset, lenInfo);
-                    tag.ChildDesc = Encoding.UTF8.GetString(data, offset, strLen);
-                    offset += strLen;
-                    break;
-                }
+                    {
+                        int strLen = DecodeStringLength(data, ref offset, lenInfo);
+                        tag.ChildDesc = Encoding.UTF8.GetString(data, offset, strLen);
+                        offset += strLen;
+                        break;
+                    }
 
                 case TagKey.KChildType:
-                {
-                    tag.ChildType = (ValueType)data[offset];
-                    offset++;
-                    break;
-                }
+                    {
+                        tag.ChildType = (ValueType)data[offset];
+                        offset++;
+                        break;
+                    }
 
                 case TagKey.KChildDefaultVal:
-                {
-                    int strLen = DecodeStringLengthSimple(data, ref offset, lenInfo);
-                    tag.ChildDefaultVal = Encoding.UTF8.GetString(data, offset, strLen);
-                    offset += strLen;
-                    break;
-                }
+                    {
+                        int strLen = DecodeStringLengthSimple(data, ref offset, lenInfo);
+                        tag.ChildDefaultVal = Encoding.UTF8.GetString(data, offset, strLen);
+                        offset += strLen;
+                        break;
+                    }
 
                 case TagKey.KChildMin:
-                {
-                    int strLen = DecodeStringLengthSimple(data, ref offset, lenInfo);
-                    tag.ChildMin = Encoding.UTF8.GetString(data, offset, strLen);
-                    offset += strLen;
-                    break;
-                }
+                    {
+                        int strLen = DecodeStringLengthSimple(data, ref offset, lenInfo);
+                        tag.ChildMin = Encoding.UTF8.GetString(data, offset, strLen);
+                        offset += strLen;
+                        break;
+                    }
 
                 case TagKey.KChildMax:
-                {
-                    int strLen = DecodeStringLengthSimple(data, ref offset, lenInfo);
-                    tag.ChildMax = Encoding.UTF8.GetString(data, offset, strLen);
-                    offset += strLen;
-                    break;
-                }
+                    {
+                        int strLen = DecodeStringLengthSimple(data, ref offset, lenInfo);
+                        tag.ChildMax = Encoding.UTF8.GetString(data, offset, strLen);
+                        offset += strLen;
+                        break;
+                    }
 
                 case TagKey.KChildSize:
-                {
-                    int byteCount = lenInfo + 1;
-                    tag.ChildSize = (int)DecodeU64(data, ref offset, byteCount);
-                    break;
-                }
+                    {
+                        int byteCount = lenInfo + 1;
+                        tag.ChildSize = (int)DecodeU64(data, ref offset, byteCount);
+                        break;
+                    }
 
                 case TagKey.KChildEnums:
-                {
-                    int strLen = DecodeStringLength(data, ref offset, lenInfo);
-                    tag.ChildEnums = Encoding.UTF8.GetString(data, offset, strLen);
-                    offset += strLen;
-                    break;
-                }
+                    {
+                        int strLen = DecodeStringLength(data, ref offset, lenInfo);
+                        tag.ChildEnums = Encoding.UTF8.GetString(data, offset, strLen);
+                        offset += strLen;
+                        break;
+                    }
 
                 case TagKey.KChildPattern:
-                {
-                    int strLen = DecodeStringLengthSimple(data, ref offset, lenInfo);
-                    tag.ChildPattern = Encoding.UTF8.GetString(data, offset, strLen);
-                    offset += strLen;
-                    break;
-                }
+                    {
+                        int strLen = DecodeStringLengthSimple(data, ref offset, lenInfo);
+                        tag.ChildPattern = Encoding.UTF8.GetString(data, offset, strLen);
+                        offset += strLen;
+                        break;
+                    }
 
                 case TagKey.KChildLocation:
-                {
-                    int strLen = lenInfo;
-                    tag.ChildLocation = int.Parse(Encoding.UTF8.GetString(data, offset, strLen));
-                    offset += strLen;
-                    break;
-                }
+                    {
+                        int strLen = lenInfo;
+                        tag.ChildLocation = int.Parse(Encoding.UTF8.GetString(data, offset, strLen));
+                        offset += strLen;
+                        break;
+                    }
 
                 case TagKey.KChildVersion:
-                {
-                    int byteCount = lenInfo + 1;
-                    tag.ChildVersion = (int)DecodeU64(data, ref offset, byteCount);
-                    break;
-                }
+                    {
+                        int byteCount = lenInfo + 1;
+                        tag.ChildVersion = (int)DecodeU64(data, ref offset, byteCount);
+                        break;
+                    }
 
                 case TagKey.KChildMime:
-                {
-                    int strLen = DecodeStringLengthSimple(data, ref offset, lenInfo);
-                    tag.ChildMime = Encoding.UTF8.GetString(data, offset, strLen);
-                    offset += strLen;
-                    break;
-                }
+                    {
+                        int strLen = DecodeStringLengthSimple(data, ref offset, lenInfo);
+                        tag.ChildMime = Encoding.UTF8.GetString(data, offset, strLen);
+                        offset += strLen;
+                        break;
+                    }
 
                 case TagKey.KMore:
-                {
-                    int byteCount = lenInfo + 1;
-                    tag.More = (int)DecodeU64(data, ref offset, byteCount);
-                    break;
-                }
+                    {
+                        int byteCount = lenInfo + 1;
+                        tag.More = (int)DecodeU64(data, ref offset, byteCount);
+                        break;
+                    }
             }
         }
 
@@ -1529,11 +1529,11 @@ public class Tag
         return result;
     }
 
-    public static Tag MergeTag(Tag dst, Tag src)
+    public static Tag MergeTag(Tag? dst, Tag? src)
     {
         if (src == null)
         {
-            return dst;
+            return dst ?? Tag.NewTag();
         }
 
         if (dst == null)

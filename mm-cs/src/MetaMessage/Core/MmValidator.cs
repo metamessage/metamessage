@@ -1732,11 +1732,12 @@ public class MmValidator
         {
             if (value is string ipStr)
             {
-                if (!IPAddress.TryParse(ipStr, out ipAddr))
+                if (!IPAddress.TryParse(ipStr, out var parsed))
                 {
                     result.AddError("value must be a valid IP address");
                     return;
                 }
+                ipAddr = parsed!;
             }
             else
             {
@@ -1792,11 +1793,12 @@ public class MmValidator
         {
             if (value is string uriStr)
             {
-                if (!Uri.TryCreate(uriStr, UriKind.Absolute, out uri))
+                if (!Uri.TryCreate(uriStr, UriKind.Absolute, out var parsed))
                 {
                     result.AddError("value must be a valid URL");
                     return;
                 }
+                uri = parsed!;
             }
             else
             {

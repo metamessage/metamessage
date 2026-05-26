@@ -18,13 +18,13 @@ public interface IMmTree
 
 public class MmScalar : IMmTree
 {
-    public object Data { get; set; }
+    public object? Data { get; set; }
     public string Text { get; set; }
     public Tag Tag { get; set; }
     public string Path { get; set; } = "";
     public MmNodeType NodeType => MmNodeType.Value;
 
-    public MmScalar(object data, string text, Tag tag)
+    public MmScalar(object? data, string text, Tag tag)
     {
         Data = data;
         Text = text;

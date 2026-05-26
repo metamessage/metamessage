@@ -319,7 +319,7 @@ public class Encoder {
     }
 
     public func encodeArray(_ array: [Bool]) {
-        var valBuf = MMBuffer()
+        let valBuf = MMBuffer()
 
         for element in array {
             let encoder = Encoder()
@@ -345,7 +345,7 @@ public class Encoder {
     }
 
     public func encodeArrayStrings(_ array: [String]) {
-        var valBuf = MMBuffer()
+        let valBuf = MMBuffer()
 
         for element in array {
             let encoder = Encoder()
@@ -371,7 +371,7 @@ public class Encoder {
     }
 
     public func encodeArrayInt(_ array: [Int]) {
-        var valBuf = MMBuffer()
+        let valBuf = MMBuffer()
 
         for element in array {
             let encoder = Encoder()
@@ -397,7 +397,7 @@ public class Encoder {
     }
 
     public func encodeArrayUInt(_ array: [UInt]) {
-        var valBuf = MMBuffer()
+        let valBuf = MMBuffer()
 
         for element in array {
             let encoder = Encoder()
@@ -423,7 +423,7 @@ public class Encoder {
     }
 
     public func encodeArrayFloat(_ array: [Float]) {
-        var valBuf = MMBuffer()
+        let valBuf = MMBuffer()
 
         for element in array {
             let encoder = Encoder()
@@ -449,7 +449,7 @@ public class Encoder {
     }
 
     public func encodeArrayDouble(_ array: [Double]) {
-        var valBuf = MMBuffer()
+        let valBuf = MMBuffer()
 
         for element in array {
             let encoder = Encoder()
@@ -475,7 +475,7 @@ public class Encoder {
     }
 
     public func encodeArrayData(_ array: [Data]) {
-        var valBuf = MMBuffer()
+        let valBuf = MMBuffer()
 
         for element in array {
             let encoder = Encoder()
@@ -555,7 +555,7 @@ extension Encoder {
 
     public func encodeNodeArray(_ node: MMArray) {
         guard let tag = node.getTag() else {
-            var valBuf = MMBuffer()
+            let valBuf = MMBuffer()
             for item in node.items {
                 if let val = item as? Value {
                     let encoder = Encoder()
@@ -580,7 +580,7 @@ extension Encoder {
         }
 
         let payloadStart = buffer.count
-        var valBuf = MMBuffer()
+        let valBuf = MMBuffer()
         for item in node.items {
             if let val = item as? Value {
                 let encoder = Encoder()
@@ -615,8 +615,8 @@ extension Encoder {
     }
 
     public func encodeNodeObject(_ node: MMObject) {
-        var keyBuf = MMBuffer()
-        var valBuf = MMBuffer()
+        let keyBuf = MMBuffer()
+        let valBuf = MMBuffer()
 
         for field in node.fields {
             let encoder = Encoder()
@@ -638,7 +638,7 @@ extension Encoder {
         let valBytes = [UInt8](valBuf.data)
 
         let keyBytesLen = keyBytes.count
-        var keyArrayBuf = MMBuffer()
+        let keyArrayBuf = MMBuffer()
         if keyBytesLen < 14 {
             keyArrayBuf.write(MMPrefix.container.rawValue | MMConstants.containerArray | UInt8(keyBytesLen))
         } else if keyBytesLen < 256 {

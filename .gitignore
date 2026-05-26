@@ -84,3 +84,4 @@ __pycache__/
 # Test files
 coverage/
 .nyc_output/
+.build/

@@ -256,6 +256,7 @@ dependencies = [
  "chrono",
  "ipnetwork",
  "itoa",
+ "metamessage-derive",
  "num-bigint",
  "num-traits",
  "regex",
@@ -264,6 +265,15 @@ dependencies = [
  "serde_json",
  "thiserror",
  "uuid",
+]
+
+[[package]]
+name = "metamessage-derive"
+version = "0.1.0"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn",
 ]
 
 [[package]]
