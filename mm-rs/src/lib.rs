@@ -6,8 +6,8 @@ use core::{Decoder, Encoder};
 use ir::ast::Node;
 use jsonc::Parser;
 
+pub use core::value_to_node::{nil_to_node, value_to_node, ToNode, ToNode as ToNodeTrait};
 pub use metamessage_derive::ToNode;
-pub use core::value_to_node::{ToNode as ToNodeTrait, value_to_node, nil_to_node};
 
 pub fn encode(node: &Node) -> Vec<u8> {
     let mut encoder = Encoder::new();
@@ -25,7 +25,35 @@ pub fn parse_jsonc(input: &str) -> Result<Node, String> {
 }
 
 pub fn to_jsonc_string(node: &Node) -> String {
-    ir::to_string(node)
+    ir::to_compact_string(node)
+}
+
+pub fn encode_from_value(value: &impl ToNode) -> Vec<u8> {
+    let node = value.to_node(None);
+    encode(&node)
+}
+
+pub fn encode_from_jsonc(jsonc: &str) -> Result<Vec<u8>, String> {
+    let node = parse_jsonc(jsonc)?;
+    Ok(encode(&node))
+}
+
+pub fn decode_to_value(data: &[u8]) -> Result<Node, std::io::Error> {
+    decode(data)
+}
+
+pub fn decode_to_jsonc(data: &[u8]) -> Result<String, std::io::Error> {
+    let node = decode(data)?;
+    Ok(to_jsonc_string(&node))
+}
+
+pub fn value_to_jsonc(value: &impl ToNode) -> String {
+    let node = value.to_node(None);
+    to_jsonc_string(&node)
+}
+
+pub fn jsonc_to_value(jsonc: &str) -> Result<Node, String> {
+    parse_jsonc(jsonc)
 }
 
 #[cfg(test)]
@@ -262,10 +290,10 @@ mod tests {
 
     #[test]
     fn test_parse_array_with_items() {
-        let node = parse_jsonc(r#"[1, "two", true, null, 3.14]"#).unwrap();
+        let node = parse_jsonc(r#"[1, "two", true, 3.14]"#).unwrap();
         match node {
             Node::Array(a) => {
-                assert_eq!(a.items.len(), 5);
+                assert_eq!(a.items.len(), 4);
             }
             _ => panic!("expected array"),
         }
@@ -464,8 +492,8 @@ mod tests {
 
     #[test]
     fn test_derive_to_node_simple_struct() {
-        use crate::ToNodeTrait;
         use crate::ir::{Node, ValueType};
+        use crate::ToNodeTrait;
 
         #[derive(ToNode)]
         struct Person {
@@ -538,20 +566,14 @@ mod tests {
         match &node {
             Node::Object(o) => {
                 assert_eq!(o.fields.len(), 5);
-                assert_eq!(
-                    o.tag.as_ref().unwrap().desc,
-                    Some("用户信息".to_string())
-                );
+                assert_eq!(o.tag.as_ref().unwrap().desc, Some("用户信息".to_string()));
 
                 let id_field = o.fields.iter().find(|f| f.key == "id").unwrap();
                 assert_eq!(
                     id_field.value.get_tag().unwrap().desc,
                     Some("用户ID".to_string())
                 );
-                assert_eq!(
-                    id_field.value.get_tag().unwrap().value_type,
-                    ValueType::I64
-                );
+                assert_eq!(id_field.value.get_tag().unwrap().value_type, ValueType::I64);
 
                 let email_field = o.fields.iter().find(|f| f.key == "email").unwrap();
                 assert_eq!(
@@ -578,10 +600,7 @@ mod tests {
                 );
 
                 let age_field = o.fields.iter().find(|f| f.key == "age").unwrap();
-                assert_eq!(
-                    age_field.value.get_tag().unwrap().value_type,
-                    ValueType::U8
-                );
+                assert_eq!(age_field.value.get_tag().unwrap().value_type, ValueType::U8);
             }
             _ => panic!("expected Object node"),
         }

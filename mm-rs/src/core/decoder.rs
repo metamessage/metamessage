@@ -1,13 +1,17 @@
 use crate::core::constants::{
-    CONTAINER_ARRAY, CONTAINER_LEN_MASK, TAG_ALLOW_EMPTY, TAG_CHILD_ALLOW_EMPTY,
-    TAG_CHILD_DEFAULT_VAL, TAG_CHILD_DESC, TAG_CHILD_ENUMS, TAG_CHILD_LOCATION, TAG_CHILD_MAX,
-    TAG_CHILD_MIME, TAG_CHILD_MIN, TAG_CHILD_NULLABLE, TAG_CHILD_PATTERN, TAG_CHILD_SIZE,
-    TAG_CHILD_TYPE, TAG_CHILD_UNIQUE, TAG_CHILD_VERSION, TAG_DEFAULT_VAL, TAG_DEPRECATED, TAG_DESC,
-    TAG_ENUMS, TAG_EXAMPLE, TAG_IS_NULL, TAG_KEY_MASK, TAG_LOCATION, TAG_MAX, TAG_MIME, TAG_MIN,
-    TAG_MORE, TAG_NULLABLE, TAG_PATTERN, TAG_PAYLOAD_MASK, TAG_SIZE, TAG_TYPE, TAG_UNIQUE,
-    TAG_VERSION,
+    BYTES_LEN_1, CONTAINER_LEN_1, CONTAINER_LEN_MASK, INT_LEN_1, INT_LEN_MASK, STRING_LEN_1,
+    TAG_ALLOW_EMPTY, TAG_CHILD_ALLOW_EMPTY, TAG_CHILD_DEFAULT_VAL, TAG_CHILD_DESC,
+    TAG_CHILD_ENUMS, TAG_CHILD_LOCATION, TAG_CHILD_MAX, TAG_CHILD_MIME, TAG_CHILD_MIN,
+    TAG_CHILD_NULLABLE, TAG_CHILD_PATTERN, TAG_CHILD_SIZE, TAG_CHILD_TYPE, TAG_CHILD_UNIQUE,
+    TAG_CHILD_VERSION, TAG_DEFAULT_VAL, TAG_DEPRECATED, TAG_DESC, TAG_ENUMS, TAG_EXAMPLE,
+    TAG_IS_NULL, TAG_KEY_MASK, TAG_LOCATION, TAG_MAX, TAG_MIME, TAG_MIN, TAG_MORE, TAG_NULLABLE,
+    TAG_PATTERN, TAG_PAYLOAD_MASK, TAG_SIZE, TAG_TYPE, TAG_UNIQUE, TAG_VERSION, TAG_LEN_1,
 };
-use crate::core::prefix::{Prefix, FLOAT_LEN_1, FLOAT_LEN_MASK, FLOAT_POSITIVE_NEGATIVE_MASK};
+use crate::core::prefix::{
+    CONTAINER_TYPE_MASK, FLOAT_LEN_1, FLOAT_LEN_MASK, FLOAT_POSITIVE_NEGATIVE_MASK, PREFIX_BYTES,
+    PREFIX_CONTAINER, PREFIX_FLOAT, PREFIX_MASK, PREFIX_NEGATIVE_INT, PREFIX_POSITIVE_INT,
+    PREFIX_SIMPLE, PREFIX_STRING, PREFIX_TAG,
+};
 use crate::core::simple_value::SimpleValue;
 use crate::ir::ast::{Array, Field, Node, Object, Value, ValueData};
 use crate::ir::tag::Tag;
@@ -54,55 +58,48 @@ impl Decoder {
 
     fn decode_node(&mut self, tag: &Tag, _path: &str) -> Result<Node, std::io::Error> {
         let b = self.read_byte()?;
-        let prefix = Prefix::from_byte(b).ok_or_else(|| {
-            std::io::Error::new(std::io::ErrorKind::InvalidData, "invalid prefix")
-        })?;
-
-        match prefix {
-            Prefix::Tag => self.decode_tag(b),
-            Prefix::Simple => self.decode_simple(b, tag),
-            Prefix::PositiveInt => self.decode_positive_int(b, tag),
-            Prefix::NegativeInt => self.decode_negative_int(b, tag),
-            Prefix::PrefixFloat => self.decode_float(b, tag),
-            Prefix::PrefixString => self.decode_string(b, tag),
-            Prefix::PrefixBytes => self.decode_bytes(b, tag),
-            Prefix::Container => self.decode_container(b, tag),
+        match b & PREFIX_MASK {
+            PREFIX_TAG => self.decode_tag(b),
+            PREFIX_SIMPLE => self.decode_simple(b, tag),
+            PREFIX_POSITIVE_INT => self.decode_positive_int(b, tag),
+            PREFIX_NEGATIVE_INT => self.decode_negative_int(b, tag),
+            PREFIX_FLOAT => self.decode_float(b, tag),
+            PREFIX_STRING => self.decode_string(b, tag),
+            PREFIX_BYTES => self.decode_bytes(b, tag),
+            PREFIX_CONTAINER => self.decode_container(b, tag),
+            _ => Err(std::io::Error::new(
+                std::io::ErrorKind::InvalidData,
+                "invalid prefix",
+            )),
         }
     }
 
     fn decode_tag(&mut self, prefix: u8) -> Result<Node, std::io::Error> {
-        let _l1 = match prefix & 0x03 {
-            0 => 0,
-            1 => {
-                let l = self.read_byte()?;
+        let _total_len = {
+            let l = prefix & INT_LEN_MASK;
+            if l < TAG_LEN_1 {
                 l as usize
-            }
-            2 => {
-                let l = self.read_bytes(2)?;
-                ((l[0] as usize) << 8) | (l[1] as usize)
-            }
-            _ => {
-                return Err(std::io::Error::new(
-                    std::io::ErrorKind::InvalidData,
-                    "invalid tag length",
-                ))
+            } else if l == TAG_LEN_1 {
+                self.read_byte()? as usize
+            } else {
+                let b = self.read_bytes(2)?;
+                ((b[0] as usize) << 8) | (b[1] as usize)
             }
         };
 
         let mut tag = Tag::new();
 
-        let b = self.read_byte()?;
-        let mut l = b as usize;
-
-        if l < 254 {
-        } else if l < 257 {
-            l = self.read_byte()? as usize;
+        let tag_len_byte = self.read_byte()?;
+        let tag_bytes_len = if tag_len_byte < 254 {
+            tag_len_byte as usize
+        } else if tag_len_byte == 254 {
+            self.read_byte()? as usize
         } else {
-            let l3 = self.read_bytes(2)?;
-            l = ((l3[0] as usize) << 8) | (l3[1] as usize);
-        }
+            let b = self.read_bytes(2)?;
+            ((b[0] as usize) << 8) | (b[1] as usize)
+        };
 
-        let mut remaining = l;
+        let mut remaining = tag_bytes_len;
         while remaining > 0 {
             let n = self.decode_tag_bytes(&mut tag)?;
             if n == 0 || n > remaining {
@@ -112,23 +109,24 @@ impl Decoder {
         }
 
         if tag.is_null {
-            let data = match tag.value_type {
-                ValueType::I => ValueData::Int(0),
-                ValueType::F64 => ValueData::Float(0.0),
-                ValueType::Bool => ValueData::Bool(false),
-                ValueType::Str => ValueData::String(String::new()),
-                ValueType::Bytes => ValueData::Bytes(vec![]),
-                ValueType::Datetime => ValueData::String("1970-01-01T00:00:00Z".to_string()),
-                _ => ValueData::Null,
+            let inner = self.decode_node(&Tag::new(), "")?;
+            let (data, text) = match &inner {
+                Node::Value(v) => (v.data.clone(), v.text.clone()),
+                _ => (ValueData::Null, String::new()),
             };
             Ok(Node::Value(Value {
                 data,
-                text: String::new(),
+                text,
                 path: String::new(),
                 tag: Some(tag),
             }))
         } else {
-            self.decode_node(&tag, "")
+            let mut inner_tag = Tag::new();
+            inner_tag.inherit(&tag);
+            if tag.child_type == ValueType::Unknown {
+                inner_tag.value_type = tag.value_type;
+            }
+            self.decode_node(&inner_tag, "")
         }
     }
 
@@ -151,8 +149,15 @@ impl Decoder {
             }
             TAG_DESC => {
                 let s = self.read_tag_str(payload)?;
-                tag.desc = Some(s);
-                Ok(1 + tag.desc.as_ref().map_or(0, |s| s.len()))
+                tag.desc = Some(s.clone());
+                let n = if payload <= 5 {
+                    1 + payload
+                } else if payload == 6 {
+                    2 + s.len()
+                } else {
+                    3 + s.len()
+                };
+                Ok(n)
             }
             TAG_TYPE => {
                 let tb = self.read_byte()?;
@@ -177,18 +182,33 @@ impl Decoder {
             }
             TAG_DEFAULT_VAL => {
                 let s = self.read_tag_short_str(payload)?;
-                tag.default_val = Some(s);
-                Ok(1 + tag.default_val.as_ref().map_or(0, |s| s.len()))
+                tag.default_val = Some(s.clone());
+                let n = if payload < 7 {
+                    1 + payload
+                } else {
+                    2 + s.len()
+                };
+                Ok(n)
             }
             TAG_MIN => {
                 let s = self.read_tag_short_str(payload)?;
-                tag.min = Some(s);
-                Ok(1 + tag.min.as_ref().map_or(0, |s| s.len()))
+                tag.min = Some(s.clone());
+                let n = if payload < 7 {
+                    1 + payload
+                } else {
+                    2 + s.len()
+                };
+                Ok(n)
             }
             TAG_MAX => {
                 let s = self.read_tag_short_str(payload)?;
-                tag.max = Some(s);
-                Ok(1 + tag.max.as_ref().map_or(0, |s| s.len()))
+                tag.max = Some(s.clone());
+                let n = if payload < 7 {
+                    1 + payload
+                } else {
+                    2 + s.len()
+                };
+                Ok(n)
             }
             TAG_SIZE => {
                 let v = self.read_tag_uint(payload)?;
@@ -198,13 +218,25 @@ impl Decoder {
             TAG_ENUMS => {
                 tag.value_type = ValueType::Enum;
                 let s = self.read_tag_str(payload)?;
-                tag.enums = Some(s);
-                Ok(1 + tag.enums.as_ref().map_or(0, |s| s.len()))
+                tag.enums = Some(s.clone());
+                let n = if payload <= 5 {
+                    1 + payload
+                } else if payload == 6 {
+                    2 + s.len()
+                } else {
+                    3 + s.len()
+                };
+                Ok(n)
             }
             TAG_PATTERN => {
                 let s = self.read_tag_short_str(payload)?;
-                tag.pattern = Some(s);
-                Ok(1 + tag.pattern.as_ref().map_or(0, |s| s.len()))
+                tag.pattern = Some(s.clone());
+                let n = if payload < 7 {
+                    1 + payload
+                } else {
+                    2 + s.len()
+                };
+                Ok(n)
             }
             TAG_LOCATION => {
                 let s = self.read_tag_ascii(payload)?;
@@ -230,8 +262,15 @@ impl Decoder {
             }
             TAG_CHILD_DESC => {
                 let s = self.read_tag_str(payload)?;
-                tag.child_desc = Some(s);
-                Ok(1 + tag.child_desc.as_ref().map_or(0, |s| s.len()))
+                tag.child_desc = Some(s.clone());
+                let n = if payload <= 5 {
+                    1 + payload
+                } else if payload == 6 {
+                    2 + s.len()
+                } else {
+                    3 + s.len()
+                };
+                Ok(n)
             }
             TAG_CHILD_TYPE => {
                 let tb = self.read_byte()?;
@@ -256,18 +295,33 @@ impl Decoder {
             }
             TAG_CHILD_DEFAULT_VAL => {
                 let s = self.read_tag_short_str(payload)?;
-                tag.child_default_val = Some(s);
-                Ok(1 + tag.child_default_val.as_ref().map_or(0, |s| s.len()))
+                tag.child_default_val = Some(s.clone());
+                let n = if payload < 7 {
+                    1 + payload
+                } else {
+                    2 + s.len()
+                };
+                Ok(n)
             }
             TAG_CHILD_MIN => {
                 let s = self.read_tag_short_str(payload)?;
-                tag.child_min = Some(s);
-                Ok(1 + tag.child_min.as_ref().map_or(0, |s| s.len()))
+                tag.child_min = Some(s.clone());
+                let n = if payload < 7 {
+                    1 + payload
+                } else {
+                    2 + s.len()
+                };
+                Ok(n)
             }
             TAG_CHILD_MAX => {
                 let s = self.read_tag_short_str(payload)?;
-                tag.child_max = Some(s);
-                Ok(1 + tag.child_max.as_ref().map_or(0, |s| s.len()))
+                tag.child_max = Some(s.clone());
+                let n = if payload < 7 {
+                    1 + payload
+                } else {
+                    2 + s.len()
+                };
+                Ok(n)
             }
             TAG_CHILD_SIZE => {
                 let v = self.read_tag_uint(payload)?;
@@ -277,13 +331,25 @@ impl Decoder {
             TAG_CHILD_ENUMS => {
                 tag.child_type = ValueType::Enum;
                 let s = self.read_tag_str(payload)?;
-                tag.child_enums = Some(s);
-                Ok(1 + tag.child_enums.as_ref().map_or(0, |s| s.len()))
+                tag.child_enums = Some(s.clone());
+                let n = if payload <= 5 {
+                    1 + payload
+                } else if payload == 6 {
+                    2 + s.len()
+                } else {
+                    3 + s.len()
+                };
+                Ok(n)
             }
             TAG_CHILD_PATTERN => {
                 let s = self.read_tag_short_str(payload)?;
-                tag.child_pattern = Some(s);
-                Ok(1 + tag.child_pattern.as_ref().map_or(0, |s| s.len()))
+                tag.child_pattern = Some(s.clone());
+                let n = if payload < 7 {
+                    1 + payload
+                } else {
+                    2 + s.len()
+                };
+                Ok(n)
             }
             TAG_CHILD_LOCATION => {
                 let s = self.read_tag_ascii(payload)?;
@@ -350,7 +416,7 @@ impl Decoder {
         Ok(v)
     }
 
-    fn decode_simple(&mut self, prefix: u8, _tag: &Tag) -> Result<Node, std::io::Error> {
+    fn decode_simple(&mut self, prefix: u8, tag: &Tag) -> Result<Node, std::io::Error> {
         let value = SimpleValue::from_byte(prefix & 0x1F).ok_or_else(|| {
             std::io::Error::new(std::io::ErrorKind::InvalidData, "invalid simple value")
         })?;
@@ -370,30 +436,23 @@ impl Decoder {
             data,
             text,
             path: String::new(),
-            tag: Some(Tag::new()),
+            tag: Some(tag.clone()),
         }))
     }
 
-    fn decode_positive_int(&mut self, prefix: u8, _tag: &Tag) -> Result<Node, std::io::Error> {
-        let l1 = match prefix & 0x07 {
-            0 => 0,
-            1 => {
-                let l = self.read_byte()?;
-                l as usize
+    fn decode_positive_int(&mut self, prefix: u8, tag: &Tag) -> Result<Node, std::io::Error> {
+        let l = prefix & INT_LEN_MASK;
+        let v = if l < INT_LEN_1 {
+            l as u64
+        } else {
+            let extra_bytes = (l - INT_LEN_1 + 1) as usize;
+            let mut v = 0u64;
+            for _ in 0..extra_bytes {
+                let b = self.read_byte()?;
+                v = (v << 8) | (b as u64);
             }
-            _ => {
-                return Err(std::io::Error::new(
-                    std::io::ErrorKind::InvalidData,
-                    "invalid int length",
-                ))
-            }
+            v
         };
-
-        let mut v = 0u64;
-        for i in 0..l1 {
-            let b = self.read_byte()?;
-            v |= (b as u64) << (i * 8);
-        }
 
         let data = ValueData::Int(v as i64);
         let text = v.to_string();
@@ -402,30 +461,23 @@ impl Decoder {
             data,
             text,
             path: String::new(),
-            tag: Some(Tag::new()),
+            tag: Some(tag.clone()),
         }))
     }
 
-    fn decode_negative_int(&mut self, prefix: u8, _tag: &Tag) -> Result<Node, std::io::Error> {
-        let l1 = match prefix & 0x07 {
-            0 => 0,
-            1 => {
-                let l = self.read_byte()?;
-                l as usize
+    fn decode_negative_int(&mut self, prefix: u8, tag: &Tag) -> Result<Node, std::io::Error> {
+        let l = prefix & INT_LEN_MASK;
+        let v = if l < INT_LEN_1 {
+            l as u64
+        } else {
+            let extra_bytes = (l - INT_LEN_1 + 1) as usize;
+            let mut v = 0u64;
+            for _ in 0..extra_bytes {
+                let b = self.read_byte()?;
+                v = (v << 8) | (b as u64);
             }
-            _ => {
-                return Err(std::io::Error::new(
-                    std::io::ErrorKind::InvalidData,
-                    "invalid int length",
-                ))
-            }
+            v
         };
-
-        let mut v = 0u64;
-        for i in 0..l1 {
-            let b = self.read_byte()?;
-            v |= (b as u64) << (i * 8);
-        }
 
         let data = ValueData::Int(-(v as i64));
         let text = format!("-{}", v);
@@ -434,29 +486,25 @@ impl Decoder {
             data,
             text,
             path: String::new(),
-            tag: Some(Tag::new()),
+            tag: Some(tag.clone()),
         }))
     }
 
-    fn decode_float(&mut self, prefix: u8, _tag: &Tag) -> Result<Node, std::io::Error> {
+    fn decode_float(&mut self, prefix: u8, tag: &Tag) -> Result<Node, std::io::Error> {
         let l = prefix & FLOAT_LEN_MASK;
-        let mut v: f64;
+        let v: f64;
 
         if l < FLOAT_LEN_1 {
-            v = (prefix & 0xF) as f64 / 10.0;
+            v = l as f64 / 10.0;
         } else {
             let exp = self.read_byte()? as i8;
-            let l1 = if l < FLOAT_LEN_1 {
-                0
-            } else {
-                l - FLOAT_LEN_1 + 1
-            };
+            let extra_bytes = (l - FLOAT_LEN_1 + 1) as usize;
 
-            let mantissa: u64 = if l1 == 0 {
+            let mantissa: u64 = if extra_bytes == 0 {
                 0
             } else {
                 let mut m = 0u64;
-                for _ in 0..l1 {
+                for _ in 0..extra_bytes {
                     let b = self.read_byte()?;
                     m = (m << 8) | (b as u64);
                 }
@@ -467,39 +515,33 @@ impl Decoder {
             v = dec.parse().unwrap_or(0.0);
         }
 
-        if (prefix & FLOAT_POSITIVE_NEGATIVE_MASK) != 0 {
-            v = -v;
-        }
+        let v = if (prefix & FLOAT_POSITIVE_NEGATIVE_MASK) != 0 {
+            -v
+        } else {
+            v
+        };
 
         Ok(Node::Value(Value {
             data: ValueData::Float(v),
             text: ryu::Buffer::new().format_finite(v).to_string(),
             path: String::new(),
-            tag: Some(Tag::new()),
+            tag: Some(tag.clone()),
         }))
     }
 
-    fn decode_string(&mut self, prefix: u8, _tag: &Tag) -> Result<Node, std::io::Error> {
-        let l1 = match prefix & 0x03 {
-            0 => 0,
-            1 => {
-                let l = self.read_byte()?;
-                l as usize
-            }
-            2 => {
-                let l = self.read_bytes(2)?;
-                ((l[0] as usize) << 8) | (l[1] as usize)
-            }
-            _ => {
-                return Err(std::io::Error::new(
-                    std::io::ErrorKind::InvalidData,
-                    "invalid string length",
-                ))
-            }
+    fn decode_string(&mut self, prefix: u8, tag: &Tag) -> Result<Node, std::io::Error> {
+        let l = prefix & INT_LEN_MASK;
+        let len = if l < STRING_LEN_1 {
+            l as usize
+        } else if l == STRING_LEN_1 {
+            self.read_byte()? as usize
+        } else {
+            let b = self.read_bytes(2)?;
+            ((b[0] as usize) << 8) | (b[1] as usize)
         };
 
-        let s = if l1 > 0 {
-            String::from_utf8_lossy(self.read_bytes(l1)?).to_string()
+        let s = if len > 0 {
+            String::from_utf8_lossy(self.read_bytes(len)?).to_string()
         } else {
             String::new()
         };
@@ -508,31 +550,23 @@ impl Decoder {
             data: ValueData::String(s.clone()),
             text: s,
             path: String::new(),
-            tag: Some(Tag::new()),
+            tag: Some(tag.clone()),
         }))
     }
 
-    fn decode_bytes(&mut self, prefix: u8, _tag: &Tag) -> Result<Node, std::io::Error> {
-        let l1 = match prefix & 0x03 {
-            0 => 0,
-            1 => {
-                let l = self.read_byte()?;
-                l as usize
-            }
-            2 => {
-                let l = self.read_bytes(2)?;
-                ((l[0] as usize) << 8) | (l[1] as usize)
-            }
-            _ => {
-                return Err(std::io::Error::new(
-                    std::io::ErrorKind::InvalidData,
-                    "invalid bytes length",
-                ))
-            }
+    fn decode_bytes(&mut self, prefix: u8, tag: &Tag) -> Result<Node, std::io::Error> {
+        let l = prefix & INT_LEN_MASK;
+        let len = if l < BYTES_LEN_1 {
+            l as usize
+        } else if l == BYTES_LEN_1 {
+            self.read_byte()? as usize
+        } else {
+            let b = self.read_bytes(2)?;
+            ((b[0] as usize) << 8) | (b[1] as usize)
         };
 
-        let bytes = if l1 > 0 {
-            self.read_bytes(l1)?.to_vec()
+        let bytes = if len > 0 {
+            self.read_bytes(len)?.to_vec()
         } else {
             vec![]
         };
@@ -541,98 +575,80 @@ impl Decoder {
             data: ValueData::Bytes(bytes.clone()),
             text: format!("{:?}", bytes),
             path: String::new(),
-            tag: Some(Tag::new()),
+            tag: Some(tag.clone()),
         }))
     }
 
     fn decode_container(&mut self, prefix: u8, tag: &Tag) -> Result<Node, std::io::Error> {
-        let is_array = (prefix & CONTAINER_ARRAY) != 0;
-        if is_array {
-            self.decode_array(tag)
+        if (prefix & CONTAINER_TYPE_MASK) != 0 {
+            self.decode_array(prefix, tag)
         } else {
-            self.decode_object(tag)
+            self.decode_object(prefix, tag)
         }
     }
 
-    fn decode_array(&mut self, _tag: &Tag) -> Result<Node, std::io::Error> {
-        let l = self.read_byte()?;
-        let len = l as usize;
+    fn decode_container_len(&mut self, prefix: u8) -> Result<usize, std::io::Error> {
+        let l = prefix & CONTAINER_LEN_MASK;
+        if l < CONTAINER_LEN_1 {
+            Ok(l as usize)
+        } else if l == CONTAINER_LEN_1 {
+            Ok(self.read_byte()? as usize)
+        } else {
+            let b = self.read_bytes(2)?;
+            Ok(((b[0] as usize) << 8) | (b[1] as usize))
+        }
+    }
+
+    fn decode_array(&mut self, prefix: u8, tag: &Tag) -> Result<Node, std::io::Error> {
+        let total_bytes = self.decode_container_len(prefix)?;
 
         let mut items = Vec::new();
-        for _ in 0..len {
-            let item = self.decode_node(&Tag::new(), "")?;
+        let mut index = 0;
+        while index < total_bytes {
+            let mut child_tag = Tag::new();
+            child_tag.inherit(tag);
+            let before = self.offset;
+            let item = self.decode_node(&child_tag, "")?;
+            let consumed = self.offset - before;
+            index += consumed;
             items.push(item);
         }
 
         Ok(Node::Array(Array {
             items,
             path: String::new(),
-            tag: Some(Tag::new()),
+            tag: Some(tag.clone()),
         }))
     }
 
-    fn decode_object(&mut self, tag: &Tag) -> Result<Node, std::io::Error> {
-        let l1 = match tag {
-            _ if self.offset >= self.data.len() => 0,
-            _ => {
-                let b = self.data[self.offset];
-                match b & CONTAINER_LEN_MASK {
-                    0 => 0,
-                    1 => 1,
-                    2 => 2,
-                    _ => 0,
-                }
-            }
-        };
+    fn decode_object(&mut self, prefix: u8, tag: &Tag) -> Result<Node, std::io::Error> {
+        let _total_bytes = self.decode_container_len(prefix)?;
 
-        let mut l2: usize = 0;
-        match l1 {
-            0 => {
-                let b = self.read_byte()?;
-                l2 = b as usize;
-            }
-            1 => {
-                let b = self.read_byte()?;
-                l2 = b as usize;
-            }
-            2 => {
-                let l = self.read_bytes(2)?;
-                l2 = ((l[0] as usize) << 8) | (l[1] as usize);
-            }
-            _ => {}
-        }
-
-        let _l_array = self.read_byte()?;
-        let keys_array = self.decode_array(&Tag::new())?;
-
-        let keys = if let Node::Array(arr) = keys_array {
+        let keys_node = self.decode_node(&Tag::new(), "")?;
+        let keys = if let Node::Array(arr) = keys_node {
             arr.items
         } else {
             vec![]
         };
 
-        let mut fields = Vec::new();
-        let mut index = 0;
-        let mut current = 0;
-
-        while current < l2 && index < keys.len() {
-            let key_node = &keys[index];
+        let mut fields = Vec::with_capacity(keys.len());
+        for key_node in &keys {
             let key = if let Node::Value(v) = key_node {
                 v.text.clone()
             } else {
-                break;
+                continue;
             };
 
-            let value = self.decode_node(&Tag::new(), "")?;
+            let mut child_tag = Tag::new();
+            child_tag.inherit(tag);
+            let value = self.decode_node(&child_tag, "")?;
             fields.push(Field { key, value });
-            current += 1;
-            index += 1;
         }
 
         Ok(Node::Object(Object {
             fields,
             path: String::new(),
-            tag: Some(Tag::new()),
+            tag: Some(tag.clone()),
         }))
     }
 }

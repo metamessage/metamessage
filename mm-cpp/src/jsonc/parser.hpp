@@ -178,8 +178,17 @@ private:
         skipComments();
       }
 
+      auto savedTag = pendingTag_;
+      pendingTag_.reset();
       auto value = parseValue();
       if (value) {
+        if (savedTag.has_value()) {
+          if (pendingTag_.has_value()) {
+            pendingTag_ = ir::mergeTag(&savedTag.value(), &pendingTag_.value());
+          } else {
+            pendingTag_ = savedTag;
+          }
+        }
         skipComments();
         applyTagToNode(value);
         obj->fields.emplace_back(key, value);
@@ -202,6 +211,9 @@ private:
     auto arr = ir::makeArray();
     skipComments();
 
+    auto outerTag = pendingTag_;
+    pendingTag_.reset();
+
     while (pos_ < tokens_.size() && tokens_[pos_].type != TokenType::RBracket) {
       if (tokens_[pos_].type == TokenType::Comma) {
         ++pos_;
@@ -221,6 +233,7 @@ private:
       ++pos_;
     }
 
+    pendingTag_ = outerTag;
     applyTagToNode(arr);
     return arr;
   }

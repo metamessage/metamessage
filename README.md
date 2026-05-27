@@ -533,13 +533,7 @@ const decoded = decodeToValue(wire, Person);
 
 [pypi.org](https://pypi.org/project/metamessage/)
 
-```python
-from metamessage import encode, decode
-
-person = {"name": "Ed", "age": 30}
-wire = encode(person)
-decoded = decode(wire)
-```
+[mm-py](./mm-py)
 
 #### JavaScript
 
@@ -567,13 +561,7 @@ const decoded = decode(wire);
 
 #### Swift
 
-```swift
-import MetaMessage
-
-let person = Person(name: "Ed", age: 30)
-let wire = MetaMessage.encodeFromValue(person)
-let decoded = try MetaMessage.decodeToValue(wire)
-```
+[mm-swift](./mm-swift)
 
 #### PHP
 

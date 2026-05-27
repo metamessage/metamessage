@@ -164,7 +164,7 @@ export class JSONCParser {
                 data = new Date(0);
               } else {
                 try {
-                  const dateValue = new Date(text);
+                  const dateValue = new Date(text.replace(' ', 'T') + 'Z');
                   let result: ValidationResult;
                   if (strTag.type === ValueType.Date) {
                     result = strTag.validateDate(dateValue);
@@ -365,7 +365,7 @@ export class JSONCParser {
             }
           } else if (text.startsWith('-')) {
             if (numTag.type === ValueType.Unknown) {
-              numTag.type = ValueType.I64;
+              numTag.type = ValueType.I;
             }
 
             switch (numTag.type) {
@@ -645,8 +645,8 @@ export class JSONCParser {
       }
 
       const childTag = val.getTag();
-      if (childTag && tag) {
-        childTag.isInherit = true;
+      if (childTag && tag && this.hasChildFields(tag)) {
+        childTag.inherit(tag);
       }
 
       obj.setProperty(keyStr, val);
@@ -717,8 +717,8 @@ export class JSONCParser {
       }
 
       const childTag = item.getTag();
-      if (childTag && tag) {
-        childTag.isInherit = true;
+      if (childTag && tag && this.hasChildFields(tag)) {
+        childTag.inherit(tag);
       }
 
       arr.addElement(item);
@@ -810,6 +810,25 @@ export class JSONCParser {
     const tagStr = trimmed.substring(3).trim();
     if (!tagStr) return null;
     return parseMMTag(tagStr);
+  }
+
+  private hasChildFields(tag: Tag): boolean {
+    return (
+      tag.childDesc !== '' ||
+      tag.childType !== ValueType.Unknown ||
+      tag.childNullable ||
+      tag.childAllowEmpty ||
+      tag.childUnique ||
+      tag.childDefaultVal !== '' ||
+      tag.childMin !== '' ||
+      tag.childMax !== '' ||
+      tag.childSize !== 0n ||
+      tag.childEnums !== '' ||
+      tag.childPattern !== '' ||
+      tag.childLocation !== 0 ||
+      tag.childVersion !== 0 ||
+      tag.childMime !== ''
+    );
   }
 }
 

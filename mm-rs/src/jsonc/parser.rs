@@ -2,6 +2,7 @@ use crate::ir::ast::{Array, Field, Node, Object, Value, ValueData};
 use crate::ir::tag::Tag;
 use crate::ir::value_type::ValueType;
 use crate::jsonc::scanner::{Scanner, Token, TokenType};
+use chrono::NaiveDateTime;
 
 const MAX_DEPTH: usize = 32;
 
@@ -116,8 +117,28 @@ impl Parser {
                     tag.value_type = ValueType::Str;
                 }
                 let text = tok.literal;
+                let data = match tag.value_type {
+                    ValueType::Datetime => {
+                        let naive = NaiveDateTime::parse_from_str(&text, "%Y-%m-%d %H:%M:%S")
+                            .map_err(|e| format!("invalid datetime '{}': {}", text, e))?;
+                        ValueData::Int(naive.and_utc().timestamp())
+                    }
+                    ValueType::Uuid => {
+                        let hex = text.replace('-', "");
+                        if hex.len() != 32 {
+                            return Err(format!("invalid uuid '{}'", text));
+                        }
+                        let bytes: Vec<u8> = (0..hex.len())
+                            .step_by(2)
+                            .map(|i| u8::from_str_radix(&hex[i..i + 2], 16))
+                            .collect::<Result<Vec<_>, _>>()
+                            .map_err(|e| format!("invalid uuid '{}': {}", text, e))?;
+                        ValueData::Bytes(bytes)
+                    }
+                    _ => ValueData::String(text.clone()),
+                };
                 let value = Node::Value(Value {
-                    data: ValueData::String(text.clone()),
+                    data,
                     text,
                     tag: Some(tag),
                     path: path.to_string(),
@@ -189,9 +210,7 @@ impl Parser {
                 });
                 Ok(Some(value))
             }
-            TokenType::Null => {
-                Err("null is not supported".to_string())
-            }
+            TokenType::Null => Err("null is not supported".to_string()),
             TokenType::TrailingComment => Ok(None),
             _ => Err(format!("unexpected token: {:?}", tok.token_type)),
         }

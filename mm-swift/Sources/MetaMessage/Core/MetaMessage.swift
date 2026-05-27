@@ -322,6 +322,15 @@ public enum MetaMessage {
         return JSONCPrinter().print(node)
     }
 
+    public static func jsoncToValue(_ jsonc: String) throws -> Decoder.DecodedValue {
+        guard let node = try parseJSONC(jsonc) else {
+            throw MMError.invalidData
+        }
+        let encoder = Encoder()
+        let data = try encodeNode(node, with: encoder)
+        return try MetaMessageDecoder(data: data).decode()
+    }
+
     public static func bindFromJSONC(_ inString: String, to out: AnyObject) throws {
         guard let node = try parseJSONC(inString) else {
             throw MMError.invalidData
@@ -344,7 +353,6 @@ public enum MetaMessage {
     }
 
     private static func nodeToString(_ node: Decoder.DecodedValue) -> String {
-        let printer = JSONCPrinter()
         switch node {
         case .bool(let b):
             return b ? "true" : "false"
@@ -353,17 +361,34 @@ public enum MetaMessage {
         case .uint(let u):
             return String(u)
         case .float(let f):
+            if f == f.rounded() && f != 0 {
+                return String(format: "%.1f", f)
+            }
             return String(f)
         case .string(let s):
-            return "\"\(s)\""
+            let escaped = s
+                .replacingOccurrences(of: "\\", with: "\\\\")
+                .replacingOccurrences(of: "\"", with: "\\\"")
+                .replacingOccurrences(of: "\n", with: "\\n")
+                .replacingOccurrences(of: "\r", with: "\\r")
+                .replacingOccurrences(of: "\t", with: "\\t")
+            return "\"\(escaped)\""
         case .data(let d):
-            return "\"\(String(data: d, encoding: .utf8) ?? "")\""
+            let str = String(data: d, encoding: .utf8) ?? d.map { String(format: "\\x%02x", $0) }.joined()
+            let escaped = str
+                .replacingOccurrences(of: "\\", with: "\\\\")
+                .replacingOccurrences(of: "\"", with: "\\\"")
+                .replacingOccurrences(of: "\n", with: "\\n")
+                .replacingOccurrences(of: "\r", with: "\\r")
+                .replacingOccurrences(of: "\t", with: "\\t")
+            return "\"\(escaped)\""
         case .array(let arr):
             let items = arr.map { nodeToString($0) }
-            return "[" + items.joined(separator: ", ") + "]"
+            return "[" + items.joined(separator: ",") + "]"
         case .object(let obj):
-            let items = obj.map { "\"\($0.key)\": \(nodeToString($0.value))" }
-            return "{" + items.joined(separator: ", ") + "}"
+            let sortedKeys = obj.keys.sorted()
+            let items = sortedKeys.map { "\"\($0)\":\(nodeToString(obj[$0]!))" }
+            return "{" + items.joined(separator: ",") + "}"
         case .null:
             return "null"
         }

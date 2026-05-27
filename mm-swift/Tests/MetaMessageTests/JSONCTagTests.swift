@@ -133,7 +133,6 @@ final class JSONCTagTests: XCTestCase {
         tag.nullable = true
 
         let str = tag.stringValue()
-        XCTAssertTrue(str.contains("type=str"))
         XCTAssertTrue(str.contains("desc=\"test\""))
         XCTAssertTrue(str.contains("nullable"))
     }

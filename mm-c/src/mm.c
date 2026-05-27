@@ -370,3 +370,23 @@ void mm_buffer_free(mm_buffer_t *buf) {
 }
 
 void mm_string_free(char *str) { free(str); }
+
+mm_buffer_t *mm_encode_from_jsonc(const char *jsonc_str) {
+  mm_node_t *node = mm_from_jsonc(jsonc_str);
+  if (!node)
+    return NULL;
+
+  mm_buffer_t *buf = mm_encode(node);
+  mm_node_free(node);
+  return buf;
+}
+
+char *mm_decode_to_jsonc(const mm_buffer_t *buf) {
+  mm_node_t *node = mm_decode(buf);
+  if (!node)
+    return NULL;
+
+  char *jsonc = mm_to_jsonc(node);
+  mm_node_free(node);
+  return jsonc;
+}

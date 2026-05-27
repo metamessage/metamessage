@@ -1,16 +1,66 @@
 // MetaMessage C# test harness - parse JSONC file and re-print to JSONC.
 using MetaMessage.Jsonc;
+using MetaMessage.Core;
+using MM = MetaMessage.Core.MetaMessage;
 
 if (args.Length < 1)
 {
-    Console.Error.WriteLine("usage: harness <file.jsonc>");
+    Console.Error.WriteLine("usage: harness [--encode|--decode] <file.jsonc>");
     Environment.Exit(1);
 }
 
-string input = "";
+if (args[0] == "--encode")
+{
+    if (args.Length < 2)
+    {
+        Console.Error.WriteLine("usage: harness --encode <file.jsonc>");
+        Environment.Exit(1);
+    }
+    string inputText = "";
+    try
+    {
+        inputText = File.ReadAllText(args[1]);
+    }
+    catch (Exception ex)
+    {
+        Console.Error.WriteLine($"read error: {ex.Message}");
+        Environment.Exit(1);
+    }
+    try
+    {
+        byte[] wire = MM.EncodeFromJsonc(inputText);
+        Console.Write(Convert.ToHexString(wire).ToLower());
+    }
+    catch (Exception ex)
+    {
+        Console.Error.WriteLine($"encode error: {ex.Message}");
+        Environment.Exit(1);
+    }
+    return;
+}
+
+if (args[0] == "--decode")
+{
+    string hexStr = Console.In.ReadToEnd().Trim();
+    try
+    {
+        byte[] wire = Convert.FromHexString(hexStr);
+        string decoded = MM.DecodeToJsonc(wire);
+        Console.Write(decoded);
+    }
+    catch (Exception ex)
+    {
+        Console.Error.WriteLine($"decode error: {ex.Message}");
+        Environment.Exit(1);
+    }
+    return;
+}
+
+// Existing behavior
+string fileContent = "";
 try
 {
-    input = File.ReadAllText(args[0]);
+    fileContent = File.ReadAllText(args[0]);
 }
 catch (Exception ex)
 {
@@ -21,7 +71,7 @@ catch (Exception ex)
 IJsoncNode node = null!;
 try
 {
-    node = Jsonc.ParseFromString(input);
+    node = Jsonc.ParseFromString(fileContent);
 }
 catch (Exception ex)
 {
@@ -29,5 +79,5 @@ catch (Exception ex)
     Environment.Exit(1);
 }
 
-string output = Jsonc.ToString(node);
-Console.Write(output);
+string jsoncOutput = Jsonc.ToString(node);
+Console.Write(jsoncOutput);

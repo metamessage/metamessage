@@ -42,6 +42,7 @@ enum {
 };
 
 enum {
+    MM_FLOAT_NEG_MASK   = 0x10,
     MM_FLOATLEN1BYTE = 8,
     MM_FLOATLEN2BYTE = 9,
     MM_FLOATLEN3BYTE = 10,

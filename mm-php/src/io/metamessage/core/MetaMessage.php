@@ -100,6 +100,24 @@ class MetaMessage
         return json_encode($n, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
     }
 
+    public static function DecodeToValue(array $wire): Node
+    {
+        $decoder = new WireDecoder([]);
+        return $decoder->decode($wire);
+    }
+
+    public static function DecodeToJsonc(array $wire): string
+    {
+        $decoder = new WireDecoder([]);
+        $node = $decoder->decode($wire);
+        return Jsonc::ToJSONC($node);
+    }
+
+    public static function JsoncToValue(string $jsonc): Node
+    {
+        return self::ParseFromJSONC($jsonc);
+    }
+
     public static function encode(object $obj): array
     {
         $encoder = new WireEncoder();

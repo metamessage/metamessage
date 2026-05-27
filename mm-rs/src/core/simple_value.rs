@@ -1,12 +1,12 @@
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum SimpleValue {
-    False,
-    True,
     NullBool,
-    NullFloat,
     NullInt,
+    NullFloat,
     NullString,
     NullBytes,
+    False,
+    True,
     Code,
     Message,
     Data,
@@ -37,13 +37,13 @@ pub enum SimpleValue {
 impl SimpleValue {
     pub fn from_byte(b: u8) -> Option<Self> {
         match b {
-            0x00 => Some(SimpleValue::False),
-            0x01 => Some(SimpleValue::True),
-            0x02 => Some(SimpleValue::NullBool),
-            0x03 => Some(SimpleValue::NullFloat),
-            0x04 => Some(SimpleValue::NullInt),
-            0x05 => Some(SimpleValue::NullString),
-            0x06 => Some(SimpleValue::NullBytes),
+            0x00 => Some(SimpleValue::NullBool),
+            0x01 => Some(SimpleValue::NullInt),
+            0x02 => Some(SimpleValue::NullFloat),
+            0x03 => Some(SimpleValue::NullString),
+            0x04 => Some(SimpleValue::NullBytes),
+            0x05 => Some(SimpleValue::False),
+            0x06 => Some(SimpleValue::True),
             0x07 => Some(SimpleValue::Code),
             0x08 => Some(SimpleValue::Message),
             0x09 => Some(SimpleValue::Data),
@@ -75,13 +75,13 @@ impl SimpleValue {
 
     pub fn to_byte(&self) -> u8 {
         match self {
-            SimpleValue::False => 0x00,
-            SimpleValue::True => 0x01,
-            SimpleValue::NullBool => 0x02,
-            SimpleValue::NullFloat => 0x03,
-            SimpleValue::NullInt => 0x04,
-            SimpleValue::NullString => 0x05,
-            SimpleValue::NullBytes => 0x06,
+            SimpleValue::NullBool => 0x00,
+            SimpleValue::NullInt => 0x01,
+            SimpleValue::NullFloat => 0x02,
+            SimpleValue::NullString => 0x03,
+            SimpleValue::NullBytes => 0x04,
+            SimpleValue::False => 0x05,
+            SimpleValue::True => 0x06,
             SimpleValue::Code => 0x07,
             SimpleValue::Message => 0x08,
             SimpleValue::Data => 0x09,
@@ -108,5 +108,11 @@ impl SimpleValue {
             SimpleValue::Key => 0x1E,
             SimpleValue::Val => 0x1F,
         }
+    }
+}
+
+impl From<SimpleValue> for u8 {
+    fn from(v: SimpleValue) -> Self {
+        v.to_byte()
     }
 }

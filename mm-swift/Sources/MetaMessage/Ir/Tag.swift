@@ -270,7 +270,7 @@ public func parseMMTag(_ tagStr: String) -> Tag? {
         case "unique":
             result.unique = true
 
-        case "default":
+        case "default", "default_val":
             result.defaultVal = value
 
         case "pattern":
@@ -287,7 +287,7 @@ public func parseMMTag(_ tagStr: String) -> Tag? {
                 result.size = size
             }
 
-        case "enum":
+        case "enum", "enums":
             result.type = .enums
             result.enums = value
 

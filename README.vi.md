@@ -407,13 +407,7 @@ const decoded = decodeToValue(wire, Person);
 
 [pypi.org](https://pypi.org/project/metamessage/)
 
-```python
-from metamessage import encode, decode
-
-person = {"name": "Ed", "age": 30}
-wire = encode(person)
-decoded = decode(wire)
-```
+[mm-py](./mm-py)
 
 #### JavaScript
 
@@ -431,13 +425,7 @@ const decoded = decode(wire);
 
 [NuGet](https://www.nuget.org/packages/MetaMessage)
 
-```csharp
-using MetaMessage;
-
-var person = new Person { Name = "Ed", Age = 30 };
-byte[] wire = MetaMessage.Encode(person);
-var decoded = MetaMessage.Decode<Person>(wire);
-```
+[mm-cs](./mm-cs)
 
 #### Rust
 
@@ -447,26 +435,13 @@ var decoded = MetaMessage.Decode<Person>(wire);
 
 #### Swift
 
-```swift
-import MetaMessage
-
-let person = Person(name: "Ed", age: 30)
-let wire = MetaMessage.encodeFromValue(person)
-let decoded = try MetaMessage.decodeToValue(wire)
-```
+[mm-swift](./mm-swift)
 
 #### PHP
 
 [packagist.org](https://packagist.org/packages/metamessage/metamessage)
 
-```php
-<?php
-use io\metamessage\mm\MetaMessage;
-
-$person = new Person();
-$wire = MetaMessage::encode($person);
-$decoded = MetaMessage::decode($wire, Person::class);
-```
+[mm-php](./mm-php)
 
 ### Ví dụ
 

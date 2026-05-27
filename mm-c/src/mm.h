@@ -547,4 +547,7 @@ char *mm_to_jsonc(mm_node_t *node);
 mm_node_t *mm_from_jsonc(const char *jsonc_str);
 void mm_string_free(char *str);
 
+mm_buffer_t *mm_encode_from_jsonc(const char *jsonc_str);
+char *mm_decode_to_jsonc(const mm_buffer_t *buf);
+
 #endif

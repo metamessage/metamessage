@@ -3,9 +3,11 @@
 
 #include "../ir/ast.hpp"
 #include "constants.hpp"
+#include <cmath>
 #include <cstdint>
 #include <cstring>
 #include <iostream>
+#include <sstream>
 #include <stdexcept>
 #include <string>
 #include <vector>
@@ -131,174 +133,225 @@ private:
       l = (bytes[0] << 8) | bytes[1];
     }
 
+    size_t frameEnd = offset_ + l;
+
     ir::Tag tag;
     tag.isInherit = true;
 
-    int remaining = l;
-    while (remaining > 0) {
-      int n = decodeTagBytes(tag);
-      if (n == 0 || n > remaining)
-        break;
-      remaining -= n;
+    uint8_t bodyLenByte = readByte();
+    int tagBodyLen;
+    if (bodyLenByte < 254) {
+      tagBodyLen = bodyLenByte;
+    } else if (bodyLenByte == 254) {
+      tagBodyLen = readByte();
+    } else {
+      auto bytes = readBytes(2);
+      tagBodyLen = (bytes[0] << 8) | bytes[1];
+    }
+
+    size_t tagBodyEnd = offset_ + tagBodyLen;
+
+    while (offset_ < tagBodyEnd) {
+      decodeTagBytes(tag);
     }
 
     auto node = decodeNode(&tag);
+
+    offset_ = frameEnd;
+
     return node;
   }
 
   int decodeTagBytes(ir::Tag &tag) {
     uint8_t b = readByte();
-    uint8_t suffix = getSuffix(b);
+    uint8_t key = b & 0xF8;
+    int payload = static_cast<int>(b & 0x07);
 
-    // Boolean flags have suffix == 1 (KKey | 1)
-    // String values have suffix indicating length
-    // Type key has suffix == 0, followed by type byte
-
-    switch (suffix) {
-    case 1: {
-      if (b == (KIsNull | 1)) {
-        tag.isNull = true;
-        return 1;
-      }
-      if (b == (KExample | 1)) {
-        tag.example = true;
-        return 1;
-      }
-      if (b == (KNullable | 1)) {
+    switch (static_cast<ir::TagKey>(key)) {
+    case ir::KIsNull:
+      tag.isNull = (payload & 1) == 1;
+      if (tag.isNull) {
         tag.nullable = true;
-        return 1;
-      }
-      if (b == (KDeprecated | 1)) {
-        tag.deprecated = true;
-        return 1;
-      }
-      if (b == (KAllowEmpty | 1)) {
-        tag.allowEmpty = true;
-        return 1;
-      }
-      if (b == (KUnique | 1)) {
-        tag.unique = true;
-        return 1;
-      }
-      if (b == (KChildNullable | 1)) {
-        tag.childNullable = true;
-        return 1;
-      }
-      if (b == (KChildAllowEmpty | 1)) {
-        tag.childAllowEmpty = true;
-        return 1;
-      }
-      if (b == (KChildUnique | 1)) {
-        tag.childUnique = true;
-        return 1;
       }
       return 1;
-    }
-    case 0: {
-      // Type key: KType, KChildType
-      if (b == (KType)) {
-        tag.type = static_cast<ir::ValueType>(readByte());
-        return 2;
-      }
-      if (b == (KChildType)) {
-        tag.childType = static_cast<ir::ValueType>(readByte());
-        return 2;
-      }
-      // Size keys with length encoding
-      if (b >= KSize && b < KSize + 8) {
-        tag.size = static_cast<int>(decodeTagU64());
-        return 2;
-      }
-      if (b >= KChildSize && b < KChildSize + 8) {
-        tag.childSize = static_cast<int>(decodeTagU64());
-        return 2;
-      }
-      if (b >= KVersion && b < KVersion + 8) {
-        tag.version = static_cast<int>(decodeTagU64());
-        return 2;
-      }
-      if (b >= KChildVersion && b < KChildVersion + 8) {
-        tag.childVersion = static_cast<int>(decodeTagU64());
-        return 2;
-      }
+
+    case ir::KExample:
+      tag.example = (payload & 1) == 1;
       return 1;
-    }
-    default: {
-      if (b >= KDesc && b < KDesc + 8) {
-        tag.desc = decodeTagString(suffix);
-        return static_cast<int>(1 + tag.desc.size());
-      }
-      if (b >= KDefaultVal && b < KDefaultVal + 8) {
-        tag.default_val = decodeTagString(suffix);
-        return static_cast<int>(1 + tag.default_val.size());
-      }
-      if (b >= KMin && b < KMin + 8) {
-        tag.min = decodeTagString(suffix);
-        return static_cast<int>(1 + tag.min.size());
-      }
-      if (b >= KMax && b < KMax + 8) {
-        tag.max = decodeTagString(suffix);
-        return static_cast<int>(1 + tag.max.size());
-      }
-      if (b >= KEnums && b < KEnums + 8) {
-        tag.enums = decodeTagString(suffix);
-        return static_cast<int>(1 + tag.enums.size());
-      }
-      if (b >= KPattern && b < KPattern + 8) {
-        tag.pattern = decodeTagString(suffix);
-        return static_cast<int>(1 + tag.pattern.size());
-      }
-      if (b >= KLocation && b < KLocation + 8) {
-        tag.locationOffset = std::stoi(decodeTagString(suffix));
-        return static_cast<int>(1 + 1);
-      }
-      if (b >= KMime && b < KMime + 8) {
-        tag.mime = decodeTagString(suffix);
-        return static_cast<int>(1 + tag.mime.size());
-      }
-      if (b >= KChildDesc && b < KChildDesc + 8) {
-        tag.childDesc = decodeTagString(suffix);
-        return static_cast<int>(1 + tag.childDesc.size());
-      }
-      if (b >= KChildDefaultVal && b < KChildDefaultVal + 8) {
-        tag.child_default_val = decodeTagString(suffix);
-        return static_cast<int>(1 + tag.child_default_val.size());
-      }
-      if (b >= KChildMin && b < KChildMin + 8) {
-        tag.childMin = decodeTagString(suffix);
-        return static_cast<int>(1 + tag.childMin.size());
-      }
-      if (b >= KChildMax && b < KChildMax + 8) {
-        tag.childMax = decodeTagString(suffix);
-        return static_cast<int>(1 + tag.childMax.size());
-      }
-      if (b >= KChildEnums && b < KChildEnums + 8) {
-        tag.child_enums = decodeTagString(suffix);
-        return static_cast<int>(1 + tag.child_enums.size());
-      }
-      if (b >= KChildPattern && b < KChildPattern + 8) {
-        tag.childPattern = decodeTagString(suffix);
-        return static_cast<int>(1 + tag.childPattern.size());
-      }
-      if (b >= KChildLocation && b < KChildLocation + 8) {
-        tag.childLocationOffset = std::stoi(decodeTagString(suffix));
-        return static_cast<int>(1 + 1);
-      }
-      if (b >= KChildMime && b <= 255) {
-        tag.childMime = decodeTagString(suffix);
-        return static_cast<int>(1 + tag.childMime.size());
-      }
+
+    case ir::KDeprecated:
+      tag.deprecated = (payload & 1) == 1;
       return 1;
+
+    case ir::KNullable:
+      tag.nullable = (payload & 1) == 1;
+      return 1;
+
+    case ir::KAllowEmpty:
+      tag.allowEmpty = (payload & 1) == 1;
+      return 1;
+
+    case ir::KUnique:
+      tag.unique = (payload & 1) == 1;
+      return 1;
+
+    case ir::KChildNullable:
+      tag.childNullable = (payload & 1) == 1;
+      return 1;
+
+    case ir::KChildAllowEmpty:
+      tag.childAllowEmpty = (payload & 1) == 1;
+      return 1;
+
+    case ir::KChildUnique:
+      tag.childUnique = (payload & 1) == 1;
+      return 1;
+
+    case ir::KType: {
+      uint8_t tb = readByte();
+      tag.type = static_cast<ir::ValueType>(tb);
+      return 2;
     }
+
+    case ir::KChildType: {
+      uint8_t tb = readByte();
+      tag.childType = static_cast<ir::ValueType>(tb);
+      return 2;
+    }
+
+    case ir::KSize: {
+      uint64_t v = readUInt(payload + 1);
+      tag.size = static_cast<int>(v);
+      return 2 + payload;
+    }
+
+    case ir::KChildSize: {
+      uint64_t v = readUInt(payload + 1);
+      tag.childSize = static_cast<int>(v);
+      return 2 + payload;
+    }
+
+    case ir::KVersion: {
+      uint64_t v = readUInt(payload + 1);
+      tag.version = static_cast<int>(v);
+      return 2 + payload;
+    }
+
+    case ir::KChildVersion: {
+      uint64_t v = readUInt(payload + 1);
+      tag.childVersion = static_cast<int>(v);
+      return 2 + payload;
+    }
+
+    case ir::KMore: {
+      uint64_t v = readUInt(payload + 1);
+      tag.more = static_cast<uint8_t>(v);
+      return 2 + payload;
+    }
+
+    case ir::KDesc: {
+      tag.desc = decodeTagString(payload);
+      return decodeTagStrConsumed(payload, tag.desc.size());
+    }
+
+    case ir::KDefaultVal: {
+      tag.default_val = decodeTagString(payload);
+      return decodeTagStrConsumed(payload, tag.default_val.size());
+    }
+
+    case ir::KMin: {
+      tag.min = decodeTagString(payload);
+      return decodeTagStrConsumed(payload, tag.min.size());
+    }
+
+    case ir::KMax: {
+      tag.max = decodeTagString(payload);
+      return decodeTagStrConsumed(payload, tag.max.size());
+    }
+
+    case ir::KEnums: {
+      tag.enums = decodeTagString(payload);
+      return decodeTagStrConsumed(payload, tag.enums.size());
+    }
+
+    case ir::KPattern: {
+      tag.pattern = decodeTagString(payload);
+      return decodeTagStrConsumed(payload, tag.pattern.size());
+    }
+
+    case ir::KLocation: {
+      tag.locationOffset = std::stoi(decodeTagString(payload));
+      return decodeTagStrConsumed(payload, 0);
+    }
+
+    case ir::KMime: {
+      tag.mime = decodeTagString(payload);
+      return decodeTagStrConsumed(payload, tag.mime.size());
+    }
+
+    case ir::KChildDesc: {
+      tag.childDesc = decodeTagString(payload);
+      return decodeTagStrConsumed(payload, tag.childDesc.size());
+    }
+
+    case ir::KChildDefaultVal: {
+      tag.child_default_val = decodeTagString(payload);
+      return decodeTagStrConsumed(payload, tag.child_default_val.size());
+    }
+
+    case ir::KChildMin: {
+      tag.childMin = decodeTagString(payload);
+      return decodeTagStrConsumed(payload, tag.childMin.size());
+    }
+
+    case ir::KChildMax: {
+      tag.childMax = decodeTagString(payload);
+      return decodeTagStrConsumed(payload, tag.childMax.size());
+    }
+
+    case ir::KChildEnums: {
+      tag.child_enums = decodeTagString(payload);
+      return decodeTagStrConsumed(payload, tag.child_enums.size());
+    }
+
+    case ir::KChildPattern: {
+      tag.childPattern = decodeTagString(payload);
+      return decodeTagStrConsumed(payload, tag.childPattern.size());
+    }
+
+    case ir::KChildLocation: {
+      tag.childLocationOffset = std::stoi(decodeTagString(payload));
+      return decodeTagStrConsumed(payload, 0);
+    }
+
+    case ir::KChildMime: {
+      tag.childMime = decodeTagString(payload);
+      return decodeTagStrConsumed(payload, tag.childMime.size());
+    }
+
+    default:
+      return 1;
     }
   }
 
-  std::string decodeTagString(uint8_t suffix) {
-    int len = suffix;
-    if (len > 5)
+  std::string decodeTagString(int payload) {
+    int len = payload;
+    if (payload == 6) {
       len = readByte();
+    } else if (payload == 7) {
+      auto bytes = readBytes(2);
+      len = (bytes[0] << 8) | bytes[1];
+    }
     auto bytes = readBytes(static_cast<size_t>(len));
     return std::string(bytes.begin(), bytes.end());
+  }
+
+  int decodeTagStrConsumed(int payload, size_t strLen) {
+    if (payload == 6)
+      return 2 + static_cast<int>(strLen);
+    if (payload == 7)
+      return 3 + static_cast<int>(strLen);
+    return 1 + payload;
   }
 
   uint64_t decodeTagU64() {
@@ -332,22 +385,27 @@ private:
     case SimpleNullBool:
       tag->type = ir::ValueType::Bool;
       tag->isNull = true;
+      val->text = "false";
       break;
     case SimpleNullInt:
       tag->type = ir::ValueType::I;
       tag->isNull = true;
+      val->text = "0";
       break;
     case SimpleNullFloat:
       tag->type = ir::ValueType::F64;
       tag->isNull = true;
+      val->text = "0.0";
       break;
     case SimpleNullString:
       tag->type = ir::ValueType::Str;
       tag->isNull = true;
+      val->text = "";
       break;
     case SimpleNullBytes:
       tag->type = ir::ValueType::Bytes;
       tag->isNull = true;
+      val->text = "";
       break;
     default:
       break;
@@ -387,7 +445,38 @@ private:
     if (tag->type == ir::ValueType::Unknown)
       tag->type = ir::ValueType::I;
 
-    val->text = std::to_string(positive ? uv : -static_cast<int64_t>(uv));
+    val->text = positive ? std::to_string(uv)
+                         : std::to_string(-static_cast<int64_t>(uv));
+
+    if (tag->type == ir::ValueType::Datetime) {
+      int64_t ts =
+          positive ? static_cast<int64_t>(uv) : -static_cast<int64_t>(uv);
+      time_t t = static_cast<time_t>(ts);
+      struct tm tm;
+      gmtime_r(&t, &tm);
+      char buf[64];
+      strftime(buf, sizeof(buf), "%Y-%m-%d %H:%M:%S", &tm);
+      val->text = buf;
+    } else if (tag->type == ir::ValueType::Date) {
+      int64_t days =
+          positive ? static_cast<int64_t>(uv) : -static_cast<int64_t>(uv);
+      time_t t = static_cast<time_t>(days * 86400);
+      struct tm tm;
+      gmtime_r(&t, &tm);
+      char buf[64];
+      strftime(buf, sizeof(buf), "%Y-%m-%d", &tm);
+      val->text = buf;
+    } else if (tag->type == ir::ValueType::Time) {
+      int64_t secs =
+          positive ? static_cast<int64_t>(uv) : -static_cast<int64_t>(uv);
+      int hours = static_cast<int>(secs / 3600);
+      int mins = static_cast<int>((secs % 3600) / 60);
+      int sec = static_cast<int>(secs % 60);
+      char buf[16];
+      snprintf(buf, sizeof(buf), "%02d:%02d:%02d", hours, mins, sec);
+      val->text = buf;
+    }
+
     return val;
   }
 
@@ -400,18 +489,28 @@ private:
       tag->inherit(*parentTag);
     }
 
-    int byteLen = floatLen(b);
-    uint64_t bits = 0;
-    if (byteLen == 0) {
-      bits = getSuffix(b);
+    int mantissaBytes = floatLen(b);
+    bool isNegative = (b & FloatPositiveNegativeMask) != 0;
+    int8_t exponent = 0;
+    uint64_t mantissa = 0;
+
+    if (mantissaBytes == 0) {
+      mantissa = b & FloatLenMask;
+      exponent = -1;
     } else {
-      bits = readUInt(byteLen);
+      exponent = static_cast<int8_t>(readByte());
+      mantissa = readUInt(mantissaBytes);
     }
 
-    double d;
-    std::memcpy(&d, &bits, sizeof(d));
-    val->text = std::to_string(d);
-    tag->type = ir::ValueType::F64;
+    double result = static_cast<double>(mantissa) * std::pow(10.0, exponent);
+    if (isNegative)
+      result = -result;
+
+    std::ostringstream oss;
+    oss << result;
+    val->text = oss.str();
+    if (tag->type == ir::ValueType::Unknown)
+      tag->type = ir::ValueType::F64;
     return val;
   }
 
@@ -439,7 +538,8 @@ private:
 
     auto bytes = readBytes(len);
     val->text = std::string(bytes.begin(), bytes.end());
-    tag->type = ir::ValueType::Str;
+    if (tag->type == ir::ValueType::Unknown)
+      tag->type = ir::ValueType::Str;
     return val;
   }
 
@@ -467,7 +567,20 @@ private:
 
     auto rawBytes = readBytes(len);
     val->text = std::string(rawBytes.begin(), rawBytes.end());
-    tag->type = ir::ValueType::Bytes;
+
+    if (tag->type == ir::ValueType::Uuid && rawBytes.size() == 16) {
+      char buf[64];
+      snprintf(buf, sizeof(buf),
+               "%02x%02x%02x%02x-%02x%02x-%02x%02x-%02x%02x-%02x%02x%02x%02x%02x%02x",
+               rawBytes[0], rawBytes[1], rawBytes[2], rawBytes[3],
+               rawBytes[4], rawBytes[5], rawBytes[6], rawBytes[7],
+               rawBytes[8], rawBytes[9], rawBytes[10], rawBytes[11],
+               rawBytes[12], rawBytes[13], rawBytes[14], rawBytes[15]);
+      val->text = buf;
+    }
+
+    if (tag->type == ir::ValueType::Unknown)
+      tag->type = ir::ValueType::Bytes;
     return val;
   }
 

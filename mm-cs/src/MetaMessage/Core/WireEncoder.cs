@@ -36,7 +36,7 @@ public class WireEncoder
         int start = _buf.Length;
         if (value >= 0)
         {
-            if (value <= WireConstants.INT_LEN_8 - 1)
+            if (value <= WireConstants.INT_LEN_1 - 1)
             {
                 _buf.Write(Prefix.POSITIVE_INT | (int)value);
             }
@@ -84,7 +84,7 @@ public class WireEncoder
             {
                 uv = (ulong)(-value);
             }
-            if (uv <= (ulong)(WireConstants.INT_LEN_8 - 1))
+            if (uv <= (ulong)(WireConstants.INT_LEN_1 - 1))
             {
                 _buf.Write(Prefix.NEGATIVE_INT | (int)uv);
             }

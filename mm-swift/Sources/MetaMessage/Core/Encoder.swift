@@ -270,7 +270,7 @@ public class Encoder {
         if mantissaBytes < 1 { mantissaBytes = 1 }
         if mantissaBytes > 8 { mantissaBytes = 8 }
 
-        let lenByte = UInt8(mantissaBytes + 6)
+        let lenByte = UInt8(mantissaBytes + 7)
         buffer.write(basePrefix | lenByte)
         buffer.write(UInt8(bitPattern: exponent))
 
@@ -510,6 +510,7 @@ public class Encoder {
 // Matches Go's internal/ir/tag.go TagKey
 enum TagKey {
     static let isNull: UInt8 = 0 << 3       // 0x00
+    static let example: UInt8 = 1 << 3       // 0x08
     static let deprecated: UInt8 = 2 << 3    // 0x10
     static let desc: UInt8 = 3 << 3         // 0x18
     static let type: UInt8 = 4 << 3         // 0x20
@@ -525,6 +526,20 @@ enum TagKey {
     static let location: UInt8 = 14 << 3    // 0x70
     static let version: UInt8 = 15 << 3     // 0x78
     static let mime: UInt8 = 16 << 3        // 0x80
+    static let childDesc: UInt8 = 17 << 3   // 0x88
+    static let childType: UInt8 = 18 << 3   // 0x90
+    static let childNullable: UInt8 = 19 << 3 // 0x98
+    static let childAllowEmpty: UInt8 = 20 << 3 // 0xA0
+    static let childUnique: UInt8 = 21 << 3 // 0xA8
+    static let childDefaultVal: UInt8 = 22 << 3 // 0xB0
+    static let childMin: UInt8 = 23 << 3    // 0xB8
+    static let childMax: UInt8 = 24 << 3    // 0xC0
+    static let childSize: UInt8 = 25 << 3   // 0xC8
+    static let childEnums: UInt8 = 26 << 3  // 0xD0
+    static let childPattern: UInt8 = 27 << 3 // 0xD8
+    static let childLocation: UInt8 = 28 << 3 // 0xE0
+    static let childVersion: UInt8 = 29 << 3 // 0xE8
+    static let childMime: UInt8 = 30 << 3   // 0xF0
     static let more: UInt8 = 31 << 3        // 0xF8
 }
 
@@ -537,7 +552,38 @@ extension Encoder {
         }
 
         let payloadStart = buffer.count
-        encodeRawValue(node)
+        if tag.isNull {
+            encodeNullForTagType(tag.type)
+        } else {
+            switch tag.type {
+            case .datetime:
+                if let date = node.data as? Date {
+                    encodeDateTime(date)
+                } else {
+                    encodeRawValue(node)
+                }
+            case .date:
+                if let date = node.data as? Date {
+                    encodeDate(date)
+                } else {
+                    encodeRawValue(node)
+                }
+            case .time:
+                if let date = node.data as? Date {
+                    encodeTime(date)
+                } else {
+                    encodeRawValue(node)
+                }
+            case .uuid:
+                if let uuidBytes = node.data as? [UInt8], uuidBytes.count == 16 {
+                    encode(Data(uuidBytes))
+                } else {
+                    encodeRawValue(node)
+                }
+            default:
+                encodeRawValue(node)
+            }
+        }
         let payloadBytes = Array(buffer.data[payloadStart..<buffer.count])
 
         if needsTagEncoding(tag) {
@@ -553,6 +599,49 @@ extension Encoder {
         }
     }
 
+    private func encodeNullForTagType(_ type: ValueType) {
+        switch type {
+        case .i, .i8, .i16, .i32, .i64, .u, .u8, .u16, .u32, .u64, .enums:
+            buffer.write(MMSimpleValue.nullInt.rawValue)
+        case .f64, .f32, .decimal:
+            buffer.write(MMSimpleValue.nullFloat.rawValue)
+        case .str:
+            buffer.write(MMSimpleValue.nullString.rawValue)
+        case .bytes:
+            buffer.write(MMSimpleValue.nullBytes.rawValue)
+        case .bool:
+            buffer.write(MMSimpleValue.nullBool.rawValue)
+        default:
+            break
+        }
+    }
+
+    private func encodeDateTime(_ date: Date) {
+        let timestamp = Int64(date.timeIntervalSince1970)
+        encodeInt64(timestamp)
+    }
+
+    private func encodeDate(_ date: Date) {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = TimeZone(secondsFromGMT: 0)!
+        let startOfDay = calendar.startOfDay(for: date)
+        let days = Int64(startOfDay.timeIntervalSince1970 / 86400)
+        if days >= 0 {
+            encode(UInt64(days))
+        } else {
+            encodeInt64(days)
+        }
+    }
+
+    private func encodeTime(_ date: Date) {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = TimeZone(secondsFromGMT: 0)!
+        let seconds = calendar.component(.hour, from: date) * 3600 +
+                      calendar.component(.minute, from: date) * 60 +
+                      calendar.component(.second, from: date)
+        encode(UInt64(seconds))
+    }
+
     public func encodeNodeArray(_ node: MMArray) {
         guard let tag = node.getTag() else {
             let valBuf = MMBuffer()
@@ -560,6 +649,14 @@ extension Encoder {
                 if let val = item as? Value {
                     let encoder = Encoder()
                     encoder.encodeNodeValue(val)
+                    valBuf.write([UInt8](encoder.buffer.data))
+                } else if let arr = item as? MMArray {
+                    let encoder = Encoder()
+                    encoder.encodeNodeArray(arr)
+                    valBuf.write([UInt8](encoder.buffer.data))
+                } else if let obj = item as? MMObject {
+                    let encoder = Encoder()
+                    encoder.encodeNodeObject(obj)
                     valBuf.write([UInt8](encoder.buffer.data))
                 }
             }
@@ -585,6 +682,14 @@ extension Encoder {
             if let val = item as? Value {
                 let encoder = Encoder()
                 encoder.encodeNodeValue(val)
+                valBuf.write([UInt8](encoder.buffer.data))
+            } else if let arr = item as? MMArray {
+                let encoder = Encoder()
+                encoder.encodeNodeArray(arr)
+                valBuf.write([UInt8](encoder.buffer.data))
+            } else if let obj = item as? MMObject {
+                let encoder = Encoder()
+                encoder.encodeNodeObject(obj)
                 valBuf.write([UInt8](encoder.buffer.data))
             }
         }
@@ -726,7 +831,51 @@ extension Encoder {
     }
 
     private func needsTagEncoding(_ tag: Tag) -> Bool {
-        return tag.type != .unknown || tag.name != "" || tag.desc != "" || tag.nullable || tag.isNull || tag.deprecated || tag.allowEmpty
+        return (tag.type != .unknown && !tag.isInherit && shouldEncodeType(tag.type, size: tag.size, enums: tag.enums)) ||
+            tag.example ||
+            tag.isNull ||
+            (tag.nullable && !tag.isInherit && !tag.isNull) ||
+            (tag.desc != "" && !tag.isInherit) ||
+            (tag.deprecated && !tag.isInherit) ||
+            (tag.allowEmpty && !tag.isInherit) ||
+            (tag.unique && !tag.isInherit) ||
+            (tag.defaultVal != "" && !tag.isInherit) ||
+            (tag.min != "" && !tag.isInherit) ||
+            (tag.max != "" && !tag.isInherit) ||
+            (tag.size != 0 && !tag.isInherit) ||
+            (tag.enums != "" && !tag.isInherit) ||
+            (tag.pattern != "" && !tag.isInherit) ||
+            (tag.mime != "" && !tag.isInherit) ||
+            (tag.location != 0 && !tag.isInherit) ||
+            (tag.version != 0 && !tag.isInherit) ||
+            tag.childDesc != "" ||
+            tag.childType != .unknown ||
+            tag.childNullable ||
+            tag.childAllowEmpty ||
+            tag.childUnique ||
+            tag.childDefaultVal != "" ||
+            tag.childMin != "" ||
+            tag.childMax != "" ||
+            tag.childSize != 0 ||
+            tag.childEnums != "" ||
+            tag.childPattern != "" ||
+            tag.childMime != "" ||
+            tag.childLocation != 0 ||
+            tag.childVersion != 0 ||
+            tag.more != 0
+    }
+
+    private func shouldEncodeType(_ type: ValueType, size: Int, enums: String) -> Bool {
+        switch type {
+        case .str, .bytes, .i, .f64, .bool, .obj, .vec:
+            return false
+        case .arr:
+            return size <= 0
+        case .enums:
+            return enums.isEmpty
+        default:
+            return true
+        }
     }
 
     private func encodeTagToBytes(_ tag: Tag) -> [UInt8] {
@@ -735,56 +884,69 @@ extension Encoder {
         if tag.isNull {
             bytes.append(TagKey.isNull | 1)
         }
-        if !tag.desc.isEmpty {
+
+        if tag.nullable && !tag.isInherit && !tag.isNull {
+            bytes.append(TagKey.nullable | 1)
+        }
+
+        if !tag.desc.isEmpty && !tag.isInherit {
             bytes.append(contentsOf: encodeTagString(TagKey.desc, value: tag.desc))
         }
-        if tag.type != .unknown {
+
+        if tag.type != .unknown && !tag.isInherit && shouldEncodeType(tag.type, size: tag.size, enums: tag.enums) {
             bytes.append(TagKey.type)
             bytes.append(UInt8(tag.type.rawValue))
         }
-        if tag.deprecated {
+
+        if tag.deprecated && !tag.isInherit {
             bytes.append(TagKey.deprecated | 1)
         }
-        if tag.nullable {
-            bytes.append(TagKey.nullable | 1)
-        }
-        if tag.allowEmpty {
+
+        if tag.allowEmpty && !tag.isInherit {
             bytes.append(TagKey.allowEmpty | 1)
         }
-        if tag.unique {
+
+        if tag.unique && !tag.isInherit {
             bytes.append(TagKey.unique | 1)
         }
-        if !tag.defaultVal.isEmpty {
+
+        if !tag.defaultVal.isEmpty && !tag.isInherit {
             bytes.append(contentsOf: encodeTagString(TagKey.defaultVal, value: tag.defaultVal))
         }
-        if !tag.min.isEmpty {
+
+        if !tag.min.isEmpty && !tag.isInherit {
             bytes.append(contentsOf: encodeTagString(TagKey.min, value: tag.min))
         }
-        if !tag.max.isEmpty {
+
+        if !tag.max.isEmpty && !tag.isInherit {
             bytes.append(contentsOf: encodeTagString(TagKey.max, value: tag.max))
         }
-        if tag.size != 0 {
+
+        if tag.size != 0 && !tag.isInherit {
             bytes.append(contentsOf: encodeTagU64(TagKey.size, value: UInt64(tag.size)))
         }
-        if !tag.enums.isEmpty {
+
+        if !tag.enums.isEmpty && !tag.isInherit {
             bytes.append(contentsOf: encodeTagString(TagKey.enums, value: tag.enums))
         }
-        if !tag.pattern.isEmpty {
+
+        if !tag.pattern.isEmpty && !tag.isInherit {
             bytes.append(contentsOf: encodeTagString(TagKey.pattern, value: tag.pattern))
         }
-        if tag.location != 0 {
+
+        if tag.location != 0 && !tag.isInherit {
             let v = "\(tag.location)"
             bytes.append(contentsOf: encodeTagString(TagKey.location, value: v))
         }
-        if tag.version != 0 {
+
+        if tag.version != 0 && !tag.isInherit {
             bytes.append(contentsOf: encodeTagU64(TagKey.version, value: UInt64(tag.version)))
         }
-        if !tag.mime.isEmpty {
+
+        if !tag.mime.isEmpty && !tag.isInherit {
             bytes.append(contentsOf: encodeTagString(TagKey.mime, value: tag.mime))
         }
-        if tag.more != 0 {
-            bytes.append(contentsOf: encodeTagU64(TagKey.more, value: UInt64(tag.more)))
-        }
+
         return bytes
     }
 
@@ -812,34 +974,35 @@ extension Encoder {
         switch value {
         case 0:
             bytes.append(key)
+            bytes.append(0)
         case 1...255:
-            bytes.append(key | 1)
+            bytes.append(key)
             bytes.append(UInt8(value))
         case 256...65535:
-            bytes.append(key | 2)
+            bytes.append(key | 1)
             bytes.append(UInt8((value >> 8) & 0xFF))
             bytes.append(UInt8(value & 0xFF))
         case 65536...16777215:
-            bytes.append(key | 3)
+            bytes.append(key | 2)
             bytes.append(UInt8((value >> 16) & 0xFF))
             bytes.append(UInt8((value >> 8) & 0xFF))
             bytes.append(UInt8(value & 0xFF))
         case 16777216...4294967295:
-            bytes.append(key | 4)
+            bytes.append(key | 3)
             bytes.append(UInt8((value >> 24) & 0xFF))
             bytes.append(UInt8((value >> 16) & 0xFF))
             bytes.append(UInt8((value >> 8) & 0xFF))
             bytes.append(UInt8(value & 0xFF))
         default:
-            bytes.append(key | 5)
-            for i in 0..<5 {
-                bytes.append(UInt8((value >> (32 + i * 8)) & 0xFF))
+            let n: UInt8 = 4
+            bytes.append(key | n)
+            var v = value
+            var valBytes: [UInt8] = []
+            for _ in 0..<Int(n) + 1 {
+                valBytes.insert(UInt8(v & 0xFF), at: 0)
+                v >>= 8
             }
-            bytes.append(UInt8((value >> 32) & 0xFF))
-            bytes.append(UInt8((value >> 24) & 0xFF))
-            bytes.append(UInt8((value >> 16) & 0xFF))
-            bytes.append(UInt8((value >> 8) & 0xFF))
-            bytes.append(UInt8(value & 0xFF))
+            bytes.append(contentsOf: valBytes)
         }
         return bytes
     }

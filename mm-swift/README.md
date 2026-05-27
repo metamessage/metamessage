@@ -1,4 +1,4 @@
-# Swift MetaMessage 库使用说明
+# MetaMessage
 
 ## 1. 安装
 

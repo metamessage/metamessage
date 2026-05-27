@@ -95,14 +95,14 @@ public enum MMConstants {
 
     public static let floatPositiveNegativeMask: UInt8 = 0b10000
     public static let floatLenMask: UInt8 = 0b01111
-    public static let floatLen1Byte: UInt8 = 0b00111
-    public static let floatLen2Byte: UInt8 = 0b01000
-    public static let floatLen3Byte: UInt8 = 0b01001
-    public static let floatLen4Byte: UInt8 = 0b01010
-    public static let floatLen5Byte: UInt8 = 0b01011
-    public static let floatLen6Byte: UInt8 = 0b01100
-    public static let floatLen7Byte: UInt8 = 0b01101
-    public static let floatLen8Byte: UInt8 = 0b01110
+    public static let floatLen1Byte: UInt8 = 0b01000
+    public static let floatLen2Byte: UInt8 = 0b01001
+    public static let floatLen3Byte: UInt8 = 0b01010
+    public static let floatLen4Byte: UInt8 = 0b01011
+    public static let floatLen5Byte: UInt8 = 0b01100
+    public static let floatLen6Byte: UInt8 = 0b01101
+    public static let floatLen7Byte: UInt8 = 0b01110
+    public static let floatLen8Byte: UInt8 = 0b01111
 
     public static let stringLenMask: UInt8 = 0b11111
     public static let stringLen1Byte: UInt8 = 0b11110

@@ -123,13 +123,16 @@ export class MMEncoder {
     const elements = arr.getElements();
 
     const valuesBuffer = new MMBuffer();
-    let n = 0;
     for (const item of elements) {
       const temp = this.encodeNode(item);
       valuesBuffer.writeBytes(temp);
     }
 
     const arrayEncoded = this.encodeArrayToBytes(valuesBuffer.result);
+    const savedOffset = this.buffer.offset;
+    this.buffer.writeBytes(arrayEncoded);
+    const n = this.buffer.offset - savedOffset;
+
     const n1 = this.encodeComment(arrayEncoded, tag);
 
     if (n1 === 0) {
@@ -163,7 +166,7 @@ export class MMEncoder {
         if (tag.isNull) {
           n = this.encodeSimple(SimpleValue.NullInt);
         } else {
-          n = this.encodeInt64(val.getValue() as bigint);
+          n = this.encodeInt64(BigInt(val.getValue()));
         }
         break;
 
@@ -271,6 +274,20 @@ export class MMEncoder {
       case ValueType.Enums:
         if (!tag.isNull) {
           n = this.encodeInt64(BigInt(val.getValue() as number));
+        }
+        break;
+      case ValueType.Unknown:
+        const raw = val.getValue();
+        if (typeof raw === 'bigint') {
+          n = this.encodeInt64(raw);
+        } else if (typeof raw === 'number') {
+          n = this.encodeInt64(BigInt(raw));
+        } else if (typeof raw === 'boolean') {
+          n = this.encodeBool(raw);
+        } else if (typeof raw === 'string') {
+          n = this.encodeString(raw);
+        } else {
+          throw new Error(`type error: unsupported type: ${tag.type}`);
         }
         break;
       default:
@@ -421,41 +438,67 @@ export class MMEncoder {
       this.buffer.writeUint8(Number(value));
       return 2;
     } else if (value <= Max2Byte) {
-      this.buffer.writeUint8(sign | IntLen2Byte);
-      this.buffer.writeUint8(Number(value & 0xffn));
+      sign |= IntLen2Byte;
+      this.buffer.writeUint8(sign);
       this.buffer.writeUint8(Number((value >> 8n) & 0xffn));
+      this.buffer.writeUint8(Number(value & 0xffn));
       return 3;
     } else if (value <= Max3Byte) {
-      this.buffer.writeUint8(sign | IntLen3Byte);
-      this.buffer.writeUint8(Number(value & 0xffn));
-      this.buffer.writeUint8(Number((value >> 8n) & 0xffn));
+      sign |= IntLen3Byte;
+      this.buffer.writeUint8(sign);
       this.buffer.writeUint8(Number((value >> 16n) & 0xffn));
+      this.buffer.writeUint8(Number((value >> 8n) & 0xffn));
+      this.buffer.writeUint8(Number(value & 0xffn));
       return 4;
     } else if (value <= Max4Byte) {
-      this.buffer.writeUint8(sign | IntLen4Byte);
-      this.buffer.writeUint32LE(Number(value));
+      sign |= IntLen4Byte;
+      this.buffer.writeUint8(sign);
+      this.buffer.writeUint8(Number((value >> 24n) & 0xffn));
+      this.buffer.writeUint8(Number((value >> 16n) & 0xffn));
+      this.buffer.writeUint8(Number((value >> 8n) & 0xffn));
+      this.buffer.writeUint8(Number(value & 0xffn));
       return 5;
     } else if (value <= Max5Byte) {
-      this.buffer.writeUint8(sign | IntLen5Byte);
-      this.buffer.writeUint32LE(Number(value & 0xffffffffn));
+      sign |= IntLen5Byte;
+      this.buffer.writeUint8(sign);
       this.buffer.writeUint8(Number((value >> 32n) & 0xffn));
+      this.buffer.writeUint8(Number((value >> 24n) & 0xffn));
+      this.buffer.writeUint8(Number((value >> 16n) & 0xffn));
+      this.buffer.writeUint8(Number((value >> 8n) & 0xffn));
+      this.buffer.writeUint8(Number(value & 0xffn));
       return 6;
     } else if (value <= Max6Byte) {
-      this.buffer.writeUint8(sign | IntLen6Byte);
-      this.buffer.writeUint32LE(Number(value & 0xffffffffn));
-      this.buffer.writeUint8(Number((value >> 32n) & 0xffn));
+      sign |= IntLen6Byte;
+      this.buffer.writeUint8(sign);
       this.buffer.writeUint8(Number((value >> 40n) & 0xffn));
+      this.buffer.writeUint8(Number((value >> 32n) & 0xffn));
+      this.buffer.writeUint8(Number((value >> 24n) & 0xffn));
+      this.buffer.writeUint8(Number((value >> 16n) & 0xffn));
+      this.buffer.writeUint8(Number((value >> 8n) & 0xffn));
+      this.buffer.writeUint8(Number(value & 0xffn));
       return 7;
     } else if (value <= Max7Byte) {
-      this.buffer.writeUint8(sign | IntLen7Byte);
-      this.buffer.writeUint32LE(Number(value & 0xffffffffn));
-      this.buffer.writeUint8(Number((value >> 32n) & 0xffn));
-      this.buffer.writeUint8(Number((value >> 40n) & 0xffn));
+      sign |= IntLen7Byte;
+      this.buffer.writeUint8(sign);
       this.buffer.writeUint8(Number((value >> 48n) & 0xffn));
+      this.buffer.writeUint8(Number((value >> 40n) & 0xffn));
+      this.buffer.writeUint8(Number((value >> 32n) & 0xffn));
+      this.buffer.writeUint8(Number((value >> 24n) & 0xffn));
+      this.buffer.writeUint8(Number((value >> 16n) & 0xffn));
+      this.buffer.writeUint8(Number((value >> 8n) & 0xffn));
+      this.buffer.writeUint8(Number(value & 0xffn));
       return 8;
     } else if (value <= Max8Byte) {
-      this.buffer.writeUint8(sign | IntLen8Byte);
-      this.buffer.writeUint64LE(value);
+      sign |= IntLen8Byte;
+      this.buffer.writeUint8(sign);
+      this.buffer.writeUint8(Number((value >> 56n) & 0xffn));
+      this.buffer.writeUint8(Number((value >> 48n) & 0xffn));
+      this.buffer.writeUint8(Number((value >> 40n) & 0xffn));
+      this.buffer.writeUint8(Number((value >> 32n) & 0xffn));
+      this.buffer.writeUint8(Number((value >> 24n) & 0xffn));
+      this.buffer.writeUint8(Number((value >> 16n) & 0xffn));
+      this.buffer.writeUint8(Number((value >> 8n) & 0xffn));
+      this.buffer.writeUint8(Number(value & 0xffn));
       return 9;
     } else {
       throw new Error('Int too large');

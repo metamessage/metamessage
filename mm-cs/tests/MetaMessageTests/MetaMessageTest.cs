@@ -131,7 +131,7 @@ public class MetaMessageTest
     {
         var testObj = new TestDateTimeTypes
         {
-            DateTimeValue = DateTime.Now
+            DateTimeValue = DateTime.UtcNow
         };
 
         var encoded = Encode(testObj);
@@ -188,7 +188,7 @@ public class MetaMessageTest
             NullableString = "Nullable",
             IntArray = new int[] { 1, 2, 3 },
             StringList = new List<string> { "a", "b" },
-            DateTimeValue = DateTime.Now,
+            DateTimeValue = DateTime.UtcNow,
             EnumValue = TestEnum.Value1,
             BytesValue = new byte[] { 1, 2, 3 },
             Nested = new NestedStruct { Value = 999 }

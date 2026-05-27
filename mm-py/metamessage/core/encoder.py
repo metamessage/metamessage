@@ -732,7 +732,19 @@ class Encoder:
 
     def _encode_datetime(self, t):
         if isinstance(t, (datetime, dt_time)):
+            if t.tzinfo is None:
+                t = t.replace(tzinfo=timezone.utc)
             v = int(t.timestamp())
+        elif isinstance(t, str):
+            for fmt in ['%Y-%m-%d %H:%M:%S', '%Y-%m-%dT%H:%M:%S', '%Y-%m-%d']:
+                try:
+                    dt = datetime.strptime(t, fmt).replace(tzinfo=timezone.utc)
+                    v = int(dt.timestamp())
+                    break
+                except ValueError:
+                    continue
+            else:
+                raise ValueError(f"cannot parse datetime string: {t}")
         else:
             v = int(t)
         self._encode_i64(v)

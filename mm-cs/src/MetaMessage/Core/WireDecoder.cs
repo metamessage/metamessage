@@ -438,8 +438,14 @@ public class WireDecoder
         {
             throw new MmDecodeException($"UUID bytes must be 16 bytes, got {bytes.Length}");
         }
-        var guid = new Guid(bytes);
-        return new MmScalar(bytes, guid.ToString(), tag);
+        var sb = new System.Text.StringBuilder();
+        for (int i = 0; i < 16; i++)
+        {
+            sb.Append(bytes[i].ToString("x2"));
+            if (i == 3 || i == 5 || i == 7 || i == 9)
+                sb.Append('-');
+        }
+        return new MmScalar(bytes, sb.ToString(), tag);
     }
 
     private IMmTree DecodeContainer(int first, Tag? inherited)

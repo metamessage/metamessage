@@ -666,10 +666,10 @@ def mm_tag(tag_str: str) -> Tag:
         return NewTag()
 
     tag_str = tag_str.strip()
-    tag_str = tag_str.lstrip("//")
-    tag_str = tag_str.strip()
-    tag_str = tag_str.lstrip("mm:")
-    tag_str = tag_str.strip()
+    if tag_str.startswith("//"):
+        tag_str = tag_str[2:].strip()
+    if tag_str.startswith("mm:"):
+        tag_str = tag_str[3:].strip()
     if not tag_str:
         return NewTag()
 

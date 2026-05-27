@@ -503,7 +503,11 @@ private:
   static void encodeU64(std::vector<uint8_t> *bs, TagKey sign, uint64_t uv) {
     constexpr uint64_t Max1Byte = 0xFF;
     constexpr uint64_t Max2Byte = 0xFFFF;
+    constexpr uint64_t Max3Byte = 0xFFFFFF;
     constexpr uint64_t Max4Byte = 0xFFFFFFFF;
+    constexpr uint64_t Max5Byte = 0xFFFFFFFFFF;
+    constexpr uint64_t Max6Byte = 0xFFFFFFFFFFFF;
+    constexpr uint64_t Max7Byte = 0xFFFFFFFFFFFFFF;
 
     if (uv <= Max1Byte) {
       bs->push_back(static_cast<uint8_t>(sign) | 0);
@@ -512,8 +516,37 @@ private:
       bs->push_back(static_cast<uint8_t>(sign) | 1);
       bs->push_back(static_cast<uint8_t>(uv >> 8));
       bs->push_back(static_cast<uint8_t>(uv));
+    } else if (uv <= Max3Byte) {
+      bs->push_back(static_cast<uint8_t>(sign) | 2);
+      bs->push_back(static_cast<uint8_t>(uv >> 16));
+      bs->push_back(static_cast<uint8_t>(uv >> 8));
+      bs->push_back(static_cast<uint8_t>(uv));
     } else if (uv <= Max4Byte) {
       bs->push_back(static_cast<uint8_t>(sign) | 3);
+      bs->push_back(static_cast<uint8_t>(uv >> 24));
+      bs->push_back(static_cast<uint8_t>(uv >> 16));
+      bs->push_back(static_cast<uint8_t>(uv >> 8));
+      bs->push_back(static_cast<uint8_t>(uv));
+    } else if (uv <= Max5Byte) {
+      bs->push_back(static_cast<uint8_t>(sign) | 4);
+      bs->push_back(static_cast<uint8_t>(uv >> 32));
+      bs->push_back(static_cast<uint8_t>(uv >> 24));
+      bs->push_back(static_cast<uint8_t>(uv >> 16));
+      bs->push_back(static_cast<uint8_t>(uv >> 8));
+      bs->push_back(static_cast<uint8_t>(uv));
+    } else if (uv <= Max6Byte) {
+      bs->push_back(static_cast<uint8_t>(sign) | 5);
+      bs->push_back(static_cast<uint8_t>(uv >> 40));
+      bs->push_back(static_cast<uint8_t>(uv >> 32));
+      bs->push_back(static_cast<uint8_t>(uv >> 24));
+      bs->push_back(static_cast<uint8_t>(uv >> 16));
+      bs->push_back(static_cast<uint8_t>(uv >> 8));
+      bs->push_back(static_cast<uint8_t>(uv));
+    } else if (uv <= Max7Byte) {
+      bs->push_back(static_cast<uint8_t>(sign) | 6);
+      bs->push_back(static_cast<uint8_t>(uv >> 48));
+      bs->push_back(static_cast<uint8_t>(uv >> 40));
+      bs->push_back(static_cast<uint8_t>(uv >> 32));
       bs->push_back(static_cast<uint8_t>(uv >> 24));
       bs->push_back(static_cast<uint8_t>(uv >> 16));
       bs->push_back(static_cast<uint8_t>(uv >> 8));

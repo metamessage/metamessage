@@ -371,10 +371,7 @@ public static class MetaMessage
         foreach (var entry in map.Entries)
         {
             tmp.Reset();
-            if (!TryEncodeSimpleByName(tmp, entry.Key.Text))
-            {
-                tmp.EncodeString(entry.Key.Text);
-            }
+            tmp.EncodeString(entry.Key.Text);
             keysPacked.WriteAll(tmp.ToByteArray());
 
             tmp.Reset();
@@ -419,11 +416,19 @@ public static class MetaMessage
 
     private static void EncodeJsoncNodeValue(WireEncoder encoder, IJsoncNode node)
     {
+        var mmTag = node?.Tag ?? Tag.Empty();
         var payload = new WireEncoder();
         switch (node)
         {
             case JsoncValue jsoncValue:
-                EncodeJsoncScalarPayload(payload, jsoncValue);
+                if (mmTag.IsNull)
+                {
+                    EncodeNullScalarPayload(payload, mmTag);
+                }
+                else
+                {
+                    EncodeJsoncScalarPayload(payload, jsoncValue);
+                }
                 break;
             case JsoncArray jsoncArray:
                 EncodeJsoncArrayPayload(payload, jsoncArray);
@@ -433,7 +438,6 @@ public static class MetaMessage
                 break;
         }
 
-        var mmTag = node?.Tag ?? Tag.Empty();
         encoder.EncodeTaggedPayload(payload.ToByteArray(), mmTag.ToBytes());
     }
 
@@ -485,7 +489,20 @@ public static class MetaMessage
                 break;
             case JsoncTokenType.String:
             default:
-                encoder.EncodeString(value.Value?.ToString() ?? "");
+                var tag = value.Tag;
+                if (tag != null && tag.Type == ValueType.Datetime)
+                {
+                    var dt = System.DateTime.Parse(value.Value?.ToString() ?? "", null, System.Globalization.DateTimeStyles.AssumeUniversal);
+                    encoder.EncodeInt64(TimeUtil.EpochSeconds(dt));
+                }
+                else if (tag != null && tag.Type == ValueType.Uuid)
+                {
+                    encoder.EncodeBytes(UuidToBytes(value.Value?.ToString() ?? ""));
+                }
+                else
+                {
+                    encoder.EncodeString(value.Value?.ToString() ?? "");
+                }
                 break;
         }
     }
@@ -502,9 +519,7 @@ public static class MetaMessage
             body.WriteAll(elementEncoder.ToByteArray());
         }
 
-        elementEncoder.Reset();
-        elementEncoder.EncodeArrayPayload(body.ToArray());
-        encoder.EncodeArrayPayload(elementEncoder.ToByteArray());
+        encoder.EncodeArrayPayload(body.ToArray());
     }
 
     private static void EncodeJsoncObjectPayload(WireEncoder encoder, JsoncObject obj)
@@ -516,10 +531,7 @@ public static class MetaMessage
         foreach (var kvp in obj.Fields)
         {
             tmp.Reset();
-            if (!TryEncodeSimpleByName(tmp, kvp.Key))
-            {
-                tmp.EncodeString(kvp.Key);
-            }
+            tmp.EncodeString(kvp.Key);
             keysPacked.WriteAll(tmp.ToByteArray());
 
             tmp.Reset();
@@ -633,7 +645,7 @@ public static class MetaMessage
                 case ValueType.Email:
                 case ValueType.Url:
                 case ValueType.Str:
-                    result = new JsoncValue { Value = scalar.Data?.ToString(), TokenType = JsoncTokenType.String };
+                    result = new JsoncValue { Value = scalar.Text, TokenType = JsoncTokenType.String };
                     break;
                 case ValueType.Bytes:
                     result = new JsoncValue

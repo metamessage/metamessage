@@ -54,8 +54,7 @@ static void skip_line_comment(parse_ctx_t *ctx) {
     ctx->pos++;
   }
   size_t comment_len = ctx->pos - start;
-  if (comment_len > 3 && ctx->input[start] == '/' &&
-      ctx->input[start + 1] == '/') {
+  if (comment_len > 0) {
     const char *text = ctx->input + start;
     size_t text_len = comment_len;
     const char *mm_pos = text;
@@ -234,7 +233,26 @@ static mm_node_t *parse_object(parse_ctx_t *ctx) {
     if (val) {
       if (ctx->has_pending_tag) {
         mm_tag_t tag = mm_tag_parse(ctx->pending_tag);
-        mm_tag_merge(&val->data.value.tag, &tag);
+        mm_tag_t *dest_tag = NULL;
+        switch (val->type) {
+        case MM_NODE_VALUE:
+          dest_tag = &val->data.value.tag;
+          break;
+        case MM_NODE_ARRAY:
+          dest_tag = &val->data.array.tag;
+          break;
+        case MM_NODE_OBJECT:
+          dest_tag = &val->data.object.tag;
+          break;
+        case MM_NODE_DOC:
+          dest_tag = &val->data.doc.tag;
+          break;
+        default:
+          break;
+        }
+        if (dest_tag) {
+          mm_tag_merge(dest_tag, &tag);
+        }
         mm_tag_cleanup(&tag);
         ctx->has_pending_tag = 0;
       }
@@ -257,6 +275,14 @@ static mm_node_t *parse_object(parse_ctx_t *ctx) {
 
 static mm_node_t *parse_array(parse_ctx_t *ctx) {
   mm_node_t *arr = mm_node_new_array();
+
+  if (ctx->has_pending_tag) {
+    mm_tag_t tag = mm_tag_parse(ctx->pending_tag);
+    mm_tag_merge(&arr->data.array.tag, &tag);
+    mm_tag_cleanup(&tag);
+    ctx->has_pending_tag = 0;
+  }
+
   if (ctx->pos >= ctx->len || ctx->input[ctx->pos] != '[') {
     mm_node_free(arr);
     return NULL;
@@ -278,12 +304,6 @@ static mm_node_t *parse_array(parse_ctx_t *ctx) {
 
     mm_node_t *item = parse_value(ctx);
     if (item) {
-      if (ctx->has_pending_tag) {
-        mm_tag_t tag = mm_tag_parse(ctx->pending_tag);
-        mm_tag_merge(&item->data.value.tag, &tag);
-        mm_tag_cleanup(&tag);
-        ctx->has_pending_tag = 0;
-      }
       mm_array_add_item(arr, item);
     } else {
       break;
@@ -316,13 +336,6 @@ static mm_node_t *parse_value(parse_ctx_t *ctx) {
 
   mm_node_t *node = mm_node_new_value();
 
-  if (ctx->has_pending_tag && c != '{' && c != '[') {
-    mm_tag_t tag = mm_tag_parse(ctx->pending_tag);
-    mm_tag_merge(&node->data.value.tag, &tag);
-    mm_tag_cleanup(&tag);
-    ctx->has_pending_tag = 0;
-  }
-
   if (c == '"') {
     char *str = parse_string(ctx);
     if (str) {
@@ -351,6 +364,13 @@ static mm_node_t *parse_value(parse_ctx_t *ctx) {
       mm_node_free(node);
       return NULL;
     }
+  }
+
+  if (ctx->has_pending_tag && c != '{' && c != '[') {
+    mm_tag_t tag = mm_tag_parse(ctx->pending_tag);
+    mm_tag_merge(&node->data.value.tag, &tag);
+    mm_tag_cleanup(&tag);
+    ctx->has_pending_tag = 0;
   }
 
   return node;

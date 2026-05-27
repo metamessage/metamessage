@@ -621,8 +621,9 @@ public class Validator {
                     result.addError("value is not a valid uuid")
                 }
             }
+        } else if value is [UInt8] {
         } else {
-            result.addError("value must be a string")
+            result.addError("value must be a string or byte array")
         }
     }
     

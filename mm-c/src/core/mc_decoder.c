@@ -6,6 +6,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <time.h>
 
 static uint8_t dec_read_byte(mm_decoder_t *d) {
   if (d->offset >= d->size) {
@@ -188,7 +189,8 @@ static mm_node_t *dec_decode_float(mm_decoder_t *d, uint8_t b) {
   double v;
 
   if (byte_len == 0) {
-    v = (double)suffix / 10.0;
+    int val = suffix & 0x0f;
+    v = (double)val / 10.0;
     if (is_negative) {
       v = -v;
     }
@@ -303,11 +305,21 @@ static mm_node_t *dec_decode_bytes(mm_decoder_t *d, uint8_t b) {
   mm_value_t *val = &node->data.value;
   mm_tag_init(&val->tag);
   val->tag.type = MM_VALUE_BYTES;
-  val->text = strdup("");
+  val->text = NULL;
 
   if (bytes_len > 0) {
     const uint8_t *raw = dec_read_bytes(d, bytes_len);
-    (void)raw;
+    if (raw) {
+      char *hex = (char *)malloc(bytes_len * 2 + 1);
+      for (size_t i = 0; i < bytes_len; i++) {
+        sprintf(hex + i * 2, "%02x", raw[i]);
+      }
+      hex[bytes_len * 2] = '\0';
+      val->text = hex;
+    }
+  }
+  if (!val->text) {
+    val->text = strdup("");
   }
 
   return node;
@@ -883,6 +895,47 @@ static mm_node_t *dec_decode_tag(mm_decoder_t *d, uint8_t b,
       break;
     }
 
+    // If type is unknown, determine from remaining payload
+    if (tag.is_null && val->tag.type == MM_VALUE_UNKNOWN) {
+      size_t payload_remaining = total_len - tag_bytes_consumed;
+      if (payload_remaining > 0) {
+        uint8_t null_type_byte = dec_read_byte(d);
+        switch (null_type_byte) {
+        case MM_SIMPLE_NULLBOOL:
+          val->tag.type = MM_VALUE_BOOL;
+          free(val->text);
+          val->text = strdup("false");
+          break;
+        case MM_SIMPLE_NULLINT:
+          val->tag.type = MM_VALUE_I;
+          free(val->text);
+          val->text = strdup("0");
+          break;
+        case MM_SIMPLE_NULLFLOAT:
+          val->tag.type = MM_VALUE_F64;
+          free(val->text);
+          val->text = strdup("0.0");
+          break;
+        case MM_SIMPLE_NULLSTRING:
+          val->tag.type = MM_VALUE_STR;
+          free(val->text);
+          val->text = strdup("");
+          break;
+        case MM_SIMPLE_NULLBYTES:
+          val->tag.type = MM_VALUE_BYTES;
+          free(val->text);
+          val->text = strdup("");
+          break;
+        default:
+          val->tag.type = MM_VALUE_STR;
+          free(val->text);
+          val->text = strdup("");
+          break;
+        }
+        tag_bytes_consumed += 1;
+      }
+    }
+
     size_t remaining = total_len - tag_bytes_consumed;
     if (d->offset + remaining <= d->size) {
       d->offset += remaining;
@@ -895,6 +948,29 @@ static mm_node_t *dec_decode_tag(mm_decoder_t *d, uint8_t b,
         mm_tag_cleanup(&tag);
         if (inner->data.value.tag.type == MM_VALUE_UNKNOWN) {
           inner->data.value.tag.type = MM_VALUE_STR;
+        }
+
+        mm_value_t *val = &inner->data.value;
+        if (val->tag.type == MM_VALUE_DATETIME && val->text &&
+            val->text[0] != '\0') {
+          long long epoch = strtoll(val->text, NULL, 10);
+          time_t t = (time_t)epoch;
+          struct tm tm;
+          gmtime_r(&t, &tm);
+          char buf[32];
+          snprintf(buf, sizeof(buf), "%04d-%02d-%02d %02d:%02d:%02d",
+                   tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday, tm.tm_hour,
+                   tm.tm_min, tm.tm_sec);
+          free(val->text);
+          val->text = strdup(buf);
+        } else if (val->tag.type == MM_VALUE_UUID && val->text &&
+                   strlen(val->text) == 32) {
+          char uuid_str[37];
+          snprintf(uuid_str, sizeof(uuid_str),
+                   "%8.8s-%4.4s-%4.4s-%4.4s-%12.12s", val->text, val->text + 8,
+                   val->text + 12, val->text + 16, val->text + 20);
+          free(val->text);
+          val->text = strdup(uuid_str);
         }
       } else if (inner->type == MM_NODE_ARRAY) {
         mm_tag_merge(&inner->data.array.tag, &tag);

@@ -23,9 +23,9 @@ export function encodeValue(value: any, tag?: Tag): Uint8Array {
 export const fromValue = encodeValue;
 
 export function fromJSONC(jsonc: string): Uint8Array {
-  const node = parseJSONC(jsonc);
+  const doc = parseJSONC(jsonc);
   const encoder = new MMEncoder();
-  return encoder.encodeNode(node);
+  return encoder.encodeNode(doc.getRoot());
 }
 
 function nodeToDecodedValue(node: Node): DecodedValue {
@@ -73,6 +73,16 @@ export { mm } from './mm';
 export { MMEncoder, MMDecoder, MMBuffer, MMError };
 export * as constants from './constants';
 export { ValueToNode } from './value-to-node';
+
+export function valueToJsonc(value: any, tag?: Tag): string {
+  const node = ValueToNode(value, tag);
+  return toJSONC(node);
+}
+
+export function jsoncToValue(jsonc: string): DecodedValue {
+  return decodeToValue(fromJSONC(jsonc));
+}
+
 export default {
   encodeNode,
   decode,

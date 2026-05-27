@@ -29,7 +29,7 @@ public static class TimeUtil
 
     public static DateTime FromEpochSeconds(long seconds)
     {
-        return Epoch.AddSeconds(seconds).ToLocalTime();
+        return Epoch.AddSeconds(seconds);
     }
 
     public static DateTime FromDaysSinceEpoch(long days)

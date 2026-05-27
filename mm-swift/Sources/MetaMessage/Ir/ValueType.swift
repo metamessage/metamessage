@@ -86,7 +86,7 @@ public enum ValueType: UInt8, Codable {
         case "unknown": return .unknown
         case "doc": return .doc
         case "vec": return .vec
-        case "arr": return .arr
+        case "arr", "array": return .arr
         case "obj": return .obj
         case "map": return .map
         case "str": return .str

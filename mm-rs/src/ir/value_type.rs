@@ -117,7 +117,8 @@ impl ValueType {
     pub fn needs_quotes(&self) -> bool {
         matches!(
             self,
-            ValueType::Str
+            ValueType::Unknown
+                | ValueType::Str
                 | ValueType::Bytes
                 | ValueType::Datetime
                 | ValueType::Date

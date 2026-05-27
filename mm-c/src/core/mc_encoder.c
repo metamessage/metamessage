@@ -5,6 +5,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <time.h>
 
 typedef struct {
   uint8_t *buf;
@@ -78,38 +79,172 @@ static void enc_encode_i(encoder_t *e, uint8_t sign, const char *text) {
   }
 }
 
+static bool parse_float_string(const char *text, bool *is_negative,
+                               int8_t *exponent, uint64_t *mantissa) {
+  const char *p = text;
+  *is_negative = false;
+  *exponent = 0;
+  *mantissa = 0;
+
+  if (*p == '-') {
+    *is_negative = true;
+    p++;
+  } else if (*p == '+') {
+    p++;
+  }
+
+  if (*p == '\0')
+    return false;
+
+  // Split into integer and fractional parts
+  const char *int_start = p;
+  size_t int_len = 0;
+  while (*p >= '0' && *p <= '9') {
+    p++;
+    int_len++;
+  }
+
+  size_t frac_len = 0;
+  const char *frac_start = NULL;
+  if (*p == '.') {
+    p++;
+    frac_start = p;
+    while (*p >= '0' && *p <= '9') {
+      p++;
+      frac_len++;
+    }
+  }
+
+  // Handle scientific notation
+  int64_t sci_exp = 0;
+  if (*p == 'e' || *p == 'E') {
+    p++;
+    int neg_exp = 0;
+    if (*p == '-') {
+      neg_exp = 1;
+      p++;
+    } else if (*p == '+') {
+      p++;
+    }
+    char *end = NULL;
+    long e = strtol(p, &end, 10);
+    if (end == p)
+      return false;
+    sci_exp = neg_exp ? -e : e;
+    p = end;
+  }
+
+  if (*p != '\0')
+    return false;
+
+  // No digits at all
+  if (int_len == 0 && frac_len == 0)
+    return false;
+
+  // Build mantissa string: concatenate int and frac parts, stripping leading
+  // zeros
+  char buf[64];
+  size_t buf_len = 0;
+  bool leading = true;
+
+  for (size_t i = 0; i < int_len; i++) {
+    if (leading && int_start[i] == '0')
+      continue;
+    leading = false;
+    buf[buf_len++] = int_start[i];
+  }
+
+  for (size_t i = 0; i < frac_len; i++) {
+    if (leading && frac_start[i] == '0')
+      continue;
+    leading = false;
+    buf[buf_len++] = frac_start[i];
+  }
+
+  if (buf_len == 0) {
+    buf[buf_len++] = '0';
+  }
+
+  buf[buf_len] = '\0';
+
+  // Parse mantissa
+  char *end = NULL;
+  unsigned long long uv = strtoull(buf, &end, 10);
+  if (end != buf + buf_len)
+    return false;
+  *mantissa = (uint64_t)uv;
+
+  // Compute exponent: -(frac_len) + sci_exp
+  int64_t exp = -(int64_t)frac_len + sci_exp;
+  if (exp < INT8_MIN || exp > INT8_MAX)
+    return false;
+  *exponent = (int8_t)exp;
+
+  return true;
+}
+
 static void enc_encode_float(encoder_t *e, const char *text) {
-  double d = strtod(text, NULL);
-  uint64_t uv;
-  memcpy(&uv, &d, sizeof(uv));
+  bool is_negative;
+  int8_t exponent;
+  uint64_t mantissa;
+
+  if (!parse_float_string(text, &is_negative, &exponent, &mantissa)) {
+    return;
+  }
 
   uint8_t sign = MM_PREFIX_FLOAT;
+  if (is_negative) {
+    sign |= MM_FLOAT_NEG_MASK;
+  }
 
-  if (uv <= 7) {
-    enc_write_byte(e, (uint8_t)(sign | uv));
-  } else if (uv <= 0xFF) {
-    enc_write_byte(e, (uint8_t)(sign | MM_FLOATLEN1BYTE));
-    enc_write_byte(e, (uint8_t)uv);
-  } else if (uv <= 0xFFFF) {
-    enc_write_byte(e, (uint8_t)(sign | MM_FLOATLEN2BYTE));
-    enc_write_byte(e, (uint8_t)(uv >> 8));
-    enc_write_byte(e, (uint8_t)uv);
-  } else if (uv <= 0xFFFFFFFF) {
-    enc_write_byte(e, (uint8_t)(sign | MM_FLOATLEN4BYTE));
-    enc_write_byte(e, (uint8_t)(uv >> 24));
-    enc_write_byte(e, (uint8_t)(uv >> 16));
-    enc_write_byte(e, (uint8_t)(uv >> 8));
-    enc_write_byte(e, (uint8_t)uv);
+  // Inline encoding: 0.0 through 0.7
+  if (exponent == -1 && mantissa <= 7) {
+    enc_write_byte(e, (uint8_t)(sign | mantissa));
+    return;
+  }
+
+  int mantissa_bytes = 0;
+  if (mantissa <= 0xFF) {
+    mantissa_bytes = 1;
+  } else if (mantissa <= 0xFFFF) {
+    mantissa_bytes = 2;
+  } else if (mantissa <= 0xFFFFFFFF) {
+    mantissa_bytes = 4;
   } else {
-    enc_write_byte(e, (uint8_t)(sign | MM_FLOATLEN8BYTE));
-    enc_write_byte(e, (uint8_t)(uv >> 56));
-    enc_write_byte(e, (uint8_t)(uv >> 48));
-    enc_write_byte(e, (uint8_t)(uv >> 40));
-    enc_write_byte(e, (uint8_t)(uv >> 32));
-    enc_write_byte(e, (uint8_t)(uv >> 24));
-    enc_write_byte(e, (uint8_t)(uv >> 16));
-    enc_write_byte(e, (uint8_t)(uv >> 8));
-    enc_write_byte(e, (uint8_t)uv);
+    mantissa_bytes = 8;
+  }
+
+  int len_val = mantissa_bytes + 7;
+  sign |= len_val;
+
+  enc_write_byte(e, sign);
+  enc_write_byte(e, (uint8_t)(int8_t)exponent);
+
+  // Write mantissa bytes in big-endian
+  switch (mantissa_bytes) {
+  case 1:
+    enc_write_byte(e, (uint8_t)mantissa);
+    break;
+  case 2:
+    enc_write_byte(e, (uint8_t)(mantissa >> 8));
+    enc_write_byte(e, (uint8_t)mantissa);
+    break;
+  case 4:
+    enc_write_byte(e, (uint8_t)(mantissa >> 24));
+    enc_write_byte(e, (uint8_t)(mantissa >> 16));
+    enc_write_byte(e, (uint8_t)(mantissa >> 8));
+    enc_write_byte(e, (uint8_t)mantissa);
+    break;
+  case 8:
+    enc_write_byte(e, (uint8_t)(mantissa >> 56));
+    enc_write_byte(e, (uint8_t)(mantissa >> 48));
+    enc_write_byte(e, (uint8_t)(mantissa >> 40));
+    enc_write_byte(e, (uint8_t)(mantissa >> 32));
+    enc_write_byte(e, (uint8_t)(mantissa >> 24));
+    enc_write_byte(e, (uint8_t)(mantissa >> 16));
+    enc_write_byte(e, (uint8_t)(mantissa >> 8));
+    enc_write_byte(e, (uint8_t)mantissa);
+    break;
   }
 }
 
@@ -323,7 +458,23 @@ static void enc_encode_node_value(encoder_t *e, mm_value_t *val) {
     if (val->tag.is_null) {
       enc_encode_simple(&tmp, MM_SIMPLE_NULLBYTES);
     } else {
-      enc_encode_string(&tmp, val->text);
+      uint8_t uuid_bytes[16];
+      size_t uuid_len = 0;
+      char hex[33];
+      size_t j = 0;
+      for (const char *p = val->text; *p && j < 32; p++) {
+        if (*p != '-') {
+          hex[j++] = *p;
+        }
+      }
+      hex[j] = '\0';
+      for (size_t i = 0; i < 16 && i * 2 < 32; i++) {
+        char byte_str[3] = {hex[i * 2], hex[i * 2 + 1] ? hex[i * 2 + 1] : '\0',
+                            '\0'};
+        uuid_bytes[i] = (uint8_t)strtol(byte_str, NULL, 16);
+      }
+      uuid_len = 16;
+      enc_encode_bytes(&tmp, uuid_bytes, uuid_len);
     }
     break;
 
@@ -333,7 +484,19 @@ static void enc_encode_node_value(encoder_t *e, mm_value_t *val) {
     if (val->tag.is_null) {
       enc_encode_simple(&tmp, MM_SIMPLE_NULLINT);
     } else {
-      enc_encode_string(&tmp, val->text);
+      struct tm tm = {0};
+      if (sscanf(val->text, "%d-%d-%d %d:%d:%d", &tm.tm_year, &tm.tm_mon,
+                 &tm.tm_mday, &tm.tm_hour, &tm.tm_min, &tm.tm_sec) >= 3) {
+        tm.tm_year -= 1900;
+        tm.tm_mon -= 1;
+        tm.tm_isdst = -1;
+        int64_t epoch = (int64_t)timegm(&tm);
+        char buf[24];
+        snprintf(buf, sizeof(buf), "%lld", (long long)epoch);
+        enc_encode_i(&tmp, MM_PREFIX_POSITIVEINT, buf);
+      } else {
+        enc_encode_i(&tmp, MM_PREFIX_POSITIVEINT, "0");
+      }
     }
     break;
 

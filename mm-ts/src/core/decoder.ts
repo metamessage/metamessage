@@ -247,7 +247,6 @@ export class MMDecoder {
 
     switch (prefix) {
       case KIsNull:
-        console.log('l & 0x01', l & 0x01);
         tag.isNull = (l & 0x01) === 1;
         if (tag.isNull) {
           tag.nullable = true;
@@ -712,7 +711,7 @@ export class MMDecoder {
     if (l1 > 0) {
       const bytes = this.readBytes(l1);
       for (let i = 0; i < l1; i++) {
-        v |= BigInt(bytes[i] ?? 0) << BigInt(i * 8);
+        v |= BigInt(bytes[i] ?? 0) << BigInt((l1 - 1 - i) * 8);
       }
     }
 
@@ -730,7 +729,7 @@ export class MMDecoder {
     if (l1 > 0) {
       const bytes = this.readBytes(l1);
       for (let i = 0; i < l1; i++) {
-        v |= BigInt(bytes[i] ?? 0) << BigInt(i * 8);
+        v |= BigInt(bytes[i] ?? 0) << BigInt((l1 - 1 - i) * 8);
       }
     }
 
@@ -1066,7 +1065,9 @@ export class MMDecoder {
         throw new Error(`Unsupported bytes type: ${tag.type}`);
     }
 
-    return new MMValue(data, tag);
+    const value = new MMValue(data, tag);
+    value.setText(text);
+    return value;
   }
 
   private bytesToUUIDString(bytes: Uint8Array): string {

@@ -274,7 +274,11 @@ class WireEncoder
                 if ($tag->isNull) {
                     $n = $this->encodeSimple(SimpleValue::NULL_STRING);
                 } else {
-                    $n = $this->encodeBytes($val->Data);
+                    $data = $val->Data;
+                    if (is_string($data)) {
+                        $data = array_map('ord', str_split($data));
+                    }
+                    $n = $this->encodeBytes($data);
                 }
                 break;
 

@@ -369,6 +369,13 @@ impl Tag {
                         tag.mime = Some(v.clone());
                     }
                 }
+                "is_null" => {
+                    if let Some(ref v) = value {
+                        tag.is_null = v == "true";
+                    } else {
+                        tag.is_null = true;
+                    }
+                }
                 "nullable" => {
                     if let Some(ref v) = value {
                         tag.nullable = v == "true";

@@ -13,7 +13,9 @@ object TimeUtil {
     val EPOCH: Instant = Instant.EPOCH
 
     fun zoneFromHourOffset(hours: Int): ZoneId {
-        require(hours in -12..14) { "location offset hours must be between -12 and +14, got $hours" }
+        require(hours in -12..14) {
+            "location offset hours must be between -12 and +14, got $hours"
+        }
         return ZoneOffset.ofHours(hours)
     }
 
@@ -40,7 +42,10 @@ object TimeUtil {
 
     fun toUtcDateTime(o: Any): LocalDateTime {
         return when (o) {
-            is LocalDateTime -> o.atZone(ZoneId.systemDefault()).withZoneSameInstant(ZoneOffset.UTC).toLocalDateTime()
+            is LocalDateTime ->
+                    o.atZone(ZoneId.systemDefault())
+                            .withZoneSameInstant(ZoneOffset.UTC)
+                            .toLocalDateTime()
             is ZonedDateTime -> o.withZoneSameInstant(ZoneOffset.UTC).toLocalDateTime()
             is Instant -> LocalDateTime.ofInstant(o, ZoneOffset.UTC)
             else -> throw IllegalArgumentException("unsupported datetime type: ${o.javaClass}")
@@ -49,7 +54,7 @@ object TimeUtil {
 
     fun epochSeconds(o: Any): Long {
         return when (o) {
-            is LocalDateTime -> o.atZone(ZoneId.systemDefault()).toEpochSecond()
+            is LocalDateTime -> o.atZone(ZoneOffset.UTC).toEpochSecond()
             is ZonedDateTime -> o.toEpochSecond()
             is Instant -> o.epochSecond
             else -> throw IllegalArgumentException("unsupported datetime type: ${o.javaClass}")

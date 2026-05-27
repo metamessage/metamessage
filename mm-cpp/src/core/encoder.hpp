@@ -3,7 +3,9 @@
 
 #include "../ir/ast.hpp"
 #include "constants.hpp"
+#include <algorithm>
 #include <cstdint>
+#include <ctime>
 #include <stdexcept>
 #include <string>
 #include <vector>
@@ -99,9 +101,21 @@ private:
     } else if (uv <= 0xFFFF) {
       prefix = static_cast<uint8_t>(sign) | IntLen2Byte;
       len = 2;
+    } else if (uv <= 0xFFFFFF) {
+      prefix = static_cast<uint8_t>(sign) | IntLen3Byte;
+      len = 3;
     } else if (uv <= 0xFFFFFFFF) {
       prefix = static_cast<uint8_t>(sign) | IntLen4Byte;
       len = 4;
+    } else if (uv <= 0xFFFFFFFFFF) {
+      prefix = static_cast<uint8_t>(sign) | IntLen5Byte;
+      len = 5;
+    } else if (uv <= 0xFFFFFFFFFFFF) {
+      prefix = static_cast<uint8_t>(sign) | IntLen6Byte;
+      len = 6;
+    } else if (uv <= 0xFFFFFFFFFFFFFF) {
+      prefix = static_cast<uint8_t>(sign) | IntLen7Byte;
+      len = 7;
     } else {
       prefix = static_cast<uint8_t>(sign) | IntLen8Byte;
       len = 8;
@@ -130,19 +144,91 @@ private:
   }
 
   uint32_t encodeFloat(const std::string &text) {
-    double val = std::stod(text);
-    uint64_t bits;
-    std::memcpy(&bits, &val, sizeof(bits));
-    uint8_t prefix = static_cast<uint8_t>(Prefix::Float) | 7;
-    writeByte(prefix);
-    for (int i = 7; i >= 0; --i)
-      writeByte(static_cast<uint8_t>(bits >> (i * 8)));
-    return 9;
+    bool isNegative = false;
+    std::string s = text;
+    if (!s.empty() && s[0] == '-') {
+      isNegative = true;
+      s = s.substr(1);
+    }
+
+    int64_t expPart = 0;
+    auto ePos = s.find_first_of("eE");
+    if (ePos != std::string::npos) {
+      expPart = std::stoll(s.substr(ePos + 1));
+      s = s.substr(0, ePos);
+    }
+
+    auto dotPos = s.find('.');
+    std::string intPart, fracPart;
+    if (dotPos != std::string::npos) {
+      intPart = s.substr(0, dotPos);
+      fracPart = s.substr(dotPos + 1);
+    } else {
+      intPart = s;
+    }
+
+    if (intPart.empty())
+      intPart = "0";
+
+    int64_t baseExp = -static_cast<int64_t>(fracPart.size()) + expPart;
+    if (baseExp < INT8_MIN || baseExp > INT8_MAX) {
+      throw std::runtime_error("float exponent out of range: " + text);
+    }
+    int8_t exponent = static_cast<int8_t>(baseExp);
+
+    std::string mantissaStr = intPart + fracPart;
+    size_t firstNonZero = mantissaStr.find_first_not_of('0');
+    if (firstNonZero == std::string::npos) {
+      mantissaStr = "0";
+    } else {
+      mantissaStr = mantissaStr.substr(firstNonZero);
+    }
+
+    uint64_t mantissa = std::stoull(mantissaStr);
+
+    uint8_t sign = static_cast<uint8_t>(Prefix::Float);
+    if (isNegative)
+      sign |= FloatPositiveNegativeMask;
+
+    if (exponent == -1 && mantissa <= 7) {
+      sign |= static_cast<uint8_t>(mantissa);
+      return writeByte(sign);
+    }
+
+    uint8_t prefixLen;
+    if (mantissa <= 0xFF) {
+      prefixLen = FloatLen1Byte;
+    } else if (mantissa <= 0xFFFF) {
+      prefixLen = FloatLen2Byte;
+    } else if (mantissa <= 0xFFFFFF) {
+      prefixLen = FloatLen3Byte;
+    } else if (mantissa <= 0xFFFFFFFF) {
+      prefixLen = FloatLen4Byte;
+    } else if (mantissa <= 0xFFFFFFFFFF) {
+      prefixLen = FloatLen5Byte;
+    } else if (mantissa <= 0xFFFFFFFFFFFF) {
+      prefixLen = FloatLen6Byte;
+    } else if (mantissa <= 0xFFFFFFFFFFFFFF) {
+      prefixLen = FloatLen7Byte;
+    } else {
+      prefixLen = FloatLen8Byte;
+    }
+
+    sign |= prefixLen;
+    writeByte(sign);
+    writeByte(static_cast<uint8_t>(exponent));
+
+    int byteCount = floatLen(sign);
+    for (int i = byteCount - 1; i >= 0; --i) {
+      writeByte(static_cast<uint8_t>(mantissa >> (i * 8)));
+    }
+
+    return static_cast<uint32_t>(2 + byteCount);
   }
 
   uint32_t encodeString(const std::string &s) {
     size_t l = s.size();
-    if (l <= 30) {
+    if (l < StringLen1Byte) {
       writeByte(static_cast<uint8_t>(Prefix::String) | static_cast<uint8_t>(l));
       writeString(s);
       return static_cast<uint32_t>(1 + l);
@@ -162,7 +248,7 @@ private:
 
   uint32_t encodeBytes(const std::vector<uint8_t> &data) {
     size_t l = data.size();
-    if (l <= 30) {
+    if (l < BytesLen1Byte) {
       writeByte(static_cast<uint8_t>(Prefix::Bytes) | static_cast<uint8_t>(l));
       writeBytes(data);
       return static_cast<uint32_t>(1 + l);
@@ -182,7 +268,7 @@ private:
 
   uint32_t encodeArray(const std::vector<uint8_t> &data) {
     size_t l = data.size();
-    if (l <= 15) {
+    if (l < ContainerLen1Byte) {
       writeByte(static_cast<uint8_t>(Prefix::Container) | ContainerArray |
                 static_cast<uint8_t>(l));
       writeBytes(data);
@@ -205,7 +291,7 @@ private:
 
   uint32_t encodeObject(const std::vector<uint8_t> &data) {
     size_t l = data.size();
-    if (l <= 15) {
+    if (l < ContainerLen1Byte) {
       writeByte(static_cast<uint8_t>(Prefix::Container) | ContainerObject |
                 static_cast<uint8_t>(l));
       writeBytes(data);
@@ -226,47 +312,56 @@ private:
     }
   }
 
-  uint32_t encodeTagPayload(uint64_t uv) {
-    if (uv <= 0xFF) {
-      writeByte(TagPayload1Byte);
-      writeByte(static_cast<uint8_t>(uv));
-      return 2;
-    } else {
-      writeByte(TagPayload2Byte);
-      writeByte(static_cast<uint8_t>(uv >> 8));
-      writeByte(static_cast<uint8_t>(uv));
-      return 3;
-    }
-  }
-
   uint32_t encodeT(const std::vector<uint8_t> &tagBytes) {
+    // Writes: [tag_byte_count] [tag_fields]
     if (tagBytes.empty())
       return 0;
 
     size_t l = tagBytes.size();
-    if (l <= 30) {
-      writeByte(static_cast<uint8_t>(Prefix::Tag) | static_cast<uint8_t>(l));
-      writeBytes(tagBytes);
-      return static_cast<uint32_t>(1 + l);
-    } else if (l <= 255) {
-      writeByte(static_cast<uint8_t>(Prefix::Tag) | TagLen1Byte);
+    if (l < 254) {
       writeByte(static_cast<uint8_t>(l));
-      writeBytes(tagBytes);
-      return static_cast<uint32_t>(2 + l);
     } else {
-      writeByte(static_cast<uint8_t>(Prefix::Tag) | TagLen2Byte);
-      writeByte(static_cast<uint8_t>(l >> 8));
+      writeByte(254);
       writeByte(static_cast<uint8_t>(l));
-      writeBytes(tagBytes);
-      return static_cast<uint32_t>(3 + l);
     }
+    writeBytes(tagBytes);
+    return static_cast<uint32_t>((l < 254 ? 1 : 2) + l);
   }
 
   uint32_t encodeTag(const std::vector<uint8_t> &payload,
                      const std::vector<uint8_t> &tagData) {
-    std::vector<uint8_t> combined = payload;
-    combined.insert(combined.end(), tagData.begin(), tagData.end());
-    return encodeTagPayload(combined.size()) | writeBytes(combined);
+    // tagData = [tag_byte_count] [tag_fields]
+    // Writes: [PrefixTag | totalLen] [tag_byte_count] [tag_fields] [payload]
+    if (tagData.empty())
+      return static_cast<uint32_t>(payload.size());
+
+    size_t totalLen = tagData.size() + payload.size();
+    uint8_t sign = static_cast<uint8_t>(Prefix::Tag);
+
+    size_t headerLen;
+    if (totalLen < TagLen1Byte) {
+      sign |= static_cast<uint8_t>(totalLen);
+      headerLen = 1;
+    } else if (totalLen <= 0xFF) {
+      sign |= TagLen1Byte;
+      headerLen = 2;
+    } else {
+      sign |= TagLen2Byte;
+      headerLen = 3;
+    }
+
+    writeByte(sign);
+    if (headerLen == 2) {
+      writeByte(static_cast<uint8_t>(totalLen));
+    } else if (headerLen == 3) {
+      writeByte(static_cast<uint8_t>(totalLen >> 8));
+      writeByte(static_cast<uint8_t>(totalLen));
+    }
+
+    writeBytes(tagData);
+    writeBytes(payload);
+
+    return static_cast<uint32_t>(headerLen + totalLen);
   }
 
   uint32_t encodeComment(const std::vector<uint8_t> &payload,
@@ -369,9 +464,21 @@ private:
     switch (tag->type) {
     case ir::ValueType::Datetime:
     case ir::ValueType::Date:
-    case ir::ValueType::Time:
-      n = encodeU64(0);
+    case ir::ValueType::Time: {
+      struct tm tm = {};
+      if (sscanf(val->text.c_str(), "%d-%d-%d %d:%d:%d", &tm.tm_year,
+                 &tm.tm_mon, &tm.tm_mday, &tm.tm_hour, &tm.tm_min,
+                 &tm.tm_sec) == 6) {
+        tm.tm_year -= 1900;
+        tm.tm_mon -= 1;
+        tm.tm_isdst = -1;
+        time_t t = timegm(&tm);
+        n = encodeInt64(static_cast<int64_t>(t));
+      } else {
+        n = encodeInt64(0);
+      }
       break;
+    }
 
     case ir::ValueType::I:
     case ir::ValueType::I8:
@@ -427,6 +534,22 @@ private:
       break;
 
     case ir::ValueType::Uuid:
+      if (tag->isNull)
+        n = encodeSimple(SimpleNullBytes);
+      else {
+        std::string u = val->text;
+        u.erase(std::remove(u.begin(), u.end(), '-'), u.end());
+        std::vector<uint8_t> bytes;
+        for (size_t i = 0; i < u.size(); i += 2) {
+          unsigned int byteVal;
+          std::string byteStr = u.substr(i, 2);
+          sscanf(byteStr.c_str(), "%2x", &byteVal);
+          bytes.push_back(static_cast<uint8_t>(byteVal));
+        }
+        n = encodeBytes(bytes);
+      }
+      break;
+
     case ir::ValueType::Ip:
     case ir::ValueType::Bytes:
       if (tag->isNull)

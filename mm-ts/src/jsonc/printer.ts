@@ -126,7 +126,7 @@ export class JSONCPrinter {
   private dateToText(val: any): string {
     if (val instanceof Date) {
       const pad = (n: number) => String(n).padStart(2, '0');
-      return `${val.getFullYear()}-${pad(val.getMonth() + 1)}-${pad(val.getDate())} ${pad(val.getHours())}:${pad(val.getMinutes())}:${pad(val.getSeconds())}`;
+      return `${val.getUTCFullYear()}-${pad(val.getUTCMonth() + 1)}-${pad(val.getUTCDate())} ${pad(val.getUTCHours())}:${pad(val.getUTCMinutes())}:${pad(val.getUTCSeconds())}`;
     }
     return String(val);
   }

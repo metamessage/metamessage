@@ -196,8 +196,10 @@ object Encoder {
             }
             ValueType.UUID -> {
                 if (!tag.isNull) {
-                    val uuid = value.data as? UUID ?: throw IllegalArgumentException("invalid uuid")
-                    tmp.encodeBytes(uuidBytes(uuid))
+                    val bytes =
+                            value.data as? ByteArray
+                                    ?: throw IllegalArgumentException("invalid uuid")
+                    tmp.encodeBytes(bytes)
                 }
             }
             ValueType.DECIMAL -> {
