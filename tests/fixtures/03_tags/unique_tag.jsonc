@@ -1,0 +1,6 @@
+{
+    // mm: unique; desc=unique string list
+    "tags": ["a", "b", "c"],
+    // mm: unique
+    "ids": [1, 2, 3, 4]
+}

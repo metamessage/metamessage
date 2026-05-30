@@ -21,8 +21,7 @@ const (
 	Null
 
 	// comments
-	LeadingComment
-	TrailingComment
+	Comment
 )
 
 func (t Type) String() string {
@@ -51,10 +50,8 @@ func (t Type) String() string {
 		return "False"
 	case Null:
 		return "Null"
-	case LeadingComment:
-		return "LeadingComment"
-	case TrailingComment:
-		return "TrailingComment"
+	case Comment:
+		return "Comment"
 	default:
 		return "Unknown"
 	}
@@ -93,10 +90,8 @@ func (t Token) String() string {
 		return "False"
 	case Null:
 		return "Null"
-	case LeadingComment:
-		return "LeadingComment(" + t.Literal + ")"
-	case TrailingComment:
-		return "TrailingComment(" + t.Literal + ")"
+	case Comment:
+		return "Comment(" + t.Literal + ")"
 	default:
 		return "Unknown"
 	}

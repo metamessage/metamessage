@@ -249,7 +249,7 @@ export class Tag {
           (this.childType === ValueType.Enums && this.childEnums)
         ) {
         } else {
-          parts.push(`child_type=${this.childType}`);
+          parts.push(`child_type=${typeToString(this.childType)}`);
         }
       }
     }

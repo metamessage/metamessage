@@ -18,27 +18,7 @@ NC='\033[0m'
 PASS=0
 FAIL=0
 
-# ---------------------------------------------------------------------------
-# Normalize JSONC for comparison: remove comments, whitespace, trailing commas,
-# then sort keys.
-# ---------------------------------------------------------------------------
-normalize() {
-    python3 -c "
-import sys, json, re
-s = sys.stdin.read()
-s = re.sub(r'//[^\n]*', '', s)
-s = re.sub(r'/\*[\s\S]*?\*/', '', s)
-s = re.sub(r',(\s*[}\]])', r'\1', s)
-try:
-    obj = json.loads(s)
-    print(json.dumps(obj, separators=(',', ':'), sort_keys=True))
-except Exception as e:
-    import sys as _sys
-    _sys.stderr.write(f'NORMALIZE_ERROR: {e}\n')
-    # return original (stripped) input for debugging
-    print(s.strip(), end='')
-" 2>/dev/null
-}
+# Compare raw JSONC output directly. Go is the reference format.
 
 # ---------------------------------------------------------------------------
 # Language harnesses: each function builds (if needed), then runs.
@@ -193,14 +173,13 @@ for fixture in "${FIXTURES[@]}"; do
         fi
     done
 
-    # Compare normalized outputs across all successful languages
+    # Compare raw outputs: all must match Go (first language)
     if [ "$fixture_ok" -eq 1 ] && [ ${#OUTPUTS[@]} -gt 0 ]; then
-        ref_norm=$(echo "${OUTPUTS[0]}" | normalize) || true
+        ref_out="${OUTPUTS[0]}"
         all_match=1
 
         for ((i=1; i<${#OUTPUTS[@]}; i++)); do
-            norm=$(echo "${OUTPUTS[$i]}" | normalize) || true
-            if [ "$norm" != "$ref_norm" ]; then
+            if [ "${OUTPUTS[$i]}" != "$ref_out" ]; then
                 all_match=0
                 break
             fi
@@ -212,29 +191,20 @@ for fixture in "${FIXTURES[@]}"; do
         else
             printf " ${RED}DIFF${NC}"
             FAIL=$((FAIL + 1))
-            # Save diff details with unified diff
             diff_file="$RESULTS_DIR/${rel//\//_}.diff"
             {
                 echo "=== $rel ==="
                 echo ""
-                # Generate per-language normalized outputs and diff
                 for ((i=0; i<${#AVAILABLE[@]}; i++)); do
                     lang="${AVAILABLE[$i]}"
-                    norm_out=$(echo "${OUTPUTS[$i]}" | normalize) || true
-                    echo "--- $lang (normalized) ---"
-                    echo "$norm_out"
+                    echo "--- $lang ---"
+                    echo "${OUTPUTS[$i]}"
                     echo ""
-                    if [ "$i" -gt 0 ] && [ "$norm_out" != "$ref_norm" ]; then
+                    if [ "$i" -gt 0 ] && [ "${OUTPUTS[$i]}" != "$ref_out" ]; then
                         echo "--- diff: go vs $lang ---"
-                        diff -u <(echo "$ref_norm") <(echo "$norm_out") 2>/dev/null || true
+                        diff -u <(echo "$ref_out") <(echo "${OUTPUTS[$i]}") 2>/dev/null || true
                         echo ""
                     fi
-                done
-                echo "=== raw outputs ==="
-                for ((i=0; i<${#AVAILABLE[@]}; i++)); do
-                    echo ""
-                    echo "--- ${AVAILABLE[$i]} (raw) ---"
-                    echo "${OUTPUTS[$i]}"
                 done
             } > "$diff_file"
         fi
@@ -280,11 +250,8 @@ for fixture in "${FIXTURES[@]}"; do
         continue
     fi
 
-    # Step 3: Normalize and compare
-    norm1=$(echo "$output1" | normalize) || true
-    norm2=$(echo "$output2" | normalize) || true
-
-    if [ "$norm1" = "$norm2" ]; then
+    # Step 3: Compare raw outputs directly
+    if [ "$output1" = "$output2" ]; then
         printf " ${GREEN}OK${NC}\n"
         REV_PASS=$((REV_PASS + 1))
     else
@@ -294,20 +261,14 @@ for fixture in "${FIXTURES[@]}"; do
         {
             echo "=== $rel reversibility failure ==="
             echo ""
-            echo "--- round 1 (normalized) ---"
-            echo "$norm1"
-            echo ""
-            echo "--- round 2 (normalized) ---"
-            echo "$norm2"
-            echo ""
-            echo "--- diff ---"
-            diff -u <(echo "$norm1") <(echo "$norm2") 2>/dev/null || true
-            echo ""
-            echo "--- round 1 (raw) ---"
+            echo "--- round 1 ---"
             echo "$output1"
             echo ""
-            echo "--- round 2 (raw) ---"
+            echo "--- round 2 ---"
             echo "$output2"
+            echo ""
+            echo "--- diff ---"
+            diff -u <(echo "$output1") <(echo "$output2") 2>/dev/null || true
         } > "$rev_file"
     fi
 done

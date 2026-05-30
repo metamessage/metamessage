@@ -8,10 +8,19 @@ import (
 	"github.com/metamessage/metamessage/internal/ir"
 )
 
-const indentUnit = "\t"
+const indentUnit = '\t'
 
-func writeIndent(b *strings.Builder, indent int) {
-	b.WriteString(strings.Repeat(indentUnit, indent))
+type JSONCConfig struct {
+	Pretty bool
+	Indent byte
+}
+
+func writeIndent(b *strings.Builder, indent int, config *JSONCConfig) {
+	if config.Pretty {
+		for range indent {
+			b.WriteByte(config.Indent)
+		}
+	}
 }
 
 func writeValueJSONC(b *strings.Builder, v *ir.Value) {
@@ -51,72 +60,86 @@ func writeValueJSONC(b *strings.Builder, v *ir.Value) {
 	}
 }
 
-func writeArrayJSONC(b *strings.Builder, a *ir.Array, indent int) {
+func writeArrayJSONC(b *strings.Builder, a *ir.Array, indent int, config *JSONCConfig) {
 	b.WriteString("[\n")
 
 	for _, item := range a.Items {
-		writeLeadingComments(b, item.GetTag(), indent+1)
+		writeLeadingComments(b, item.GetTag(), indent+1, config)
 
-		writeIndent(b, indent+1)
+		writeIndent(b, indent+1, config)
 
-		writeNodeJSONC(b, item, indent+1)
+		writeNodeJSONC(b, item, indent+1, config)
 
 		b.WriteString(",\n")
 	}
 
-	writeIndent(b, indent)
+	writeIndent(b, indent, config)
 	b.WriteString("]")
 }
 
-func writeObjectJSONC(b *strings.Builder, o *ir.Object, indent int) {
+func writeObjectJSONC(b *strings.Builder, o *ir.Object, indent int, config *JSONCConfig) {
 	b.WriteString("{\n")
 
 	for _, f := range o.Fields {
-		writeLeadingComments(b, f.Value.GetTag(), indent+1)
+		writeLeadingComments(b, f.Value.GetTag(), indent+1, config)
 
-		writeIndent(b, indent+1)
+		writeIndent(b, indent+1, config)
 
 		b.WriteString(strconv.Quote(f.Key))
 		b.WriteString(": ")
 
-		writeNodeJSONC(b, f.Value, indent+1)
+		writeNodeJSONC(b, f.Value, indent+1, config)
 
 		b.WriteString(",\n")
 	}
 
-	writeIndent(b, indent)
+	writeIndent(b, indent, config)
 	b.WriteString("}")
 }
 
-func writeLeadingComments(b *strings.Builder, tag *ir.Tag, indent int) {
+func writeLeadingComments(b *strings.Builder, tag *ir.Tag, indent int, config *JSONCConfig) {
 	tagStr := tag.ToString()
 	if tagStr != "" {
 		b.WriteString("\n")
-		writeIndent(b, indent)
+		writeIndent(b, indent, config)
 		fmt.Fprintf(b, "// mm: %s\n", tagStr)
 	}
 }
 
-func writeNodeJSONC(b *strings.Builder, n ir.Node, indent int) {
+func writeNodeJSONC(b *strings.Builder, n ir.Node, indent int, config *JSONCConfig) {
 	switch v := n.(type) {
+	case *ir.Doc:
+		writeObjectJSONC(b, &ir.Object{Fields: v.Fields, Tag: v.Tag, Path: v.Path}, indent, config)
+
+	case *ir.Object:
+		writeObjectJSONC(b, v, indent, config)
+
+	case *ir.Array:
+		writeArrayJSONC(b, v, indent, config)
+
 	case *ir.Value:
 		writeValueJSONC(b, v)
-	case *ir.Object:
-		writeObjectJSONC(b, v, indent)
-	case *ir.Doc:
-		writeObjectJSONC(b, &ir.Object{Fields: v.Fields, Tag: v.Tag, Path: v.Path}, indent)
-	case *ir.Array:
-		writeArrayJSONC(b, v, indent)
+
+	case *ir.NodeNull:
+
 	default:
 	}
 }
 
 func ToJSONC(n ir.Node) string {
+	return ToJSONCWithConfig(n, &JSONCConfig{Pretty: true, Indent: indentUnit})
+}
+
+func ToJSONCCompact(n ir.Node) string {
+	return ToJSONCWithConfig(n, &JSONCConfig{})
+}
+
+func ToJSONCWithConfig(n ir.Node, config *JSONCConfig) string {
 	if n == nil {
 		return ""
 	}
 	var b strings.Builder
-	writeLeadingComments(&b, n.GetTag(), 0)
-	writeNodeJSONC(&b, n, 0)
+	writeLeadingComments(&b, n.GetTag(), 0, config)
+	writeNodeJSONC(&b, n, 0, config)
 	return b.String()
 }

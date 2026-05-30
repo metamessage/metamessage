@@ -76,16 +76,6 @@ static void skip_line_comment(parse_ctx_t *ctx) {
   }
 }
 
-static void skip_block_comment(parse_ctx_t *ctx) {
-  while (ctx->pos + 1 < ctx->len) {
-    if (ctx->input[ctx->pos] == '*' && ctx->input[ctx->pos + 1] == '/') {
-      ctx->pos += 2;
-      return;
-    }
-    ctx->pos++;
-  }
-}
-
 static void consume_comments(parse_ctx_t *ctx) {
   while (ctx->pos < ctx->len) {
     skip_ws(ctx);
@@ -94,9 +84,6 @@ static void consume_comments(parse_ctx_t *ctx) {
     if (ctx->input[ctx->pos] == '/' && ctx->input[ctx->pos + 1] == '/') {
       ctx->pos += 2;
       skip_line_comment(ctx);
-    } else if (ctx->input[ctx->pos] == '/' && ctx->input[ctx->pos + 1] == '*') {
-      ctx->pos += 2;
-      skip_block_comment(ctx);
     } else {
       break;
     }
@@ -352,9 +339,7 @@ static mm_node_t *parse_value(parse_ctx_t *ctx) {
       if (strcmp(raw, "true") == 0 || strcmp(raw, "false") == 0) {
         node->data.value.tag.type = MM_VALUE_BOOL;
       } else if (strcmp(raw, "null") == 0) {
-        mm_node_free(node);
-        ctx->error = 1;
-        return NULL;
+        node->data.value.tag.is_null = 1;
       } else if (strchr(raw, '.') || strchr(raw, 'e') || strchr(raw, 'E')) {
         node->data.value.tag.type = MM_VALUE_F64;
       } else {

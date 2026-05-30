@@ -49,8 +49,6 @@ func (p *Parser) consumeCommentsFor(anchorLine int) (*ir.Tag, error) {
 		return nil, nil
 	}
 
-	// if the last pending comment is separated from the anchor by a blank line,
-	// drop all pending comments
 	last := p.pending[len(p.pending)-1]
 	if anchorLine-last.Line > 1 {
 		p.pending = nil
@@ -76,10 +74,13 @@ func (p *Parser) Parse() (val ir.Node, err error) {
 	for {
 		tok := p.peek()
 		if tok.Type == token.EOF {
+			if val == nil {
+				val = &ir.NodeNull{}
+			}
 			return
 		}
 
-		if tok.Type == token.LeadingComment {
+		if tok.Type == token.Comment {
 			if len(p.pending) > 0 {
 				last := p.pending[len(p.pending)-1]
 				if tok.Line-last.Line > 1 {
@@ -91,28 +92,22 @@ func (p *Parser) Parse() (val ir.Node, err error) {
 			continue
 		}
 
-		if tok.Type == token.TrailingComment {
-			if val != nil {
-				var parsed *ir.Tag
-				parsed, err = parseCommentsToTag(tok.Literal)
-				if err != nil {
-					return
-				} else if parsed != nil {
-					mergeNodeTag(val, parsed)
-				}
-			}
-			p.next()
-			continue
+		var tag *ir.Tag
+		if tag, err = p.consumeCommentsFor(tok.Line); err != nil {
+			return nil, err
 		}
 
-		// TODO tag?
-		if val, err = p.parse("", false); err != nil {
+		if tag == nil {
+			tag = ir.NewTag()
+		}
+
+		if val, err = p.parse("", false, tag); err != nil {
 			return
 		}
 	}
 }
 
-func (p *Parser) parse(path string, example bool) (val ir.Node, err error) {
+func (p *Parser) parse(path string, example bool, tag *ir.Tag) (val ir.Node, err error) {
 	for {
 		tok := p.next()
 		var data any
@@ -120,20 +115,11 @@ func (p *Parser) parse(path string, example bool) (val ir.Node, err error) {
 		case token.EOF:
 			return nil, nil
 		case token.LBrace:
-			return p.parseObject(tok.Line, path)
+			return p.parseObject(tok.Line, path, tag)
 		case token.LBracket:
-			return p.parseArray(tok.Line, path)
+			return p.parseArray(tok.Line, path, tag)
 		case token.String:
-			var tag *ir.Tag
-			if tag, err = p.consumeCommentsFor(tok.Line); err != nil {
-				return nil, err
-			}
-
 			text := tok.Literal
-
-			if tag == nil {
-				tag = ir.NewTag()
-			}
 
 			if tag.Type == ir.ValueTypeUnknown {
 				tag.Type = ir.ValueTypeStr
@@ -382,16 +368,7 @@ func (p *Parser) parse(path string, example bool) (val ir.Node, err error) {
 			}, nil
 
 		case token.Number:
-			var tag *ir.Tag
-			if tag, err = p.consumeCommentsFor(tok.Line); err != nil {
-				return nil, err
-			}
-
 			text := tok.Literal
-
-			if tag == nil {
-				tag = ir.NewTag()
-			}
 
 			if strings.Contains(text, ".") {
 				if tag.Type == ir.ValueTypeUnknown {
@@ -429,6 +406,17 @@ func (p *Parser) parse(path string, example bool) (val ir.Node, err error) {
 						}
 
 						data, text, err = tag.ValidateF64(f64, example || tag.Example)
+					}
+
+				case ir.ValueTypeDecimal:
+					if tag.IsNull {
+						if text != "0.0" {
+							return nil, fmt.Errorf("invalid decimal: %v, valid: %v", text, "0.0")
+						}
+
+						data = ""
+					} else {
+						data, text, err = tag.ValidateDecimal(text, example || tag.Example)
 					}
 
 				default:
@@ -535,34 +523,6 @@ func (p *Parser) parse(path string, example bool) (val ir.Node, err error) {
 
 						data, text, err = tag.ValidateBigint(*bi, example || tag.Example)
 					}
-
-				// // It is recommended that floating - point numbers must include a decimal point, e.g., 1.0.
-				// case ir.ValueTypeF32:
-				// 	if tag.IsNull {
-				// 		data = float32(0.0)
-				// 		text = "0.0"
-				// 	} else {
-				// 		var f64 float64
-				// 		if f64, err = strconv.ParseFloat(text, 32); err != nil {
-				// 			return nil, fmt.Errorf("invalid float32 literal: %w", err)
-				// 		}
-
-				// 		data, text, err = tag.ValidateF32(float32(f64))
-				// 	}
-
-				// // It is recommended that floating - point numbers must include a decimal point, e.g., 1.0.
-				// case ir.ValueTypeF64:
-				// 	if tag.IsNull {
-				// 		data = 0.0
-				// 		text = "0.0"
-				// 	} else {
-				// 		var f64 float64
-				// 		if f64, err = strconv.ParseFloat(text, 64); err != nil {
-				// 			return nil, fmt.Errorf("invalid float64 literal: %w", err)
-				// 		}
-
-				// 		data, text, err = tag.ValidateF64(f64)
-				// 	}
 
 				default:
 					return nil, fmt.Errorf("unsupported numeric type %v for negative literal", tag.Type)
@@ -749,34 +709,6 @@ func (p *Parser) parse(path string, example bool) (val ir.Node, err error) {
 						data, text, err = tag.ValidateBigint(*bi, example || tag.Example)
 					}
 
-				// // It is recommended that floating - point numbers must include a decimal point, e.g., 1.0.
-				// case ir.ValueTypeF32:
-				// 	if tag.IsNull {
-				// 		data = float32(0.0)
-				// 		text = "0.0"
-				// 	} else {
-				// 		var f64 float64
-				// 		if f64, err = strconv.ParseFloat(text, 32); err != nil {
-				// 			return nil, fmt.Errorf("invalid float32 literal: %w", err)
-				// 		}
-
-				// 		data, text, err = tag.ValidateF32(float32(f64))
-				// 	}
-
-				// // It is recommended that floating - point numbers must include a decimal point, e.g., 1.0.
-				// case ir.ValueTypeF64:
-				// 	if tag.IsNull {
-				// 		data = 0.0
-				// 		text = "0.0"
-				// 	} else {
-				// 		var f64 float64
-				// 		if f64, err = strconv.ParseFloat(text, 64); err != nil {
-				// 			return nil, fmt.Errorf("invalid float64 literal: %w", err)
-				// 		}
-
-				// 		data, text, err = tag.ValidateF64(f64)
-				// 	}
-
 				default:
 					return nil, fmt.Errorf("unsupported numeric type %v", tag.Type)
 				}
@@ -794,15 +726,6 @@ func (p *Parser) parse(path string, example bool) (val ir.Node, err error) {
 			}, nil
 
 		case token.True:
-			var tag *ir.Tag
-			tag, err = p.consumeCommentsFor(tok.Line)
-			if err != nil {
-				return nil, err
-			}
-
-			if tag == nil {
-				tag = ir.NewTag()
-			}
 			if tag.Type == ir.ValueTypeUnknown {
 				tag.Type = ir.ValueTypeBool
 			}
@@ -829,15 +752,6 @@ func (p *Parser) parse(path string, example bool) (val ir.Node, err error) {
 			}, nil
 
 		case token.False:
-			var tag *ir.Tag
-			tag, err = p.consumeCommentsFor(tok.Line)
-			if err != nil {
-				return nil, err
-			}
-
-			if tag == nil {
-				tag = ir.NewTag()
-			}
 			if tag.Type == ir.ValueTypeUnknown {
 				tag.Type = ir.ValueTypeBool
 			}
@@ -871,19 +785,18 @@ func (p *Parser) parse(path string, example bool) (val ir.Node, err error) {
 	}
 }
 
-func (p *Parser) parseObject(openLine int, path string) (*ir.Object, error) {
+func (p *Parser) parseObject(openLine int, path string, tag *ir.Tag) (*ir.Object, error) {
 	p.depth++
 	if p.depth > maxDepth {
 		return nil, fmt.Errorf("max depth: %d", maxDepth)
 	}
 
-	tag, err := p.consumeCommentsFor(openLine)
-	if err != nil {
-		return nil, err
-	}
 	if tag == nil {
 		tag = ir.NewTag()
 	}
+
+	var err error
+
 	if tag.Type == ir.ValueTypeUnknown {
 		tag.Type = ir.ValueTypeObj
 	}
@@ -912,7 +825,7 @@ func (p *Parser) parseObject(openLine int, path string) (*ir.Object, error) {
 			break
 		}
 
-		if tok.Type == token.LeadingComment {
+		if tok.Type == token.Comment {
 			if len(p.pending) > 0 {
 				last := p.pending[len(p.pending)-1]
 				if tok.Line-last.Line > 1 {
@@ -924,19 +837,6 @@ func (p *Parser) parseObject(openLine int, path string) (*ir.Object, error) {
 			continue
 		}
 
-		if tok.Type == token.TrailingComment {
-			if val != nil {
-				parsed, err := parseCommentsToTag(tok.Literal)
-				if err != nil {
-					return nil, err
-				} else if parsed != nil {
-					mergeNodeTag(val, parsed)
-				}
-			}
-			p.next()
-			continue
-		}
-
 		key := p.next()
 		if key.Type != token.String {
 			return nil, fmt.Errorf("expect string key")
@@ -944,24 +844,29 @@ func (p *Parser) parseObject(openLine int, path string) (*ir.Object, error) {
 		keyStr := utils.CamelToSnake(key.Literal)
 
 		p.next()
+
+		var childTag *ir.Tag
+		if childTag, err = p.consumeCommentsFor(tok.Line); err != nil {
+			return nil, err
+		}
+
+		if childTag == nil {
+			childTag = ir.NewTag()
+		}
+
 		pa := fmt.Sprintf("%s.%s", path, keyStr)
 		if ir.ValueTypeMap == tag.Type {
+			childTag.Inherit(tag)
+
 			pa = fmt.Sprintf("%s[%s]", path, keyStr)
 		}
-		example := tag.Example
-		if val, err = p.parse(pa, example); err != nil {
+		example := tag.Example || childTag.Example
+		if val, err = p.parse(pa, example, childTag); err != nil {
 			err = fmt.Errorf("%s parse err: %w", pa, err)
 			return nil, err
 		}
 		if val == nil {
-			// p.next()
 			continue
-		}
-
-		// for map
-		childTag := val.GetTag()
-		if childTag != nil && tag != nil && childTag.Type == ir.ValueTypeMap {
-			childTag.Inherit(tag)
 		}
 
 		field := &ir.Field{
@@ -978,7 +883,6 @@ func (p *Parser) parseObject(openLine int, path string) (*ir.Object, error) {
 	if !tag.Example {
 		switch tag.Type {
 		case ir.ValueTypeMap:
-
 			err = tag.ValidateMap()
 			if err != nil {
 				err = fmt.Errorf("validate failed: %w", err)
@@ -997,19 +901,18 @@ func (p *Parser) parseObject(openLine int, path string) (*ir.Object, error) {
 	return obj, nil
 }
 
-func (p *Parser) parseArray(openLine int, path string) (*ir.Array, error) {
+func (p *Parser) parseArray(openLine int, path string, tag *ir.Tag) (*ir.Array, error) {
 	p.depth++
 	if p.depth > maxDepth {
 		return nil, fmt.Errorf("max depth: %d", maxDepth)
 	}
 
-	tag, err := p.consumeCommentsFor(openLine)
-	if err != nil {
-		return nil, err
-	}
 	if tag == nil {
 		tag = ir.NewTag()
 	}
+
+	var err error
+
 	if tag.Type == ir.ValueTypeUnknown {
 		if tag.Size > 0 {
 			tag.Type = ir.ValueTypeArr
@@ -1038,7 +941,7 @@ func (p *Parser) parseArray(openLine int, path string) (*ir.Array, error) {
 			break
 		}
 
-		if tok.Type == token.LeadingComment {
+		if tok.Type == token.Comment {
 			if len(p.pending) > 0 {
 				last := p.pending[len(p.pending)-1]
 				if tok.Line-last.Line > 1 {
@@ -1050,31 +953,23 @@ func (p *Parser) parseArray(openLine int, path string) (*ir.Array, error) {
 			continue
 		}
 
-		if tok.Type == token.TrailingComment {
-			if item != nil {
-				parsed, err := parseCommentsToTag(tok.Literal)
-				if err != nil {
-					return nil, err
-				} else if parsed != nil {
-					mergeNodeTag(item, parsed)
-				}
-			}
-			p.next()
-			continue
+		var childTag *ir.Tag
+		if childTag, err = p.consumeCommentsFor(tok.Line); err != nil {
+			return nil, err
 		}
+		if childTag == nil {
+			childTag = ir.NewTag()
+		}
+		childTag.Inherit(tag)
 
 		pa := fmt.Sprintf("%s[%d]", path, i)
-		example := tag.Example
-		if item, err = p.parse(pa, example); err != nil {
+		example := tag.Example || childTag.Example
+		if item, err = p.parse(pa, example, childTag); err != nil {
 			err = fmt.Errorf("%s parse err: %w", pa, err)
 			return nil, err
 		}
 		if item == nil {
 			continue
-		}
-		childTag := item.GetTag()
-		if childTag != nil && tag != nil {
-			childTag.Inherit(tag)
 		}
 		arr.Items = append(arr.Items, item)
 		i++
@@ -1103,25 +998,6 @@ func (p *Parser) parseArray(openLine int, path string) (*ir.Array, error) {
 	}
 
 	return arr, nil
-}
-
-func mergeNodeTag(n ir.Node, parsed *ir.Tag) {
-	if n == nil || parsed == nil {
-		return
-	}
-	existing := n.GetTag()
-	merged := ir.MergeTag(existing, parsed)
-	switch t := n.(type) {
-	case *ir.Doc:
-		t.Tag = merged
-	case *ir.Value:
-		t.Tag = merged
-	case *ir.Object:
-		t.Tag = merged
-	case *ir.Array:
-		t.Tag = merged
-	default:
-	}
 }
 
 func parseCommentsToTag(cs string) (*ir.Tag, error) {

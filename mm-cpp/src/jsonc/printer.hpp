@@ -10,7 +10,7 @@ namespace jsonc {
 
 inline void printIndent(std::ostringstream &os, int indent) {
   for (int i = 0; i < indent; ++i)
-    os << "    ";
+    os << "\t";
 }
 
 inline void printValue(std::ostringstream &os, std::shared_ptr<ir::Value> val,
@@ -44,10 +44,16 @@ inline void printLeadingComment(std::ostringstream &os, const ir::Tag *tag,
 inline void printValue(std::ostringstream &os, std::shared_ptr<ir::Value> val,
                        int indent) {
 
+  if (val->getTag()->isNull) {
+    os << "null";
+    return;
+  }
+
   switch (val->getTag()->type) {
   case ir::ValueType::Str:
   case ir::ValueType::Email:
-  case ir::ValueType::Url: {
+  case ir::ValueType::Url:
+  case ir::ValueType::Enums: {
     os << "\"";
     for (char c : val->text) {
       switch (c) {
@@ -91,11 +97,10 @@ inline void printValue(std::ostringstream &os, std::shared_ptr<ir::Value> val,
   case ir::ValueType::U64:
   case ir::ValueType::F32:
   case ir::ValueType::F64:
-  case ir::ValueType::Enums:
     os << val->text;
     break;
   case ir::ValueType::Bigint:
-    os << val->text << "n";
+    os << val->text;
     break;
   case ir::ValueType::Datetime:
   case ir::ValueType::Date:
@@ -122,91 +127,57 @@ inline void printValue(std::ostringstream &os, std::shared_ptr<ir::Value> val,
 
 inline void printArray(std::ostringstream &os, std::shared_ptr<ir::Array> arr,
                        int indent) {
-  os << "[";
+  os << "[\n";
 
   if (arr->items.empty()) {
+    printIndent(os, indent);
     os << "]";
     return;
   }
 
-  bool multiline = false;
-  size_t objCount = 0;
-  for (auto &item : arr->items) {
-    if (item->getType() == ir::NodeType::Object) {
-      objCount++;
-      if (!multiline && item->getType() == ir::NodeType::Object) {
-        auto obj = std::static_pointer_cast<ir::Object>(item);
-        if (obj->fields.size() > 1)
-          multiline = true;
-      }
-    }
-  }
-  if (objCount > 1)
-    multiline = true;
-
-  if (multiline)
-    os << "\n";
-
   for (size_t i = 0; i < arr->items.size(); ++i) {
-    printLeadingComment(os, arr->items[i]->getTag(),
-                        multiline ? indent + 1 : indent);
-    if (multiline)
-      printIndent(os, indent + 1);
+    printLeadingComment(os, arr->items[i]->getTag(), indent + 1);
+    printIndent(os, indent + 1);
 
     switch (arr->items[i]->getType()) {
     case ir::NodeType::Object:
       printObject(os, std::static_pointer_cast<ir::Object>(arr->items[i]),
-                  multiline ? indent + 1 : indent);
+                  indent + 1);
       break;
     case ir::NodeType::Array:
       printArray(os, std::static_pointer_cast<ir::Array>(arr->items[i]),
-                 multiline ? indent + 1 : indent);
+                 indent + 1);
       break;
     case ir::NodeType::Value:
       printValue(os, std::static_pointer_cast<ir::Value>(arr->items[i]),
-                 multiline ? indent + 1 : indent);
+                 indent + 1);
       break;
     default:
       os << "null";
       break;
     }
 
-    os << ",";
-    if (multiline)
-      os << "\n";
+    os << ",\n";
   }
 
-  if (multiline)
-    printIndent(os, indent);
+  printIndent(os, indent);
   os << "]";
 }
 
 inline void printObject(std::ostringstream &os, std::shared_ptr<ir::Object> obj,
                         int indent) {
-  // Object tag is printed by the parent; field tags printed before each field.
-  os << "{";
+  os << "{\n";
 
   if (obj->fields.empty()) {
+    printIndent(os, indent);
     os << "}";
     return;
   }
 
-  bool multiline = false;
-  for (auto &f : obj->fields) {
-    if (f.value->getType() == ir::NodeType::Object)
-      multiline = true;
-  }
-  if (obj->fields.size() > 1)
-    multiline = true;
-
-  if (multiline)
-    os << "\n";
-
   for (size_t i = 0; i < obj->fields.size(); ++i) {
     auto &field = obj->fields[i];
     printLeadingComment(os, field.value->getTag(), indent + 1);
-    if (multiline)
-      printIndent(os, indent + 1);
+    printIndent(os, indent + 1);
 
     os << "\"";
     for (char c : field.key) {
@@ -226,28 +197,25 @@ inline void printObject(std::ostringstream &os, std::shared_ptr<ir::Object> obj,
     switch (field.value->getType()) {
     case ir::NodeType::Object:
       printObject(os, std::static_pointer_cast<ir::Object>(field.value),
-                  multiline ? indent + 1 : indent);
+                  indent + 1);
       break;
     case ir::NodeType::Array:
       printArray(os, std::static_pointer_cast<ir::Array>(field.value),
-                 multiline ? indent + 1 : indent);
+                 indent + 1);
       break;
     case ir::NodeType::Value:
       printValue(os, std::static_pointer_cast<ir::Value>(field.value),
-                 multiline ? indent + 1 : indent);
+                 indent + 1);
       break;
     default:
       os << "null";
       break;
     }
 
-    os << ",";
-    if (multiline)
-      os << "\n";
+    os << ",\n";
   }
 
-  if (multiline)
-    printIndent(os, indent);
+  printIndent(os, indent);
   os << "}";
 }
 

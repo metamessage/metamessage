@@ -13,8 +13,7 @@ enum class JsoncTokenType {
     True,
     False,
     Null,
-    LeadingComment,
-    TrailingComment
+    Comment
 }
 
 data class JsoncToken(

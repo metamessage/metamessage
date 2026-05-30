@@ -48,6 +48,7 @@ public class JsoncPrinter
         if (string.IsNullOrEmpty(tagStr)) return;
         b.Append('\n');
         WriteIndent(b, indent);
+        b.Append("// mm: ");
         b.Append(tagStr);
         b.Append('\n');
     }
@@ -64,6 +65,11 @@ public class JsoncPrinter
     {
         if (v.Tag != null)
         {
+            if (v.Tag.IsNull)
+            {
+                b.Append("null");
+                return;
+            }
             switch (v.Tag.Type)
             {
                 case ValueType.Str:

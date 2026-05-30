@@ -13,7 +13,7 @@ public class JSONCPrinter {
     private let indentString: String
     private let useIndent: Bool
 
-    public init(indentString: String = "  ", useIndent: Bool = true) {
+    public init(indentString: String = "\t", useIndent: Bool = true) {
         self.indentLevel = 0
         self.indentString = indentString
         self.useIndent = useIndent
@@ -22,18 +22,28 @@ public class JSONCPrinter {
     public func print(_ node: Node?) -> String {
         guard let node = node else { return "" }
 
+        var result = ""
+        if let tag = node.getTag() {
+            let tagStr = tag.stringValue()
+            if !tagStr.isEmpty {
+                result += "\n"
+                result += "// mm: \(tagStr)\n"
+            }
+        }
+
         switch node.getType() {
         case .object:
-            return printObject(node as! MMObject)
+            result += printObject(node as! MMObject)
         case .array:
-            return printArray(node as! MMArray)
+            result += printArray(node as! MMArray)
         case .value:
-            return printValue(node as! Value)
+            result += printValue(node as! Value)
         case .doc:
-            return printObject(node as! MMDoc)
+            result += printObject(node as! MMDoc)
         case .unknown:
-            return ""
+            result += ""
         }
+        return result
     }
 
     private func indent() -> String {
@@ -63,6 +73,7 @@ public class JSONCPrinter {
             if let tag = field.value.getTag() {
                     let tagStr = tag.stringValue()
                     if !tagStr.isEmpty {
+                        result += "\n"
                         result += indent()
                         result += "// mm: \(tagStr)\n"
                     }
@@ -96,13 +107,22 @@ public class JSONCPrinter {
 
     private func printArray(_ arr: MMArray) -> String {
         if arr.items.isEmpty {
-            return "[]"
+            return "[\n" + indent() + "]"
         }
 
         var result = "[\n"
         increaseIndent()
 
         for (_, item) in arr.items.enumerated() {
+            if let tag = item.getTag() {
+                let tagStr = tag.stringValue()
+                if !tagStr.isEmpty {
+                    result += "\n"
+                    result += indent()
+                    result += "// mm: \(tagStr)\n"
+                }
+            }
+
             result += indent()
 
             switch item.getType() {
@@ -129,6 +149,10 @@ public class JSONCPrinter {
     }
 
     private func printValue(_ value: Value) -> String {
+        if let tag = value.tag, tag.isNull {
+            return "null"
+        }
+
         if let boolVal = value.data as? Bool {
             return boolVal ? "true" : "false"
         }
@@ -294,6 +318,10 @@ public class JSONCPrinter {
     }
 
     private func printValueCompact(_ value: Value) -> String {
+        if let tag = value.tag, tag.isNull {
+            return "null"
+        }
+
         if let boolVal = value.data as? Bool {
             return boolVal ? "true" : "false"
         }

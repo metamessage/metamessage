@@ -59,7 +59,7 @@ class JsoncParser(private val tokens: List<JsoncToken>) {
                 break
             }
 
-            if (tok.type == JsoncTokenType.LeadingComment) {
+            if (tok.type == JsoncTokenType.Comment) {
                 if (pendingComments.isNotEmpty()) {
                     val last = pendingComments.last()
                     if (tok.line - last.line > 1) {
@@ -67,17 +67,6 @@ class JsoncParser(private val tokens: List<JsoncToken>) {
                     }
                 }
                 pendingComments.add(next())
-                continue
-            }
-
-            if (tok.type == JsoncTokenType.TrailingComment) {
-                if (result != null) {
-                    val parsed = tagFromComment(tok.literal)
-                    if (parsed != null) {
-                        mergeNodeTag(result, parsed)
-                    }
-                }
-                next()
                 continue
             }
 
@@ -187,7 +176,10 @@ class JsoncParser(private val tokens: List<JsoncToken>) {
 
                     return Value(data = false, text = "false", tag = tag, path = path)
                 }
-                JsoncTokenType.Null -> throw JsoncException("null is not supported")
+                JsoncTokenType.Null -> {
+                    val tag = consumeCommentsFor(tok.line) ?: Tag()
+                    return Value(data = null, text = "null", tag = tag, path = path)
+                }
                 else -> throw JsoncException("unexpected token ${tok.type}")
             }
         }
@@ -679,7 +671,7 @@ class JsoncParser(private val tokens: List<JsoncToken>) {
                 break
             }
 
-            if (tok.type == JsoncTokenType.LeadingComment) {
+            if (tok.type == JsoncTokenType.Comment) {
                 if (pendingComments.isNotEmpty()) {
                     val last = pendingComments.last()
                     if (tok.line - last.line > 1) {
@@ -687,17 +679,6 @@ class JsoncParser(private val tokens: List<JsoncToken>) {
                     }
                 }
                 pendingComments.add(next())
-                continue
-            }
-
-            if (tok.type == JsoncTokenType.TrailingComment) {
-                if (valNode != null) {
-                    val parsed = tagFromComment(tok.literal)
-                    if (parsed != null) {
-                        mergeNodeTag(valNode, parsed)
-                    }
-                }
-                next()
                 continue
             }
 
@@ -771,7 +752,7 @@ class JsoncParser(private val tokens: List<JsoncToken>) {
                 break
             }
 
-            if (tok.type == JsoncTokenType.LeadingComment) {
+            if (tok.type == JsoncTokenType.Comment) {
                 if (pendingComments.isNotEmpty()) {
                     val last = pendingComments.last()
                     if (tok.line - last.line > 1) {
@@ -779,17 +760,6 @@ class JsoncParser(private val tokens: List<JsoncToken>) {
                     }
                 }
                 pendingComments.add(next())
-                continue
-            }
-
-            if (tok.type == JsoncTokenType.TrailingComment) {
-                if (item != null) {
-                    val parsed = tagFromComment(tok.literal)
-                    if (parsed != null) {
-                        mergeNodeTag(item, parsed)
-                    }
-                }
-                next()
                 continue
             }
 

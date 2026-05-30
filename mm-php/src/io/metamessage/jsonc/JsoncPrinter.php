@@ -39,6 +39,10 @@ class JsoncPrinter
             return '';
         }
 
+        if ($v->getTag()->isNull) {
+            return 'null';
+        }
+
         switch ($v->getTag()->type) {
             case ValueType::STR:
             case ValueType::BYTES:

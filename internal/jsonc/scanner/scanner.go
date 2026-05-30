@@ -9,11 +9,10 @@ import (
 )
 
 type Scanner struct {
-	src     []rune
-	pos     int
-	line    int
-	col     int
-	newLine bool
+	src []rune
+	pos int
+	line int
+	col  int
 }
 
 func New(input string) *Scanner {
@@ -39,7 +38,6 @@ func (s *Scanner) next() rune {
 	s.pos++
 
 	if ch == '\n' {
-		s.newLine = true
 		s.line++
 		s.col = 1
 	} else {
@@ -79,11 +77,9 @@ func (s *Scanner) NextToken() token.Token {
 		return token.Token{Type: token.RBracket, Line: startLine, Column: startCol}
 	case ':':
 		s.next()
-		s.newLine = false
 		return token.Token{Type: token.Colon, Line: startLine, Column: startCol}
 	case ',':
 		s.next()
-		s.newLine = false
 		return token.Token{Type: token.Comma, Line: startLine, Column: startCol}
 	case '"':
 		return s.scanString()
@@ -96,7 +92,7 @@ func (s *Scanner) NextToken() token.Token {
 
 func (s *Scanner) scanString() token.Token {
 	startLine, startCol := s.line, s.col
-	s.next() // "
+	s.next()
 
 	var buf strings.Builder
 	for {
@@ -127,55 +123,26 @@ func (s *Scanner) scanComment() token.Token {
 	startLine, startCol := s.line, s.col
 	s.next()
 
-	if s.peek() == '/' {
-		c := token.LeadingComment
-		if !s.newLine {
-			c = token.TrailingComment
+	if s.peek() != '/' {
+		return token.Token{Type: token.EOF}
+	}
+	s.next()
+
+	var buf strings.Builder
+	for {
+		ch := s.peek()
+		if ch == '\n' || ch == 0 {
+			break
 		}
-		s.next()
-		var buf strings.Builder
-		for {
-			ch := s.peek()
-			if ch == '\n' || ch == 0 {
-				break
-			}
-			buf.WriteRune(s.next())
-		}
-		return token.Token{
-			Type:    c,
-			Literal: strings.TrimSpace(buf.String()),
-			Line:    startLine,
-			Column:  startCol,
-		}
+		buf.WriteRune(s.next())
 	}
 
-	if s.peek() == '*' {
-		c := token.LeadingComment
-		if !s.newLine {
-			c = token.TrailingComment
-		}
-		s.next()
-		var buf strings.Builder
-		for {
-			if s.peek() == 0 {
-				break
-			}
-			if s.peek() == '*' && s.pos+1 < len(s.src) && s.src[s.pos+1] == '/' {
-				s.next()
-				s.next()
-				break
-			}
-			buf.WriteRune(s.next())
-		}
-		return token.Token{
-			Type:    c,
-			Literal: strings.TrimSpace(buf.String()),
-			Line:    startLine,
-			Column:  startCol,
-		}
+	return token.Token{
+		Type:    token.Comment,
+		Literal: strings.TrimSpace(buf.String()),
+		Line:    startLine,
+		Column:  startCol,
 	}
-
-	return token.Token{Type: token.EOF}
 }
 
 func (s *Scanner) scanLiteral() token.Token {

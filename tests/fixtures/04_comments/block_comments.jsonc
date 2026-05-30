@@ -1,4 +1,4 @@
 {
-    /* this is a block comment */
+    // this is a block comment
     "key": "value"
 }

@@ -102,7 +102,6 @@ class JsoncScanner(private val source: String) {
         next()
 
         if (peek() == '/') {
-            val tokenType = if (!newLine) JsoncTokenType.TrailingComment else JsoncTokenType.LeadingComment
             next()
             val buf = StringBuilder()
             while (true) {
@@ -110,23 +109,7 @@ class JsoncScanner(private val source: String) {
                 if (ch == '\n' || ch == '\u0000') break
                 buf.append(next())
             }
-            return JsoncToken(tokenType, buf.toString().trim(), startLine, startCol)
-        }
-
-        if (peek() == '*') {
-            val tokenType = if (!newLine) JsoncTokenType.TrailingComment else JsoncTokenType.LeadingComment
-            next()
-            val buf = StringBuilder()
-            while (true) {
-                if (peek() == '\u0000') break
-                if (peek() == '*' && pos + 1 < src.size && src[pos + 1] == '/') {
-                    next()
-                    next()
-                    break
-                }
-                buf.append(next())
-            }
-            return JsoncToken(tokenType, buf.toString().trim(), startLine, startCol)
+            return JsoncToken(JsoncTokenType.Comment, buf.toString().trim(), startLine, startCol)
         }
 
         return JsoncToken(JsoncTokenType.EOF, "", line, col)

@@ -525,25 +525,11 @@ def write_value_jsonc(b: list, v) -> None:
     if v.tag is None:
         return
 
-    val_type = v.tag.type
-
     if v.tag.is_null:
-        if val_type in (ValueType.Str, ValueType.Bytes, ValueType.Datetime,
-                        ValueType.Date, ValueType.Time, ValueType.Uuid,
-                        ValueType.Ip, ValueType.Url, ValueType.Email,
-                        ValueType.Enums, ValueType.Decimal):
-            b.append('""')
-        elif val_type in (ValueType.I, ValueType.I8, ValueType.I16, ValueType.I32, ValueType.I64,
-                          ValueType.U, ValueType.U8, ValueType.U16, ValueType.U32, ValueType.U64,
-                          ValueType.Bigint):
-            b.append("0")
-        elif val_type == ValueType.Bool:
-            b.append("false")
-        elif val_type in (ValueType.F32, ValueType.F64):
-            b.append("0.0")
-        else:
-            b.append("null")
+        b.append("null")
         return
+
+    val_type = v.tag.type
 
     if val_type in (ValueType.Str, ValueType.Bytes, ValueType.Datetime,
                     ValueType.Date, ValueType.Time, ValueType.Uuid,
@@ -590,10 +576,35 @@ def write_object_jsonc(b: list, o: Obj, indent: int):
     b.append("}")
 
 
+def _tag_has_child(tag) -> bool:
+    if tag is None:
+        return False
+    return (tag.child_desc != "" or
+            tag.child_type != ValueType.Unknown or
+            tag.child_nullable or
+            tag.child_allow_empty or
+            tag.child_unique or
+            tag.child_default_val != "" or
+            tag.child_min != "" or
+            tag.child_max != "" or
+            tag.child_size != 0 or
+            tag.child_enums != "" or
+            tag.child_pattern != "" or
+            tag.child_version != 0 or
+            tag.child_mime != "")
+
+
 def write_array_jsonc(b: list, a: Arr, indent: int):
     b.append("[\n")
     for item in a.items:
-        write_leading_comments(b, item.get_tag(), indent + 1)
+        item_tag = item.get_tag()
+        comment_tag = item_tag
+        if a.tag is not None and _tag_has_child(a.tag):
+            comment_tag = NewTag()
+            if item_tag is not None:
+                comment_tag = MergeTag(comment_tag, item_tag)
+            comment_tag.inherit(a.tag)
+        write_leading_comments(b, comment_tag, indent + 1)
         write_indent(b, indent + 1)
         write_node_jsonc(b, item, indent + 1)
         b.append(",\n")

@@ -163,6 +163,8 @@ impl Parser {
                 } else if text.starts_with('-') {
                     if let Ok(ival) = text.parse::<i64>() {
                         data = ValueData::Int(ival);
+                    } else if tag.value_type == ValueType::Bigint {
+                        data = ValueData::String(text.clone());
                     } else {
                         data = ValueData::Int(i64::MIN);
                     }
@@ -172,6 +174,8 @@ impl Parser {
                     } else {
                         data = ValueData::Int(uval as i64);
                     }
+                } else if tag.value_type == ValueType::Bigint {
+                    data = ValueData::String(text.clone());
                 } else {
                     data = ValueData::Int(0);
                 }

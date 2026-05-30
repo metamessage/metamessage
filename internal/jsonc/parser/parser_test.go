@@ -162,7 +162,7 @@ func TestParseNullLiteral_Unsupported(t *testing.T) {
 	if err == nil {
 		t.Fatal("expected error for null literal")
 	}
-	if err.Error() != "null literal is not supported" {
+	if err.Error() != "null is not supported" {
 		t.Fatalf("unexpected error message: %v", err)
 	}
 }

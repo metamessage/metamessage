@@ -984,14 +984,16 @@ class JsoncParser
             }
         }
 
-        switch ($tag->type) {
-            case ValueType::ARR:
-                $this->validateArr($tag, $arr->Items);
-                break;
+        if (!$tag->example) {
+            switch ($tag->type) {
+                case ValueType::ARR:
+                    $this->validateArr($tag, $arr->Items);
+                    break;
 
-            case ValueType::VEC:
-                $this->validateVec($tag, $arr->Items);
-                break;
+                case ValueType::VEC:
+                    $this->validateVec($tag, $arr->Items);
+                    break;
+            }
         }
 
         return $arr;
@@ -1039,11 +1041,12 @@ class JsoncParser
         }
 
         if ($tag->pattern !== '') {
-            $re = @preg_match($tag->pattern, '');
+            $pattern = '/' . addcslashes($tag->pattern, '/') . '/';
+            $re = @preg_match($pattern, '');
             if ($re === false) {
                 throw new \Exception(sprintf('pattern "%s" compile error', $tag->pattern));
             }
-            if (!preg_match($tag->pattern, $val)) {
+            if (!preg_match($pattern, $val)) {
                 throw new \Exception(sprintf('value "%s" does not match pattern %s', $val, $tag->pattern));
             }
         }

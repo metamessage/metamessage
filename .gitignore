@@ -53,7 +53,7 @@ tests/**/[Oo]bj/
 *.lscache
 
 # Rust
-mm-rs/target/
+mm-rs/**/target/
 tests/**/target/
 
 # Swift

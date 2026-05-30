@@ -6,7 +6,7 @@ export class JSONCPrinter {
   private indent: string;
   private indentLevel: number;
 
-  constructor(indent: string = '  ') {
+  constructor(indent: string = '\t') {
     this.indent = indent;
     this.indentLevel = 0;
   }
@@ -17,7 +17,7 @@ export class JSONCPrinter {
     let result = '';
 
     if (tag.toString() !== '') {
-      result += `// mm: ${tag.toString()}\n`;
+      result += `\n// mm: ${tag.toString()}\n`;
     }
 
     return (result += this.printNode(node));
@@ -64,6 +64,9 @@ export class JSONCPrinter {
 
   private valueToStringOnly(value: MMValue): string {
     const tag = value.getTag();
+    if (tag.isNull) {
+      return 'null';
+    }
     const type = tag.type;
     const text = value.getText();
     const val = value.getValue();
@@ -134,7 +137,8 @@ export class JSONCPrinter {
   private printObject(obj: MMObject): string {
     const properties = obj.getProperties();
     if (Object.keys(properties).length === 0) {
-      return '{}';
+      const indent = this.getIndent();
+      return `{\n${indent}}`;
     }
 
     this.indentLevel++;
@@ -145,7 +149,7 @@ export class JSONCPrinter {
       const tag = value.getTag();
       let entry = '';
       if (tag.toString() !== '') {
-        entry += `${indent}// mm: ${tag.toString()}\n${indent}`;
+        entry += `\n${indent}// mm: ${tag.toString()}\n${indent}`;
       }
       entry += `${JSON.stringify(key)}: ${this.printNode(value)},`;
       entries.push(entry);
@@ -174,7 +178,8 @@ export class JSONCPrinter {
   private printArray(array: MMArray): string {
     const elements = array.getElements();
     if (elements.length === 0) {
-      return '[]';
+      const indent = this.getIndent();
+      return `[\n${indent}]`;
     }
 
     this.indentLevel++;
@@ -182,7 +187,14 @@ export class JSONCPrinter {
     const entries: string[] = [];
 
     for (const element of elements) {
-      entries.push(`${indent}${this.printNode(element)},`);
+      const tag = element.getTag();
+      if (tag.toString() !== '') {
+        entries.push(
+          `\n${indent}// mm: ${tag.toString()}\n${indent}${this.printNode(element)},`,
+        );
+      } else {
+        entries.push(`${indent}${this.printNode(element)},`);
+      }
     }
 
     this.indentLevel--;

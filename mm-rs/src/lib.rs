@@ -25,7 +25,7 @@ pub fn parse_jsonc(input: &str) -> Result<Node, String> {
 }
 
 pub fn to_jsonc_string(node: &Node) -> String {
-    ir::to_compact_string(node)
+    ir::to_string(node)
 }
 
 pub fn encode_from_value(value: &impl ToNode) -> Vec<u8> {

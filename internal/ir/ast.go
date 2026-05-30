@@ -4,28 +4,32 @@ type NodeType uint8
 
 const (
 	NodeTypeUnknown NodeType = iota
+	NodeTypeDoc
 	NodeTypeObject
 	NodeTypeArray
 	NodeTypeValue
-	NodeTypeDoc
+	NodeTypeNull
 
 	LabelNodeTypeUnknown = "unknown"
+	LabelNodeTypeDoc     = "doc"
 	LabelNodeTypeObject  = "object"
 	LabelNodeTypeArray   = "array"
 	LabelNodeTypeValue   = "value"
-	LabelNodeTypeDoc     = "doc"
+	LabelNodeTypeNull    = "null"
 )
 
 func (nt NodeType) String() string {
 	switch nt {
+	case NodeTypeDoc:
+		return LabelNodeTypeDoc
 	case NodeTypeObject:
 		return LabelNodeTypeObject
 	case NodeTypeArray:
 		return LabelNodeTypeArray
 	case NodeTypeValue:
 		return LabelNodeTypeValue
-	case NodeTypeDoc:
-		return LabelNodeTypeDoc
+	case NodeTypeNull:
+		return LabelNodeTypeNull
 	default:
 		return LabelNodeTypeUnknown
 	}
@@ -33,14 +37,16 @@ func (nt NodeType) String() string {
 
 func ParseNodeType(s string) NodeType {
 	switch s {
+	case LabelNodeTypeDoc:
+		return NodeTypeDoc
 	case LabelNodeTypeObject:
 		return NodeTypeObject
 	case LabelNodeTypeArray:
 		return NodeTypeArray
 	case LabelNodeTypeValue:
 		return NodeTypeValue
-	case LabelNodeTypeDoc:
-		return NodeTypeDoc
+	case LabelNodeTypeNull:
+		return NodeTypeNull
 	default:
 		return NodeTypeUnknown
 	}
@@ -145,5 +151,17 @@ func (d *Doc) GetTag() *Tag {
 	if d.Tag != nil {
 		return d.Tag
 	}
+	return nil
+}
+
+type NodeNull struct{}
+
+func (d *NodeNull) GetPath() string { return "" }
+
+func (d *NodeNull) SetPath(path string) {}
+
+func (d *NodeNull) GetType() NodeType { return NodeTypeNull }
+
+func (d *NodeNull) GetTag() *Tag {
 	return nil
 }

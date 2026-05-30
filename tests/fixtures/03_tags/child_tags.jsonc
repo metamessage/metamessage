@@ -1,0 +1,80 @@
+{
+    // original child_tag fields
+
+    // mm: child_desc=item name
+    "names": ["alice", "bob"],
+    // mm: child_min=1; child_max=100; child_nullable
+    "scores": [80, 90, 95],
+
+    // mm: default_val=42
+    "count": 42,
+
+    // mm: deprecated
+    "old_field": "legacy",
+
+    // integer types
+    // mm: child_type=i
+    "i_arr": [1, 2, 3],
+    // mm: child_type=i8
+    "i8_arr": [1, 2, 3],
+    // mm: child_type=i16
+    "i16_arr": [1, 2, 3],
+    // mm: child_type=i32
+    "i32_arr": [1, 2, 3],
+    // mm: child_type=i64
+    "i64_arr": [1, 2, 3],
+
+    // unsigned integer types
+    // mm: child_type=u
+    "u_arr": [1, 2, 3],
+    // mm: child_type=u8
+    "u8_arr": [1, 2, 3],
+    // mm: child_type=u16
+    "u16_arr": [1, 2, 3],
+    // mm: child_type=u32
+    "u32_arr": [1, 2, 3],
+    // mm: child_type=u64
+    "u64_arr": [1, 2, 3],
+
+    // float types
+    // mm: child_type=f32
+    "f32_arr": [1.5, 2.5, 3.5],
+    // mm: child_type=f64
+    "f64_arr": [1.5, 2.5, 3.5],
+
+    // string / bool / bytes types
+    // mm: child_type=str
+    "str_arr": ["a", "b", "c"],
+    // mm: child_type=bool
+    "bool_arr": [true, false, true],
+    // mm: child_type=bytes
+    "bytes_arr": ["aGVsbG8=", "d29ybGQ="],
+
+    // bigint type
+    // mm: child_type=bigint
+    "bigint_arr": [12345678901234567890, 98765432109876543210],
+
+    // temporal types
+    // mm: child_type=datetime
+    "datetime_arr": ["2024-01-01T00:00:00Z", "2024-06-15T12:30:00Z"],
+    // mm: child_type=date
+    "date_arr": ["2024-01-01", "2024-06-15"],
+    // mm: child_type=time
+    "time_arr": ["12:30:00", "23:59:59"],
+
+    // special string types
+    // mm: child_type=uuid
+    "uuid_arr": ["550e8400-e29b-41d4-a716-446655440000", "6ba7b810-9dad-11d1-80b4-00c04fd430c8"],
+    // mm: child_type=decimal
+    "decimal_arr": [3.14159, 2.71828],
+    // mm: child_type=ip
+    "ip_arr": ["192.168.1.1", "10.0.0.1"],
+    // mm: child_type=url
+    "url_arr": ["https://example.com", "https://test.org"],
+    // mm: child_type=email
+    "email_arr": ["user@example.com", "admin@test.org"],
+
+    // enum type
+    // mm: child_type=enums; child_enums=red|green|blue
+    "enum_arr": ["red", "green", "blue"],
+}

@@ -112,8 +112,29 @@ static void write_leading_tag_comment(strbuf_t *sb, const mm_tag_t *tag,
   free(tag_str);
 }
 
+static mm_tag_t *get_data_tag(mm_node_t *node) {
+  if (!node)
+    return NULL;
+  switch (node->type) {
+  case MM_NODE_VALUE:
+    return &node->data.value.tag;
+  case MM_NODE_OBJECT:
+    return &node->data.object.tag;
+  case MM_NODE_ARRAY:
+    return &node->data.array.tag;
+  case MM_NODE_DOC:
+    return &node->data.doc.tag;
+  default:
+    return &node->tag;
+  }
+}
+
 static void print_value(strbuf_t *sb, const mm_value_t *value, int depth) {
   (void)depth;
+  if (value->tag.is_null) {
+    sb_puts(sb, "null");
+    return;
+  }
   if (!value->text) {
     sb_puts(sb, "null");
     return;
@@ -145,7 +166,9 @@ static void print_object(strbuf_t *sb, const mm_object_t *obj, int depth) {
 
   for (size_t i = 0; i < obj->field_count; i++) {
     mm_field_t *field = &obj->fields[i];
-    write_leading_tag_comment(sb, &field->value->tag, depth + 1);
+    mm_tag_t *tag = get_data_tag(field->value);
+    if (tag)
+      write_leading_tag_comment(sb, tag, depth + 1);
     print_indent(sb, depth + 1);
     print_string(sb, field->key);
     sb_puts(sb, ": ");
@@ -162,7 +185,9 @@ static void print_array(strbuf_t *sb, const mm_array_t *arr, int depth) {
 
   for (size_t i = 0; i < arr->item_count; i++) {
     mm_node_t *item = arr->items[i];
-    write_leading_tag_comment(sb, &item->tag, depth + 1);
+    mm_tag_t *tag = get_data_tag(item);
+    if (tag)
+      write_leading_tag_comment(sb, tag, depth + 1);
     print_indent(sb, depth + 1);
     print_node(sb, item, depth + 1);
     sb_puts(sb, ",\n");
@@ -177,7 +202,9 @@ static void print_doc(strbuf_t *sb, const mm_doc_t *doc, int depth) {
 
   for (size_t i = 0; i < doc->field_count; i++) {
     mm_field_t *field = &doc->fields[i];
-    write_leading_tag_comment(sb, &field->value->tag, depth + 1);
+    mm_tag_t *tag = get_data_tag(field->value);
+    if (tag)
+      write_leading_tag_comment(sb, tag, depth + 1);
     print_indent(sb, depth + 1);
     print_string(sb, field->key);
     sb_puts(sb, ": ");
@@ -221,7 +248,9 @@ char *mm_printer_to_jsonc(mm_node_t *node) {
   strbuf_t sb;
   memset(&sb, 0, sizeof(sb));
 
-  write_leading_tag_comment(&sb, &node->tag, 0);
+  mm_tag_t *tag = get_data_tag(node);
+  if (tag)
+    write_leading_tag_comment(&sb, tag, 0);
   print_node(&sb, node, 0);
 
   sb_putc(&sb, '\0');
