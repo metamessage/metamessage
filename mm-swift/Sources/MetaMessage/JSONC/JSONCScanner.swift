@@ -13,8 +13,7 @@ public enum JSONCTokenType: Equatable {
     case trueValue
     case falseValue
     case nullValue
-    case leadingComment
-    case trailingComment
+    case comment
 }
 
 public struct JSONCToken {
@@ -36,14 +35,12 @@ public class JSONCScanner {
     private var pos: Int
     private var line: Int
     private var col: Int
-    private var newLine: Bool
 
     public init(input: String) {
         self.src = Array(input)
         self.pos = 0
         self.line = 1
         self.col = 1
-        self.newLine = true
     }
 
     private func peek() -> Character {
@@ -57,7 +54,6 @@ public class JSONCScanner {
         pos += 1
 
         if ch == "\n" {
-            newLine = true
             line += 1
             col = 1
         } else {
@@ -87,8 +83,6 @@ public class JSONCScanner {
 
         let startLine = line
         let startCol = col
-        let hasNewLine = newLine
-        newLine = false
 
         switch ch {
         case "{":
@@ -112,7 +106,7 @@ public class JSONCScanner {
         case "\"":
             return scanString(startLine: startLine, startCol: startCol)
         case "/":
-            return scanComment(startLine: startLine, startCol: startCol, hasNewLine: hasNewLine)
+            return scanComment(startLine: startLine, startCol: startCol)
         default:
             return scanLiteral(startLine: startLine, startCol: startCol)
         }
@@ -143,33 +137,15 @@ public class JSONCScanner {
         return JSONCToken(type: .string, literal: buf, line: startLine, column: startCol)
     }
 
-    private func scanComment(startLine: Int, startCol: Int, hasNewLine: Bool) -> JSONCToken {
+    private func scanComment(startLine: Int, startCol: Int) -> JSONCToken {
         _ = next()
 
         if peekIfNotEmpty() == "/" {
-            let commentType: JSONCTokenType = hasNewLine ? .leadingComment : .trailingComment
+            let commentType: JSONCTokenType = .comment
             _ = next()
 
             var buf = ""
             while let ch = peekIfNotEmpty(), ch != "\0", ch != "\n" {
-                buf.append(next())
-            }
-            let trimmed = buf.trimmingCharacters(in: .whitespaces)
-
-            return JSONCToken(type: commentType, literal: trimmed, line: startLine, column: startCol)
-        }
-
-        if peekIfNotEmpty() == "*" {
-            let commentType: JSONCTokenType = hasNewLine ? .leadingComment : .trailingComment
-            _ = next()
-
-            var buf = ""
-            while let ch = peekIfNotEmpty(), ch != "\0" {
-                if ch == "*" && pos + 1 < src.count && src[pos + 1] == "/" {
-                    _ = next()
-                    _ = next()
-                    break
-                }
                 buf.append(next())
             }
             let trimmed = buf.trimmingCharacters(in: .whitespaces)

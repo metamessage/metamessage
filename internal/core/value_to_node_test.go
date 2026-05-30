@@ -234,14 +234,14 @@ func TestValueToNode(t *testing.T) {
 				if astNode == nil {
 					t.Fatalf("expected astNode non-nil")
 				}
-				fmt.Println("=== AST Node ===")
-				fmt.Println("AST Node", Dump(astNode))
+				// fmt.Println("=== AST Node ===")
+				// fmt.Println("AST Node", Dump(astNode))
 
 				// fmt.Println("\n=== go struct ===")
 				// PrintGoStruct(astNode)
 
-				fmt.Println("\n=== Print ===")
-				PrintJSONC(astNode)
+				// fmt.Println("\n=== Print ===")
+				// PrintJSONC(astNode)
 			}
 
 		})
@@ -266,11 +266,11 @@ func TestValueToNodeA(t *testing.T) {
 		Arr []int `mm:"desc=Arr desc; child_desc=Arr item desc"`
 	}
 
-	astNode, err := ValueToNode(A{Arr: []int{1, 2, 3}}, "")
+	_, err := ValueToNode(A{Arr: []int{1, 2, 3}}, "")
 	if err != nil {
 		t.Error("err:", err)
 	}
-	fmt.Println("node", Dump(astNode))
+	// fmt.Println("node", Dump(astNode))
 }
 
 type B struct {
@@ -288,9 +288,9 @@ func (*A) MM() string {
 func TestValueToNodeB(t *testing.T) {
 
 	// astNode, err := ValueToNode(A{Arr: B{ArrB: 5}}, "")
-	astNode, err := ValueToNode(A{}, "")
+	_, err := ValueToNode(A{}, "")
 	if err != nil {
 		t.Error("err:", err)
 	}
-	fmt.Println("node", Dump(astNode))
+	// fmt.Println("node", Dump(astNode))
 }

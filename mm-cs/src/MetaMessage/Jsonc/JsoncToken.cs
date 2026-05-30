@@ -17,8 +17,7 @@ public enum JsoncTokenType
     False,
     Null,
 
-    LeadingComment,
-    TrailingComment
+    Comment
 }
 
 public class JsoncToken
@@ -27,7 +26,6 @@ public class JsoncToken
     public string Literal { get; set; } = string.Empty;
     public int Line { get; set; }
     public int Column { get; set; }
-    public bool IsBlock { get; set; }
 
     public override string ToString()
     {
@@ -45,8 +43,7 @@ public class JsoncToken
             JsoncTokenType.True => "True",
             JsoncTokenType.False => "False",
             JsoncTokenType.Null => "Null",
-            JsoncTokenType.LeadingComment => $"LeadingComment({Literal})",
-            JsoncTokenType.TrailingComment => $"TrailingComment({Literal})",
+            JsoncTokenType.Comment => $"Comment({Literal})",
             _ => "Unknown"
         };
     }

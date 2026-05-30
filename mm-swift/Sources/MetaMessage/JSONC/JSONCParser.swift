@@ -117,7 +117,7 @@ public class JSONCParser {
                 return result
             }
 
-            if tok.type == .leadingComment {
+            if tok.type == .comment {
                 if !pendingComments.isEmpty {
                     let last = pendingComments[pendingComments.count - 1]
                     if tok.line - last.line > 1 {
@@ -129,15 +129,6 @@ public class JSONCParser {
                 continue
             }
 
-            if tok.type == .trailingComment {
-                if let val = result {
-                    if let parsed = parseCommentToTag(tok.literal) {
-                        mergeNodeTag(val, parsed)
-                    }
-                }
-                _ = next()
-                continue
-            }
 
             result = try parseNode("")
         }
@@ -355,7 +346,7 @@ public class JSONCParser {
                 break
             }
 
-            if tok.type == .leadingComment {
+            if tok.type == .comment {
                 if !pendingComments.isEmpty {
                     let last = pendingComments[pendingComments.count - 1]
                     if tok.line - last.line > 1 {
@@ -367,16 +358,6 @@ public class JSONCParser {
                 continue
             }
 
-            if tok.type == .trailingComment {
-                if let lastField = obj.fields.last {
-                    let val = lastField.value
-                    if let parsed = parseCommentToTag(tok.literal) {
-                        mergeNodeTag(val, parsed)
-                    }
-                }
-                _ = next()
-                continue
-            }
 
             let keyTok = next()
             guard keyTok.type == .string else {
@@ -443,7 +424,7 @@ public class JSONCParser {
                 break
             }
 
-            if tok.type == .leadingComment {
+            if tok.type == .comment {
                 if !pendingComments.isEmpty {
                     let last = pendingComments[pendingComments.count - 1]
                     if tok.line - last.line > 1 {
@@ -455,16 +436,6 @@ public class JSONCParser {
                 continue
             }
 
-            if tok.type == .trailingComment {
-                if let lastItem = arr.items.last {
-                    let val = lastItem
-                    if let parsed = parseCommentToTag(tok.literal) {
-                        mergeNodeTag(val, parsed)
-                    }
-                }
-                _ = next()
-                continue
-            }
 
             let itemPath = "\(path)[\(index)]"
             if let item = try parseNode(itemPath) {

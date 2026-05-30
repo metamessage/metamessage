@@ -105,7 +105,7 @@ class JsoncParser
                 return $val;
             }
 
-            if ($tok->type === JsoncTokenType::LeadingComment) {
+            if ($tok->type === JsoncTokenType::Comment) {
                 if (count($this->pending) > 0) {
                     $last = $this->pending[count($this->pending) - 1];
                     if ($tok->line - $last->line > 1) {
@@ -113,17 +113,6 @@ class JsoncParser
                     }
                 }
                 $this->pending[] = $tok;
-                $this->next();
-                continue;
-            }
-
-            if ($tok->type === JsoncTokenType::TrailingComment) {
-                if ($val !== null) {
-                    $parsed = self::parseCommentsToTag($tok->literal);
-                    if ($parsed !== null) {
-                        self::mergeNodeTag($val, $parsed);
-                    }
-                }
                 $this->next();
                 continue;
             }
@@ -836,7 +825,7 @@ class JsoncParser
                 break;
             }
 
-            if ($tok->type === JsoncTokenType::LeadingComment) {
+            if ($tok->type === JsoncTokenType::Comment) {
                 if (count($this->pending) > 0) {
                     $last = $this->pending[count($this->pending) - 1];
                     if ($tok->line - $last->line > 1) {
@@ -844,17 +833,6 @@ class JsoncParser
                     }
                 }
                 $this->pending[] = $tok;
-                $this->next();
-                continue;
-            }
-
-            if ($tok->type === JsoncTokenType::TrailingComment) {
-                if ($val !== null) {
-                    $parsed = self::parseCommentsToTag($tok->literal);
-                    if ($parsed !== null) {
-                        self::mergeNodeTag($val, $parsed);
-                    }
-                }
                 $this->next();
                 continue;
             }
@@ -944,7 +922,7 @@ class JsoncParser
                 break;
             }
 
-            if ($tok->type === JsoncTokenType::LeadingComment) {
+            if ($tok->type === JsoncTokenType::Comment) {
                 if (count($this->pending) > 0) {
                     $last = $this->pending[count($this->pending) - 1];
                     if ($tok->line - $last->line > 1) {
@@ -952,17 +930,6 @@ class JsoncParser
                     }
                 }
                 $this->pending[] = $tok;
-                $this->next();
-                continue;
-            }
-
-            if ($tok->type === JsoncTokenType::TrailingComment) {
-                if ($item !== null) {
-                    $parsed = self::parseCommentsToTag($tok->literal);
-                    if ($parsed !== null) {
-                        self::mergeNodeTag($item, $parsed);
-                    }
-                }
                 $this->next();
                 continue;
             }
@@ -1017,10 +984,8 @@ class JsoncParser
 
     private static function parseCommentsToTag(string $cs): ?Tag
     {
-        $trimmed = trim($cs);
-        $lower = strtolower($trimmed);
-        if (str_starts_with($lower, 'mm:')) {
-            $after = substr($trimmed, 3);
+        if (str_starts_with($cs, 'mm:')) {
+            $after = substr($cs, 3);
             $parsed = Tag::parseMMTag($after);
             return $parsed;
         }

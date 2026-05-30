@@ -3,7 +3,7 @@
 namespace io\metamessage\jsonc;
 
 /**
- * JSONC scanner that tokenizes JSON with comments (// and /* *​/)
+ * JSONC scanner that tokenizes JSON with comments (//)
  */
 class JsoncScanner
 {
@@ -11,7 +11,6 @@ class JsoncScanner
     private int $pos;
     private int $line;
     private int $col;
-    private bool $newLine;
 
     public function __construct(string $input)
     {
@@ -19,7 +18,6 @@ class JsoncScanner
         $this->pos     = 0;
         $this->line    = 1;
         $this->col     = 1;
-        $this->newLine = false;
     }
 
     private function peek(): string
@@ -39,7 +37,6 @@ class JsoncScanner
         $this->pos++;
 
         if ($ch === "\n") {
-            $this->newLine = true;
             $this->line++;
             $this->col = 1;
         } else {
@@ -82,11 +79,9 @@ class JsoncScanner
                 return new JsoncToken(JsoncTokenType::RBracket, "]", $startLine, $startCol);
             case ':':
                 $this->next();
-                $this->newLine = false;
                 return new JsoncToken(JsoncTokenType::Colon, ":", $startLine, $startCol);
             case ',':
                 $this->next();
-                $this->newLine = false;
                 return new JsoncToken(JsoncTokenType::Comma, ",", $startLine, $startCol);
             case '"':
                 return $this->scanString();
@@ -130,7 +125,6 @@ class JsoncScanner
         $this->next();
 
         if ($this->peek() === '/') {
-            $c = $this->newLine ? JsoncTokenType::LeadingComment : JsoncTokenType::TrailingComment;
             $this->next();
             $buf = "";
             while (true) {
@@ -140,26 +134,9 @@ class JsoncScanner
                 }
                 $buf .= $this->next();
             }
-            return new JsoncToken($c, trim($buf), $startLine, $startCol);
+            return new JsoncToken(JsoncTokenType::Comment, trim($buf), $startLine, $startCol);
         }
 
-        if ($this->peek() === '*') {
-            $c = $this->newLine ? JsoncTokenType::LeadingComment : JsoncTokenType::TrailingComment;
-            $this->next();
-            $buf = "";
-            while (true) {
-                if ($this->peek() === "\0") {
-                    break;
-                }
-                if ($this->peek() === '*' && $this->pos + 1 < count($this->src) && $this->src[$this->pos + 1] === '/') {
-                    $this->next();
-                    $this->next();
-                    break;
-                }
-                $buf .= $this->next();
-            }
-            return new JsoncToken($c, trim($buf), $startLine, $startCol);
-        }
 
         return new JsoncToken(JsoncTokenType::EOF, "", $this->line, $this->col);
     }

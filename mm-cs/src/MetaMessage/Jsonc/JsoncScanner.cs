@@ -6,7 +6,6 @@ public class JsoncScanner
     private int _position;
     private int _line;
     private int _column;
-    private bool _newLine;
 
     public JsoncScanner(string input)
     {
@@ -52,11 +51,9 @@ public class JsoncScanner
                 return NewToken(JsoncTokenType.RBracket);
             case ':':
                 Advance(1);
-                _newLine = false;
                 return NewToken(JsoncTokenType.Colon);
             case ',':
                 Advance(1);
-                _newLine = false;
                 return NewToken(JsoncTokenType.Comma);
             case '"':
                 return ScanString();
@@ -89,7 +86,7 @@ public class JsoncScanner
         if (_input.Length <= _position + 1)
         {
             Advance(1);
-            return NewToken(JsoncTokenType.LeadingComment, "/");
+            return NewToken(JsoncTokenType.Comment, "/");
         }
 
         char next = _input[_position + 1];
@@ -107,44 +104,16 @@ public class JsoncScanner
             string content = _input.Substring(contentStart, _position - contentStart).Trim();
             return new JsoncToken
             {
-                Type = _newLine ? JsoncTokenType.LeadingComment : JsoncTokenType.TrailingComment,
+                Type = JsoncTokenType.Comment,
                 Literal = content,
                 Line = startLine,
                 Column = startColumn
             };
         }
 
-        if (next == '*')
-        {
-            Advance(2);
-            int contentStart = _position;
-            while (_position < _input.Length - 1)
-            {
-                if (_input[_position] == '*' && _input[_position + 1] == '/')
-                {
-                    Advance(2);
-                    break;
-                }
-                if (_input[_position] == '\n')
-                {
-                    _line++;
-                    _column = 1;
-                }
-                Advance(1);
-            }
-            string content = _input.Substring(contentStart, _position - contentStart - 2).Trim();
-            return new JsoncToken
-            {
-                Type = _newLine ? JsoncTokenType.LeadingComment : JsoncTokenType.TrailingComment,
-                Literal = content,
-                IsBlock = true,
-                Line = startLine,
-                Column = startColumn
-            };
-        }
 
         Advance(1);
-        return NewToken(JsoncTokenType.LeadingComment, "/");
+        return NewToken(JsoncTokenType.Comment, "/");
     }
 
     private JsoncToken ScanString()
@@ -249,7 +218,6 @@ public class JsoncScanner
         {
             if (_input[_position] == '\n')
             {
-                _newLine = true;
                 _line++;
                 _column = 1;
             }

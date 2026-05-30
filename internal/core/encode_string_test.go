@@ -12,7 +12,6 @@ import (
 	"time"
 
 	"github.com/metamessage/metamessage/internal/ir"
-	"github.com/metamessage/metamessage/internal/jsonc"
 )
 
 // go test ./internal/core -v -run TestEncodeString
@@ -47,7 +46,7 @@ func TestEncodeString(t *testing.T) {
 			input:       "",
 			tag:         "location=-10",
 			expectedOut: nil,
-			expectedErr: "not allow empty value",
+			expectedErr: "not allow empty",
 		},
 		{
 			name:        "location__10",
@@ -68,7 +67,7 @@ func TestEncodeString(t *testing.T) {
 			input:       time.Now(),
 			tag:         "location=-13",
 			expectedOut: nil,
-			expectedErr: "parse tag failed",
+			expectedErr: "location offset hours must be between -12 and +14",
 		},
 		{
 			name:        "location_14",
@@ -131,7 +130,7 @@ func TestEncodeString(t *testing.T) {
 			name:        "url_zero",
 			input:       url.URL{},
 			expectedOut: nil,
-			expectedErr: "not allow empty value",
+			expectedErr: "not allow empty",
 		},
 		{
 			name:        "nil_pointer",
@@ -168,7 +167,7 @@ func TestEncodeString(t *testing.T) {
 			name:        "pointer2",
 			input:       &y,
 			expectedOut: nil,
-			expectedErr: "not allow empty value",
+			expectedErr: "not allow empty",
 		},
 		{
 			name:        "Ordinary byte vec",
@@ -180,13 +179,13 @@ func TestEncodeString(t *testing.T) {
 			name:        "Empty vec ([]byte{})",
 			input:       []byte{},
 			expectedOut: nil,
-			expectedErr: "not allow empty value",
+			expectedErr: "not allow empty",
 		},
 		{
 			name:        "vec",
 			input:       []byte{0, 0, 0, 0},
 			expectedOut: nil,
-			expectedErr: "not allow empty value",
+			expectedErr: "not allow empty",
 		},
 	}
 
@@ -197,7 +196,7 @@ func TestEncodeString(t *testing.T) {
 			if err != nil {
 				fmt.Println("err", err)
 			}
-			fmt.Printf("encode len: %d\n", len(bs))
+			// fmt.Printf("encode len: %d\n", len(bs))
 
 			if tc.expectedErr != "" {
 				if err == nil {
@@ -218,8 +217,8 @@ func TestEncodeString(t *testing.T) {
 			if err != nil {
 				fmt.Println("decoded err", err)
 			}
-			fmt.Println("decoded:", Dump(bs2))
-			fmt.Println("jsonc:", jsonc.ToJSONC(bs2))
+			// fmt.Println("decoded:", Dump(bs2))
+			// fmt.Println("jsonc:", jsonc.ToJSONC(bs2))
 			v, ok := bs2.(*ir.Value)
 			if ok {
 				if dataTime, isTime := v.Data.(time.Time); isTime {

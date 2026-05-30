@@ -1,0 +1,33 @@
+#include "mc_scanner.h"
+#include <stdlib.h>
+#include <string.h>
+#include <ctype.h>
+#include <stdio.h>
+
+struct MMC_Scanner {
+    const char* input;
+    size_t input_len;
+    size_t position;
+    size_t line;
+    size_t column;
+};
+
+static void advance(MMC_Scanner* scanner, size_t count) {
+    for (size_t i = 0; i < count; i++) {
+        if (scanner->position >= scanner->input_len) break;
+        char ch = scanner->input[scanner->position];
+        if (ch == '\n') {
+            scanner->line++;
+            scanner->column = 0;
+        } else {
+            scanner->column++;
+        }
+        scanner->position++;
+    }
+}
+
+static void skip_whitespace(MMC_Scanner* scanner) {
+    while (scanner->position < scanner->input_len) {
+        char ch = scanner->input[scanner->position];
+        if (ch == ' ' || ch == '\t' || ch == '\n' || ch == '\r') {
+            if (ch == #include mc_scanner.h

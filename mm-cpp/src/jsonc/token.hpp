@@ -19,8 +19,7 @@ enum class TokenType {
     True,
     False,
     Null,
-    LeadingComment,
-    TrailingComment,
+    Comment,
     Invalid
 };
 

@@ -100,21 +100,21 @@ final class JSONCScannerTests: XCTestCase {
     func testScanLineComment() {
         let scanner = JSONCScanner(input: "// this is a comment")
         let token = scanner.nextToken()
-        XCTAssertEqual(token.type, .leadingComment)
+        XCTAssertEqual(token.type, .comment)
         XCTAssertEqual(token.literal, "this is a comment")
     }
 
     func testScanBlockComment() {
         let scanner = JSONCScanner(input: "/* this is a block comment */")
         let token = scanner.nextToken()
-        XCTAssertEqual(token.type, .leadingComment)
+        XCTAssertEqual(token.type, .comment)
         XCTAssertEqual(token.literal, "this is a block comment")
     }
 
     func testScanMultiLineBlockComment() {
         let scanner = JSONCScanner(input: "/* this is\na block\ncomment */")
         let token = scanner.nextToken()
-        XCTAssertEqual(token.type, .leadingComment)
+        XCTAssertEqual(token.type, .comment)
         XCTAssertEqual(token.literal, "this is\na block\ncomment")
     }
 
@@ -155,7 +155,7 @@ final class JSONCScannerTests: XCTestCase {
         // mm:type=str
         "value"
         """)
-        XCTAssertEqual(scanner.nextToken().type, .leadingComment)
+        XCTAssertEqual(scanner.nextToken().type, .comment)
         XCTAssertEqual(scanner.nextToken().type, .string)
         XCTAssertEqual(scanner.nextToken().type, .eof)
     }

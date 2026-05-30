@@ -387,7 +387,7 @@ public class ComprehensiveTests
         var node = JsoncParser.ParseFromString(@"{
   // This is a leading comment
   ""name"": ""test"", // trailing comment
-  /* block comment */
+  // block comment
   ""value"": 42
 }");
         var obj = Assert.IsType<JsoncObject>(node);

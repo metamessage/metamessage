@@ -69,69 +69,22 @@ export class JSONCPrinter {
     }
     const type = tag.type;
     const text = value.getText();
-    const val = value.getValue();
-
-    if (text) {
-      switch (type) {
-        case ValueType.Str:
-        case ValueType.Bytes:
-        case ValueType.Datetime:
-        case ValueType.Date:
-        case ValueType.Time:
-        case ValueType.Uuid:
-        case ValueType.Ip:
-        case ValueType.Url:
-        case ValueType.Email:
-        case ValueType.Enums:
-          return `"${text}"`;
-        default:
-          return text;
-      }
-    }
 
     switch (type) {
-      case ValueType.Unknown:
-        return 'null';
       case ValueType.Str:
-      case ValueType.Uuid:
-      case ValueType.Email:
-        return `"${val}"`;
       case ValueType.Bytes:
-        return `"${uint8ToBase64(val)}"`;
       case ValueType.Datetime:
       case ValueType.Date:
       case ValueType.Time:
-        return `"${this.dateToText(val)}"`;
+      case ValueType.Uuid:
       case ValueType.Ip:
       case ValueType.Url:
+      case ValueType.Email:
       case ValueType.Enums:
-        return `"${val}"`;
-      case ValueType.Bool:
-        return val ? 'true' : 'false';
-      case ValueType.Bigint:
-      case ValueType.I:
-      case ValueType.I8:
-      case ValueType.I16:
-      case ValueType.I32:
-      case ValueType.I64:
-      case ValueType.U:
-      case ValueType.U8:
-      case ValueType.U16:
-      case ValueType.U32:
-      case ValueType.U64:
-      case ValueType.F32:
-      case ValueType.F64:
+        return `"${text}"`;
       default:
-        return String(val);
+        return text;
     }
-  }
-
-  private dateToText(val: any): string {
-    if (val instanceof Date) {
-      const pad = (n: number) => String(n).padStart(2, '0');
-      return `${val.getUTCFullYear()}-${pad(val.getUTCMonth() + 1)}-${pad(val.getUTCDate())} ${pad(val.getUTCHours())}:${pad(val.getUTCMinutes())}:${pad(val.getUTCSeconds())}`;
-    }
-    return String(val);
   }
 
   private printObject(obj: MMObject): string {

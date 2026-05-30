@@ -42,6 +42,9 @@ static MMC_Node* parse_value(MMC_Parser* parser) {
             return parse_object(parser);
         case MMC_TOKEN_LBRACKET:
             return parse_array(parser);
+        case MMC_TOKEN_COMMENT:
+            next_token(parser);
+            return parse_value(parser);
         case MMC_TOKEN_STRING:
         case MMC_TOKEN_NUMBER:
         case MMC_TOKEN_TRUE:
@@ -130,6 +133,11 @@ static MMC_Node* parse_object(MMC_Parser* parser) {
             continue;
         }
 
+        if (parser->current_token->type == MMC_TOKEN_COMMENT) {
+            next_token(parser);
+            continue;
+        }
+
         if (parser->current_token->type != MMC_TOKEN_STRING) {
             if (parser->current_token->type != MMC_TOKEN_EOF) {
                 next_token(parser);
@@ -193,6 +201,11 @@ static MMC_Node* parse_array(MMC_Parser* parser) {
 
     while (parser->current_token != NULL && parser->current_token->type != MMC_TOKEN_RBRACKET) {
         if (parser->current_token->type == MMC_TOKEN_COMMA) {
+            next_token(parser);
+            continue;
+        }
+
+        if (parser->current_token->type == MMC_TOKEN_COMMENT) {
             next_token(parser);
             continue;
         }

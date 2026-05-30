@@ -1,11 +1,8 @@
 package core
 
 import (
-	"fmt"
 	"reflect"
 	"testing"
-
-	"github.com/metamessage/metamessage/internal/jsonc"
 )
 
 // go test ./internal/core -v
@@ -104,7 +101,7 @@ func TestEncodeArray(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			encoded, err := FromValue(tc.input, tc.tag)
-			fmt.Println("encoded", encoded)
+			// fmt.Println("encoded", encoded)
 			if tc.expectedErr != "" {
 				if err == nil || err.Error() != tc.expectedErr {
 					t.Errorf("Expected error: %s, Actual error: %v", tc.expectedErr, err)
@@ -116,11 +113,11 @@ func TestEncodeArray(t *testing.T) {
 				t.Fatalf("Unexpected error: %v", err)
 			}
 
-			gotVal, decodeErr := Decode(encoded)
+			_, decodeErr := Decode(encoded)
 			if decodeErr != nil {
 				t.Fatalf("decode failed: %v", decodeErr)
 			}
-			fmt.Println("decoded:", Dump(gotVal), jsonc.ToJSONC(gotVal))
+			// fmt.Println("decoded:", Dump(gotVal), jsonc.ToJSONC(gotVal))
 
 			// if !reflect.DeepEqual(str, tc.expectedBuf) {
 			// 	t.Errorf("Expected buffer: %v, actual buffer: %v", tc.expectedBuf, str)

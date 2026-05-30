@@ -10,8 +10,7 @@ export enum TokenType {
   TRUE = 'true',
   FALSE = 'false',
   NULL = 'null',
-  LINECOMMENT = 'LINECOMMENT',
-  BLOCKCOMMENT = 'BLOCKCOMMENT',
+  COMMENT = 'COMMENT',
   EOF = 'EOF',
 }
 
@@ -39,7 +38,7 @@ export class JSONCScanner {
 
   nextToken(): Token {
     this.skipWhitespace();
-    
+
     if (this.position >= this.length) {
       return this.createToken(TokenType.EOF, '');
     }
@@ -82,7 +81,9 @@ export class JSONCScanner {
       case '/':
         return this.consumeComment();
       default:
-        throw new Error(`Unexpected character: ${char} at ${this.line}:${this.column}`);
+        throw new Error(
+          `Unexpected character: ${char} at ${this.line}:${this.column}`,
+        );
     }
   }
 
@@ -103,7 +104,7 @@ export class JSONCScanner {
 
     while (this.position < this.length) {
       const char = this.input[this.position];
-      
+
       if (char === '"') {
         this.position++;
         this.column++;
@@ -147,10 +148,16 @@ export class JSONCScanner {
     if (this.position < this.length && this.input[this.position] === '0') {
       this.position++;
       this.column++;
-    } else if (this.position < this.length && /[1-9]/.test(this.input[this.position] as string)) {
+    } else if (
+      this.position < this.length &&
+      /[1-9]/.test(this.input[this.position] as string)
+    ) {
       this.position++;
       this.column++;
-      while (this.position < this.length && /[0-9]/.test(this.input[this.position] as string)) {
+      while (
+        this.position < this.length &&
+        /[0-9]/.test(this.input[this.position] as string)
+      ) {
         this.position++;
         this.column++;
       }
@@ -161,8 +168,14 @@ export class JSONCScanner {
     if (this.position < this.length && this.input[this.position] === '.') {
       this.position++;
       this.column++;
-      if (this.position < this.length && /[0-9]/.test(this.input[this.position] as string)) {
-        while (this.position < this.length && /[0-9]/.test(this.input[this.position] as string)) {
+      if (
+        this.position < this.length &&
+        /[0-9]/.test(this.input[this.position] as string)
+      ) {
+        while (
+          this.position < this.length &&
+          /[0-9]/.test(this.input[this.position] as string)
+        ) {
           this.position++;
           this.column++;
         }
@@ -171,15 +184,27 @@ export class JSONCScanner {
       }
     }
 
-    if (this.position < this.length && (this.input[this.position] === 'e' || this.input[this.position] === 'E')) {
+    if (
+      this.position < this.length &&
+      (this.input[this.position] === 'e' || this.input[this.position] === 'E')
+    ) {
       this.position++;
       this.column++;
-      if (this.position < this.length && (this.input[this.position] === '+' || this.input[this.position] === '-')) {
+      if (
+        this.position < this.length &&
+        (this.input[this.position] === '+' || this.input[this.position] === '-')
+      ) {
         this.position++;
         this.column++;
       }
-      if (this.position < this.length && /[0-9]/.test(this.input[this.position] as string)) {
-        while (this.position < this.length && /[0-9]/.test(this.input[this.position] as string)) {
+      if (
+        this.position < this.length &&
+        /[0-9]/.test(this.input[this.position] as string)
+      ) {
+        while (
+          this.position < this.length &&
+          /[0-9]/.test(this.input[this.position] as string)
+        ) {
           this.position++;
           this.column++;
         }
@@ -203,7 +228,10 @@ export class JSONCScanner {
     const startColumn = this.column;
 
     for (let i = 0; i < expected.length; i++) {
-      if (this.position + i >= this.length || this.input[this.position + i] !== expected[i]) {
+      if (
+        this.position + i >= this.length ||
+        this.input[this.position + i] !== expected[i]
+      ) {
         throw new Error(`Unexpected token at ${startLine}:${startColumn}`);
       }
     }
@@ -220,59 +248,33 @@ export class JSONCScanner {
   }
 
   private consumeComment(): Token {
-    const start = this.position;
     const startLine = this.line;
     const startColumn = this.column;
     this.position++;
     this.column++;
 
     if (this.position < this.length && this.input[this.position] === '/') {
-      // Line comment
       this.position++;
       this.column++;
-      while (this.position < this.length && this.input[this.position] !== '\n') {
+      const contentStart = this.position;
+      while (
+        this.position < this.length &&
+        this.input[this.position] !== '\n'
+      ) {
         this.position++;
         this.column++;
       }
-      const value = this.input.substring(start, this.position);
+      const value = this.input.substring(contentStart, this.position).trim();
       return {
-        type: TokenType.LINECOMMENT,
-        value,
-        line: startLine,
-        column: startColumn,
-      };
-    } else if (this.position < this.length && this.input[this.position] === '*') {
-      // Block comment
-      this.position++;
-      this.column++;
-      let foundEnd = false;
-      while (this.position + 1 < this.length) {
-        if (this.input[this.position] === '*' && this.input[this.position + 1] === '/') {
-          this.position += 2;
-          this.column += 2;
-          foundEnd = true;
-          break;
-        } else if (this.input[this.position] === '\n') {
-          this.line++;
-          this.column = 1;
-          this.position++;
-        } else {
-          this.position++;
-          this.column++;
-        }
-      }
-      if (!foundEnd) {
-        throw new Error(`Unclosed block comment at ${startLine}:${startColumn}`);
-      }
-      const value = this.input.substring(start, this.position);
-      return {
-        type: TokenType.BLOCKCOMMENT,
+        type: TokenType.COMMENT,
         value,
         line: startLine,
         column: startColumn,
       };
     } else {
-      throw new Error(`Unexpected character after '/' at ${startLine}:${startColumn}`);
+      throw new Error(
+        `Unexpected character after '/' at ${startLine}:${startColumn}`,
+      );
     }
   }
 

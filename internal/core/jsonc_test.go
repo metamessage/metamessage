@@ -1,7 +1,6 @@
 package core
 
 import (
-	"fmt"
 	"testing"
 
 	"github.com/metamessage/metamessage/internal/jsonc"
@@ -163,7 +162,7 @@ func TestStrToJsonc(t *testing.T) {
 			encoder := getEncoder()
 			defer putEncoder(encoder)
 			wire, err := encoder.Encode(node)
-			fmt.Println("wire", wire)
+			// fmt.Println("wire", wire)
 			_, _ = Decode(wire)
 
 		})

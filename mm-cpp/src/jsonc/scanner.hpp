@@ -4,7 +4,6 @@
 #include "token.hpp"
 #include <string>
 #include <vector>
-#include <optional>
 
 namespace mmc {
 namespace jsonc {
@@ -35,21 +34,14 @@ private:
     Token scanNumber();
     Token scanIdentifier();
 
-    bool isLeadingComment() const;
-
     Token createToken(TokenType type, const std::string& literal = "") {
-        Token token(type, literal, line_, column_);
-        lastToken_ = currentToken_;
-        currentToken_ = token;
-        return token;
+        return Token(type, literal, line_, column_);
     }
 
     std::vector<char> input_;
     size_t position_;
     size_t line_;
     size_t column_;
-    std::optional<Token> lastToken_;
-    std::optional<Token> currentToken_;
 };
 
 } // namespace jsonc

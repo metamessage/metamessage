@@ -2,12 +2,10 @@ package core
 
 import (
 	"bytes"
-	"fmt"
 	"reflect"
 	"testing"
 
 	"github.com/metamessage/metamessage/internal/ir"
-	"github.com/metamessage/metamessage/internal/jsonc"
 )
 
 // go test ./internal/core -v -run TestEncodeBool
@@ -75,7 +73,7 @@ func TestEncodeBool(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			bs, err := FromValue(tc.input, "")
-			fmt.Println("res", bs)
+			// fmt.Println("res", bs)
 
 			if (err != nil) != tc.wantErr {
 				t.Fatalf("error mismatch: expected err=%t, got err=%v", tc.wantErr, err)
@@ -87,7 +85,7 @@ func TestEncodeBool(t *testing.T) {
 					t.Fatalf("decode failed: %v", decodeErr)
 				}
 
-				fmt.Println("decoded:", Dump(gotVal), jsonc.ToJSONC(gotVal))
+				// fmt.Println("decoded:", Dump(gotVal), jsonc.ToJSONC(gotVal))
 				if !reflect.DeepEqual(gotVal.(*ir.Value).Data, tc.wantDecode) {
 					t.Errorf("value mismatch: expected %v (%T), got %v (%T)",
 						tc.wantDecode, tc.wantDecode, gotVal, gotVal)

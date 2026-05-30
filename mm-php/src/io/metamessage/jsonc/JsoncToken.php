@@ -19,8 +19,7 @@ class JsoncTokenType
     const False  = 10;
     const Null   = 11;
 
-    const LeadingComment  = 12;
-    const TrailingComment = 13;
+    const Comment = 12;
 }
 
 class LiteralType

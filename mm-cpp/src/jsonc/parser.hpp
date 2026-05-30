@@ -64,15 +64,7 @@ private:
   void skipComments() {
     while (pos_ < tokens_.size()) {
       auto &tok = tokens_[pos_];
-      if (tok.type == TokenType::LeadingComment) {
-        std::string comment = tok.literal;
-        auto it = comment.find("mm:");
-        if (it != std::string::npos) {
-          std::string tagStr = comment.substr(it + 3);
-          pendingTag_ = ir::Tag::parse(tagStr);
-        }
-        ++pos_;
-      } else if (tok.type == TokenType::TrailingComment) {
+      if (tok.type == TokenType::Comment) {
         std::string comment = tok.literal;
         auto it = comment.find("mm:");
         if (it != std::string::npos) {

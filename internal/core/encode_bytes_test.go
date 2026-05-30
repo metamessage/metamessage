@@ -2,12 +2,10 @@ package core
 
 import (
 	"bytes"
-	"fmt"
 	"reflect"
 	"testing"
 
 	"github.com/metamessage/metamessage/internal/ir"
-	"github.com/metamessage/metamessage/internal/jsonc"
 )
 
 // go test -v -run TestEncodeBytes
@@ -84,7 +82,7 @@ func TestEncodeBytes(t *testing.T) {
 			}
 
 			bs2, _ := Decode(bs)
-			fmt.Println("decoded:", Dump(bs2), jsonc.ToJSONC(bs2))
+			// fmt.Println("decoded:", Dump(bs2), jsonc.ToJSONC(bs2))
 			if !reflect.DeepEqual(bs2.(*ir.Value).Data, tc.expectedOut) {
 				t.Errorf("Expected output: %v %T, actual output: %v %T", tc.expectedOut, tc.expectedOut, bs2.(*ir.Value).Data, bs2.(*ir.Value).Data)
 			}

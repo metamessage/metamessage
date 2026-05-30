@@ -7,7 +7,6 @@ import (
 	"testing"
 
 	"github.com/metamessage/metamessage/internal/ir"
-	"github.com/metamessage/metamessage/internal/jsonc"
 )
 
 // go test ./internal/core -v -run TestEncodeFloat
@@ -119,7 +118,7 @@ func TestEncodeFloat(t *testing.T) {
 
 			var bs []byte
 			bs, err = FromValue(tc.input, "")
-			fmt.Println("bs", bs)
+			// fmt.Println("bs", bs)
 
 			if (err != nil) != tc.wantErr {
 				t.Fatalf("Mismatch in error status: expected = %t, actual = %v", tc.wantErr, err)
@@ -130,7 +129,7 @@ func TestEncodeFloat(t *testing.T) {
 				if decodeErr != nil {
 					t.Fatalf("decode failed: %v", decodeErr)
 				}
-				fmt.Println("decoded:", Dump(gotVal), jsonc.ToJSONC(gotVal))
+				// fmt.Println("decoded:", Dump(gotVal), jsonc.ToJSONC(gotVal))
 				if !reflect.DeepEqual(gotVal.(*ir.Value).Data, tc.wantDecode) {
 					t.Errorf("value mismatch: expected %v (%T), got %v (%T)",
 						tc.wantDecode, tc.wantDecode, gotVal.(*ir.Value).Data, gotVal.(*ir.Value).Data)

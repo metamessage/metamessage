@@ -81,7 +81,7 @@ impl Parser {
                 return Err("empty input".to_string());
             }
 
-            if tok.token_type == TokenType::LeadingComment {
+            if tok.token_type == TokenType::Comment {
                 if !self.pending.is_empty() {
                     let last = &self.pending[self.pending.len() - 1];
                     if tok.line - last.line > 1 {
@@ -89,11 +89,6 @@ impl Parser {
                     }
                 }
                 self.pending.push(tok);
-                self.next();
-                continue;
-            }
-
-            if tok.token_type == TokenType::TrailingComment {
                 self.next();
                 continue;
             }
@@ -215,7 +210,6 @@ impl Parser {
                 Ok(Some(value))
             }
             TokenType::Null => Err("null is not supported".to_string()),
-            TokenType::TrailingComment => Ok(None),
             _ => Err(format!("unexpected token: {:?}", tok.token_type)),
         }
     }
@@ -244,7 +238,7 @@ impl Parser {
                 break;
             }
 
-            if tok.token_type == TokenType::LeadingComment {
+            if tok.token_type == TokenType::Comment {
                 if !self.pending.is_empty() {
                     let last = &self.pending[self.pending.len() - 1];
                     if tok.line - last.line > 1 {
@@ -252,19 +246,6 @@ impl Parser {
                     }
                 }
                 self.pending.push(tok);
-                self.next();
-                continue;
-            }
-
-            if tok.token_type == TokenType::TrailingComment {
-                if let Some(parsed) = Tag::parse(&tok.literal) {
-                    if let Some(last) = fields.last_mut() {
-                        if let Some(ref mut existing) = last.value.get_tag_mut() {
-                            let merged = Tag::merge(Some(existing.clone()), parsed);
-                            **existing = merged;
-                        }
-                    }
-                }
                 self.next();
                 continue;
             }
@@ -337,7 +318,7 @@ impl Parser {
                 break;
             }
 
-            if tok.token_type == TokenType::LeadingComment {
+            if tok.token_type == TokenType::Comment {
                 if !self.pending.is_empty() {
                     let last = &self.pending[self.pending.len() - 1];
                     if tok.line - last.line > 1 {
@@ -345,19 +326,6 @@ impl Parser {
                     }
                 }
                 self.pending.push(tok);
-                self.next();
-                continue;
-            }
-
-            if tok.token_type == TokenType::TrailingComment {
-                if let Some(parsed) = Tag::parse(&tok.literal) {
-                    if let Some(last) = items.last_mut() {
-                        if let Some(ref mut existing) = last.get_tag_mut() {
-                            let merged = Tag::merge(Some(existing.clone()), parsed);
-                            **existing = merged;
-                        }
-                    }
-                }
                 self.next();
                 continue;
             }

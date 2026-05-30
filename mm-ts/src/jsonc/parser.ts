@@ -27,10 +27,7 @@ export class JSONCParser {
         break;
       }
 
-      if (
-        tok.type === TokenType.LINECOMMENT ||
-        tok.type === TokenType.BLOCKCOMMENT
-      ) {
+      if (tok.type === TokenType.COMMENT) {
         if (this.pendingComments.length > 0) {
           const last = this.pendingComments[this.pendingComments.length - 1];
           if (last && tok.line - last.line > 1) {
@@ -614,10 +611,7 @@ export class JSONCParser {
         break;
       }
 
-      if (
-        tok.type === TokenType.LINECOMMENT ||
-        tok.type === TokenType.BLOCKCOMMENT
-      ) {
+      if (tok.type === TokenType.COMMENT) {
         if (this.pendingComments.length > 0) {
           const last = this.pendingComments[this.pendingComments.length - 1];
           if (last && tok.line - last.line > 1) {
@@ -695,10 +689,7 @@ export class JSONCParser {
         break;
       }
 
-      if (
-        tok.type === TokenType.LINECOMMENT ||
-        tok.type === TokenType.BLOCKCOMMENT
-      ) {
+      if (tok.type === TokenType.COMMENT) {
         if (this.pendingComments.length > 0) {
           const last = this.pendingComments[this.pendingComments.length - 1];
           if (last && tok.line - last.line > 1) {
@@ -737,15 +728,6 @@ export class JSONCParser {
     }
 
     return arr;
-  }
-
-  private mergeNodeTag(n: Node, parsed: Tag): void {
-    if (!n || !parsed) {
-      return;
-    }
-    const existing = n.getTag();
-    const merged = this.mergeTag(existing, parsed);
-    n.setTag(merged);
   }
 
   private mergeTag(a: Tag | null, b: Tag): Tag {
@@ -795,19 +777,8 @@ export class JSONCParser {
   }
 
   private parseCommentsToTag(cs: string): Tag | null {
-    let trimmed = cs.trim();
-
-    if (trimmed.startsWith('//')) {
-      trimmed = trimmed.substring(2).trim();
-    } else if (trimmed.startsWith('/*')) {
-      trimmed = trimmed.substring(2).trim();
-      if (trimmed.endsWith('*/')) {
-        trimmed = trimmed.slice(0, -2).trim();
-      }
-    }
-
-    if (!trimmed.startsWith('mm:')) return null;
-    const tagStr = trimmed.substring(3).trim();
+    if (!cs.startsWith('mm:')) return null;
+    const tagStr = cs.substring(3).trim();
     if (!tagStr) return null;
     return parseMMTag(tagStr);
   }

@@ -12,8 +12,7 @@ pub enum TokenType {
     True,
     False,
     Null,
-    LeadingComment,
-    TrailingComment,
+    Comment,
 }
 
 #[derive(Debug, Clone)]
@@ -29,9 +28,6 @@ pub struct Scanner {
     position: usize,
     line: usize,
     column: usize,
-    last_token: Option<Token>,
-    current_token: Option<Token>,
-    had_value_since_separator: bool,
 }
 
 impl Scanner {
@@ -41,9 +37,6 @@ impl Scanner {
             position: 0,
             line: 1,
             column: 1,
-            last_token: None,
-            current_token: None,
-            had_value_since_separator: false,
         }
     }
 
@@ -80,23 +73,6 @@ impl Scanner {
                     ch, self.line, self.column
                 ),
             };
-            match t.token_type {
-                TokenType::String
-                | TokenType::Number
-                | TokenType::True
-                | TokenType::False
-                | TokenType::Null
-                | TokenType::RBrace
-                | TokenType::RBracket => {
-                    self.had_value_since_separator = true;
-                }
-                TokenType::LBrace | TokenType::LBracket | TokenType::Comma | TokenType::Colon => {
-                    self.had_value_since_separator = false;
-                }
-                _ => {}
-            }
-            self.last_token = self.current_token.take();
-            self.current_token = Some(t.clone());
             t
         };
 
@@ -115,64 +91,27 @@ impl Scanner {
     }
 
     fn scan_comment(&mut self) -> Token {
-        if self.position + 1 >= self.input.len() {
-            return self.create_token(TokenType::LeadingComment);
+        if self.position + 1 >= self.input.len() || self.input[self.position + 1] != '/' {
+            return self.create_token(TokenType::Comment);
         }
 
-        let next = self.input[self.position + 1];
-        let is_leading = !self.had_value_since_separator;
-
-        let start_pos = self.position;
         let start_line = self.line;
         let start_column = self.column;
 
-        if next == '/' {
-            self.advance(2);
-            while self.position < self.input.len() && self.input[self.position] != '\n' {
-                self.advance(1);
-            }
-            let literal: String = self.input[start_pos..self.position].iter().collect();
-            let token_type = if is_leading {
-                TokenType::LeadingComment
-            } else {
-                TokenType::TrailingComment
-            };
-            let token = Token {
-                token_type,
-                literal,
-                line: start_line,
-                column: start_column,
-            };
-            return token;
-        } else if next == '*' {
-            self.advance(2);
-            while self.position + 1 < self.input.len() {
-                if self.input[self.position] == '*' && self.input[self.position + 1] == '/' {
-                    self.advance(2);
-                    break;
-                }
-                if self.input[self.position] == '\n' {
-                    self.line += 1;
-                    self.column = 0;
-                }
-                self.advance(1);
-            }
-            let literal: String = self.input[start_pos..self.position].iter().collect();
-            let token_type = if is_leading {
-                TokenType::LeadingComment
-            } else {
-                TokenType::TrailingComment
-            };
-            let token = Token {
-                token_type,
-                literal,
-                line: start_line,
-                column: start_column,
-            };
-            return token;
+        self.advance(2);
+        let content_start = self.position;
+        while self.position < self.input.len() && self.input[self.position] != '\n' {
+            self.advance(1);
         }
+        let literal: String = self.input[content_start..self.position].iter().collect();
+        let literal = literal.trim().to_string();
 
-        self.create_token(TokenType::LeadingComment)
+        Token {
+            token_type: TokenType::Comment,
+            literal,
+            line: start_line,
+            column: start_column,
+        }
     }
 
     fn scan_string(&mut self) -> Token {

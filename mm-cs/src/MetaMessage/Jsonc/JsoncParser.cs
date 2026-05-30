@@ -24,7 +24,7 @@ public class JsoncParser
             if (tok.Type == JsoncTokenType.EOF)
                 return new JsoncValue { TokenType = JsoncTokenType.Null };
 
-            if (tok.Type == JsoncTokenType.LeadingComment)
+            if (tok.Type == JsoncTokenType.Comment)
             {
                 if (_pendingComments.Count > 0)
                 {
@@ -38,10 +38,6 @@ public class JsoncParser
                 continue;
             }
 
-            if (tok.Type == JsoncTokenType.TrailingComment)
-            {
-                continue;
-            }
 
             var val = ParseValue("", tok, false);
             return val;
@@ -116,7 +112,7 @@ public class JsoncParser
                 case JsoncTokenType.EOF:
                     return new JsoncValue { TokenType = JsoncTokenType.Null };
 
-                case JsoncTokenType.LeadingComment:
+                case JsoncTokenType.Comment:
                     {
                         if (_pendingComments.Count > 0)
                         {
@@ -127,13 +123,9 @@ public class JsoncParser
                             }
                         }
                         _pendingComments.Add(tok);
+                    }
                         tok = Advance();
                         continue;
-                    }
-
-                case JsoncTokenType.TrailingComment:
-                    tok = Advance();
-                    continue;
 
                 case JsoncTokenType.LBrace:
                     return ParseObject(tok.Line, path);
@@ -214,17 +206,6 @@ public class JsoncParser
             Path = path
         };
 
-        // Handle trailing comments
-        var next = Peek();
-        if (next.Type == JsoncTokenType.TrailingComment)
-        {
-            var trailing = Advance();
-            var parsed = ParseCommentsToTag(trailing.Literal);
-            if (parsed != null)
-            {
-                MergeNodeTag(val, parsed);
-            }
-        }
 
         return val;
     }
@@ -256,16 +237,6 @@ public class JsoncParser
             Path = path
         };
 
-        var next = Peek();
-        if (next.Type == JsoncTokenType.TrailingComment)
-        {
-            var trailing = Advance();
-            var parsed = ParseCommentsToTag(trailing.Literal);
-            if (parsed != null)
-            {
-                MergeNodeTag(val, parsed);
-            }
-        }
 
         return val;
     }
@@ -289,16 +260,6 @@ public class JsoncParser
             Path = path
         };
 
-        var next = Peek();
-        if (next.Type == JsoncTokenType.TrailingComment)
-        {
-            var trailing = Advance();
-            var parsed = ParseCommentsToTag(trailing.Literal);
-            if (parsed != null)
-            {
-                MergeNodeTag(val, parsed);
-            }
-        }
 
         return val;
     }
@@ -334,7 +295,7 @@ public class JsoncParser
             if (tok.Type == JsoncTokenType.RBrace)
                 break;
 
-            if (tok.Type == JsoncTokenType.LeadingComment)
+            if (tok.Type == JsoncTokenType.Comment)
             {
                 if (_pendingComments.Count > 0)
                 {
@@ -345,19 +306,6 @@ public class JsoncParser
                     }
                 }
                 _pendingComments.Add(tok);
-                continue;
-            }
-
-            if (tok.Type == JsoncTokenType.TrailingComment)
-            {
-                if (lastValue != null)
-                {
-                    var parsed = ParseCommentsToTag(tok.Literal);
-                    if (parsed != null)
-                    {
-                        MergeNodeTag(lastValue, parsed);
-                    }
-                }
                 continue;
             }
 
@@ -447,7 +395,7 @@ public class JsoncParser
             if (tok.Type == JsoncTokenType.RBracket)
                 break;
 
-            if (tok.Type == JsoncTokenType.LeadingComment)
+            if (tok.Type == JsoncTokenType.Comment)
             {
                 if (_pendingComments.Count > 0)
                 {
@@ -458,19 +406,6 @@ public class JsoncParser
                     }
                 }
                 _pendingComments.Add(tok);
-                continue;
-            }
-
-            if (tok.Type == JsoncTokenType.TrailingComment)
-            {
-                if (lastItem != null)
-                {
-                    var parsed = ParseCommentsToTag(tok.Literal);
-                    if (parsed != null)
-                    {
-                        MergeNodeTag(lastItem, parsed);
-                    }
-                }
                 continue;
             }
 
