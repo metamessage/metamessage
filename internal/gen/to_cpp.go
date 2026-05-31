@@ -40,7 +40,7 @@ var cppTypeMap = map[ir.ValueType]string{
 	ir.ValueTypeIp:       "std::string",
 	ir.ValueTypeUrl:      "std::string",
 	ir.ValueTypeEnum:     "std::string",
-	ir.ValueTypeImage:    "std::string",
+	ir.ValueTypeMedia:    "std::string",
 }
 
 type cppStructCollector struct {

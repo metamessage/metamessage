@@ -91,4 +91,26 @@ public static class TypeInference
     {
         return ValueTypeForType(componentType);
     }
+
+    public static bool IsIntegerType(ValueType vt)
+    {
+        return vt == ValueType.I ||
+               vt == ValueType.I8 ||
+               vt == ValueType.I16 ||
+               vt == ValueType.I32 ||
+               vt == ValueType.I64 ||
+               vt == ValueType.U ||
+               vt == ValueType.U8 ||
+               vt == ValueType.U16 ||
+               vt == ValueType.U32 ||
+               vt == ValueType.U64 ||
+               vt == ValueType.Enums;
+    }
+
+    public static bool IsFloatType(ValueType vt)
+    {
+        return vt == ValueType.F32 ||
+               vt == ValueType.F64 ||
+               vt == ValueType.Decimal;
+    }
 }

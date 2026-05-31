@@ -121,7 +121,7 @@ class JsoncParser
         }
     }
 
-    private function parseValue(string $path): ?Node
+    private function parseValue(string $path, ?Tag $inheritTag = null): ?Node
     {
         while (true) {
             $tok = $this->next();
@@ -142,6 +142,13 @@ class JsoncParser
 
                     if ($tag === null) {
                         $tag = Tag::newTag();
+                    }
+
+                    if ($tag->type === ValueType::UNKNOWN && $inheritTag !== null && $inheritTag->childType !== ValueType::UNKNOWN) {
+                        $tag->type = $inheritTag->childType;
+                        if ($inheritTag->childType === ValueType::ENUMS && $inheritTag->childEnums !== '') {
+                            $tag->enumValues = $inheritTag->childEnums;
+                        }
                     }
 
                     if ($tag->type === ValueType::UNKNOWN) {
@@ -385,6 +392,10 @@ class JsoncParser
                         $tag = Tag::newTag();
                     }
 
+                    if ($tag->type === ValueType::UNKNOWN && $inheritTag !== null && $inheritTag->childType !== ValueType::UNKNOWN) {
+                        $tag->type = $inheritTag->childType;
+                    }
+
                     if (str_contains($text, '.')) {
                         if ($tag->type === ValueType::UNKNOWN) {
                             $tag->type = ValueType::F64;
@@ -417,6 +428,10 @@ class JsoncParser
                                     $data = $result[0];
                                     $text = $result[1];
                                 }
+                                break;
+
+                            case ValueType::DECIMAL:
+                                $data = $text;
                                 break;
 
                             default:
@@ -724,6 +739,9 @@ class JsoncParser
                     if ($tag === null) {
                         $tag = Tag::newTag();
                     }
+                    if ($tag->type === ValueType::UNKNOWN && $inheritTag !== null && $inheritTag->childType !== ValueType::UNKNOWN) {
+                        $tag->type = $inheritTag->childType;
+                    }
                     if ($tag->type === ValueType::UNKNOWN) {
                         $tag->type = ValueType::BOOL;
                     }
@@ -753,6 +771,9 @@ class JsoncParser
 
                     if ($tag === null) {
                         $tag = Tag::newTag();
+                    }
+                    if ($tag->type === ValueType::UNKNOWN && $inheritTag !== null && $inheritTag->childType !== ValueType::UNKNOWN) {
+                        $tag->type = $inheritTag->childType;
                     }
                     if ($tag->type === ValueType::UNKNOWN) {
                         $tag->type = ValueType::BOOL;
@@ -935,7 +956,7 @@ class JsoncParser
             }
 
             $pa = sprintf('%s[%d]', $path, $i);
-            $item = $this->parseValue($pa);
+            $item = $this->parseValue($pa, $tag);
             if ($item === null) {
                 continue;
             }

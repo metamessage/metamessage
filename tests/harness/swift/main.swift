@@ -63,8 +63,15 @@ guard let input = try? String(contentsOfFile: path, encoding: .utf8) else {
     exit(1)
 }
 
-guard let node = try? parseJSONC(input) else {
-    fputs("parse error\n", stderr)
+let node: Node?
+do {
+    node = try parseJSONC(input)
+} catch {
+    fputs("parse error: \(error)\n", stderr)
+    exit(1)
+}
+guard let node = node else {
+    fputs("parse error: null result\n", stderr)
     exit(1)
 }
 

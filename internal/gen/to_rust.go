@@ -39,7 +39,7 @@ var rustTypeMap = map[ir.ValueType]string{
 	ir.ValueTypeIp:       "String",
 	ir.ValueTypeUrl:      "String",
 	ir.ValueTypeEnum:     "String",
-	ir.ValueTypeImage:    "String",
+	ir.ValueTypeMedia:    "String",
 }
 
 func ToRust(n ir.Node) string {

@@ -38,7 +38,7 @@ var csharpTypeMap = map[ir.ValueType]string{
 	ir.ValueTypeIp:       "string",
 	ir.ValueTypeUrl:      "string",
 	ir.ValueTypeEnum:     "string",
-	ir.ValueTypeImage:    "string",
+	ir.ValueTypeMedia:    "string",
 }
 
 func ToCSharp(n ir.Node) string {

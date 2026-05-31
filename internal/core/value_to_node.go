@@ -32,7 +32,7 @@ func resolveDefaultValue(tag *ir.Tag) (data any, text string, ok bool) {
 	}
 	text = tag.DefaultVal
 	switch tag.Type {
-	case ir.ValueTypeBytes, ir.ValueTypeImage:
+	case ir.ValueTypeBytes, ir.ValueTypeMedia:
 		data = []byte(tag.DefaultVal)
 	case ir.ValueTypeBool:
 		if tag.DefaultVal == "true" || tag.DefaultVal == "1" {
@@ -122,6 +122,10 @@ func resolveDefaultValue(tag *ir.Tag) (data any, text string, ok bool) {
 }
 
 func ValueToNode(v any, tagStr string) (node ir.Node, err error) {
+	if v == nil {
+		return &ir.NodeNull{}, nil
+	}
+
 	var tag *ir.Tag
 	if tagStr != "" {
 		if tag, err = ir.ParseMMTag(tagStr); err != nil {
@@ -165,8 +169,8 @@ func valueToNode(v any, tag *ir.Tag, depth int, path string, example bool) (node
 		case ir.ValueTypeBytes:
 			data, text, err = tag.ValidateBytes(val, example)
 
-		case ir.ValueTypeImage:
-			data, text, err = tag.ValidateImage(val, example)
+		case ir.ValueTypeMedia:
+			data, text, err = tag.ValidateMedia(val, example)
 
 		case ir.ValueTypeVec:
 			return anyToJSONC(v, tag, depth, path, example)
@@ -203,7 +207,7 @@ func valueToNode(v any, tag *ir.Tag, depth int, path string, example bool) (node
 				data, text, err = tag.ValidateBytes(*val, example)
 			}
 
-		case ir.ValueTypeImage:
+		case ir.ValueTypeMedia:
 			if val == nil {
 				if !tag.Nullable {
 					err = fmt.Errorf("%s: value is nil and not nullable", path)
@@ -222,7 +226,7 @@ func valueToNode(v any, tag *ir.Tag, depth int, path string, example bool) (node
 					text = ""
 				}
 			} else {
-				data, text, err = tag.ValidateImage(*val, example)
+				data, text, err = tag.ValidateMedia(*val, example)
 			}
 
 		case ir.ValueTypeVec:

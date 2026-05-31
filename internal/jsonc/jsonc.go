@@ -42,7 +42,8 @@ func writeValueJSONC(b *strings.Builder, v *ir.Value) {
 		ir.ValueTypeIp,
 		ir.ValueTypeUrl,
 		ir.ValueTypeEmail,
-		ir.ValueTypeEnum:
+		ir.ValueTypeEnum,
+		ir.ValueTypeMedia:
 		b.WriteString(strconv.Quote(v.Text))
 
 	case ir.ValueTypeI, ir.ValueTypeI8, ir.ValueTypeI16, ir.ValueTypeI32, ir.ValueTypeI64,

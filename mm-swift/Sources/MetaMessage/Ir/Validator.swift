@@ -604,8 +604,12 @@ public class Validator {
             if bytes.isEmpty && !tag.allowEmpty {
                 result.addError("value is empty")
             }
+        } else if let str = value as? String {
+            if str.isEmpty && !tag.allowEmpty {
+                result.addError("value is empty")
+            }
         } else {
-            result.addError("value must be a byte array")
+            result.addError("value must be a byte array or string")
         }
     }
     

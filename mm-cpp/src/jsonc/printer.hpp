@@ -44,11 +44,6 @@ inline void printLeadingComment(std::ostringstream &os, const ir::Tag *tag,
 inline void printValue(std::ostringstream &os, std::shared_ptr<ir::Value> val,
                        int indent) {
 
-  if (val->getTag()->isNull) {
-    os << "null";
-    return;
-  }
-
   switch (val->getTag()->type) {
   case ir::ValueType::Str:
   case ir::ValueType::Email:

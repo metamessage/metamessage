@@ -1,4 +1,5 @@
 using System.Text;
+using MetaMessage.Core;
 
 namespace MetaMessage.Ir;
 
@@ -150,71 +151,85 @@ public class Tag
         if (!string.IsNullOrEmpty(parent.ChildDesc))
         {
             Desc = parent.ChildDesc;
+            ChildDesc = parent.ChildDesc;
         }
 
         if (parent.ChildType != ValueType.Unknown)
         {
             Type = parent.ChildType;
+            ChildType = parent.ChildType;
         }
 
         if (parent.ChildNullable)
         {
             Nullable = parent.ChildNullable;
+            ChildNullable = parent.ChildNullable;
         }
 
         if (parent.ChildAllowEmpty)
         {
             AllowEmpty = parent.ChildAllowEmpty;
+            ChildAllowEmpty = parent.ChildAllowEmpty;
         }
 
         if (parent.ChildUnique)
         {
             Unique = parent.ChildUnique;
+            ChildUnique = parent.ChildUnique;
         }
 
         if (!string.IsNullOrEmpty(parent.ChildDefaultVal))
         {
             DefaultVal = parent.ChildDefaultVal;
+            ChildDefaultVal = parent.ChildDefaultVal;
         }
 
         if (!string.IsNullOrEmpty(parent.ChildMin))
         {
             Min = parent.ChildMin;
+            ChildMin = parent.ChildMin;
         }
 
         if (!string.IsNullOrEmpty(parent.ChildMax))
         {
             Max = parent.ChildMax;
+            ChildMax = parent.ChildMax;
         }
 
         if (parent.ChildSize != 0)
         {
             Size = parent.ChildSize;
+            ChildSize = parent.ChildSize;
         }
 
         if (!string.IsNullOrEmpty(parent.ChildEnums))
         {
             Enums = parent.ChildEnums;
+            ChildEnums = parent.ChildEnums;
         }
 
         if (!string.IsNullOrEmpty(parent.ChildPattern))
         {
             Pattern = parent.ChildPattern;
+            ChildPattern = parent.ChildPattern;
         }
 
         if (parent.ChildLocation != 0)
         {
             Location = parent.ChildLocation;
+            ChildLocation = parent.ChildLocation;
         }
 
         if (parent.ChildVersion != DefaultVersionValue)
         {
             Version = parent.ChildVersion;
+            ChildVersion = parent.ChildVersion;
         }
 
         if (!string.IsNullOrEmpty(parent.ChildMime))
         {
             Mime = parent.ChildMime;
+            ChildMime = parent.ChildMime;
         }
     }
 
@@ -535,7 +550,7 @@ public class Tag
         {
             return "";
         }
-        return "// mm: " + result;
+        return result;
     }
 
     public static Tag Parse(string comment)
@@ -1038,18 +1053,15 @@ public class Tag
 
         if (!string.IsNullOrEmpty(Mime) && !IsInherit)
         {
-            var mimeBytes = Encoding.UTF8.GetBytes(Mime);
-            var l = mimeBytes.Length;
-            if (l < 7)
+            int mimeIndex = MimeWire.ParseMIME(Mime);
+            if (mimeIndex < 7)
             {
-                bs.Add((byte)((byte)TagKey.KMime | (byte)l));
-                bs.AddRange(mimeBytes);
+                bs.Add((byte)((byte)TagKey.KMime | (byte)mimeIndex));
             }
             else
             {
                 bs.Add((byte)((byte)TagKey.KMime | 7));
-                bs.Add((byte)l);
-                bs.AddRange(mimeBytes);
+                bs.Add((byte)mimeIndex);
             }
         }
 

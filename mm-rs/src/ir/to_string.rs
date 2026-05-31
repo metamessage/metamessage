@@ -33,10 +33,6 @@ fn write_node_compact(buf: &mut String, node: &Node) {
 }
 
 fn write_value(buf: &mut String, val: &Value) {
-    if val.tag.as_ref().map(|t| t.is_null).unwrap_or(false) {
-        buf.push_str("null");
-        return;
-    }
     let value_type = val.tag.as_ref().map(|t| t.value_type);
     match &val.data {
         ValueData::Bool(b) => {

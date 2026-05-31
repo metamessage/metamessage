@@ -110,7 +110,7 @@ type Tag struct {
 	Pattern    string         // pattern=...
 	Location   *time.Location // location=0  for time.Time [-12, +14]
 	Version    int            // version=0 for uuid/ip
-	Mime       string         // mime=...
+	Mime       int            // mime=...
 	More       int            // more
 
 	ChildDesc       string         // child_desc=...
@@ -126,7 +126,7 @@ type Tag struct {
 	ChildPattern    string         // child_pattern=...
 	ChildLocation   *time.Location // child_location=0  for time.Time [-12, +14]
 	ChildVersion    int            // child_version=0 for uuid/ip
-	ChildMime       string         // child_mime=...
+	ChildMime       int            // child_mime=...
 
 	IsInherit bool
 }
@@ -201,7 +201,7 @@ func (t *Tag) Inherit(tag *Tag) {
 		t.Version = tag.ChildVersion
 	}
 
-	if tag.ChildMime != "" {
+	if tag.ChildMime != 0 {
 		t.Mime = tag.ChildMime
 	}
 }
@@ -242,7 +242,8 @@ func (t *Tag) ToString() string {
 			t.Type == ValueTypeVec {
 		} else {
 			if t.Type == ValueTypeArr && t.Size > 0 ||
-				t.Type == ValueTypeEnum && t.Enums != "" {
+				t.Type == ValueTypeEnum && t.Enums != "" ||
+				t.Type == ValueTypeMedia && t.Mime != int(MIMEUnknown) {
 
 			} else {
 				add(TType + "=" + t.Type.String())
@@ -313,8 +314,8 @@ func (t *Tag) ToString() string {
 		add(TVersion + "=" + strconv.Itoa(t.Version))
 	}
 
-	if t.Mime != "" && !t.IsInherit {
-		add(TMime + "=" + t.Mime)
+	if t.Mime != 0 && !t.IsInherit {
+		add(TMime + "=" + MIME(t.Mime).String())
 	}
 
 	if t.ChildDesc != "" {
@@ -330,7 +331,8 @@ func (t *Tag) ToString() string {
 			t.ChildType == ValueTypeVec {
 		} else {
 			if t.ChildType == ValueTypeArr && t.ChildSize > 0 ||
-				t.ChildType == ValueTypeEnum && t.ChildEnums != "" {
+				t.ChildType == ValueTypeEnum && t.ChildEnums != "" ||
+				t.ChildType == ValueTypeMedia && t.ChildMime != int(MIMEUnknown) {
 
 			} else {
 				add(TChildType + "=" + t.ChildType.String())
@@ -383,8 +385,8 @@ func (t *Tag) ToString() string {
 		add(TChildVersion + "=" + strconv.Itoa(t.ChildVersion))
 	}
 
-	if t.ChildMime != "" {
-		add(TChildMime + "=" + t.ChildMime)
+	if t.ChildMime != 0 {
+		add(TChildMime + "=" + MIME(t.ChildMime).String())
 	}
 
 	return b.String()
@@ -437,7 +439,8 @@ func (t *Tag) Bytes() []byte {
 			t.Type == ValueTypeVec {
 		} else {
 			if t.Type == ValueTypeArr && t.Size > 0 ||
-				t.Type == ValueTypeEnum && t.Enums != "" {
+				t.Type == ValueTypeEnum && t.Enums != "" ||
+				t.Type == ValueTypeMedia && t.Mime != int(MIMEUnknown) {
 
 			} else {
 				bs.WriteByte(byte(KType))
@@ -542,14 +545,8 @@ func (t *Tag) Bytes() []byte {
 		encodeU64(&bs, KVersion, uint64(t.Version))
 	}
 
-	if t.Mime != "" && !t.IsInherit {
-		l, _ := ParseMIME(t.Mime)
-		if l < 7 {
-			bs.WriteByte(byte(KMime) | byte(l))
-		} else {
-			bs.WriteByte(byte(KMime) | byte(7))
-			bs.WriteByte(byte(l))
-		}
+	if t.Mime != 0 && !t.IsInherit {
+		encodeU64(&bs, KMime, uint64(t.Mime))
 	}
 
 	if t.ChildDesc != "" {
@@ -581,7 +578,8 @@ func (t *Tag) Bytes() []byte {
 			t.ChildType == ValueTypeVec {
 		} else {
 			if t.ChildType == ValueTypeArr && t.ChildSize > 0 ||
-				t.ChildType == ValueTypeEnum && t.ChildEnums != "" {
+				t.ChildType == ValueTypeEnum && t.ChildEnums != "" ||
+				t.ChildType == ValueTypeMedia && t.ChildMime != int(MIMEUnknown) {
 
 			} else {
 				bs.WriteByte(byte(KChildType))
@@ -686,16 +684,8 @@ func (t *Tag) Bytes() []byte {
 		encodeU64(&bs, KChildVersion, uint64(t.ChildVersion))
 	}
 
-	if t.ChildMime != "" {
-		l := len(t.ChildMime)
-		if l < 7 {
-			bs.WriteByte(byte(KChildMime) | byte(l))
-			bs.WriteString(t.ChildMime)
-		} else {
-			bs.WriteByte(byte(KChildMime) | byte(7))
-			bs.WriteByte(byte(l))
-			bs.WriteString(t.ChildMime)
-		}
+	if t.ChildMime != 0 {
+		encodeU64(&bs, KChildMime, uint64(t.ChildMime))
 	}
 
 	if t.More != 0 {
@@ -866,7 +856,7 @@ func MergeTag(dst *Tag, src *Tag) *Tag {
 		dst.Version = src.Version
 	}
 
-	if src.Mime != "" {
+	if src.Mime != 0 {
 		dst.Mime = src.Mime
 	}
 
@@ -922,7 +912,7 @@ func MergeTag(dst *Tag, src *Tag) *Tag {
 		dst.ChildVersion = src.ChildVersion
 	}
 
-	if src.ChildMime != "" {
+	if src.ChildMime != 0 {
 		dst.ChildMime = src.ChildMime
 	}
 
@@ -1047,7 +1037,12 @@ func ParseMMTag(tag string) (*Tag, error) {
 			r.Version = d
 
 		case TMime:
-			r.Mime = v
+			m, err := ParseMIME(v)
+			if err != nil {
+				return nil, fmt.Errorf("failed to parse MIME %v %w", v, err)
+			}
+			r.Mime = int(m)
+			r.Type = ValueTypeMedia
 
 		case TChildDesc:
 			r.ChildDesc = v
@@ -1119,7 +1114,12 @@ func ParseMMTag(tag string) (*Tag, error) {
 			r.ChildVersion = d
 
 		case TChildMime:
-			r.ChildMime = v
+			m, err := ParseMIME(v)
+			if err != nil {
+				return nil, fmt.Errorf("failed to parse MIME %v %w", v, err)
+			}
+			r.ChildMime = int(m)
+			r.ChildType = ValueTypeMedia
 
 		default:
 

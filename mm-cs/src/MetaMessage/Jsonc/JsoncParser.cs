@@ -231,7 +231,7 @@ public class JsoncParser
 
         var val = new JsoncValue
         {
-            Value = double.Parse(text, System.Globalization.CultureInfo.InvariantCulture),
+            Value = text,
             TokenType = JsoncTokenType.Number,
             Tag = tag,
             Path = path

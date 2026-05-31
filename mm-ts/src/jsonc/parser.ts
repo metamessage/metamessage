@@ -712,6 +712,28 @@ export class JSONCParser {
         childTag.inherit(tag);
       }
 
+      if (item instanceof MMValue) {
+        const itemTag = item.getTag();
+        if (
+          itemTag.type === ValueType.Datetime ||
+          itemTag.type === ValueType.Date ||
+          itemTag.type === ValueType.Time
+        ) {
+          if (typeof item.getValue() === 'string') {
+            const text = item.getText();
+            let dateValue: Date;
+            if (itemTag.type === ValueType.Time) {
+              dateValue = new Date(`1970-01-01T${text}Z`);
+            } else {
+              dateValue = new Date(text.replace(' ', 'T') + 'Z');
+            }
+            if (!isNaN(dateValue.getTime())) {
+              item.setValue(dateValue);
+            }
+          }
+        }
+      }
+
       arr.addElement(item);
       i++;
 

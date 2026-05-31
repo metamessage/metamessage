@@ -63,7 +63,7 @@ public class JSONCPrinter {
 
     private func printObject(_ obj: ObjectFieldsProvider) -> String {
         if obj.fields.isEmpty {
-            return "{}"
+            return "{\n" + indent() + "}"
         }
 
         var result = "{\n"
@@ -150,6 +150,18 @@ public class JSONCPrinter {
 
     private func printValue(_ value: Value) -> String {
         if let tag = value.tag, tag.isNull {
+            if let boolVal = value.data as? Bool {
+                return boolVal ? "true" : "false"
+            }
+            if value.data is Int || value.data is Int64 || value.data is UInt || value.data is UInt64 {
+                return "0"
+            }
+            if value.data is Float || value.data is Double {
+                return "0.0"
+            }
+            if value.data is String {
+                return "\"\""
+            }
             return "null"
         }
 

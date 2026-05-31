@@ -44,6 +44,10 @@ public class Tag {
     public init() {}
 
     public func inherit(from tag: Tag) {
+        self.isInherit = true
+
+        if tag.example { self.example = true }
+
         if !tag.childDesc.isEmpty { self.desc = tag.childDesc }
         if tag.childType != .unknown { self.type = tag.childType }
         if tag.childNullable { self.nullable = true }
@@ -63,12 +67,16 @@ public class Tag {
     public func stringValue() -> String {
         var parts: [String] = []
 
-        if type != .unknown && !isInherit {
+        if type != .unknown {
             if type == .str || type == .i || type == .f64 || type == .bool || type == .obj || type == .vec {
             } else {
                 if type == .arr && size > 0 || type == .enums && enums != "" {
                 } else {
-                    parts.append("type=\(type.stringValue)")
+                    if isInherit {
+                        parts.append("child_type=\(type.stringValue)")
+                    } else {
+                        parts.append("type=\(type.stringValue)")
+                    }
                 }
             }
         }
@@ -81,67 +89,119 @@ public class Tag {
             parts.append("is_null")
         }
 
-        if nullable && !isInherit && !isNull {
-            parts.append("nullable")
+        if nullable && !isNull {
+            if isInherit {
+                parts.append("child_nullable")
+            } else {
+                parts.append("nullable")
+            }
         }
 
-        if desc != "" && !isInherit {
-            parts.append("desc=\"\(desc)\"")
+        if desc != "" {
+            if isInherit {
+                parts.append("child_desc=\"\(desc)\"")
+            } else {
+                parts.append("desc=\"\(desc)\"")
+            }
         }
 
         if deprecated && !isInherit {
             parts.append("deprecated")
         }
 
-        if allowEmpty && !isInherit {
-            parts.append("allow_empty")
+        if allowEmpty {
+            if isInherit {
+                parts.append("child_allow_empty")
+            } else {
+                parts.append("allow_empty")
+            }
         }
 
-        if unique && !isInherit {
-            parts.append("unique")
+        if unique {
+            if isInherit {
+                parts.append("child_unique")
+            } else {
+                parts.append("unique")
+            }
         }
 
-        if defaultVal != "" && !isInherit {
-            parts.append("default_val=\(defaultVal)")
+        if defaultVal != "" {
+            if isInherit {
+                parts.append("child_default_val=\(defaultVal)")
+            } else {
+                parts.append("default_val=\(defaultVal)")
+            }
         }
 
-        if min != "" && !isInherit {
-            parts.append("min=\(min)")
+        if min != "" {
+            if isInherit {
+                parts.append("child_min=\(min)")
+            } else {
+                parts.append("min=\(min)")
+            }
         }
 
-        if max != "" && !isInherit {
-            parts.append("max=\(max)")
+        if max != "" {
+            if isInherit {
+                parts.append("child_max=\(max)")
+            } else {
+                parts.append("max=\(max)")
+            }
         }
 
-        if size != 0 && !isInherit {
-            parts.append("size=\(size)")
+        if size != 0 {
+            if isInherit {
+                parts.append("child_size=\(size)")
+            } else {
+                parts.append("size=\(size)")
+            }
         }
 
-        if enums != "" && !isInherit {
-            parts.append("enums=\(enums)")
+        if enums != "" {
+            if isInherit {
+                parts.append("child_enums=\(enums)")
+            } else {
+                parts.append("enums=\(enums)")
+            }
         }
 
-        if pattern != "" && !isInherit {
-            parts.append("pattern=\(pattern)")
+        if pattern != "" {
+            if isInherit {
+                parts.append("child_pattern=\(pattern)")
+            } else {
+                parts.append("pattern=\(pattern)")
+            }
         }
 
-        if location != 0 && !isInherit {
-            parts.append("location=\(location)")
+        if location != 0 {
+            if isInherit {
+                parts.append("child_location=\(location)")
+            } else {
+                parts.append("location=\(location)")
+            }
         }
 
-        if version != 0 && !isInherit {
-            parts.append("version=\(version)")
+        if version != 0 {
+            if isInherit {
+                parts.append("child_version=\(version)")
+            } else {
+                parts.append("version=\(version)")
+            }
         }
 
-        if mime != "" && !isInherit {
-            parts.append("mime=\(mime)")
+        if mime != "" {
+            if isInherit {
+                parts.append("child_mime=\(mime)")
+            } else {
+                parts.append("mime=\(mime)")
+            }
         }
 
-        if childDesc != "" {
+        if childDesc != "" && !isInherit {
             parts.append("child_desc=\"\(childDesc)\"")
         }
 
-        if childType != .unknown {
+        if childType != .unknown && !isInherit {
             if childType == .str || childType == .i || childType == .f64 || childType == .bool || childType == .obj || childType == .vec {
             } else {
                 if childType == .arr && childSize > 0 || childType == .enums && childEnums != "" {
@@ -151,51 +211,51 @@ public class Tag {
             }
         }
 
-        if childNullable {
+        if childNullable && !isInherit {
             parts.append("child_nullable")
         }
 
-        if childAllowEmpty {
+        if childAllowEmpty && !isInherit {
             parts.append("child_allow_empty")
         }
 
-        if childUnique {
+        if childUnique && !isInherit {
             parts.append("child_unique")
         }
 
-        if childDefaultVal != "" {
+        if childDefaultVal != "" && !isInherit {
             parts.append("child_default_val=\(childDefaultVal)")
         }
 
-        if childMin != "" {
+        if childMin != "" && !isInherit {
             parts.append("child_min=\(childMin)")
         }
 
-        if childMax != "" {
+        if childMax != "" && !isInherit {
             parts.append("child_max=\(childMax)")
         }
 
-        if childSize != 0 {
+        if childSize != 0 && !isInherit {
             parts.append("child_size=\(childSize)")
         }
 
-        if childEnums != "" {
+        if childEnums != "" && !isInherit {
             parts.append("child_enums=\(childEnums)")
         }
 
-        if childPattern != "" {
+        if childPattern != "" && !isInherit {
             parts.append("child_pattern=\(childPattern)")
         }
 
-        if childLocation != 0 {
+        if childLocation != 0 && !isInherit {
             parts.append("child_location=\(childLocation)")
         }
 
-        if childVersion != 0 {
+        if childVersion != 0 && !isInherit {
             parts.append("child_version=\(childVersion)")
         }
 
-        if childMime != "" {
+        if childMime != "" && !isInherit {
             parts.append("child_mime=\(childMime)")
         }
 

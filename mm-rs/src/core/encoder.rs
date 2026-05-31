@@ -152,6 +152,22 @@ impl Encoder {
                 Some(ValueType::Bytes) => self.encode_simple(SimpleValue::NullBytes),
                 _ => self.encode_simple(SimpleValue::NullInt),
             }
+        } else if val.tag.as_ref().map_or(false, |t| t.value_type == ValueType::Enum) {
+            let tag = val.tag.as_ref().unwrap();
+            let s = match &val.data {
+                ValueData::String(s) => s.clone(),
+                _ => val.text.clone(),
+            };
+            if let Some(ref enums) = tag.enums {
+                let enum_list: Vec<&str> = enums.split('|').map(|e| e.trim()).collect();
+                if let Some(pos) = enum_list.iter().position(|e| *e == s) {
+                    self.encode_int64(pos as i64);
+                } else {
+                    self.encode_int64(0);
+                }
+            } else {
+                self.encode_int64(0);
+            }
         } else {
             match &val.data {
                 ValueData::Bool(b) => {

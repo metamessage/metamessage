@@ -13,6 +13,7 @@ public protocol Node {
     func getType() -> NodeType
     func getPath() -> String
     func setPath(_ path: String)
+    func setTag(_ tag: Tag)
 }
 
 public struct Field {
@@ -51,6 +52,10 @@ public class MMObject: Node {
     public func setPath(_ path: String) {
         self.path = path
     }
+
+    public func setTag(_ tag: Tag) {
+        self.tag = tag
+    }
 }
 
 public class MMArray: Node {
@@ -78,6 +83,10 @@ public class MMArray: Node {
 
     public func setPath(_ path: String) {
         self.path = path
+    }
+
+    public func setTag(_ tag: Tag) {
+        self.tag = tag
     }
 }
 
@@ -109,6 +118,10 @@ public class Value: Node {
     public func setPath(_ path: String) {
         self.path = path
     }
+
+    public func setTag(_ tag: Tag) {
+        self.tag = tag
+    }
 }
 
 public class MMDoc: Node {
@@ -136,5 +149,9 @@ public class MMDoc: Node {
 
     public func setPath(_ path: String) {
         self.path = path
+    }
+
+    public func setTag(_ tag: Tag) {
+        self.tag = tag
     }
 }

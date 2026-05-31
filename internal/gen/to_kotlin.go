@@ -38,7 +38,7 @@ var kotlinTypeMap = map[ir.ValueType]string{
 	ir.ValueTypeIp:       "String",
 	ir.ValueTypeUrl:      "String",
 	ir.ValueTypeEnum:     "String",
-	ir.ValueTypeImage:    "String",
+	ir.ValueTypeMedia:    "String",
 }
 
 func ToKotlin(n ir.Node) string {
@@ -204,7 +204,7 @@ func getKotlinDefaultValue(node ir.Node) string {
 			case ir.ValueTypeStr, ir.ValueTypeBytes, ir.ValueTypeDecimal,
 				ir.ValueTypeDatetime, ir.ValueTypeDate, ir.ValueTypeTime,
 				ir.ValueTypeUuid, ir.ValueTypeEmail, ir.ValueTypeIp,
-				ir.ValueTypeUrl, ir.ValueTypeEnum, ir.ValueTypeImage:
+				ir.ValueTypeUrl, ir.ValueTypeEnum, ir.ValueTypeMedia:
 				return "\"\""
 			case ir.ValueTypeI, ir.ValueTypeI8, ir.ValueTypeI16, ir.ValueTypeI32, ir.ValueTypeI64,
 				ir.ValueTypeU, ir.ValueTypeU8, ir.ValueTypeU16, ir.ValueTypeU32, ir.ValueTypeU64,

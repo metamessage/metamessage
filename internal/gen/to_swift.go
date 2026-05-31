@@ -40,7 +40,7 @@ var swiftTypeMap = map[ir.ValueType]string{
 	ir.ValueTypeIp:       "String",
 	ir.ValueTypeUrl:      "URL",
 	ir.ValueTypeEnum:     "String",
-	ir.ValueTypeImage:    "String",
+	ir.ValueTypeMedia:    "String",
 }
 
 func ToSwift(n ir.Node) string {

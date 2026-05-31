@@ -13,7 +13,7 @@ export const KDefault = 8 << 3;
 export const KMin = 9 << 3;
 export const KMax = 10 << 3;
 export const KSize = 11 << 3;
-export const KEnum = 12 << 3;
+export const KEnums = 12 << 3;
 export const KPattern = 13 << 3;
 export const KLocation = 14 << 3;
 export const KVersion = 15 << 3;
@@ -99,50 +99,80 @@ export class Tag {
 
     this.isInherit = true;
 
-    if (this.childType !== ValueType.Unknown) {
-      this.type = tag.childType;
-    }
-    if (this.childDesc !== '') {
+    if (tag.childDesc !== '') {
       this.desc = tag.childDesc;
+      this.childDesc = tag.childDesc;
     }
-    if (this.childNullable) {
+
+    if (tag.childType !== ValueType.Unknown) {
+      this.type = tag.childType;
+      this.childType = tag.childType;
+    }
+
+    if (tag.childNullable) {
       this.nullable = tag.childNullable;
+      this.childNullable = tag.childNullable;
     }
-    if (this.childAllowEmpty) {
+
+    if (tag.childAllowEmpty) {
       this.allowEmpty = tag.childAllowEmpty;
+      this.childAllowEmpty = tag.childAllowEmpty;
     }
-    if (this.childUnique) {
+
+    if (tag.childUnique) {
       this.unique = tag.childUnique;
+      this.childUnique = tag.childUnique;
     }
-    if (this.childMin !== '') {
+
+    if (tag.childDefaultVal !== '') {
+      this.default_val = tag.childDefaultVal;
+      this.childDefaultVal = tag.childDefaultVal;
+    }
+
+    if (tag.childMin !== '') {
       this.min = tag.childMin;
+      this.childMin = tag.childMin;
     }
-    if (this.childMax !== '') {
+
+    if (tag.childMax !== '') {
       this.max = tag.childMax;
+      this.childMax = tag.childMax;
     }
-    if (this.childSize !== 0n) {
+
+    if (tag.childSize !== 0n) {
       this.size = tag.childSize;
+      this.childSize = tag.childSize;
     }
-    if (this.childEnums !== '') {
+
+    if (tag.childEnums !== '') {
       this.enums = tag.childEnums;
+      this.childEnums = tag.childEnums;
     }
-    if (this.childPattern !== '') {
+
+    if (tag.childPattern !== '') {
       this.pattern = tag.childPattern;
+      this.childPattern = tag.childPattern;
     }
-    if (this.childLocation !== 0) {
+
+    if (tag.childLocation !== 0) {
       this.location = tag.childLocation;
+      this.childLocation = tag.childLocation;
     }
-    if (this.childVersion !== 0) {
+
+    if (tag.childVersion !== 0) {
       this.version = tag.childVersion;
+      this.childVersion = tag.childVersion;
     }
-    if (this.childMime !== '') {
+
+    if (tag.childMime !== '') {
       this.mime = tag.childMime;
+      this.childMime = tag.childMime;
     }
   }
 
   toString(): string {
     const parts: string[] = [];
-    if (this.type !== ValueType.Unknown) {
+    if (!this.isInherit && this.type !== ValueType.Unknown) {
       if (
         this.type === ValueType.Str ||
         this.type === ValueType.I ||
@@ -170,61 +200,61 @@ export class Tag {
       parts.push('is_null');
     }
 
-    if (this.nullable) {
+    if (!this.isInherit && this.nullable) {
       if (!this.isNull) {
         parts.push('nullable');
       }
     }
 
-    if (this.desc) {
-      parts.push(`desc=${this.desc}`);
+    if (!this.isInherit && this.desc) {
+      parts.push(`desc="${this.desc}"`);
     }
 
-    if (this.deprecated) {
+    if (!this.isInherit && this.deprecated) {
       parts.push('deprecated');
     }
 
-    if (this.allowEmpty) {
+    if (!this.isInherit && this.allowEmpty) {
       parts.push('allow_empty');
     }
 
-    if (this.unique) {
+    if (!this.isInherit && this.unique) {
       parts.push('unique');
     }
 
-    if (this.default_val) {
+    if (!this.isInherit && this.default_val) {
       parts.push(`default_val=${this.default_val}`);
     }
 
-    if (this.min) {
+    if (!this.isInherit && this.min) {
       parts.push(`min=${this.min}`);
     }
 
-    if (this.max) {
+    if (!this.isInherit && this.max) {
       parts.push(`max=${this.max}`);
     }
 
-    if (this.size !== 0n) {
+    if (!this.isInherit && this.size !== 0n) {
       parts.push(`size=${this.size}`);
     }
 
-    if (this.enums) {
+    if (!this.isInherit && this.enums) {
       parts.push(`enums=${this.enums}`);
     }
 
-    if (this.pattern) {
+    if (!this.isInherit && this.pattern) {
       parts.push(`pattern=${this.pattern}`);
     }
 
-    if (this.location) {
+    if (!this.isInherit && this.location) {
       parts.push(`location=${this.location}`);
     }
 
-    if (this.version !== 0) {
+    if (!this.isInherit && this.version !== 0) {
       parts.push(`version=${this.version}`);
     }
 
-    if (this.mime) {
+    if (!this.isInherit && this.mime) {
       parts.push(`mime=${this.mime}`);
     }
 
@@ -232,7 +262,7 @@ export class Tag {
       parts.push(`child_desc="${this.childDesc}"`);
     }
 
-    if (this.childType) {
+    if (this.childType !== ValueType.Unknown) {
       if (
         this.childType === ValueType.Str ||
         this.childType === ValueType.I ||
@@ -243,9 +273,7 @@ export class Tag {
       ) {
       } else {
         if (
-          (this.childType === ValueType.Arr &&
-            this.childSize &&
-            this.childSize > 0) ||
+          (this.childType === ValueType.Arr && this.childSize > 0) ||
           (this.childType === ValueType.Enums && this.childEnums)
         ) {
         } else {
@@ -278,7 +306,7 @@ export class Tag {
       parts.push(`child_max=${this.childMax}`);
     }
 
-    if (this.childSize) {
+    if (this.childSize !== 0n) {
       parts.push(`child_size=${this.childSize}`);
     }
 
@@ -306,11 +334,90 @@ export class Tag {
   }
 
   private getLocationOffsetHour(location: number): number {
+    if (Math.abs(location) >= 60) {
+      return Math.round(location / 60);
+    }
     return location;
   }
 
-  private parseMIME(mime: string): number {
-    return mime.length;
+  parseMIME(mime: string): number {
+    const mimeMap: Record<string, number> = {
+      'image/jpeg': 1,
+      'image/jpg': 1,
+      'image/png': 2,
+      'image/gif': 3,
+      'image/webp': 4,
+      'image/svg+xml': 5,
+      'image/avif': 6,
+      'image/bmp': 7,
+      'image/x-icon': 8,
+      'image/tiff': 9,
+      'image/heic': 10,
+      'image/heif': 11,
+      'text/plain': 12,
+      'text/html': 13,
+      'text/css': 14,
+      'text/javascript': 15,
+      'application/json': 16,
+      'text/csv': 17,
+      'text/markdown': 18,
+      'application/pdf': 19,
+      'application/zip': 20,
+      'application/gzip': 21,
+      'application/x-tar': 22,
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': 23,
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document': 24,
+      'application/octet-stream': 25,
+      'video/mp4': 26,
+      'video/webm': 27,
+      'video/mov': 28,
+      'audio/mpeg': 29,
+      'audio/wav': 30,
+      'audio/flac': 31,
+      'font/woff2': 32,
+      'font/ttf': 33,
+    };
+    const key = mime.toLowerCase().trim();
+    return mimeMap[key] ?? 0;
+  }
+
+  mimeFromCode(code: number): string {
+    const codeMap: Record<number, string> = {
+      1: 'image/jpeg',
+      2: 'image/png',
+      3: 'image/gif',
+      4: 'image/webp',
+      5: 'image/svg+xml',
+      6: 'image/avif',
+      7: 'image/bmp',
+      8: 'image/x-icon',
+      9: 'image/tiff',
+      10: 'image/heic',
+      11: 'image/heif',
+      12: 'text/plain',
+      13: 'text/html',
+      14: 'text/css',
+      15: 'text/javascript',
+      16: 'application/json',
+      17: 'text/csv',
+      18: 'text/markdown',
+      19: 'application/pdf',
+      20: 'application/zip',
+      21: 'application/gzip',
+      22: 'application/x-tar',
+      23: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      24: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      25: 'application/octet-stream',
+      26: 'video/mp4',
+      27: 'video/webm',
+      28: 'video/mov',
+      29: 'audio/mpeg',
+      30: 'audio/wav',
+      31: 'audio/flac',
+      32: 'font/woff2',
+      33: 'font/ttf',
+    };
+    return codeMap[code] ?? '';
   }
 
   private encodeU64(buf: number[], sign: number, uv: bigint): void {
@@ -515,14 +622,14 @@ export class Tag {
       const l = enumBytes.length;
 
       if (l <= 5) {
-        buf.push(KEnum | l);
+        buf.push(KEnums | l);
         buf.push(...enumBytes);
       } else if (l <= 0xff) {
-        buf.push(KEnum | 6);
+        buf.push(KEnums | 6);
         buf.push(l);
         buf.push(...enumBytes);
       } else if (l <= 0xffff) {
-        buf.push(KEnum | 7);
+        buf.push(KEnums | 7);
         buf.push((l >> 8) & 0xff);
         buf.push(l & 0xff);
         buf.push(...enumBytes);
@@ -558,13 +665,7 @@ export class Tag {
     }
 
     if (this.mime !== '' && !this.isInherit) {
-      const l = this.parseMIME(this.mime);
-      if (l < 7) {
-        buf.push(KMime | l);
-      } else {
-        buf.push(KMime | 7);
-        buf.push(l);
-      }
+      this.encodeU64(buf, KMime, BigInt(this.parseMIME(this.mime)));
     }
 
     if (this.childDesc !== '') {
@@ -720,13 +821,7 @@ export class Tag {
     }
 
     if (this.childMime !== '') {
-      const l = this.parseMIME(this.childMime);
-      if (l < 7) {
-        buf.push(KChildMime | l);
-      } else {
-        buf.push(KChildMime | 7);
-        buf.push(l);
-      }
+      this.encodeU64(buf, KChildMime, BigInt(this.parseMIME(this.childMime)));
     }
 
     if (this.more !== 0) {
@@ -1800,16 +1895,12 @@ export function parseMMTag(tagStr: string): Tag {
         tag.desc = value.replace(/^"|"$/g, '');
         break;
       case 'type':
-        if (value === 'struct') {
-          tag.type = ValueType.Obj;
-        } else {
-          tag.type = stringToType(value);
-        }
+        tag.type = stringToType(value);
         break;
       case 'nullable':
         tag.nullable = true;
         break;
-      case 'raw':
+      case 'deprecated':
         tag.deprecated = true;
         break;
       case 'allow_empty':
@@ -1851,8 +1942,6 @@ export function parseMMTag(tagStr: string): Tag {
         break;
       case 'child_type':
         tag.childType = stringToType(value);
-        break;
-      case 'child_raw':
         break;
       case 'child_nullable':
         tag.childNullable = true;

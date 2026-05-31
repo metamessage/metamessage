@@ -339,8 +339,6 @@ static uint8_t parse_mime(const char *s) {
     return 14;
   if (strcmp(lower, "text/javascript") == 0)
     return 15;
-  if (strcmp(lower, "application/javascript") == 0)
-    return 15;
   if (strcmp(lower, "application/json") == 0)
     return 16;
   if (strcmp(lower, "text/csv") == 0)
@@ -493,7 +491,7 @@ char *mm_tag_to_string(const mm_tag_t *tag) {
   size_t len = 0;
   bool first = true;
 
-  if (tag->type != MM_VALUE_UNKNOWN && !tag->is_inherit) {
+  if (tag->type != MM_VALUE_UNKNOWN) {
     if (is_simple_type(tag->type)) {
     } else {
       if ((tag->type == MM_VALUE_ARR && tag->size > 0) ||
@@ -501,7 +499,10 @@ char *mm_tag_to_string(const mm_tag_t *tag) {
       } else {
         if (!first)
           append_str(&buf, &cap, &len, "; ");
-        append_str(&buf, &cap, &len, "type=");
+        if (tag->is_inherit)
+          append_str(&buf, &cap, &len, "child_type=");
+        else
+          append_str(&buf, &cap, &len, "type=");
         append_str(&buf, &cap, &len, mm_value_type_to_string(tag->type));
         first = false;
       }
@@ -522,19 +523,25 @@ char *mm_tag_to_string(const mm_tag_t *tag) {
     first = false;
   }
 
-  if (tag->nullable && !tag->is_inherit) {
+  if (tag->nullable) {
     if (!tag->is_null) {
       if (!first)
         append_str(&buf, &cap, &len, "; ");
-      append_str(&buf, &cap, &len, "nullable");
+      if (tag->is_inherit)
+        append_str(&buf, &cap, &len, "child_nullable");
+      else
+        append_str(&buf, &cap, &len, "nullable");
       first = false;
     }
   }
 
-  if (tag->desc && !tag->is_inherit) {
+  if (tag->desc) {
     if (!first)
       append_str(&buf, &cap, &len, "; ");
-    append_str(&buf, &cap, &len, "desc=");
+    if (tag->is_inherit)
+      append_str(&buf, &cap, &len, "child_desc=");
+    else
+      append_str(&buf, &cap, &len, "desc=");
     char *q = quote_string(tag->desc);
     if (q) {
       append_str(&buf, &cap, &len, q);
@@ -543,97 +550,130 @@ char *mm_tag_to_string(const mm_tag_t *tag) {
     first = false;
   }
 
-  if (tag->deprecated && !tag->is_inherit) {
+  if (tag->deprecated) {
     if (!first)
       append_str(&buf, &cap, &len, "; ");
     append_str(&buf, &cap, &len, "deprecated");
     first = false;
   }
 
-  if (tag->allow_empty && !tag->is_inherit) {
+  if (tag->allow_empty) {
     if (!first)
       append_str(&buf, &cap, &len, "; ");
-    append_str(&buf, &cap, &len, "allow_empty");
+    if (tag->is_inherit)
+      append_str(&buf, &cap, &len, "child_allow_empty");
+    else
+      append_str(&buf, &cap, &len, "allow_empty");
     first = false;
   }
 
-  if (tag->unique && !tag->is_inherit) {
+  if (tag->unique) {
     if (!first)
       append_str(&buf, &cap, &len, "; ");
-    append_str(&buf, &cap, &len, "unique");
+    if (tag->is_inherit)
+      append_str(&buf, &cap, &len, "child_unique");
+    else
+      append_str(&buf, &cap, &len, "unique");
     first = false;
   }
 
-  if (tag->default_val && !tag->is_inherit) {
+  if (tag->default_val) {
     if (!first)
       append_str(&buf, &cap, &len, "; ");
-    append_str(&buf, &cap, &len, "default_val=");
+    if (tag->is_inherit)
+      append_str(&buf, &cap, &len, "child_default_val=");
+    else
+      append_str(&buf, &cap, &len, "default_val=");
     append_str(&buf, &cap, &len, tag->default_val);
     first = false;
   }
 
-  if (tag->min && !tag->is_inherit) {
+  if (tag->min) {
     if (!first)
       append_str(&buf, &cap, &len, "; ");
-    append_str(&buf, &cap, &len, "min=");
+    if (tag->is_inherit)
+      append_str(&buf, &cap, &len, "child_min=");
+    else
+      append_str(&buf, &cap, &len, "min=");
     append_str(&buf, &cap, &len, tag->min);
     first = false;
   }
 
-  if (tag->max && !tag->is_inherit) {
+  if (tag->max) {
     if (!first)
       append_str(&buf, &cap, &len, "; ");
-    append_str(&buf, &cap, &len, "max=");
+    if (tag->is_inherit)
+      append_str(&buf, &cap, &len, "child_max=");
+    else
+      append_str(&buf, &cap, &len, "max=");
     append_str(&buf, &cap, &len, tag->max);
     first = false;
   }
 
-  if (tag->size != 0 && !tag->is_inherit) {
+  if (tag->size != 0) {
     if (!first)
       append_str(&buf, &cap, &len, "; ");
-    append_fmt(&buf, &cap, &len, "size=%d", tag->size);
+    if (tag->is_inherit)
+      append_fmt(&buf, &cap, &len, "child_size=%d", tag->size);
+    else
+      append_fmt(&buf, &cap, &len, "size=%d", tag->size);
     first = false;
   }
 
-  if (tag->enums && !tag->is_inherit) {
+  if (tag->enums) {
     if (!first)
       append_str(&buf, &cap, &len, "; ");
-    append_str(&buf, &cap, &len, "enums=");
+    if (tag->is_inherit)
+      append_str(&buf, &cap, &len, "child_enums=");
+    else
+      append_str(&buf, &cap, &len, "enums=");
     append_str(&buf, &cap, &len, tag->enums);
     first = false;
   }
 
-  if (tag->pattern && !tag->is_inherit) {
+  if (tag->pattern) {
     if (!first)
       append_str(&buf, &cap, &len, "; ");
-    append_str(&buf, &cap, &len, "pattern=");
+    if (tag->is_inherit)
+      append_str(&buf, &cap, &len, "child_pattern=");
+    else
+      append_str(&buf, &cap, &len, "pattern=");
     append_str(&buf, &cap, &len, tag->pattern);
     first = false;
   }
 
-  if (tag->location_offset != 0 && !tag->is_inherit) {
+  if (tag->location_offset != 0) {
     if (!first)
       append_str(&buf, &cap, &len, "; ");
-    append_fmt(&buf, &cap, &len, "location=%d", tag->location_offset);
+    if (tag->is_inherit)
+      append_fmt(&buf, &cap, &len, "child_location=%d", tag->location_offset);
+    else
+      append_fmt(&buf, &cap, &len, "location=%d", tag->location_offset);
     first = false;
   }
 
-  if (tag->version != MM_TAG_DEFAULT_VERSION && !tag->is_inherit) {
+  if (tag->version != MM_TAG_DEFAULT_VERSION) {
     if (!first)
       append_str(&buf, &cap, &len, "; ");
-    append_fmt(&buf, &cap, &len, "version=%d", tag->version);
+    if (tag->is_inherit)
+      append_fmt(&buf, &cap, &len, "child_version=%d", tag->version);
+    else
+      append_fmt(&buf, &cap, &len, "version=%d", tag->version);
     first = false;
   }
 
-  if (tag->mime && !tag->is_inherit) {
+  if (tag->mime) {
     if (!first)
       append_str(&buf, &cap, &len, "; ");
-    append_str(&buf, &cap, &len, "mime=");
+    if (tag->is_inherit)
+      append_str(&buf, &cap, &len, "child_mime=");
+    else
+      append_str(&buf, &cap, &len, "mime=");
     append_str(&buf, &cap, &len, tag->mime);
     first = false;
   }
 
-  if (tag->child_desc) {
+  if (tag->child_desc && !tag->is_inherit) {
     if (!first)
       append_str(&buf, &cap, &len, "; ");
     append_str(&buf, &cap, &len, "child_desc=");
@@ -645,7 +685,7 @@ char *mm_tag_to_string(const mm_tag_t *tag) {
     first = false;
   }
 
-  if (tag->child_type != MM_VALUE_UNKNOWN) {
+  if (tag->child_type != MM_VALUE_UNKNOWN && !tag->is_inherit) {
     if (is_simple_type(tag->child_type)) {
     } else {
       if ((tag->child_type == MM_VALUE_ARR && tag->child_size > 0) ||
@@ -660,28 +700,28 @@ char *mm_tag_to_string(const mm_tag_t *tag) {
     }
   }
 
-  if (tag->child_nullable) {
+  if (tag->child_nullable && !tag->is_inherit) {
     if (!first)
       append_str(&buf, &cap, &len, "; ");
     append_str(&buf, &cap, &len, "child_nullable");
     first = false;
   }
 
-  if (tag->child_allow_empty) {
+  if (tag->child_allow_empty && !tag->is_inherit) {
     if (!first)
       append_str(&buf, &cap, &len, "; ");
     append_str(&buf, &cap, &len, "child_allow_empty");
     first = false;
   }
 
-  if (tag->child_unique) {
+  if (tag->child_unique && !tag->is_inherit) {
     if (!first)
       append_str(&buf, &cap, &len, "; ");
     append_str(&buf, &cap, &len, "child_unique");
     first = false;
   }
 
-  if (tag->child_default_val) {
+  if (tag->child_default_val && !tag->is_inherit) {
     if (!first)
       append_str(&buf, &cap, &len, "; ");
     append_str(&buf, &cap, &len, "child_default_val=");
@@ -689,7 +729,7 @@ char *mm_tag_to_string(const mm_tag_t *tag) {
     first = false;
   }
 
-  if (tag->child_min) {
+  if (tag->child_min && !tag->is_inherit) {
     if (!first)
       append_str(&buf, &cap, &len, "; ");
     append_str(&buf, &cap, &len, "child_min=");
@@ -697,7 +737,7 @@ char *mm_tag_to_string(const mm_tag_t *tag) {
     first = false;
   }
 
-  if (tag->child_max) {
+  if (tag->child_max && !tag->is_inherit) {
     if (!first)
       append_str(&buf, &cap, &len, "; ");
     append_str(&buf, &cap, &len, "child_max=");
@@ -705,14 +745,14 @@ char *mm_tag_to_string(const mm_tag_t *tag) {
     first = false;
   }
 
-  if (tag->child_size != 0) {
+  if (tag->child_size != 0 && !tag->is_inherit) {
     if (!first)
       append_str(&buf, &cap, &len, "; ");
     append_fmt(&buf, &cap, &len, "child_size=%d", tag->child_size);
     first = false;
   }
 
-  if (tag->child_enums) {
+  if (tag->child_enums && !tag->is_inherit) {
     if (!first)
       append_str(&buf, &cap, &len, "; ");
     append_str(&buf, &cap, &len, "child_enums=");
@@ -720,7 +760,7 @@ char *mm_tag_to_string(const mm_tag_t *tag) {
     first = false;
   }
 
-  if (tag->child_pattern) {
+  if (tag->child_pattern && !tag->is_inherit) {
     if (!first)
       append_str(&buf, &cap, &len, "; ");
     append_str(&buf, &cap, &len, "child_pattern=");
@@ -728,7 +768,7 @@ char *mm_tag_to_string(const mm_tag_t *tag) {
     first = false;
   }
 
-  if (tag->child_location_offset != 0) {
+  if (tag->child_location_offset != 0 && !tag->is_inherit) {
     if (!first)
       append_str(&buf, &cap, &len, "; ");
     append_fmt(&buf, &cap, &len, "child_location=%d",
@@ -736,14 +776,14 @@ char *mm_tag_to_string(const mm_tag_t *tag) {
     first = false;
   }
 
-  if (tag->child_version != MM_TAG_DEFAULT_VERSION) {
+  if (tag->child_version != MM_TAG_DEFAULT_VERSION && !tag->is_inherit) {
     if (!first)
       append_str(&buf, &cap, &len, "; ");
     append_fmt(&buf, &cap, &len, "child_version=%d", tag->child_version);
     first = false;
   }
 
-  if (tag->child_mime) {
+  if (tag->child_mime && !tag->is_inherit) {
     if (!first)
       append_str(&buf, &cap, &len, "; ");
     append_str(&buf, &cap, &len, "child_mime=");
@@ -1016,7 +1056,7 @@ uint8_t *mm_tag_bytes(const mm_tag_t *tag, size_t *out_len) {
     buf[len++] = (uint8_t)(MM_TAG_KISNULL | 1);
   }
 
-  if (tag->nullable && !tag->is_inherit) {
+  if (tag->nullable) {
     if (!tag->is_null) {
       if (len + 1 > cap) {
         cap = cap ? cap * 2 : 128;
@@ -1026,11 +1066,11 @@ uint8_t *mm_tag_bytes(const mm_tag_t *tag, size_t *out_len) {
     }
   }
 
-  if (tag->desc && !tag->is_inherit) {
+  if (tag->desc) {
     encode_string(&buf, &cap, &len, MM_TAG_KDESC, tag->desc);
   }
 
-  if (tag->type != MM_VALUE_UNKNOWN && !tag->is_inherit) {
+  if (tag->type != MM_VALUE_UNKNOWN) {
     if (is_bytes_simple_type(tag->type)) {
     } else {
       if ((tag->type == MM_VALUE_ARR && tag->size > 0) ||
@@ -1046,7 +1086,7 @@ uint8_t *mm_tag_bytes(const mm_tag_t *tag, size_t *out_len) {
     }
   }
 
-  if (tag->deprecated && !tag->is_inherit) {
+  if (tag->deprecated) {
     if (len + 1 > cap) {
       cap = cap ? cap * 2 : 128;
       buf = (uint8_t *)realloc(buf, cap);
@@ -1054,7 +1094,7 @@ uint8_t *mm_tag_bytes(const mm_tag_t *tag, size_t *out_len) {
     buf[len++] = (uint8_t)(MM_TAG_KDEPRECATED | 1);
   }
 
-  if (tag->allow_empty && !tag->is_inherit) {
+  if (tag->allow_empty) {
     if (len + 1 > cap) {
       cap = cap ? cap * 2 : 128;
       buf = (uint8_t *)realloc(buf, cap);
@@ -1062,7 +1102,7 @@ uint8_t *mm_tag_bytes(const mm_tag_t *tag, size_t *out_len) {
     buf[len++] = (uint8_t)(MM_TAG_KALLOWEMPTY | 1);
   }
 
-  if (tag->unique && !tag->is_inherit) {
+  if (tag->unique) {
     if (len + 1 > cap) {
       cap = cap ? cap * 2 : 128;
       buf = (uint8_t *)realloc(buf, cap);
@@ -1070,32 +1110,32 @@ uint8_t *mm_tag_bytes(const mm_tag_t *tag, size_t *out_len) {
     buf[len++] = (uint8_t)(MM_TAG_KUNIQUE | 1);
   }
 
-  if (tag->default_val && !tag->is_inherit) {
+  if (tag->default_val) {
     encode_string_simple(&buf, &cap, &len, MM_TAG_KDEFAULTVAL,
                          tag->default_val);
   }
 
-  if (tag->min && !tag->is_inherit) {
+  if (tag->min) {
     encode_string_simple(&buf, &cap, &len, MM_TAG_KMIN, tag->min);
   }
 
-  if (tag->max && !tag->is_inherit) {
+  if (tag->max) {
     encode_string_simple(&buf, &cap, &len, MM_TAG_KMAX, tag->max);
   }
 
-  if (tag->size != 0 && !tag->is_inherit) {
+  if (tag->size != 0) {
     encode_u64(&buf, &cap, &len, MM_TAG_KSIZE, (uint64_t)tag->size);
   }
 
-  if (tag->enums && !tag->is_inherit) {
+  if (tag->enums) {
     encode_string(&buf, &cap, &len, MM_TAG_KENUMS, tag->enums);
   }
 
-  if (tag->pattern && !tag->is_inherit) {
+  if (tag->pattern) {
     encode_string_simple(&buf, &cap, &len, MM_TAG_KPATTERN, tag->pattern);
   }
 
-  if (tag->location_offset != 0 && !tag->is_inherit) {
+  if (tag->location_offset != 0) {
     char loc_buf[16];
     int loc_len =
         snprintf(loc_buf, sizeof(loc_buf), "%d", tag->location_offset);
@@ -1111,11 +1151,11 @@ uint8_t *mm_tag_bytes(const mm_tag_t *tag, size_t *out_len) {
     len += l;
   }
 
-  if (tag->version != MM_TAG_DEFAULT_VERSION && !tag->is_inherit) {
+  if (tag->version != MM_TAG_DEFAULT_VERSION) {
     encode_u64(&buf, &cap, &len, MM_TAG_KVERSION, (uint64_t)tag->version);
   }
 
-  if (tag->mime && !tag->is_inherit) {
+  if (tag->mime) {
     uint8_t l = parse_mime(tag->mime);
     if (l < 7) {
       if (len + 1 > cap) {

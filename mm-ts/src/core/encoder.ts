@@ -149,7 +149,7 @@ export class MMEncoder {
     switch (tag.type) {
       case ValueType.Datetime:
         if (!tag.isNull) {
-          n = this.encodeDateTime(val.getValue() as Date);
+          n = this.encodeDateTime(val.getValue() as Date, tag.location || 0);
         }
         break;
       case ValueType.Date:
@@ -867,8 +867,8 @@ export class MMEncoder {
     return n;
   }
 
-  encodeDateTime(date: Date): number {
-    const v = date.getTime() / 1000;
+  encodeDateTime(date: Date, locationOffset: number = 0): number {
+    const v = date.getTime() / 1000 - locationOffset * 3600;
     return this.encodeInt64(BigInt(Math.floor(v)));
   }
 

@@ -35,7 +35,7 @@ import {
   KChildVersion,
   KDefault,
   KDesc,
-  KEnum,
+  KEnums,
   KExample,
   KIsNull,
   KLocation,
@@ -348,7 +348,7 @@ export class MMDecoder {
         }
         throw new Error('size 不能超过 8 字节');
 
-      case KEnum:
+      case KEnums:
         tag.type = ValueType.Enums;
         let lenEnum = l;
         if (lenEnum <= 5) {
@@ -403,14 +403,16 @@ export class MMDecoder {
         throw new Error('size 不能超过 8 字节');
 
       case KMime:
-        if (l < 7) {
-          tag.mime = this.mimeToString(l);
-          return 1;
-        } else {
-          const l2 = this.readByte();
-          tag.mime = this.mimeToString(l2);
-          return 1 + 1;
+        if (l < 8) {
+          let mimeCode = 0;
+          for (let i = 0; i < l + 1; i++) {
+            const byteVal = this.readByte();
+            mimeCode = (mimeCode << 8) | byteVal;
+          }
+          tag.mime = tag.mimeFromCode(mimeCode);
+          return 2 + l;
         }
+        throw new Error('mime 不能超过 8 字节');
 
       case KChildDesc:
         let lenChildDesc = l;
@@ -554,14 +556,16 @@ export class MMDecoder {
         throw new Error('size 不能超过 8 字节');
 
       case KChildMime:
-        if (l < 7) {
-          tag.childMime = this.mimeToString(l);
-          return 1;
-        } else {
-          const l2 = this.readByte();
-          tag.childMime = this.mimeToString(l2);
-          return 1 + 1;
+        if (l < 8) {
+          let mimeCode = 0;
+          for (let i = 0; i < l + 1; i++) {
+            const byteVal = this.readByte();
+            mimeCode = (mimeCode << 8) | byteVal;
+          }
+          tag.childMime = tag.mimeFromCode(mimeCode);
+          return 2 + l;
         }
+        throw new Error('mime 不能超过 8 字节');
 
       default:
         throw new Error('invalid data');
@@ -697,7 +701,9 @@ export class MMDecoder {
         throw new Error(`Unsupported simple value: ${typeToString(value)}`);
     }
 
-    return new MMValue(data, tag);
+    const mv = new MMValue(data, tag);
+    mv.setText(text);
+    return mv;
   }
 
   private decodePositiveInt(
@@ -801,7 +807,10 @@ export class MMDecoder {
       case ValueType.Datetime:
         const ts = isNegative ? -Number(v) : Number(v);
         data = new Date(ts * 1000);
-        text = data.toISOString();
+        text = data
+          .toISOString()
+          .replace('T', ' ')
+          .replace(/\.\d{3}Z$/, '');
         break;
       case ValueType.Date:
         const days = isNegative ? -Number(v) : Number(v);
@@ -827,7 +836,9 @@ export class MMDecoder {
         throw new Error(`Unsupported int type: ${typeToString(tag.type)}`);
     }
 
-    return new MMValue(data, tag);
+    const mv = new MMValue(data, tag);
+    mv.setText(text);
+    return mv;
   }
 
   private decodeFloat(prefix: number, tag: Tag | null, path: string): MMValue {
@@ -958,7 +969,9 @@ export class MMDecoder {
         throw new Error(`unsupported value types: ${tag.type}`);
     }
 
-    return new MMValue(data, tag);
+    const mv = new MMValue(data, tag);
+    mv.setText(text);
+    return mv;
   }
 
   private mantissaToDecimal(mantissa: bigint, exp: number): string {
@@ -1017,7 +1030,9 @@ export class MMDecoder {
         throw new Error(`Unsupported string type: ${typeToString(tag.type)}`);
     }
 
-    return new MMValue(data, tag);
+    const mv = new MMValue(data, tag);
+    mv.setText(text);
+    return mv;
   }
 
   private decodeBytes(prefix: number, tag: Tag | null, path: string): MMValue {

@@ -623,7 +623,7 @@ class Encoder:
 
         if tag.type == ValueType.Datetime:
             if not tag.is_null:
-                self._encode_datetime(val.data)
+                self._encode_datetime(val.data, tag.location)
         elif tag.type == ValueType.Date:
             if not tag.is_null:
                 self._encode_date(val.data)
@@ -634,7 +634,10 @@ class Encoder:
             if tag.is_null:
                 self._encode_simple(SimpleNullInt)
             else:
-                self._encode_i64(int(val.data))
+                try:
+                    self._encode_i64(int(val.data))
+                except ValueError:
+                    self._encode_big_int(val.text)
         elif tag.type in (ValueType.I8, ValueType.I16, ValueType.I32, ValueType.I64):
             if not tag.is_null:
                 self._encode_i64(int(val.data))
@@ -703,6 +706,13 @@ class Encoder:
                 elif not isinstance(data, (bytes, bytearray)):
                     data = bytes(data)
                 self._encode_bytes(bytes(data))
+        elif tag.type == ValueType.Media:
+            if not tag.is_null:
+                data = val.data
+                if isinstance(data, str):
+                    import base64
+                    data = base64.b64decode(data)
+                self._encode_bytes(bytes(data))
         elif tag.type == ValueType.Bigint:
             if not tag.is_null:
                 self._encode_big_int(val.text)
@@ -713,7 +723,18 @@ class Encoder:
                 self._encode_bool(bool(val.data))
         elif tag.type == ValueType.Enums:
             if not tag.is_null:
-                self._encode_i64(int(val.data))
+                data = val.data
+                if isinstance(data, str):
+                    if tag.enums:
+                        enum_list = [e.strip() for e in tag.enums.split('|')]
+                        try:
+                            idx = enum_list.index(data)
+                            data = idx
+                        except ValueError:
+                            raise ValueError(f"enum value '{data}' not found in enums: {tag.enums}")
+                    else:
+                        raise ValueError(f"enum value '{data}' is string but no enums defined in tag")
+                self._encode_i64(int(data))
         else:
             raise ValueError(f"unsupported value type: {tag.type}")
 
@@ -730,15 +751,24 @@ class Encoder:
 
     # ===== Date/time encoding =====
 
-    def _encode_datetime(self, t):
+    def _encode_datetime(self, t, location=0):
         if isinstance(t, (datetime, dt_time)):
             if t.tzinfo is None:
-                t = t.replace(tzinfo=timezone.utc)
+                if location != 0:
+                    from datetime import timedelta as _td2
+                    t = t.replace(tzinfo=timezone(_td2(hours=location)))
+                else:
+                    t = t.replace(tzinfo=timezone.utc)
             v = int(t.timestamp())
         elif isinstance(t, str):
             for fmt in ['%Y-%m-%d %H:%M:%S', '%Y-%m-%dT%H:%M:%S', '%Y-%m-%d']:
                 try:
-                    dt = datetime.strptime(t, fmt).replace(tzinfo=timezone.utc)
+                    dt = datetime.strptime(t, fmt)
+                    if location != 0:
+                        from datetime import timedelta as _td3
+                        dt = dt.replace(tzinfo=timezone(_td3(hours=location)))
+                    else:
+                        dt = dt.replace(tzinfo=timezone.utc)
                     v = int(dt.timestamp())
                     break
                 except ValueError:
@@ -754,6 +784,10 @@ class Encoder:
             d = t if isinstance(t, date) else t.date()
             ref = date(1970, 1, 1)
             days = (d - ref).days
+        elif isinstance(t, str):
+            d = datetime.strptime(t, '%Y-%m-%d').date()
+            ref = date(1970, 1, 1)
+            days = (d - ref).days
         else:
             days = int(t)
         sign = PositiveInt if days >= 0 else NegativeInt
@@ -766,6 +800,9 @@ class Encoder:
         elif isinstance(t, datetime):
             utc = t.utctimetuple()
             v = utc.tm_hour * 3600 + utc.tm_min * 60 + utc.tm_sec
+        elif isinstance(t, str):
+            parts = t.split(':')
+            v = int(parts[0]) * 3600 + int(parts[1]) * 60 + int(parts[2])
         else:
             v = int(t)
         self._encode_u64(v)

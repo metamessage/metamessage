@@ -40,7 +40,7 @@ var cTypeMap = map[ir.ValueType]string{
 	ir.ValueTypeIp:       "char*",
 	ir.ValueTypeUrl:      "char*",
 	ir.ValueTypeEnum:     "char*",
-	ir.ValueTypeImage:    "char*",
+	ir.ValueTypeMedia:    "char*",
 }
 
 type cStructCollector struct {

@@ -558,7 +558,11 @@ extension Encoder {
             switch tag.type {
             case .datetime:
                 if let date = node.data as? Date {
-                    encodeDateTime(date)
+                    var adjustedDate = date
+                    if tag.location != 0 {
+                        adjustedDate = date.addingTimeInterval(TimeInterval(-tag.location * 3600))
+                    }
+                    encodeDateTime(adjustedDate)
                 } else {
                     encodeRawValue(node)
                 }
@@ -571,6 +575,17 @@ extension Encoder {
             case .time:
                 if let date = node.data as? Date {
                     encodeTime(date)
+                } else {
+                    encodeRawValue(node)
+                }
+            case .enums:
+                if let strVal = node.data as? String, !tag.enums.isEmpty {
+                    let enumValues = tag.enums.split(separator: "|").map(String.init)
+                    if let index = enumValues.firstIndex(of: strVal) {
+                        encodeInt64(Int64(index))
+                    } else {
+                        encode(strVal)
+                    }
                 } else {
                     encodeRawValue(node)
                 }
@@ -883,6 +898,10 @@ extension Encoder {
 
         if tag.isNull {
             bytes.append(TagKey.isNull | 1)
+        }
+
+        if tag.example {
+            bytes.append(TagKey.example | 1)
         }
 
         if tag.nullable && !tag.isInherit && !tag.isNull {

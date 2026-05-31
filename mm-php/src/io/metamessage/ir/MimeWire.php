@@ -21,7 +21,6 @@ class Mime
         'text/html' => 13,
         'text/css' => 14,
         'text/javascript' => 15,
-        'application/javascript' => 15,
         'application/json' => 16,
         'text/csv' => 17,
         'text/markdown' => 18,

@@ -136,13 +136,16 @@ struct Tag {
       first = false;
     };
 
-    if (type != ValueType::Unknown && !isInherit) {
+    if (type != ValueType::Unknown) {
       bool skip = (type == ValueType::Str || type == ValueType::I ||
                    type == ValueType::F64 || type == ValueType::Bool ||
                    type == ValueType::Obj || type == ValueType::Vec);
       if (!(skip || (type == ValueType::Arr && size > 0) ||
             (type == ValueType::Enums && !enums.empty()))) {
-        add("type=" + valueTypeToString(type));
+        if (!isInherit)
+          add("type=" + valueTypeToString(type));
+        else
+          add("child_type=" + valueTypeToString(type));
       }
     }
 
@@ -150,61 +153,121 @@ struct Tag {
       add("example");
     if (isNull)
       add("is_null");
-    if (nullable && !isInherit && !isNull)
-      add("nullable");
-    if (!desc.empty() && !isInherit)
-      add("desc=\"" + desc + "\"");
+    if (nullable && !isNull) {
+      if (!isInherit)
+        add("nullable");
+      else
+        add("child_nullable");
+    }
+    if (!desc.empty()) {
+      if (!isInherit)
+        add("desc=\"" + desc + "\"");
+      else
+        add("child_desc=\"" + desc + "\"");
+    }
     if (deprecated && !isInherit)
       add("deprecated");
-    if (allowEmpty && !isInherit)
-      add("allow_empty");
-    if (unique && !isInherit)
-      add("unique");
-    if (!default_val.empty() && !isInherit)
-      add("default_val=" + default_val);
-    if (!min.empty() && !isInherit)
-      add("min=" + min);
-    if (!max.empty() && !isInherit)
-      add("max=" + max);
-    if (size != 0 && !isInherit)
-      add("size=" + std::to_string(size));
-    if (!enums.empty() && !isInherit)
-      add("enums=" + enums);
-    if (!pattern.empty() && !isInherit)
-      add("pattern=" + pattern);
-    if (locationOffset != 0 && !isInherit)
-      add("location=" + std::to_string(locationOffset));
-    if (version != DefaultVersion && !isInherit)
-      add("version=" + std::to_string(version));
-    if (!mime.empty() && !isInherit)
-      add("mime=" + mime);
-    if (!childDesc.empty())
+    if (allowEmpty) {
+      if (!isInherit)
+        add("allow_empty");
+      else
+        add("child_allow_empty");
+    }
+    if (unique) {
+      if (!isInherit)
+        add("unique");
+      else
+        add("child_unique");
+    }
+    if (!default_val.empty()) {
+      if (!isInherit)
+        add("default_val=" + default_val);
+      else
+        add("child_default_val=" + default_val);
+    }
+    if (!min.empty()) {
+      if (!isInherit)
+        add("min=" + min);
+      else
+        add("child_min=" + min);
+    }
+    if (!max.empty()) {
+      if (!isInherit)
+        add("max=" + max);
+      else
+        add("child_max=" + max);
+    }
+    if (size != 0) {
+      if (!isInherit)
+        add("size=" + std::to_string(size));
+      else
+        add("child_size=" + std::to_string(size));
+    }
+    if (!enums.empty()) {
+      if (!isInherit)
+        add("enums=" + enums);
+      else
+        add("child_enums=" + enums);
+    }
+    if (!pattern.empty()) {
+      if (!isInherit)
+        add("pattern=" + pattern);
+      else
+        add("child_pattern=" + pattern);
+    }
+    if (locationOffset != 0) {
+      if (!isInherit)
+        add("location=" + std::to_string(locationOffset));
+      else
+        add("child_location=" + std::to_string(locationOffset));
+    }
+    if (version != DefaultVersion) {
+      if (!isInherit)
+        add("version=" + std::to_string(version));
+      else
+        add("child_version=" + std::to_string(version));
+    }
+    if (!mime.empty()) {
+      if (!isInherit)
+        add("mime=" + mime);
+      else
+        add("child_mime=" + mime);
+    }
+    if (!childDesc.empty() && !isInherit)
       add("child_desc=\"" + childDesc + "\"");
-    if (childType != ValueType::Unknown)
-      add("child_type=" + valueTypeToString(childType));
-    if (childNullable)
+    if (childType != ValueType::Unknown && !isInherit) {
+      bool childSkip =
+          (childType == ValueType::Str || childType == ValueType::I ||
+           childType == ValueType::F64 || childType == ValueType::Bool ||
+           childType == ValueType::Obj || childType == ValueType::Vec);
+      if (!(childSkip || (childType == ValueType::Arr && childSize > 0) ||
+            (childType == ValueType::Enums && !child_enums.empty()))) {
+        add("child_type=" + valueTypeToString(childType));
+      }
+    }
+    if (childNullable && !isInherit)
       add("child_nullable");
-    if (childAllowEmpty)
+    if (childAllowEmpty && !isInherit)
       add("child_allow_empty");
-    if (childUnique)
+    if (childUnique && !isInherit)
       add("child_unique");
-    if (!child_default_val.empty())
+    if (!child_default_val.empty() && !isInherit)
       add("child_default_val=" + child_default_val);
-    if (!childMin.empty())
+    if (!childMin.empty() && !isInherit)
       add("child_min=" + childMin);
-    if (!childMax.empty())
+    if (!childMax.empty() && !isInherit)
       add("child_max=" + childMax);
-    if (childSize != 0)
+    if (childSize != 0 && !isInherit)
       add("child_size=" + std::to_string(childSize));
-    if (!child_enums.empty())
+    if (!child_enums.empty() && !isInherit)
       add("child_enums=" + child_enums);
-    if (!childPattern.empty())
+    if (!childPattern.empty() && !isInherit)
       add("child_pattern=" + childPattern);
-    if (childLocationOffset != DefaultLocationOffset)
+    if (childLocationOffset != DefaultLocationOffset && !isInherit)
       add("child_location=" + std::to_string(childLocationOffset));
-    if (childVersion != DefaultVersion)
+    if (childVersion != DefaultVersion && !isInherit)
       add("child_version=" + std::to_string(childVersion));
-    if (!childMime.empty())
+    if (!childMime.empty() && !isInherit)
       add("child_mime=" + childMime);
 
     return b.str();
@@ -259,7 +322,7 @@ struct Tag {
         r.desc = v;
       } else if (lower == "type") {
         r.type = parseValueType(v);
-      } else if (lower == "raw") {
+      } else if (lower == "deprecated") {
         r.deprecated = true;
       } else if (lower == "nullable") {
         r.nullable = true;
@@ -374,14 +437,28 @@ struct Tag {
     }
     if (version != DefaultVersion && !isInherit)
       encodeU64(&bs, KVersion, static_cast<uint64_t>(version));
-    if (!mime.empty() && !isInherit)
-      encodeString(&bs, KMime, mime);
+    if (!mime.empty() && !isInherit) {
+      int code = parseMime(mime);
+      if (code < 7) {
+        writeByte(static_cast<uint8_t>(KMime) | static_cast<uint8_t>(code));
+      } else {
+        writeByte(static_cast<uint8_t>(KMime) | 7);
+        writeByte(static_cast<uint8_t>(code));
+      }
+    }
 
     if (!childDesc.empty())
       encodeString(&bs, KChildDesc, childDesc);
     if (childType != ValueType::Unknown) {
-      writeByte(static_cast<uint8_t>(KChildType));
-      writeByte(static_cast<uint8_t>(childType));
+      bool childSkip =
+          (childType == ValueType::Str || childType == ValueType::I ||
+           childType == ValueType::F64 || childType == ValueType::Bool ||
+           childType == ValueType::Obj || childType == ValueType::Vec);
+      if (!(childSkip || (childType == ValueType::Arr && childSize > 0) ||
+            (childType == ValueType::Enums && !child_enums.empty()))) {
+        writeByte(static_cast<uint8_t>(KChildType));
+        writeByte(static_cast<uint8_t>(childType));
+      }
     }
     if (childNullable)
       writeByte(static_cast<uint8_t>(KChildNullable | 1));
@@ -409,8 +486,16 @@ struct Tag {
     }
     if (childVersion != DefaultVersion)
       encodeU64(&bs, KChildVersion, static_cast<uint64_t>(childVersion));
-    if (!childMime.empty())
-      encodeString(&bs, KChildMime, childMime);
+    if (!childMime.empty()) {
+      int code = parseMime(childMime);
+      if (code < 7) {
+        writeByte(static_cast<uint8_t>(KChildMime) |
+                  static_cast<uint8_t>(code));
+      } else {
+        writeByte(static_cast<uint8_t>(KChildMime) | 7);
+        writeByte(static_cast<uint8_t>(code));
+      }
+    }
 
     return bs;
   }
@@ -556,6 +641,83 @@ private:
       for (int i = 7; i >= 0; --i)
         bs->push_back(static_cast<uint8_t>(uv >> (i * 8)));
     }
+  }
+
+  static int parseMime(const std::string &mime) {
+    std::string key = mime;
+    std::transform(key.begin(), key.end(), key.begin(), ::tolower);
+    key.erase(0, key.find_first_not_of(" \t"));
+    key.erase(key.find_last_not_of(" \t") + 1);
+
+    if (key == "image/jpeg" || key == "image/jpg")
+      return 1;
+    if (key == "image/png")
+      return 2;
+    if (key == "image/gif")
+      return 3;
+    if (key == "image/webp")
+      return 4;
+    if (key == "image/svg+xml")
+      return 5;
+    if (key == "image/avif")
+      return 6;
+    if (key == "image/bmp")
+      return 7;
+    if (key == "image/x-icon")
+      return 8;
+    if (key == "image/tiff")
+      return 9;
+    if (key == "image/heic")
+      return 10;
+    if (key == "image/heif")
+      return 11;
+    if (key == "text/plain")
+      return 12;
+    if (key == "text/html")
+      return 13;
+    if (key == "text/css")
+      return 14;
+    if (key == "text/javascript")
+      return 15;
+    if (key == "application/json")
+      return 16;
+    if (key == "text/csv")
+      return 17;
+    if (key == "text/markdown")
+      return 18;
+    if (key == "application/pdf")
+      return 19;
+    if (key == "application/zip")
+      return 20;
+    if (key == "application/gzip")
+      return 21;
+    if (key == "application/x-tar")
+      return 22;
+    if (key ==
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+      return 23;
+    if (key == "application/"
+               "vnd.openxmlformats-officedocument.wordprocessingml.document")
+      return 24;
+    if (key == "application/octet-stream")
+      return 25;
+    if (key == "video/mp4")
+      return 26;
+    if (key == "video/webm")
+      return 27;
+    if (key == "video/mov")
+      return 28;
+    if (key == "audio/mpeg")
+      return 29;
+    if (key == "audio/wav")
+      return 30;
+    if (key == "audio/flac")
+      return 31;
+    if (key == "font/woff2")
+      return 32;
+    if (key == "font/ttf")
+      return 33;
+    return 0;
   }
 };
 

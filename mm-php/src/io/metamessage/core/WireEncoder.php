@@ -308,13 +308,21 @@ class WireEncoder
                             $n = $this->encodeString($text);
                             break;
                         case 4:
-                            $n = $this->encodeBytes($val->Data);
+                            $data = $val->Data;
+                            if (is_string($data)) {
+                                $data = array_map('ord', str_split($data));
+                            }
+                            $n = $this->encodeBytes($data);
                             break;
                         case 6:
                             if (strlen($text) < 16) {
                                 $n = $this->encodeString($text);
                             } else {
-                                $n = $this->encodeBytes($val->Data);
+                                $data = $val->Data;
+                                if (is_string($data)) {
+                                    $data = array_map('ord', str_split($data));
+                                }
+                                $n = $this->encodeBytes($data);
                             }
                             break;
                         default:
@@ -327,7 +335,11 @@ class WireEncoder
                 if ($tag->isNull) {
                     $n = $this->encodeSimple(SimpleValue::NULL_BYTES);
                 } else {
-                    $n = $this->encodeBytes($val->Data);
+                    $data = $val->Data;
+                    if (is_string($data)) {
+                        $data = array_map('ord', str_split($data));
+                    }
+                    $n = $this->encodeBytes($data);
                 }
                 break;
 

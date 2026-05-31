@@ -42,11 +42,6 @@ class MimeTest {
 
     @Test
     fun parseApplicationJavascript() {
-        assertEquals(15, Mime.parse("application/javascript"))
-    }
-
-    @Test
-    fun parseTextJavascript() {
         assertEquals(15, Mime.parse("text/javascript"))
     }
 
@@ -129,11 +124,19 @@ class MimeTest {
 
     @Test
     fun roundtrip() {
-        val mimeTypes = listOf(
-            "image/jpeg", "image/png", "image/gif", "image/webp",
-            "text/plain", "text/html", "application/json",
-            "video/mp4", "audio/mpeg", "font/woff2"
-        )
+        val mimeTypes =
+                listOf(
+                        "image/jpeg",
+                        "image/png",
+                        "image/gif",
+                        "image/webp",
+                        "text/plain",
+                        "text/html",
+                        "application/json",
+                        "video/mp4",
+                        "audio/mpeg",
+                        "font/woff2"
+                )
         for (m in mimeTypes) {
             val code = Mime.parse(m)
             assertTrue(code > 0, "MIME '$m' should parse to a positive code")

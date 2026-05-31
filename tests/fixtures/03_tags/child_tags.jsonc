@@ -13,7 +13,6 @@
     "old_field": "legacy",
 
     // integer types
-    // mm: child_type=i
     "i_arr": [1, 2, 3],
     // mm: child_type=i8
     "i8_arr": [1, 2, 3],
@@ -43,7 +42,6 @@
     "f64_arr": [1.5, 2.5, 3.5],
 
     // string / bool / bytes types
-    // mm: child_type=str
     "str_arr": ["a", "b", "c"],
     // mm: child_type=bool
     "bool_arr": [true, false, true],
@@ -56,7 +54,7 @@
 
     // temporal types
     // mm: child_type=datetime
-    "datetime_arr": ["2024-01-01T00:00:00Z", "2024-06-15T12:30:00Z"],
+    "datetime_arr": ["2024-01-01 00:00:00", "2024-06-15 12:30:00"],
     // mm: child_type=date
     "date_arr": ["2024-01-01", "2024-06-15"],
     // mm: child_type=time
@@ -75,6 +73,6 @@
     "email_arr": ["user@example.com", "admin@test.org"],
 
     // enum type
-    // mm: child_type=enums; child_enums=red|green|blue
+    // mm: child_enums=red|green|blue
     "enum_arr": ["red", "green", "blue"],
 }

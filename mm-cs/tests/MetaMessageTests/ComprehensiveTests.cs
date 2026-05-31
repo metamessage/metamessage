@@ -725,4 +725,14 @@ public class ComprehensiveTests
         public string? SometimesNull { get; set; }
         public string? SometimesPresent { get; set; }
     }
+
+    [Fact]
+    public void TestEncodeChildTags_HexOutput()
+    {
+        string fixturePath = "/Users/lizongying/IdeaProjects/meta-message/tests/fixtures/03_tags/child_tags.jsonc";
+        string input = File.ReadAllText(fixturePath);
+        byte[] wire = EncodeFromJsonc(input);
+        string hex = Convert.ToHexString(wire).ToLower();
+        Console.WriteLine($"C# hex ({wire.Length} bytes): {hex}");
+    }
 }

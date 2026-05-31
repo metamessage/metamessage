@@ -38,7 +38,7 @@ var phpTypeMap = map[ir.ValueType]string{
 	ir.ValueTypeIp:       "string",
 	ir.ValueTypeUrl:      "string",
 	ir.ValueTypeEnum:     "string",
-	ir.ValueTypeImage:    "string",
+	ir.ValueTypeMedia:    "string",
 }
 
 func ToPHP(n ir.Node) string {
@@ -349,7 +349,7 @@ func formatPhpValueLiteral(v *ir.Value) string {
 
 	if v.Tag != nil {
 		switch v.Tag.Type {
-		case ir.ValueTypeStr, ir.ValueTypeBytes, ir.ValueTypeDatetime, ir.ValueTypeDate, ir.ValueTypeTime, ir.ValueTypeUuid, ir.ValueTypeDecimal, ir.ValueTypeEmail, ir.ValueTypeIp, ir.ValueTypeUrl, ir.ValueTypeEnum, ir.ValueTypeImage:
+		case ir.ValueTypeStr, ir.ValueTypeBytes, ir.ValueTypeDatetime, ir.ValueTypeDate, ir.ValueTypeTime, ir.ValueTypeUuid, ir.ValueTypeDecimal, ir.ValueTypeEmail, ir.ValueTypeIp, ir.ValueTypeUrl, ir.ValueTypeEnum, ir.ValueTypeMedia:
 			return "\"" + strings.ReplaceAll(v.Text, "\"", "\\\"") + "\""
 		case ir.ValueTypeBool:
 			if strings.EqualFold(v.Text, "true") {

@@ -443,6 +443,12 @@ public static class MetaMessage
 
     private static void EncodeJsoncScalarPayload(WireEncoder encoder, JsoncValue value)
     {
+        var valTag = value.Tag;
+        if (valTag != null && valTag.Type == ValueType.Bigint)
+        {
+            encoder.EncodeBigIntDecimal(value.Value?.ToString() ?? "0");
+            return;
+        }
         switch (value.TokenType)
         {
             case JsoncTokenType.Null:
@@ -484,20 +490,69 @@ public static class MetaMessage
                 }
                 else
                 {
-                    encoder.EncodeFloatString(value.Value?.ToString() ?? "0");
+                    var strVal = value.Value?.ToString() ?? "0";
+                    var numTag = value.Tag;
+                    if (numTag != null && TypeInference.IsIntegerType(numTag.Type))
+                    {
+                        if (long.TryParse(strVal, out long lVal))
+                            encoder.EncodeInt64(lVal);
+                        else
+                            encoder.EncodeFloatString(strVal);
+                    }
+                    else if (numTag != null && TypeInference.IsFloatType(numTag.Type))
+                    {
+                        encoder.EncodeFloatString(strVal);
+                    }
+                    else
+                    {
+                        if (long.TryParse(strVal, out long lVal))
+                            encoder.EncodeInt64(lVal);
+                        else
+                            encoder.EncodeFloatString(strVal);
+                    }
                 }
                 break;
             case JsoncTokenType.String:
             default:
                 var tag = value.Tag;
-                if (tag != null && tag.Type == ValueType.Datetime)
+                if (tag != null && tag.Type == ValueType.Enums && !string.IsNullOrEmpty(tag.Enums))
+                {
+                    var enumValues = tag.Enums.Split('|');
+                    var strVal = value.Value?.ToString() ?? "";
+                    int index = Array.IndexOf(enumValues, strVal);
+                    if (index >= 0)
+                    {
+                        encoder.EncodeInt64(index);
+                    }
+                    else
+                    {
+                        encoder.EncodeString(strVal);
+                    }
+                }
+                else if (tag != null && tag.Type == ValueType.Datetime)
                 {
                     var dt = System.DateTime.Parse(value.Value?.ToString() ?? "", null, System.Globalization.DateTimeStyles.AssumeUniversal);
+                    if (tag.Location != 0)
+                    {
+                        dt = dt.AddHours(-tag.Location);
+                    }
                     encoder.EncodeInt64(TimeUtil.EpochSeconds(dt));
                 }
                 else if (tag != null && tag.Type == ValueType.Uuid)
                 {
                     encoder.EncodeBytes(UuidToBytes(value.Value?.ToString() ?? ""));
+                }
+                else if (tag != null && (tag.Type == ValueType.Bytes || tag.Type == ValueType.Image || tag.Type == ValueType.Video))
+                {
+                    var base64Str = value.Value?.ToString() ?? "";
+                    if (string.IsNullOrEmpty(base64Str))
+                    {
+                        encoder.EncodeBytes(Array.Empty<byte>());
+                    }
+                    else
+                    {
+                        encoder.EncodeBytes(Convert.FromBase64String(base64Str));
+                    }
                 }
                 else
                 {
@@ -511,10 +566,24 @@ public static class MetaMessage
     {
         var body = new GrowableByteBuf();
         var elementEncoder = new WireEncoder();
+        var arrayTag = array.Tag;
 
         foreach (var element in array.Elements)
         {
             elementEncoder.Reset();
+            if (arrayTag != null)
+            {
+                var inherited = Tag.Empty();
+                inherited.InheritFromArrayParent(arrayTag);
+                if (element.Tag != null)
+                {
+                    element.Tag = Tag.MergeTag(inherited, element.Tag);
+                }
+                else
+                {
+                    element.Tag = inherited;
+                }
+            }
             EncodeJsoncNodeValue(elementEncoder, element);
             body.WriteAll(elementEncoder.ToByteArray());
         }

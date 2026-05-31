@@ -38,8 +38,9 @@ class ValueType(IntEnum):
     Url = 28
     Email = 29
     Enums = 30
-    Image = 31
-    Video = 32
+    # Image = 31
+    # Video = 32
+    Media = 31
 
     def __str__(self) -> str:
         mapping = {
@@ -74,8 +75,9 @@ class ValueType(IntEnum):
             ValueType.Url: "url",
             ValueType.Email: "email",
             ValueType.Enums: "enums",
-            ValueType.Image: "image",
-            ValueType.Video: "video",
+            # ValueType.Image: "image",
+            # ValueType.Video: "video",
+            ValueType.Media: "media",
         }
         return mapping.get(self, "ValueType(%d)" % self.value)
 
@@ -90,7 +92,8 @@ _str_to_value_type = {
     "bigint": ValueType.Bigint, "datetime": ValueType.Datetime, "date": ValueType.Date, "time": ValueType.Time,
     "uuid": ValueType.Uuid, "decimal": ValueType.Decimal, "ip": ValueType.Ip, "url": ValueType.Url,
     "email": ValueType.Email, "enums": ValueType.Enums,
-    "image": ValueType.Image, "video": ValueType.Video,
+    # "image": ValueType.Image, "video": ValueType.Video,
+    "media": ValueType.Media,
 }
 
 
@@ -354,6 +357,8 @@ class Tag:
         if self.location is not None:
             try:
                 location_offset_hour = int(self.location)
+                if abs(location_offset_hour) >= 60:
+                    location_offset_hour = int(round(location_offset_hour / 60))
             except (ValueError, TypeError):
                 pass
         if location_offset_hour != 0 and not self.is_inherit:
@@ -365,12 +370,7 @@ class Tag:
             _encode_u64(buf, TagKey.Version, self.version)
 
         if self.mime and not self.is_inherit:
-            l = ParseMIME(self.mime)
-            if l < 7:
-                buf.append(TagKey.Mime | l)
-            else:
-                buf.append(TagKey.Mime | 7)
-                buf.append(l)
+            _encode_u64(buf, TagKey.Mime, ParseMIME(self.mime))
 
         if self.child_desc:
             child_desc_bytes = self.child_desc.encode('utf-8')
@@ -462,6 +462,8 @@ class Tag:
         if self.child_location is not None:
             try:
                 child_location_offset_hour = int(self.child_location)
+                if abs(child_location_offset_hour) >= 60:
+                    child_location_offset_hour = int(round(child_location_offset_hour / 60))
             except (ValueError, TypeError):
                 pass
         if child_location_offset_hour != 0:
@@ -473,12 +475,7 @@ class Tag:
             _encode_u64(buf, TagKey.ChildVersion, self.child_version)
 
         if self.child_mime:
-            l = ParseMIME(self.child_mime)
-            if l < 7:
-                buf.append(TagKey.ChildMime | l)
-            else:
-                buf.append(TagKey.ChildMime | 7)
-                buf.append(l)
+            _encode_u64(buf, TagKey.ChildMime, ParseMIME(self.child_mime))
 
         if self.more != 0:
             _encode_u64(buf, TagKey.More, self.more)
@@ -541,6 +538,8 @@ class Tag:
         if self.location is not None:
             try:
                 location_offset_hour = int(self.location)
+                if abs(location_offset_hour) >= 60:
+                    location_offset_hour = int(round(location_offset_hour / 60))
             except (ValueError, TypeError):
                 pass
         if location_offset_hour != 0 and not self.is_inherit:
@@ -593,6 +592,8 @@ class Tag:
         if self.child_location is not None:
             try:
                 child_location_offset_hour = int(self.child_location)
+                if abs(child_location_offset_hour) >= 60:
+                    child_location_offset_hour = int(round(child_location_offset_hour / 60))
             except (ValueError, TypeError):
                 pass
         if child_location_offset_hour != 0:
@@ -701,7 +702,7 @@ def mm_tag(tag_str: str) -> Tag:
             tag.desc = v
         elif k == "type":
             tag.type = parse_value_type(v)
-        elif k == "raw":
+        elif k == "raw" or k == "deprecated":
             tag.deprecated = True
         elif k == "nullable":
             tag.nullable = True

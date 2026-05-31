@@ -1,4 +1,4 @@
 {
-    // mm: mime=0
-    "content": "plain text"
+    // mm: type=media; mime=image/jpeg
+    "content": "MTIz"
 }

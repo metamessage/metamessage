@@ -155,7 +155,18 @@ class Tag(
     override fun toString(): String {
         val parts = mutableListOf<String>()
 
-        if (type != ValueType.UNKNOWN && !isInherit) {
+        if (isInherit) {
+            addInheritedParts(parts)
+        } else {
+            addOwnParts(parts)
+            addChildParts(parts)
+        }
+
+        return parts.joinToString("; ")
+    }
+
+    private fun addOwnParts(parts: MutableList<String>) {
+        if (type != ValueType.UNKNOWN) {
             if (!(type == ValueType.STR ||
                             type == ValueType.I ||
                             type == ValueType.F64 ||
@@ -179,64 +190,66 @@ class Tag(
             parts.add(T_IS_NULL)
         }
 
-        if (nullable && !isInherit) {
+        if (nullable) {
             if (!isNull) {
                 parts.add(T_NULLABLE)
             }
         }
 
-        if (desc.isNotEmpty() && !isInherit) {
+        if (desc.isNotEmpty()) {
             parts.add("${T_DESC}=${quote(desc)}")
         }
 
-        if (deprecated && !isInherit) {
+        if (deprecated) {
             parts.add(T_DEPRECATED)
         }
 
-        if (allowEmpty && !isInherit) {
+        if (allowEmpty) {
             parts.add(T_ALLOW_EMPTY)
         }
 
-        if (unique && !isInherit) {
+        if (unique) {
             parts.add(T_UNIQUE)
         }
 
-        if (default_val.isNotEmpty() && !isInherit) {
+        if (default_val.isNotEmpty()) {
             parts.add("${T_DEFAULT_VAL}=${default_val}")
         }
 
-        if (min.isNotEmpty() && !isInherit) {
+        if (min.isNotEmpty()) {
             parts.add("${T_MIN}=${min}")
         }
 
-        if (max.isNotEmpty() && !isInherit) {
+        if (max.isNotEmpty()) {
             parts.add("${T_MAX}=${max}")
         }
 
-        if (size != 0 && !isInherit) {
+        if (size != 0) {
             parts.add("${T_SIZE}=${size}")
         }
 
-        if (enums.isNotEmpty() && !isInherit) {
+        if (enums.isNotEmpty()) {
             parts.add("${T_ENUM}=${enums}")
         }
 
-        if (pattern.isNotEmpty() && !isInherit) {
+        if (pattern.isNotEmpty()) {
             parts.add("${T_PATTERN}=${pattern}")
         }
 
-        if (location != 0 && !isInherit) {
+        if (location != 0) {
             parts.add("${T_LOCATION}=${location}")
         }
 
-        if (version != DEFAULT_VERSION && !isInherit) {
+        if (version != DEFAULT_VERSION) {
             parts.add("${T_VERSION}=${version}")
         }
 
-        if (mime.isNotEmpty() && !isInherit) {
+        if (mime.isNotEmpty()) {
             parts.add("${T_MIME}=${mime}")
         }
+    }
 
+    private fun addChildParts(parts: MutableList<String>) {
         if (childDesc.isNotEmpty()) {
             parts.add("${T_CHILD_DESC}=${quote(childDesc)}")
         }
@@ -304,8 +317,78 @@ class Tag(
         if (childMime.isNotEmpty()) {
             parts.add("${T_CHILD_MIME}=${childMime}")
         }
+    }
 
-        return parts.joinToString("; ")
+    private fun addInheritedParts(parts: MutableList<String>) {
+        if (type != ValueType.UNKNOWN) {
+            if (!(type == ValueType.STR ||
+                            type == ValueType.I ||
+                            type == ValueType.F64 ||
+                            type == ValueType.BOOL ||
+                            type == ValueType.OBJ ||
+                            type == ValueType.VEC)
+            ) {
+                if (!((type == ValueType.ARR && size > 0) ||
+                                (type == ValueType.ENUMS && enums.isNotEmpty()))
+                ) {
+                    parts.add("${T_CHILD_TYPE}=${type.toString()}")
+                }
+            }
+        }
+
+        if (desc.isNotEmpty()) {
+            parts.add("${T_CHILD_DESC}=${quote(desc)}")
+        }
+
+        if (nullable) {
+            if (!isNull) {
+                parts.add(T_CHILD_NULLABLE)
+            }
+        }
+
+        if (allowEmpty) {
+            parts.add(T_CHILD_ALLOW_EMPTY)
+        }
+
+        if (unique) {
+            parts.add(T_CHILD_UNIQUE)
+        }
+
+        if (default_val.isNotEmpty()) {
+            parts.add("${T_CHILD_DEFAULT_VAL}=${default_val}")
+        }
+
+        if (min.isNotEmpty()) {
+            parts.add("${T_CHILD_MIN}=${min}")
+        }
+
+        if (max.isNotEmpty()) {
+            parts.add("${T_CHILD_MAX}=${max}")
+        }
+
+        if (size != 0) {
+            parts.add("${T_CHILD_SIZE}=${size}")
+        }
+
+        if (enums.isNotEmpty()) {
+            parts.add("${T_CHILD_ENUMS}=${enums}")
+        }
+
+        if (pattern.isNotEmpty()) {
+            parts.add("${T_CHILD_PATTERN}=${pattern}")
+        }
+
+        if (location != 0) {
+            parts.add("${T_CHILD_LOCATION}=${location}")
+        }
+
+        if (version != DEFAULT_VERSION) {
+            parts.add("${T_CHILD_VERSION}=${version}")
+        }
+
+        if (mime.isNotEmpty()) {
+            parts.add("${T_CHILD_MIME}=${mime}")
+        }
     }
 
     fun toBytes(): ByteArray {
@@ -1794,7 +1877,7 @@ class Tag(
     fun validateTime(value: LocalTime): ValidationResult {
         val zero = LocalTime.of(0, 0, 0)
 
-        val format = value.toString()
+        val format = value.format(DateTimeFormatter.ofPattern("HH:mm:ss"))
         if (value == zero) {
             if (allowEmpty) {
                 return ValidationResult(true, data = value, text = format)
@@ -1884,8 +1967,9 @@ class Tag(
             return ValidationResult(false, "type ip not allow empty value \"\"")
         }
 
+        val addr: java.net.InetAddress
         try {
-            val addr = java.net.InetAddress.getByName(value)
+            addr = java.net.InetAddress.getByName(value)
             val ipBytes = addr.address
 
             if (version == 4 && ipBytes.size != 4) {
@@ -1907,7 +1991,7 @@ class Tag(
             return ValidationResult(false, "type ip not support location UTC$location")
         }
 
-        return ValidationResult(true, data = value, text = value)
+        return ValidationResult(true, data = addr, text = value)
     }
 
     fun validateURL(value: String): ValidationResult {

@@ -305,6 +305,17 @@ static mm_node_t *parse_array(parse_ctx_t *ctx) {
     }
   }
 
+  for (size_t i = 0; i < arr->data.array.item_count; i++) {
+    mm_node_t *item = arr->data.array.items[i];
+    if (item->type == MM_NODE_VALUE) {
+      mm_tag_inherit(&item->data.value.tag, &arr->data.array.tag);
+    } else if (item->type == MM_NODE_ARRAY) {
+      mm_tag_inherit(&item->data.array.tag, &arr->data.array.tag);
+    } else if (item->type == MM_NODE_OBJECT) {
+      mm_tag_inherit(&item->data.object.tag, &arr->data.array.tag);
+    }
+  }
+
   return arr;
 }
 

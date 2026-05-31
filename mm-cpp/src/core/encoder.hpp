@@ -6,6 +6,7 @@
 #include <algorithm>
 #include <cstdint>
 #include <ctime>
+#include <sstream>
 #include <stdexcept>
 #include <string>
 #include <vector>
@@ -457,18 +458,101 @@ private:
     return n1;
   }
 
+  uint32_t encodeBigInt(const std::string &s) {
+    if (s.empty())
+      return 0;
+
+    bool neg = false;
+    std::string body = s;
+    if (body[0] == '-') {
+      neg = true;
+      body = body.substr(1);
+    }
+
+    std::vector<int> bits;
+    bits.push_back(neg ? 1 : 0);
+
+    size_t i = 0;
+    while (i < body.size()) {
+      size_t rem = body.size() - i;
+      if (rem >= 3) {
+        int num = (body[i] - '0') * 100 + (body[i + 1] - '0') * 10 +
+                  (body[i + 2] - '0');
+        toBitsVec(num, 10, bits);
+        i += 3;
+      } else if (rem == 2) {
+        int num = (body[i] - '0') * 10 + (body[i + 1] - '0');
+        toBitsVec(num, 7, bits);
+        i += 2;
+      } else {
+        int num = body[i] - '0';
+        toBitsVec(num, 4, bits);
+        i += 1;
+      }
+    }
+
+    std::vector<uint8_t> packed = bitsToBytes(bits);
+    std::vector<uint8_t> inner;
+    inner.push_back(static_cast<uint8_t>(s.size()));
+    inner.insert(inner.end(), packed.begin(), packed.end());
+
+    return encodeBytes(inner);
+  }
+
+  static void toBitsVec(int v, int n, std::vector<int> &bits) {
+    for (int i = n - 1; i >= 0; --i) {
+      bits.push_back((v >> i) & 1);
+    }
+  }
+
+  static std::vector<uint8_t> bitsToBytes(const std::vector<int> &bits) {
+    std::vector<uint8_t> out;
+    uint8_t bt = 0;
+    int bl = 0;
+    for (int b : bits) {
+      bt = static_cast<uint8_t>((bt << 1) | b);
+      bl++;
+      if (bl == 8) {
+        out.push_back(bt);
+        bt = 0;
+        bl = 0;
+      }
+    }
+    if (bl > 0) {
+      bt <<= (8 - bl);
+      out.push_back(bt);
+    }
+    return out;
+  }
+
   uint32_t encodeNodeValue(std::shared_ptr<ir::Value> val) {
     uint32_t n = 0;
     auto *tag = val->getTag();
 
     switch (tag->type) {
-    case ir::ValueType::Datetime:
+    case ir::ValueType::Datetime: {
+      struct tm tm = {};
+      if (sscanf(val->text.c_str(), "%d-%d-%d %d:%d:%d", &tm.tm_year,
+                 &tm.tm_mon, &tm.tm_mday, &tm.tm_hour, &tm.tm_min,
+                 &tm.tm_sec) == 6) {
+        tm.tm_year -= 1900;
+        tm.tm_mon -= 1;
+        tm.tm_isdst = -1;
+        int64_t epoch = static_cast<int64_t>(timegm(&tm));
+        epoch -= static_cast<int64_t>(tag->locationOffset) * 3600;
+        n = encodeInt64(epoch);
+      } else {
+        n = encodeInt64(0);
+      }
+      break;
+    }
+
     case ir::ValueType::Date:
     case ir::ValueType::Time: {
       struct tm tm = {};
       if (sscanf(val->text.c_str(), "%d-%d-%d %d:%d:%d", &tm.tm_year,
                  &tm.tm_mon, &tm.tm_mday, &tm.tm_hour, &tm.tm_min,
-                 &tm.tm_sec) == 6) {
+                 &tm.tm_sec) >= 3) {
         tm.tm_year -= 1900;
         tm.tm_mon -= 1;
         tm.tm_isdst = -1;
@@ -521,7 +605,7 @@ private:
       if (tag->isNull)
         n = 0;
       else
-        n = encodeU64(std::stoull(val->text));
+        n = encodeBigInt(val->text);
       break;
 
     case ir::ValueType::Str:
@@ -570,8 +654,24 @@ private:
     case ir::ValueType::Enums:
       if (tag->isNull)
         n = 0;
-      else
-        n = encodeU64(0);
+      else {
+        int enumIndex = 0;
+        if (!tag->enums.empty()) {
+          std::istringstream enumStream(tag->enums);
+          std::string token;
+          int idx = 0;
+          while (std::getline(enumStream, token, '|')) {
+            token.erase(0, token.find_first_not_of(" "));
+            token.erase(token.find_last_not_of(" ") + 1);
+            if (token == val->text) {
+              enumIndex = idx;
+              break;
+            }
+            idx++;
+          }
+        }
+        n = encodeU64(static_cast<uint64_t>(enumIndex));
+      }
       break;
 
     default:

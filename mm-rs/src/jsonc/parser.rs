@@ -108,6 +108,12 @@ impl Parser {
             TokenType::LBracket => self.parse_array(tok.line, path).map(Some),
             TokenType::String => {
                 let mut tag = self.consume_comments_for(tok.line).unwrap_or_default();
+                if self.peek().token_type == TokenType::Comment && self.peek().line == tok.line {
+                    let comment = self.next();
+                    if let Some(parsed) = Tag::parse(&comment.literal) {
+                        tag = Tag::merge(Some(tag), parsed);
+                    }
+                }
                 if tag.value_type == ValueType::Unknown {
                     tag.value_type = ValueType::Str;
                 }
@@ -142,6 +148,12 @@ impl Parser {
             }
             TokenType::Number => {
                 let mut tag = self.consume_comments_for(tok.line).unwrap_or_default();
+                if self.peek().token_type == TokenType::Comment && self.peek().line == tok.line {
+                    let comment = self.next();
+                    if let Some(parsed) = Tag::parse(&comment.literal) {
+                        tag = Tag::merge(Some(tag), parsed);
+                    }
+                }
                 let text = tok.literal;
 
                 if tag.value_type == ValueType::Unknown {
@@ -158,10 +170,8 @@ impl Parser {
                 } else if text.starts_with('-') {
                     if let Ok(ival) = text.parse::<i64>() {
                         data = ValueData::Int(ival);
-                    } else if tag.value_type == ValueType::Bigint {
-                        data = ValueData::String(text.clone());
                     } else {
-                        data = ValueData::Int(i64::MIN);
+                        data = ValueData::String(text.clone());
                     }
                 } else if let Ok(uval) = text.parse::<u64>() {
                     if uval > i64::MAX as u64 {
@@ -169,10 +179,8 @@ impl Parser {
                     } else {
                         data = ValueData::Int(uval as i64);
                     }
-                } else if tag.value_type == ValueType::Bigint {
-                    data = ValueData::String(text.clone());
                 } else {
-                    data = ValueData::Int(0);
+                    data = ValueData::String(text.clone());
                 }
 
                 let value = Node::Value(Value {
@@ -185,6 +193,12 @@ impl Parser {
             }
             TokenType::True => {
                 let mut tag = self.consume_comments_for(tok.line).unwrap_or_default();
+                if self.peek().token_type == TokenType::Comment && self.peek().line == tok.line {
+                    let comment = self.next();
+                    if let Some(parsed) = Tag::parse(&comment.literal) {
+                        tag = Tag::merge(Some(tag), parsed);
+                    }
+                }
                 if tag.value_type == ValueType::Unknown {
                     tag.value_type = ValueType::Bool;
                 }
@@ -198,6 +212,12 @@ impl Parser {
             }
             TokenType::False => {
                 let mut tag = self.consume_comments_for(tok.line).unwrap_or_default();
+                if self.peek().token_type == TokenType::Comment && self.peek().line == tok.line {
+                    let comment = self.next();
+                    if let Some(parsed) = Tag::parse(&comment.literal) {
+                        tag = Tag::merge(Some(tag), parsed);
+                    }
+                }
                 if tag.value_type == ValueType::Unknown {
                     tag.value_type = ValueType::Bool;
                 }

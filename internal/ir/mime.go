@@ -56,127 +56,174 @@ const (
 	MIMETtf
 )
 
+const (
+	mimeStringUnknown = "unknown"
+
+	// Image
+	mimeStringJpeg = "image/jpeg"
+	mimeStringPng  = "image/png"
+	mimeStringGif  = "image/gif"
+	mimeStringWebp = "image/webp"
+	mimeStringSvg  = "image/svg+xml"
+	mimeStringAvif = "image/avif"
+	mimeStringBmp  = "image/bmp"
+	mimeStringIco  = "image/x-icon"
+	mimeStringTiff = "image/tiff"
+	mimeStringHeic = "image/heic"
+	mimeStringHeif = "image/heif"
+
+	// Text
+	mimeStringTextPlain  = "text/plain"
+	mimeStringHtml       = "text/html"
+	mimeStringCss        = "text/css"
+	mimeStringJavaScript = "text/javascript"
+	mimeStringJson       = "application/json"
+	mimeStringCsv        = "text/csv"
+	mimeStringMarkdown   = "text/markdown"
+
+	// Application
+	mimeStringPdf         = "application/pdf"
+	mimeStringZip         = "application/zip"
+	mimeStringGzip        = "application/gzip"
+	mimeStringTar         = "application/x-tar"
+	mimeStringXlsx        = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+	mimeStringDocx        = "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+	mimeStringOctetStream = "application/octet-stream"
+
+	// Video
+	mimeStringMp4  = "video/mp4"
+	mimeStringWebm = "video/webm"
+	mimeStringMov  = "video/quicktime"
+
+	// Audio
+	mimeStringMp3  = "audio/mpeg"
+	mimeStringWav  = "audio/wav"
+	mimeStringFlac = "audio/flac"
+
+	// Font
+	mimeStringWoff2 = "font/woff2"
+	mimeStringTtf   = "font/ttf"
+)
+
 func (m MIME) String() string {
 	switch m {
 	// Image
 	case MIMEJpeg:
-		return "image/jpeg"
+		return mimeStringJpeg
 	case MIMEPng:
-		return "image/png"
+		return mimeStringPng
 	case MIMEGif:
-		return "image/gif"
+		return mimeStringGif
 	case MIMEWebp:
-		return "image/webp"
+		return mimeStringWebp
 	case MIMESvg:
-		return "image/svg+xml"
+		return mimeStringSvg
 	case MIMEAvif:
-		return "image/avif"
+		return mimeStringAvif
 	case MIMEBmp:
-		return "image/bmp"
+		return mimeStringBmp
 	case MIMEIco:
-		return "image/x-icon"
+		return mimeStringIco
 	case MIMETiff:
-		return "image/tiff"
+		return mimeStringTiff
 	case MIMEHeic:
-		return "image/heic"
+		return mimeStringHeic
 	case MIMEHeif:
-		return "image/heif"
+		return mimeStringHeif
 
 	// Text
 	case MIMETextPlain:
-		return "text/plain"
+		return mimeStringTextPlain
 	case MIMEHtml:
-		return "text/html"
+		return mimeStringHtml
 	case MIMECss:
-		return "text/css"
+		return mimeStringCss
 	case MIMEJavaScript:
-		return "text/javascript"
+		return mimeStringJavaScript
 	case MIMEJson:
-		return "application/json"
+		return mimeStringJson
 	case MIMECsv:
-		return "text/csv"
+		return mimeStringCsv
 	case MIMEMarkdown:
-		return "text/markdown"
+		return mimeStringMarkdown
 
 	// Application
 	case MIMEPdf:
-		return "application/pdf"
+		return mimeStringPdf
 	case MIMEZip:
-		return "application/zip"
+		return mimeStringZip
 	case MIMEGzip:
-		return "application/gzip"
+		return mimeStringGzip
 	case MIMETar:
-		return "application/x-tar"
+		return mimeStringTar
 	case MIMEXlsx:
-		return "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+		return mimeStringXlsx
 	case MIMEDocx:
-		return "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+		return mimeStringDocx
 	case MIMEOctetStream:
-		return "application/octet-stream"
+		return mimeStringOctetStream
 
 	// Video
 	case MIMEMp4:
-		return "video/mp4"
+		return mimeStringMp4
 	case MIMEWebm:
-		return "video/webm"
+		return mimeStringWebm
 	case MIMEMov:
-		return "video/mov"
+		return mimeStringMov
 
 	// Audio
 	case MIMEMp3:
-		return "audio/mpeg"
+		return mimeStringMp3
 	case MIMEWav:
-		return "audio/wav"
+		return mimeStringWav
 	case MIMEFlac:
-		return "audio/flac"
+		return mimeStringFlac
 
 	// Font
 	case MIMEWoff2:
-		return "font/woff2"
+		return mimeStringWoff2
 	case MIMETtf:
-		return "font/ttf"
+		return mimeStringTtf
 
 	default:
-		return "unknown"
+		return mimeStringUnknown
 	}
 }
 
 var strToMIME = map[string]MIME{
-	"image/jpeg":             MIMEJpeg,
-	"image/jpg":              MIMEJpeg,
-	"image/png":              MIMEPng,
-	"image/gif":              MIMEGif,
-	"image/webp":             MIMEWebp,
-	"image/svg+xml":          MIMESvg,
-	"image/avif":             MIMEAvif,
-	"image/bmp":              MIMEBmp,
-	"image/x-icon":           MIMEIco,
-	"image/tiff":             MIMETiff,
-	"image/heic":             MIMEHeic,
-	"image/heif":             MIMEHeif,
-	"text/plain":             MIMETextPlain,
-	"text/html":              MIMEHtml,
-	"text/css":               MIMECss,
-	"text/javascript":        MIMEJavaScript,
-	"application/javascript": MIMEJavaScript,
-	"application/json":       MIMEJson,
-	"text/csv":               MIMECsv,
-	"text/markdown":          MIMEMarkdown,
-	"application/pdf":        MIMEPdf,
-	"application/zip":        MIMEZip,
-	"application/gzip":       MIMEGzip,
-	"application/x-tar":      MIMETar,
-	"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet":       MIMEXlsx,
-	"application/vnd.openxmlformats-officedocument.wordprocessingml.document": MIMEDocx,
-	"application/octet-stream": MIMEOctetStream,
-	"video/mp4":                MIMEMp4,
-	"video/webm":               MIMEWebm,
-	"video/mov":                MIMEMov,
-	"audio/mpeg":               MIMEMp3,
-	"audio/wav":                MIMEWav,
-	"audio/flac":               MIMEFlac,
-	"font/woff2":               MIMEWoff2,
-	"font/ttf":                 MIMETtf,
+	mimeStringJpeg:        MIMEJpeg,
+	mimeStringPng:         MIMEPng,
+	mimeStringGif:         MIMEGif,
+	mimeStringWebp:        MIMEWebp,
+	mimeStringSvg:         MIMESvg,
+	mimeStringAvif:        MIMEAvif,
+	mimeStringBmp:         MIMEBmp,
+	mimeStringIco:         MIMEIco,
+	mimeStringTiff:        MIMETiff,
+	mimeStringHeic:        MIMEHeic,
+	mimeStringHeif:        MIMEHeif,
+	mimeStringTextPlain:   MIMETextPlain,
+	mimeStringHtml:        MIMEHtml,
+	mimeStringCss:         MIMECss,
+	mimeStringJavaScript:  MIMEJavaScript,
+	mimeStringJson:        MIMEJson,
+	mimeStringCsv:         MIMECsv,
+	mimeStringMarkdown:    MIMEMarkdown,
+	mimeStringPdf:         MIMEPdf,
+	mimeStringZip:         MIMEZip,
+	mimeStringGzip:        MIMEGzip,
+	mimeStringTar:         MIMETar,
+	mimeStringXlsx:        MIMEXlsx,
+	mimeStringDocx:        MIMEDocx,
+	mimeStringOctetStream: MIMEOctetStream,
+	mimeStringMp4:         MIMEMp4,
+	mimeStringWebm:        MIMEWebm,
+	mimeStringMov:         MIMEMov,
+	mimeStringMp3:         MIMEMp3,
+	mimeStringWav:         MIMEWav,
+	mimeStringFlac:        MIMEFlac,
+	mimeStringWoff2:       MIMEWoff2,
+	mimeStringTtf:         MIMETtf,
 }
 
 func ParseMIME(s string) (MIME, error) {

@@ -40,7 +40,7 @@ var goTypeMap = map[ir.ValueType]string{
 	ir.ValueTypeIp:       "net.IP",
 	ir.ValueTypeUrl:      "url.URL",
 	ir.ValueTypeEnum:     "string",
-	ir.ValueTypeImage:    "string",
+	ir.ValueTypeMedia:    "string",
 }
 
 // structDef represents a struct definition that needs to be generated

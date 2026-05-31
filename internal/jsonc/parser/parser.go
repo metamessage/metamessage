@@ -334,10 +334,10 @@ func (p *Parser) parse(path string, example bool, tag *ir.Tag) (val ir.Node, err
 						data, text, err = tag.ValidateEnum(text, example || tag.Example)
 					}
 
-				case ir.ValueTypeImage:
+				case ir.ValueTypeMedia:
 					if tag.IsNull {
 						if text != "" {
-							return nil, fmt.Errorf("invalid image: %q, valid: %q", text, "")
+							return nil, fmt.Errorf("invalid media: %q, valid: %q", text, "")
 						}
 
 						data = []byte{}
@@ -345,10 +345,10 @@ func (p *Parser) parse(path string, example bool, tag *ir.Tag) (val ir.Node, err
 						var val []byte
 						val, err = base64.StdEncoding.DecodeString(text)
 						if err != nil {
-							return nil, fmt.Errorf("invalid base64 image %q: %w", text, err)
+							return nil, fmt.Errorf("invalid base64 media %q: %w", text, err)
 						}
 
-						data, text, err = tag.ValidateImage(val, example || tag.Example)
+						data, text, err = tag.ValidateMedia(val, example || tag.Example)
 					}
 
 				default:

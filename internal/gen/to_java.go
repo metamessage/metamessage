@@ -38,7 +38,7 @@ var javaTypeMap = map[ir.ValueType]string{
 	ir.ValueTypeIp:       "String",
 	ir.ValueTypeUrl:      "String",
 	ir.ValueTypeEnum:     "String",
-	ir.ValueTypeImage:    "String",
+	ir.ValueTypeMedia:    "String",
 }
 
 var javaWrapperTypeMap = map[ir.ValueType]string{
@@ -63,7 +63,7 @@ var javaWrapperTypeMap = map[ir.ValueType]string{
 	ir.ValueTypeIp:      "String",
 	ir.ValueTypeUrl:     "String",
 	ir.ValueTypeEnum:    "String",
-	ir.ValueTypeImage:   "String",
+	ir.ValueTypeMedia:   "String",
 }
 
 func ToJava(n ir.Node) string {

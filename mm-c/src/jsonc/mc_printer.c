@@ -131,10 +131,6 @@ static mm_tag_t *get_data_tag(mm_node_t *node) {
 
 static void print_value(strbuf_t *sb, const mm_value_t *value, int depth) {
   (void)depth;
-  if (value->tag.is_null) {
-    sb_puts(sb, "null");
-    return;
-  }
   if (!value->text) {
     sb_puts(sb, "null");
     return;

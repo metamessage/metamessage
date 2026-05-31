@@ -99,7 +99,7 @@ object Encoder {
             ValueType.DATETIME -> {
                 if (!tag.isNull) {
                     val timeValue = value.data ?: throw IllegalArgumentException("null datetime")
-                    tmp.encodeInt64(TimeUtil.epochSeconds(timeValue))
+                    tmp.encodeInt64(TimeUtil.epochSeconds(timeValue) - tag.location * 3600)
                 }
             }
             ValueType.DATE -> {
@@ -167,7 +167,7 @@ object Encoder {
             }
             ValueType.U64 -> {
                 if (!tag.isNull) {
-                    tmp.encodeU64(value.data as Long)
+                    tmp.encodeU64((value.data as Number).toLong())
                 }
             }
             ValueType.F32 -> {

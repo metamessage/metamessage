@@ -345,6 +345,12 @@ func (e *encoder) encodeNodeValue(val *ir.Value) (n uint32, err error) {
 			n, err = e.encodeBytes(val.Data.([]byte))
 		}
 
+	case ir.ValueTypeMedia:
+		if tag.IsNull {
+		} else {
+			n, err = e.encodeBytes(val.Data.([]byte))
+		}
+
 	case ir.ValueTypeBigint:
 		if tag.IsNull {
 		} else {

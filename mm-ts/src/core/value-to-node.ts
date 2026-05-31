@@ -330,6 +330,45 @@ function valueToNode(v: any, tag: Tag, depth: number, path: string): Node {
           text = result.text || '';
           break;
         }
+        case ValueType.Datetime: {
+          const parsed = new Date(v);
+          if (isNaN(parsed.getTime())) {
+            throw new Error(`invalid datetime string: ${v}`);
+          }
+          const result = tag.validateDatetime(parsed);
+          if (!result.valid) {
+            throw new Error(`validate failed: ${result.error}`);
+          }
+          data = result.data;
+          text = result.text || '';
+          break;
+        }
+        case ValueType.Date: {
+          const parsed = new Date(v);
+          if (isNaN(parsed.getTime())) {
+            throw new Error(`invalid date string: ${v}`);
+          }
+          const result = tag.validateDate(parsed);
+          if (!result.valid) {
+            throw new Error(`validate failed: ${result.error}`);
+          }
+          data = result.data;
+          text = result.text || '';
+          break;
+        }
+        case ValueType.Time: {
+          const parsed = new Date(`1970-01-01T${v}Z`);
+          if (isNaN(parsed.getTime())) {
+            throw new Error(`invalid time string: ${v}`);
+          }
+          const result = tag.validateTime(parsed);
+          if (!result.valid) {
+            throw new Error(`validate failed: ${result.error}`);
+          }
+          data = result.data;
+          text = result.text || '';
+          break;
+        }
         default:
           throw new Error(`${tag.type} unsupported type: ${typeof v}`);
       }

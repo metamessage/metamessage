@@ -480,7 +480,6 @@ static void enc_encode_node_value(encoder_t *e, mm_value_t *val) {
 
   case MM_VALUE_DATE:
   case MM_VALUE_TIME:
-  case MM_VALUE_DATETIME:
     if (val->tag.is_null) {
       enc_encode_simple(&tmp, MM_SIMPLE_NULLINT);
     } else {
@@ -500,6 +499,31 @@ static void enc_encode_node_value(encoder_t *e, mm_value_t *val) {
     }
     break;
 
+  case MM_VALUE_DATETIME:
+    if (val->tag.is_null) {
+      enc_encode_simple(&tmp, MM_SIMPLE_NULLINT);
+    } else {
+      struct tm tm = {0};
+      if (sscanf(val->text, "%d-%d-%d %d:%d:%d", &tm.tm_year, &tm.tm_mon,
+                 &tm.tm_mday, &tm.tm_hour, &tm.tm_min, &tm.tm_sec) >= 3) {
+        tm.tm_year -= 1900;
+        tm.tm_mon -= 1;
+        tm.tm_isdst = -1;
+        int64_t epoch = (int64_t)timegm(&tm);
+        epoch -= val->tag.location_offset * 3600;
+        char buf[24];
+        snprintf(buf, sizeof(buf), "%lld", (long long)epoch);
+        if (epoch < 0) {
+          enc_encode_i(&tmp, MM_PREFIX_NEGATIVEINT, buf);
+        } else {
+          enc_encode_i(&tmp, MM_PREFIX_POSITIVEINT, buf);
+        }
+      } else {
+        enc_encode_i(&tmp, MM_PREFIX_POSITIVEINT, "0");
+      }
+    }
+    break;
+
   case MM_VALUE_IP:
     if (val->tag.is_null) {
       enc_encode_simple(&tmp, MM_SIMPLE_NULLSTRING);
@@ -512,7 +536,32 @@ static void enc_encode_node_value(encoder_t *e, mm_value_t *val) {
     if (val->tag.is_null) {
       enc_encode_simple(&tmp, MM_SIMPLE_NULLINT);
     } else {
-      enc_encode_i(&tmp, MM_PREFIX_POSITIVEINT, val->text);
+      int enum_index = 0;
+      if (val->tag.enums) {
+        char *enums_copy = strdup(val->tag.enums);
+        if (enums_copy) {
+          char *token = strtok(enums_copy, "|");
+          int idx = 0;
+          while (token) {
+            while (*token == ' ')
+              token++;
+            char *end = token + strlen(token);
+            while (end > token && *(end - 1) == ' ')
+              end--;
+            *end = '\0';
+            if (strcmp(token, val->text) == 0) {
+              enum_index = idx;
+              break;
+            }
+            token = strtok(NULL, "|");
+            idx++;
+          }
+          free(enums_copy);
+        }
+      }
+      char buf[24];
+      snprintf(buf, sizeof(buf), "%d", enum_index);
+      enc_encode_i(&tmp, MM_PREFIX_POSITIVEINT, buf);
     }
     break;
 

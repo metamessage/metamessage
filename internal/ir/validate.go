@@ -37,7 +37,7 @@ func (t *Tag) ValidateVec(value []Node) (err error) {
 		if t.AllowEmpty {
 			return
 		}
-		err = fmt.Errorf("type slice not allow empty")
+		err = fmt.Errorf("vec not allow empty")
 		return
 	}
 
@@ -1469,7 +1469,7 @@ func (t *Tag) ValidateEnum(val string, example bool) (data any, text string, err
 	return
 }
 
-func (t *Tag) ValidateImage(val []byte, example bool) (data any, text string, err error) {
+func (t *Tag) ValidateMedia(val []byte, example bool) (data any, text string, err error) {
 	if len(t.Desc) > 65535 {
 		err = fmt.Errorf("desc length exceeds 65535 bytes")
 		return

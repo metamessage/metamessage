@@ -19,7 +19,6 @@ object Mime {
                 put("text/html", 13)
                 put("text/css", 14)
                 put("text/javascript", 15)
-                put("application/javascript", 15)
                 put("application/json", 16)
                 put("text/csv", 17)
                 put("text/markdown", 18)

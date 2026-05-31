@@ -101,7 +101,41 @@ private:
   }
 
   void applyTagsToArray(std::shared_ptr<ir::Array> arr) {
+    auto *arrTag = arr->getTag();
     for (auto &item : arr->items) {
+      auto *childTag = item->getTag();
+      if (childTag && arrTag) {
+        childTag->isInherit = true;
+        if (!arrTag->childDesc.empty())
+          childTag->desc = arrTag->childDesc;
+        if (arrTag->childType != ir::ValueType::Unknown) {
+          childTag->type = arrTag->childType;
+        }
+        if (arrTag->childNullable)
+          childTag->nullable = true;
+        if (arrTag->childAllowEmpty)
+          childTag->allowEmpty = true;
+        if (arrTag->childUnique)
+          childTag->unique = true;
+        if (!arrTag->child_default_val.empty())
+          childTag->default_val = arrTag->child_default_val;
+        if (!arrTag->childMin.empty())
+          childTag->min = arrTag->childMin;
+        if (!arrTag->childMax.empty())
+          childTag->max = arrTag->childMax;
+        if (arrTag->childSize != 0)
+          childTag->size = arrTag->childSize;
+        if (!arrTag->child_enums.empty())
+          childTag->enums = arrTag->child_enums;
+        if (!arrTag->childPattern.empty())
+          childTag->pattern = arrTag->childPattern;
+        if (arrTag->childLocationOffset != ir::DefaultLocationOffset)
+          childTag->locationOffset = arrTag->childLocationOffset;
+        if (arrTag->childVersion != ir::DefaultVersion)
+          childTag->version = arrTag->childVersion;
+        if (!arrTag->childMime.empty())
+          childTag->mime = arrTag->childMime;
+      }
       applyTags(item);
     }
   }

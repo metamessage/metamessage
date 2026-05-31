@@ -65,7 +65,27 @@ export class JSONCPrinter {
   private valueToStringOnly(value: MMValue): string {
     const tag = value.getTag();
     if (tag.isNull) {
-      return 'null';
+      switch (tag.type) {
+        case ValueType.I:
+        case ValueType.I8:
+        case ValueType.I16:
+        case ValueType.I32:
+        case ValueType.I64:
+        case ValueType.U:
+        case ValueType.U8:
+        case ValueType.U16:
+        case ValueType.U32:
+        case ValueType.U64:
+        case ValueType.Bigint:
+          return '0';
+        case ValueType.F32:
+        case ValueType.F64:
+          return '0.0';
+        case ValueType.Bool:
+          return 'false';
+        default:
+          return '""';
+      }
     }
     const type = tag.type;
     const text = value.getText();
@@ -103,6 +123,8 @@ export class JSONCPrinter {
       let entry = '';
       if (tag.toString() !== '') {
         entry += `\n${indent}// mm: ${tag.toString()}\n${indent}`;
+      } else {
+        entry += `${indent}`;
       }
       entry += `${JSON.stringify(key)}: ${this.printNode(value)},`;
       entries.push(entry);

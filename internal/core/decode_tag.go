@@ -295,18 +295,21 @@ func (d *decoder) decodeTagBytes(tag *ir.Tag) (length int, err error) {
 		}
 
 	case ir.KMime:
-		if l < 7 {
-			tag.Mime = ir.MIME(uint8(l)).String()
-			length = 1
-		} else {
-			var l2 byte
-			l2, err = d.ReadByte()
-			if err != nil {
-				return
+		if l < 8 {
+			for i := 0; i < l+1; i++ {
+				var b byte
+				b, err = d.ReadByte()
+				if err != nil {
+					return
+				}
+				tag.Mime = tag.Mime<<8 | int(b)
 			}
-			tag.Mime = ir.MIME(uint8(l2)).String()
-			length = 1 + 1
+			length = 2 + l
+			tag.Type = ir.ValueTypeMedia
+			return
 		}
+		err = fmt.Errorf("mime is too large")
+		return
 
 	case ir.KChildDesc:
 		switch {
@@ -560,18 +563,21 @@ func (d *decoder) decodeTagBytes(tag *ir.Tag) (length int, err error) {
 		}
 
 	case ir.KChildMime:
-		if l < 7 {
-			tag.ChildMime = ir.MIME(uint8(l)).String()
-			length = 1
-		} else {
-			var l2 byte
-			l2, err = d.ReadByte()
-			if err != nil {
-				return
+		if l < 8 {
+			for i := 0; i < l+1; i++ {
+				var b byte
+				b, err = d.ReadByte()
+				if err != nil {
+					return
+				}
+				tag.ChildMime = tag.ChildMime<<8 | int(b)
 			}
-			tag.ChildMime = ir.MIME(uint8(l2)).String()
-			length = 1 + 1
+			length = 2 + l
+			tag.ChildType = ir.ValueTypeMedia
+			return
 		}
+		err = fmt.Errorf("child mime is too large")
+		return
 
 	case ir.KMore:
 		if l < 8 {

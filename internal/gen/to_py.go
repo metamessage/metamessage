@@ -39,7 +39,7 @@ var pyTypeMap = map[ir.ValueType]string{
 	ir.ValueTypeIp:       "str",
 	ir.ValueTypeUrl:      "str",
 	ir.ValueTypeEnum:     "str",
-	ir.ValueTypeImage:    "str",
+	ir.ValueTypeMedia:    "str",
 }
 
 func ToPy(n ir.Node) string {

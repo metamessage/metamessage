@@ -11,7 +11,7 @@ func TestParseMIME(t *testing.T) {
 		{"text/html", MIMEHtml},
 		{"image/png", MIMEPng},
 		{"audio/wav", MIMEWav},
-		{"application/javascript", MIMEJavaScript},
+		{"text/javascript", MIMEJavaScript},
 	}
 
 	for _, c := range cases {

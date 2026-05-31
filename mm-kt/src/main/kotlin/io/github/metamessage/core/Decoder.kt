@@ -115,7 +115,12 @@ class Decoder() {
                 val d = LocalDate.of(1970, 1, 1)
                 Value(d, d.toString(), tag)
             }
-            ValueType.TIME -> Value(LocalTime.MIDNIGHT, LocalTime.MIDNIGHT.toString(), tag)
+            ValueType.TIME ->
+                    Value(
+                            LocalTime.MIDNIGHT,
+                            LocalTime.MIDNIGHT.format(DateTimeFormatter.ofPattern("HH:mm:ss")),
+                            tag
+                    )
             ValueType.I8 -> Value(0.toByte(), "0", tag)
             ValueType.I16 -> Value(0.toShort(), "0", tag)
             ValueType.I32 -> Value(0, "0", tag)
@@ -307,7 +312,7 @@ class Decoder() {
         if (tag.isNull) return Value(null, "", tag)
         if (v > 86399) throw MmDecodeException("time out of range")
         val t = TimeUtil.timeFromSeconds(v.toInt())
-        return Value(t, t.toString(), tag)
+        return Value(t, t.format(DateTimeFormatter.ofPattern("HH:mm:ss")), tag)
     }
 
     private fun decodeEnum(tag: Tag, v: Long): Node {

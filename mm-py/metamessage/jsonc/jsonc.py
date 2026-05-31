@@ -32,8 +32,6 @@ TOKEN_TRUE = "TRUE"
 TOKEN_FALSE = "FALSE"
 TOKEN_NULL = "NULL"
 TOKEN_COMMENT = "COMMENT"
-TOKEN_LEADING_COMMENT = "LEADING_COMMENT"
-TOKEN_TRAILING_COMMENT = "TRAILING_COMMENT"
 TOKEN_EOF = "EOF"
 
 
@@ -43,7 +41,6 @@ class Lexer:
         self.pos = 0
         self.line = 1
         self.col = 1
-        self.new_line = True
         self.tokens: List[Token] = []
 
     def is_at_end(self):
@@ -55,7 +52,6 @@ class Lexer:
         c = self.source[self.pos]
         self.pos += 1
         if c == '\n':
-            self.new_line = True
             self.line += 1
             self.col = 1
         else:
@@ -79,7 +75,7 @@ class Lexer:
         while not self.is_at_end():
             c = self.advance()
             start_line = self.line
-            
+
             if c == '{':
                 self.add_token(TOKEN_LBRACE, "{")
             elif c == '}':
@@ -90,10 +86,8 @@ class Lexer:
                 self.add_token(TOKEN_RBRACKET, "]")
             elif c == ',':
                 self.add_token(TOKEN_COMMA, ",")
-                self.new_line = False
             elif c == ':':
                 self.add_token(TOKEN_COLON, ":")
-                self.new_line = False
             elif c in ' \t\n\r':
                 pass
             elif c == '"':
@@ -101,8 +95,6 @@ class Lexer:
             elif c == '/':
                 if self.peek() == '/':
                     self._line_comment()
-                elif self.peek() == '*':
-                    self._block_comment()
             elif c in '0123456789' or c == '-':
                 start_pos = self.pos - 1
                 self._number(start_pos)
@@ -159,7 +151,7 @@ class Lexer:
     def _number(self, start_pos: int):
         while self.peek() and self.peek() in '0123456789.eE+-':
             self.advance()
-        
+
         value = self.source[start_pos:self.pos]
         if '.' in value or 'e' in value or 'E' in value:
             self.add_token(TOKEN_NUMBER, float(value))
@@ -169,7 +161,7 @@ class Lexer:
     def _identifier(self, start_pos: int):
         while self.peek() and (self.peek().isalnum() or self.peek() == '_'):
             self.advance()
-        
+
         value = self.source[start_pos:self.pos].lower()
         if value == "true":
             self.add_token(TOKEN_TRUE, True)
@@ -181,26 +173,12 @@ class Lexer:
             self.add_token(TOKEN_STRING, value)
 
     def _line_comment(self):
-        comment_type = TOKEN_LEADING_COMMENT if self.new_line else TOKEN_TRAILING_COMMENT
         self.advance()  # skip second /
         start = self.pos
         while self.peek() and self.peek() != '\n':
             self.advance()
         value = self.source[start:self.pos].strip()
-        self.add_token(comment_type, value)
-
-    def _block_comment(self):
-        self.advance()  # skip *
-        comment_type = TOKEN_LEADING_COMMENT if self.new_line else TOKEN_TRAILING_COMMENT
-        start = self.pos
-        while not self.is_at_end():
-            if self.peek() == '*' and self.peek_next() == '/':
-                self.advance()
-                self.advance()
-                break
-            self.advance()
-        value = self.source[start:self.pos - 2].strip()
-        self.add_token(comment_type, value)
+        self.add_token(TOKEN_COMMENT, value)
 
 
 # ===== Parser =====
@@ -243,12 +221,6 @@ class Parser:
     @staticmethod
     def _parse_mm_tag(comment: str) -> Optional[Tag]:
         comment = comment.strip()
-        if comment.startswith("//"):
-            comment = comment[2:].strip()
-        elif comment.startswith("/*"):
-            comment = comment[2:]
-            if comment.endswith("*/"):
-                comment = comment[:-2].strip()
 
         if not comment.startswith("mm:"):
             return None
@@ -265,16 +237,12 @@ class Parser:
             if tok.type == TOKEN_EOF:
                 return None
 
-            if tok.type in (TOKEN_LEADING_COMMENT, TOKEN_COMMENT):
+            if tok.type == TOKEN_COMMENT:
                 if self.pending:
                     last = self.pending[-1]
                     if tok.line - last.line > 1:
                         self.pending = []
                 self.pending.append(tok)
-                self.next()
-                continue
-
-            if tok.type == TOKEN_TRAILING_COMMENT:
                 self.next()
                 continue
 
@@ -300,12 +268,8 @@ class Parser:
         while self.peek().type != TOKEN_RBRACE and self.peek().type != TOKEN_EOF:
             tok = self.peek()
 
-            if tok.type in (TOKEN_LEADING_COMMENT, TOKEN_COMMENT):
+            if tok.type == TOKEN_COMMENT:
                 self.pending.append(tok)
-                self.next()
-                continue
-
-            if tok.type == TOKEN_TRAILING_COMMENT:
                 self.next()
                 continue
 
@@ -318,12 +282,6 @@ class Parser:
 
             value_path = f"{path}.{key_token.literal}" if path else key_token.literal
             value = self._parse_value_or_container(value_path)
-
-            if self.peek().type == TOKEN_TRAILING_COMMENT:
-                inline_tag = self._parse_mm_tag(self.peek().literal)
-                if inline_tag is not None and hasattr(value, 'tag'):
-                    value.tag = MergeTag(value.tag, inline_tag)
-                self.next()
 
             fields.append(Field(key=key_token.literal, value=value))
 
@@ -353,23 +311,18 @@ class Parser:
         while self.peek().type != TOKEN_RBRACKET and self.peek().type != TOKEN_EOF:
             tok = self.peek()
 
-            if tok.type in (TOKEN_LEADING_COMMENT, TOKEN_COMMENT):
+            if tok.type == TOKEN_COMMENT:
                 self.pending.append(tok)
-                self.next()
-                continue
-
-            if tok.type == TOKEN_TRAILING_COMMENT:
                 self.next()
                 continue
 
             item_path = f"{path}[{index}]" if path else str(index)
             item = self._parse_value_or_container(item_path)
 
-            if self.peek().type == TOKEN_TRAILING_COMMENT:
-                inline_tag = self._parse_mm_tag(self.peek().literal)
-                if inline_tag is not None and hasattr(item, 'tag'):
-                    item.tag = MergeTag(item.tag, inline_tag)
-                self.next()
+            if tag is not None and item is not None:
+                item_tag = item.get_tag()
+                if item_tag is not None:
+                    item_tag.inherit(tag)
 
             items.append(item)
             index += 1
@@ -437,6 +390,7 @@ _INFERRED_TYPES = {
     ValueType.I,
     ValueType.F64,
     ValueType.Bool,
+    ValueType.Media,
 }
 
 
@@ -444,71 +398,120 @@ def _get_tag_str(tag) -> str:
     """Get tag string, omitting inferred types."""
     if tag is None:
         return ""
-    
+
+    inh = tag.is_inherit
+
     # Build tag string manually to filter inferred types
     parts = []
-    
+
+    type_key = "child_type" if inh else "type"
     if tag.type != ValueType.Unknown and tag.type not in _INFERRED_TYPES:
-        parts.append(f"type={str(tag.type)}")
-    
+        if not (tag.type == ValueType.Arr and tag.size > 0 or
+                tag.type == ValueType.Enums and tag.enums):
+            parts.append(f"{type_key}={str(tag.type)}")
+
     if tag.example:
         parts.append("example")
     if tag.is_null:
         parts.append("is_null")
-    if tag.nullable and not tag.is_null and not tag.is_inherit:
-        parts.append("nullable")
+
+    nullable_key = "child_nullable" if inh else "nullable"
+    if tag.nullable and not tag.is_null:
+        parts.append(nullable_key)
+
+    desc_key = "child_desc" if inh else "desc"
     if tag.desc:
-        parts.append(f'desc="{tag.desc}"')
-    if tag.deprecated:
+        parts.append(f'{desc_key}="{tag.desc}"')
+
+    if tag.deprecated and not inh:
         parts.append("deprecated")
+
+    allow_empty_key = "child_allow_empty" if inh else "allow_empty"
     if tag.allow_empty:
-        parts.append("allow_empty")
+        parts.append(allow_empty_key)
+
+    unique_key = "child_unique" if inh else "unique"
     if tag.unique:
-        parts.append("unique")
+        parts.append(unique_key)
+
+    default_key = "child_default_val" if inh else "default_val"
     if tag.default_val:
-        parts.append(f"default_val={tag.default_val}")
+        parts.append(f"{default_key}={tag.default_val}")
+
+    min_key = "child_min" if inh else "min"
     if tag.min:
-        parts.append(f"min={tag.min}")
+        parts.append(f"{min_key}={tag.min}")
+
+    max_key = "child_max" if inh else "max"
     if tag.max:
-        parts.append(f"max={tag.max}")
+        parts.append(f"{max_key}={tag.max}")
+
+    size_key = "child_size" if inh else "size"
     if tag.size:
-        parts.append(f"size={tag.size}")
+        parts.append(f"{size_key}={tag.size}")
+
+    enums_key = "child_enums" if inh else "enums"
     if tag.enums:
-        parts.append(f"enums={tag.enums}")
+        parts.append(f"{enums_key}={tag.enums}")
+
+    pattern_key = "child_pattern" if inh else "pattern"
     if tag.pattern:
-        parts.append(f"pattern={tag.pattern}")
-    if tag.version:
-        parts.append(f"version={tag.version}")
+        parts.append(f"{pattern_key}={tag.pattern}")
+
+    location_offset_hour = 0
+    if tag.location is not None:
+        try:
+            location_offset_hour = int(tag.location)
+        except (ValueError, TypeError):
+            pass
+    if location_offset_hour != 0 and not inh:
+        parts.append(f"location={location_offset_hour}")
+
+    version_key = "child_version" if inh else "version"
+    if tag.version != 0:
+        parts.append(f"{version_key}={tag.version}")
+
+    mime_key = "child_mime" if inh else "mime"
     if tag.mime:
-        parts.append(f"mime={tag.mime}")
-    
-    if tag.child_desc:
+        parts.append(f"{mime_key}={tag.mime}")
+
+    if tag.child_desc and not inh:
         parts.append(f'child_desc="{tag.child_desc}"')
-    if tag.child_type != ValueType.Unknown and tag.child_type not in _INFERRED_TYPES:
-        parts.append(f"child_type={str(tag.child_type)}")
-    if tag.child_nullable:
+    if tag.child_type != ValueType.Unknown and tag.child_type not in _INFERRED_TYPES and not inh:
+        if not (tag.child_type == ValueType.Arr and tag.child_size > 0 or
+                tag.child_type == ValueType.Enums and tag.child_enums):
+            parts.append(f"child_type={str(tag.child_type)}")
+    if tag.child_nullable and not inh:
         parts.append("child_nullable")
-    if tag.child_allow_empty:
+    if tag.child_allow_empty and not inh:
         parts.append("child_allow_empty")
-    if tag.child_unique:
+    if tag.child_unique and not inh:
         parts.append("child_unique")
-    if tag.child_default_val:
+    if tag.child_default_val and not inh:
         parts.append(f"child_default_val={tag.child_default_val}")
-    if tag.child_min:
+    if tag.child_min and not inh:
         parts.append(f"child_min={tag.child_min}")
-    if tag.child_max:
+    if tag.child_max and not inh:
         parts.append(f"child_max={tag.child_max}")
-    if tag.child_size:
+    if tag.child_size and not inh:
         parts.append(f"child_size={tag.child_size}")
-    if tag.child_enums:
+    if tag.child_enums and not inh:
         parts.append(f"child_enums={tag.child_enums}")
-    if tag.child_pattern:
+    if tag.child_pattern and not inh:
         parts.append(f"child_pattern={tag.child_pattern}")
-    if tag.child_version:
+    child_location_offset_hour = 0
+    if tag.child_location is not None:
+        try:
+            child_location_offset_hour = int(tag.child_location)
+        except (ValueError, TypeError):
+            pass
+    if child_location_offset_hour != 0 and not inh:
+        parts.append(f"child_location={child_location_offset_hour}")
+    if tag.child_version != 0 and not inh:
         parts.append(f"child_version={tag.child_version}")
-    if tag.child_mime:
+    if tag.child_mime and not inh:
         parts.append(f"child_mime={tag.child_mime}")
-    
+
     return "; ".join(parts)
 
 
@@ -525,16 +528,24 @@ def write_value_jsonc(b: list, v) -> None:
     if v.tag is None:
         return
 
-    if v.tag.is_null:
-        b.append("null")
-        return
-
     val_type = v.tag.type
+
+    if v.tag.is_null:
+        if val_type in (ValueType.Str, ValueType.Bytes, ValueType.Datetime,
+                        ValueType.Date, ValueType.Time, ValueType.Uuid,
+                        ValueType.Ip, ValueType.Url, ValueType.Email,
+                        ValueType.Enums):
+            b.append('""')
+        elif val_type in (ValueType.Bool,):
+            b.append("false")
+        else:
+            b.append("0")
+        return
 
     if val_type in (ValueType.Str, ValueType.Bytes, ValueType.Datetime,
                     ValueType.Date, ValueType.Time, ValueType.Uuid,
                     ValueType.Ip, ValueType.Url, ValueType.Email,
-                    ValueType.Enums):
+                    ValueType.Enums, ValueType.Media):
         b.append(json.dumps(v.text))
     elif val_type in (ValueType.I, ValueType.I8, ValueType.I16, ValueType.I32, ValueType.I64,
                       ValueType.U, ValueType.U8, ValueType.U16, ValueType.U32, ValueType.U64,

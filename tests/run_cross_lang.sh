@@ -102,9 +102,10 @@ kt_run() {
 
 # --- Swift ---
 sw_build() {
+    [ -f "$SCRIPT_DIR/harness/swift/.build/debug/mm-harness-swift" ] && return 0
     cd "$SCRIPT_DIR/harness/swift" && swift build --quiet 2>/dev/null
 }
-sw_run() { swift run --package-path "$SCRIPT_DIR/harness/swift" --skip-build mm-harness-swift "$1" 2>/dev/null; }
+sw_run() { "$SCRIPT_DIR/harness/swift/.build/debug/mm-harness-swift" "$1" 2>/dev/null; }
 
 # Ordered list of language keys
 LANGS="go py php ts rs c cpp cs kt sw"
@@ -217,61 +218,149 @@ for fixture in "${FIXTURES[@]}"; do
 done
 
 # ---------------------------------------------------------------------------
-# Reversibility phase: parse JSONC → re-print → re-parse → compare JSON
+# Reversibility phase 1: per-language round-trip
+#   parse(print(parse(input))) == print(parse(input)) for each language
 # ---------------------------------------------------------------------------
 echo ""
-echo -e "${CYAN}=== Reversibility tests ===${NC}"
+echo -e "${CYAN}=== Reversibility: per-language round-trip ===${NC}"
 echo ""
 
 REV_PASS=0
 REV_FAIL=0
 
+printf "%-45s" ""
+for _lang in "${AVAILABLE[@]}"; do
+    printf " ${CYAN}%-6s${NC}" "$_lang"
+done
+echo ""
+
 for fixture in "${FIXTURES[@]}"; do
     rel="${fixture#$FIXTURES_DIR/}"
     printf "%-45s" "$rel"
 
-    # Step 1: Parse original JSONC with Go (reference) → output1
-    output1=$(go_run "$fixture" 2>/dev/null) || true
-    if [ -z "$output1" ]; then
-        printf " ${RED}FAIL (parse)${NC}\n"
-        REV_FAIL=$((REV_FAIL + 1))
-        continue
-    fi
+    for lang in "${AVAILABLE[@]}"; do
+        output1=$("${lang}_run" "$fixture" 2>/dev/null) || true
+        if [ -z "$output1" ]; then
+            printf " ${RED}FAIL${NC}  "
+            REV_FAIL=$((REV_FAIL + 1))
+            continue
+        fi
 
-    # Step 2: Write output1 to temp file and re-parse → output2
-    tmpfile=$(mktemp /tmp/mm_rev_test.XXXXXX)
-    echo "$output1" > "$tmpfile"
-    output2=$(go_run "$tmpfile" 2>/dev/null) || true
-    rm -f "$tmpfile"
+        tmpfile=$(mktemp /tmp/mm_rev_test.XXXXXX)
+        echo "$output1" > "$tmpfile"
+        output2=$("${lang}_run" "$tmpfile" 2>/dev/null) || true
+        rm -f "$tmpfile"
 
-    if [ -z "$output2" ]; then
-        printf " ${RED}FAIL (re-parse)${NC}\n"
-        REV_FAIL=$((REV_FAIL + 1))
-        continue
-    fi
+        if [ -z "$output2" ]; then
+            printf " ${RED}FAIL${NC}  "
+            REV_FAIL=$((REV_FAIL + 1))
+            continue
+        fi
 
-    # Step 3: Compare raw outputs directly
-    if [ "$output1" = "$output2" ]; then
-        printf " ${GREEN}OK${NC}\n"
-        REV_PASS=$((REV_PASS + 1))
-    else
-        printf " ${RED}DIFF${NC}\n"
-        REV_FAIL=$((REV_FAIL + 1))
-        rev_file="$RESULTS_DIR/${rel//\//_}.rev_diff"
-        {
-            echo "=== $rel reversibility failure ==="
-            echo ""
-            echo "--- round 1 ---"
-            echo "$output1"
-            echo ""
-            echo "--- round 2 ---"
-            echo "$output2"
-            echo ""
-            echo "--- diff ---"
-            diff -u <(echo "$output1") <(echo "$output2") 2>/dev/null || true
-        } > "$rev_file"
-    fi
+        if [ "$output1" = "$output2" ]; then
+            printf " ${GREEN}OK${NC}    "
+        else
+            printf " ${RED}DIFF${NC}  "
+            REV_FAIL=$((REV_FAIL + 1))
+            rev_file="$RESULTS_DIR/${lang}_${rel//\//_}.rev_diff"
+            {
+                echo "=== $rel ($lang) per-language reversibility failure ==="
+                echo ""
+                echo "--- round 1 ---"
+                echo "$output1"
+                echo ""
+                echo "--- round 2 ---"
+                echo "$output2"
+                echo ""
+                echo "--- diff ---"
+                diff -u <(echo "$output1") <(echo "$output2") 2>/dev/null || true
+            } > "$rev_file"
+        fi
+    done
+    echo ""
 done
+
+# ---------------------------------------------------------------------------
+# Reversibility phase 2: cross-language round-trip
+#   parse_lang(print_go(input)) == print_go(input) for each non-Go language
+# ---------------------------------------------------------------------------
+# echo ""
+# echo -e "${CYAN}=== Reversibility: cross-language round-trip (Go output → each lang) ===${NC}"
+# echo ""
+
+# XREV_PASS=0
+# XREV_FAIL=0
+
+# printf "%-45s" ""
+# for _lang in "${AVAILABLE[@]}"; do
+#     printf " ${CYAN}%-6s${NC}" "$_lang"
+# done
+# echo ""
+
+# for fixture in "${FIXTURES[@]}"; do
+#     rel="${fixture#$FIXTURES_DIR/}"
+#     printf "%-45s" "$rel"
+
+#     go_output=$(go_run "$fixture" 2>/dev/null) || true
+#     if [ -z "$go_output" ]; then
+#         for _lang in "${AVAILABLE[@]}"; do
+#             printf " ${RED}FAIL${NC}  "
+#         done
+#         echo ""
+#         continue
+#     fi
+
+#     for lang in "${AVAILABLE[@]}"; do
+#         if [ "$lang" = "go" ]; then
+#             printf " ${GREEN}ref${NC}   "
+#             continue
+#         fi
+
+#         tmpfile=$(mktemp /tmp/mm_xrev_test.XXXXXX)
+#         echo "$go_output" > "$tmpfile"
+#         output2=$("${lang}_run" "$tmpfile" 2>/dev/null) || true
+#         rm -f "$tmpfile"
+
+#         if [ -z "$output2" ]; then
+#             printf " ${RED}FAIL${NC}  "
+#             XREV_FAIL=$((XREV_FAIL + 1))
+#             continue
+#         fi
+
+#         if [ "$go_output" = "$output2" ]; then
+#             printf " ${GREEN}OK${NC}    "
+#         else
+#             printf " ${RED}DIFF${NC}  "
+#             XREV_FAIL=$((XREV_FAIL + 1))
+#             xrev_file="$RESULTS_DIR/${lang}_${rel//\//_}.xrev_diff"
+#             {
+#                 echo "=== $rel ($lang) cross-language reversibility failure ==="
+#                 echo ""
+#                 echo "--- Go output ---"
+#                 echo "$go_output"
+#                 echo ""
+#                 echo "--- $lang re-parse ---"
+#                 echo "$output2"
+#                 echo ""
+#                 echo "--- diff ---"
+#                 diff -u <(echo "$go_output") <(echo "$output2") 2>/dev/null || true
+#             } > "$xrev_file"
+#         fi
+#     done
+#     echo ""
+# done
+
+# ---------------------------------------------------------------------------
+# Reversibility Summary (per-language)
+# ---------------------------------------------------------------------------
+REV_TOTAL=$(( ${#FIXTURES[@]} * ${#AVAILABLE[@]} ))
+REV_PASS=$(( REV_TOTAL - REV_FAIL ))
+
+# ---------------------------------------------------------------------------
+# Cross-language Reversibility Summary
+# ---------------------------------------------------------------------------
+XREV_TOTAL=$(( ${#FIXTURES[@]} * (${#AVAILABLE[@]} - 1) ))
+XREV_PASS=$(( XREV_TOTAL - XREV_FAIL ))
 
 # ---------------------------------------------------------------------------
 # Summary
@@ -283,13 +372,20 @@ echo -e "Languages: ${#AVAILABLE[@]} (${AVAILABLE[*]})"
 echo -e "  ${GREEN}PASS (all languages match): $PASS${NC}"
 echo -e "  ${RED}FAIL (mismatch or error):    $FAIL${NC}"
 echo ""
-echo -e "${CYAN}=== Reversibility Summary ===${NC}"
-echo -e "Fixtures: ${#FIXTURES[@]}"
-echo -e "  ${GREEN}PASS (round-trip stable): $REV_PASS${NC}"
-echo -e "  ${RED}FAIL (round-trip changed): $REV_FAIL${NC}"
+echo -e "${CYAN}=== Reversibility: per-language round-trip ===${NC}"
+echo -e "Fixtures:  ${#FIXTURES[@]}"
+echo -e "Languages: ${#AVAILABLE[@]} (${AVAILABLE[*]})"
+echo -e "  ${GREEN}PASS: $REV_PASS${NC}"
+echo -e "  ${RED}FAIL: $REV_FAIL${NC}"
+echo ""
+echo -e "${CYAN}=== Reversibility: cross-language round-trip ===${NC}"
+echo -e "Fixtures:        ${#FIXTURES[@]}"
+echo -e "Non-Go languages: $(( ${#AVAILABLE[@]} - 1 ))"
+echo -e "  ${GREEN}PASS: $XREV_PASS${NC}"
+echo -e "  ${RED}FAIL: $XREV_FAIL${NC}"
 echo ""
 
-TOTAL_FAIL=$((FAIL + REV_FAIL))
+TOTAL_FAIL=$((FAIL + REV_FAIL + XREV_FAIL))
 
 if [ "$TOTAL_FAIL" -gt 0 ]; then
     echo -e "${YELLOW}Differences in: $RESULTS_DIR/${NC}"

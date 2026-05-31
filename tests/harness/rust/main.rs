@@ -4,7 +4,7 @@ use std::fs;
 use std::io::Read;
 use std::process;
 
-use metamessage::{parse_jsonc, to_jsonc_string, encode_from_jsonc, decode_to_jsonc};
+use metamessage::{decode_to_jsonc, encode_from_jsonc, parse_jsonc, to_jsonc_string};
 
 fn bytes_to_hex(bytes: &[u8]) -> String {
     bytes.iter().map(|b| format!("{:02x}", b)).collect()
@@ -18,8 +18,7 @@ fn hex_to_bytes(hex: &str) -> Result<Vec<u8>, String> {
     (0..hex.len())
         .step_by(2)
         .map(|i| {
-            u8::from_str_radix(&hex[i..i + 2], 16)
-                .map_err(|e| format!("hex decode error: {}", e))
+            u8::from_str_radix(&hex[i..i + 2], 16).map_err(|e| format!("hex decode error: {}", e))
         })
         .collect()
 }

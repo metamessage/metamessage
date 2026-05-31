@@ -143,7 +143,6 @@ _str_to_mime = {
     "text/html": MIME.Html,
     "text/css": MIME.Css,
     "text/javascript": MIME.JavaScript,
-    "application/javascript": MIME.JavaScript,
     "application/json": MIME.Json,
     "text/csv": MIME.Csv,
     "text/markdown": MIME.Markdown,

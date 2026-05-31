@@ -138,59 +138,74 @@ impl Tag {
 
         if parent.child_type != ValueType::Unknown {
             self.value_type = parent.child_type;
+            self.child_type = parent.child_type;
         }
 
         if let Some(ref v) = parent.child_desc {
             self.desc = Some(v.clone());
+            self.child_desc = Some(v.clone());
         }
 
         if parent.child_nullable {
             self.nullable = true;
+            self.child_nullable = true;
         }
 
         if parent.child_allow_empty {
             self.allow_empty = true;
+            self.child_allow_empty = true;
         }
 
         if parent.child_unique {
             self.unique = true;
+            self.child_unique = true;
         }
 
         if let Some(ref v) = parent.child_default_val {
             self.default_val = Some(v.clone());
+            self.child_default_val = Some(v.clone());
         }
 
         if let Some(ref v) = parent.child_min {
             self.min = Some(v.clone());
+            self.child_min = Some(v.clone());
         }
 
         if let Some(ref v) = parent.child_max {
             self.max = Some(v.clone());
+            self.child_max = Some(v.clone());
         }
 
         if let Some(v) = parent.child_size {
             self.size = Some(v);
+            self.child_size = Some(v);
         }
 
         if let Some(ref v) = parent.child_enums {
             self.enums = Some(v.clone());
+            self.child_enums = Some(v.clone());
             self.value_type = ValueType::Enum;
+            self.child_type = ValueType::Enum;
         }
 
         if let Some(ref v) = parent.child_pattern {
             self.pattern = Some(v.clone());
+            self.child_pattern = Some(v.clone());
         }
 
         if let Some(v) = parent.child_location {
             self.location = Some(v);
+            self.child_location = Some(v);
         }
 
         if let Some(v) = parent.child_version {
             self.version = Some(v);
+            self.child_version = Some(v);
         }
 
         if let Some(ref v) = parent.child_mime {
             self.mime = Some(v.clone());
+            self.child_mime = Some(v.clone());
         }
     }
 
@@ -269,6 +284,62 @@ impl Tag {
             dst.mime = Some(v.clone());
         }
 
+        if let Some(ref v) = src.child_desc {
+            dst.child_desc = Some(v.clone());
+        }
+
+        if src.child_type != ValueType::Unknown {
+            dst.child_type = src.child_type;
+        }
+
+        if src.child_nullable {
+            dst.child_nullable = true;
+        }
+
+        if src.child_allow_empty {
+            dst.child_allow_empty = true;
+        }
+
+        if src.child_unique {
+            dst.child_unique = true;
+        }
+
+        if let Some(ref v) = src.child_default_val {
+            dst.child_default_val = Some(v.clone());
+        }
+
+        if let Some(ref v) = src.child_min {
+            dst.child_min = Some(v.clone());
+        }
+
+        if let Some(ref v) = src.child_max {
+            dst.child_max = Some(v.clone());
+        }
+
+        if let Some(v) = src.child_size {
+            dst.child_size = Some(v);
+        }
+
+        if let Some(ref v) = src.child_enums {
+            dst.child_enums = Some(v.clone());
+        }
+
+        if let Some(ref v) = src.child_pattern {
+            dst.child_pattern = Some(v.clone());
+        }
+
+        if let Some(v) = src.child_location {
+            dst.child_location = Some(v);
+        }
+
+        if let Some(v) = src.child_version {
+            dst.child_version = Some(v);
+        }
+
+        if let Some(ref v) = src.child_mime {
+            dst.child_mime = Some(v.clone());
+        }
+
         dst
     }
 
@@ -280,7 +351,7 @@ impl Tag {
         } else if let Some(rest) = s.strip_prefix("/*") {
             rest.strip_suffix("*/")?
         } else {
-            return None;
+            s
         };
 
         let s = s.trim();
@@ -367,6 +438,13 @@ impl Tag {
                 "mime" => {
                     if let Some(ref v) = value {
                         tag.mime = Some(v.clone());
+                    }
+                }
+                "example" => {
+                    if let Some(ref v) = value {
+                        tag.example = v == "true";
+                    } else {
+                        tag.example = true;
                     }
                 }
                 "is_null" => {
@@ -589,7 +667,7 @@ impl Tag {
         }
 
         if let Some(v) = self.location {
-            if !self.is_inherit {
+            if !self.is_inherit && v != 0 {
                 parts.push(format!("location={}", v));
             }
         }
@@ -665,7 +743,9 @@ impl Tag {
         }
 
         if let Some(v) = self.child_location {
-            parts.push(format!("child_location={}", v));
+            if v != 0 {
+                parts.push(format!("child_location={}", v));
+            }
         }
 
         if let Some(v) = self.child_version {
@@ -830,7 +910,7 @@ impl Tag {
         }
 
         if let Some(v) = self.location {
-            if !self.is_inherit {
+            if !self.is_inherit && v != 0 {
                 let s = v.to_string();
                 bs.push(TagKey::Location as u8 | s.len() as u8);
                 bs.extend_from_slice(s.as_bytes());
