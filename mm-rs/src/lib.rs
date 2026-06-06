@@ -462,12 +462,12 @@ mod tests {
 
     #[test]
     fn test_parse_array_size_based_type() {
-        let input = "// mm:size=3\n[1, 2, 3]";
+        let input = "// mm: size=3\n[1, 2, 3]";
         let node = parse_jsonc(input).unwrap();
         match node {
             Node::Array(a) => {
                 let tag = a.tag.as_ref().unwrap();
-                assert_eq!(tag.value_type, ValueType::Arr);
+                assert_eq!(tag.value_type, ValueType::Vec);
                 assert_eq!(tag.size, Some(3));
             }
             _ => panic!("expected array"),

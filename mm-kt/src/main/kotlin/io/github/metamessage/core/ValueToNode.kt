@@ -591,7 +591,7 @@ private fun convertVec(list: List<*>, tag: Tag, depth: Int, path: String): Node 
                 childVersion = resultTag.version
                 childMime = resultTag.mime
             }
-            setTag = true
+            // setTag not needed beyond this point
         }
 
         node.items.add(itemNode)

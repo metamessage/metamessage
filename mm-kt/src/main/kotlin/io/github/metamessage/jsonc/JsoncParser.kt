@@ -682,7 +682,6 @@ class JsoncParser(private val tokens: List<JsoncToken>) {
 
         val obj = AstObject(tag = tag, path = currentPath)
 
-        var valNode: Node? = null
         while (true) {
             val tok = peek()
             if (tok.type == JsoncTokenType.EOF) break
@@ -710,7 +709,7 @@ class JsoncParser(private val tokens: List<JsoncToken>) {
 
             next()
             val fieldPath = "$currentPath.$keyStr"
-            valNode = parse(fieldPath) ?: continue
+            val valNode = parse(fieldPath) ?: continue
 
             val childTag = valNode.tag
             if (childTag != null && childTag.type == ValueType.MAP) {
@@ -764,7 +763,6 @@ class JsoncParser(private val tokens: List<JsoncToken>) {
 
         val arr = AstArray(tag = tag, path = currentPath)
 
-        var item: Node? = null
         var index = 0
         while (true) {
             val tok = peek()
@@ -788,7 +786,7 @@ class JsoncParser(private val tokens: List<JsoncToken>) {
             val itemPath = "$currentPath[$index]"
             val savedParentTag = pendingParentTag
             pendingParentTag = tag
-            item = parse(itemPath) ?: continue
+            val item = parse(itemPath) ?: continue
             pendingParentTag = savedParentTag
 
             arr.items.add(item)

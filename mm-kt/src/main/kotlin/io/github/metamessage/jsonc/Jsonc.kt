@@ -27,7 +27,7 @@ fun printJsonc(node: Node?): String {
 private fun writeLeadingComments(
         sb: StringBuilder,
         tag: io.github.metamessage.ir.Tag?,
-        indentLevel: Int
+        @Suppress("UNUSED_PARAMETER") indentLevel: Int
 ) {
     val tagStr = tag?.toString() ?: ""
     if (tagStr.isNotEmpty()) {

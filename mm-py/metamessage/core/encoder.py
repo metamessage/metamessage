@@ -782,6 +782,8 @@ class Encoder:
     # ===== Date/time encoding =====
 
     def _encode_datetime(self, t, location=0):
+        if location is None:
+            location = 0
         if isinstance(t, (datetime, dt_time)):
             if t.tzinfo is None:
                 if location != 0:

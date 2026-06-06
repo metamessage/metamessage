@@ -33,7 +33,7 @@ class JsoncMMTest {
         val source =
                 """
             {
-                /* mm: type=i; desc=年齡 */
+                // mm: desc=年齡
                 "age": 25
             }
         """.trimIndent()

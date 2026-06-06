@@ -11,6 +11,7 @@ import java.time.LocalDateTime
 import java.util.UUID
 
 object Binder {
+    @Suppress("UNCHECKED_CAST")
     fun <T> bind(node: Node, clazz: Class<T>): T {
         when (node) {
             is Object -> {
@@ -90,7 +91,6 @@ object Binder {
     }
 
     private fun convertArr(arr: Array, clazz: Class<*>): Any {
-        val size = arr.tag?.size ?: arr.items.size
         val list = mutableListOf<Any?>()
         for (item in arr.items) {
             when (item) {
@@ -109,11 +109,6 @@ object Binder {
     @Suppress("UNCHECKED_CAST")
     private fun <T> convertVec(arr: Array, clazz: Class<T>): T {
         val list = mutableListOf<Any?>()
-        var elemClass: Class<*> = Any::class.java
-        val gt = clazz.typeParameters.firstOrNull()
-        if (gt != null && gt is Class<*>) {
-            elemClass = gt
-        }
         for (item in arr.items) {
             when (item) {
                 is Value -> list.add(convertScalarToAny(item))
@@ -128,7 +123,7 @@ object Binder {
         return list as T
     }
 
-    @Suppress("UNCHECKED_CAST")
+    @Suppress("UNCHECKED_CAST", "UNUSED_PARAMETER")
     private fun <T> convertScalar(value: Value, clazz: Class<T>): T {
         val tag = value.tag ?: Tag.empty()
         val data = value.data

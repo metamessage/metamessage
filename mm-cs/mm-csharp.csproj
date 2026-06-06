@@ -15,7 +15,7 @@
     <GenerateAssemblyVersionAttribute>false</GenerateAssemblyVersionAttribute>
 
     <PackageId>MetaMessage</PackageId>
-    <Version>0.1.19</Version>
+    <Version>0.1.20</Version>
     <Authors>MetaMessage</Authors>
     <Description>MetaMessage (mm) is a structured data exchange protocol. It is self-describing, self-constraining, and self-exemplifying, enabling lossless data exchange. It is designed as a next-generation universal protocol that natively supports AI, humans, and machines.</Description>
     <PackageTags>serialization; schema; protocol; mm; metamessage</PackageTags>

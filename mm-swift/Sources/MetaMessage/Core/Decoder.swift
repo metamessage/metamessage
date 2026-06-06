@@ -402,7 +402,7 @@ public class NodeDecoder {
         let value = try innerDecoder.decodeNode(tag: tag, path: path)
 
         // Attach the tag to the decoded node
-        if var val = value as? Value {
+        if let val = value as? Value {
             val.tag = tag
             val.path = path
             return val

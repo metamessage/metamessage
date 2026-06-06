@@ -2,6 +2,8 @@
 
 MetaMessage 是一种自描述、可约束、可示例化的结构化数据交换协议，支持无损数据交换。它适用于配置文件、API 交互和 AI 数据交换场景。
 
+[npmjs.com](https://www.npmjs.com/package/metamessage)
+
 ## 核心优势
 
 - 自描述数据：数据本身携带类型、约束、描述和示例

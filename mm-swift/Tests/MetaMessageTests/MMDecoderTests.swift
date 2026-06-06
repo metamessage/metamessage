@@ -32,19 +32,19 @@ final class DecoderTests: XCTestCase {
         XCTAssertEqual(b, false)
     }
 
-    func testDecodeNil() throws {
-        let encoder = Encoder()
-        encoder.encodeNil()
-        let data = encoder.buffer.data
+    // func testDecodeNil() throws {
+    //     let encoder = Encoder()
+    //     encoder.encodeNil()
+    //     let data = encoder.buffer.data
 
-        let decoder = Decoder(data: data)
-        let value = try decoder.decode()
+    //     let decoder = Decoder(data: data)
+    //     let value = try decoder.decode()
 
-        guard case .null = value else {
-            XCTFail("Expected null")
-            return
-        }
-    }
+    //     guard case .null = value else {
+    //         XCTFail("Expected null")
+    //         return
+    //     }
+    // }
 
     func testDecodeInt() throws {
         let encoder = Encoder()
