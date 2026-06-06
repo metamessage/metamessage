@@ -32,8 +32,7 @@ enum class ValueType {
     URL,
     EMAIL,
     ENUMS,
-    IMAGE,
-    VIDEO;
+    MEDIA;
 
     fun code(): Byte = ordinal.toByte()
 
@@ -70,8 +69,7 @@ enum class ValueType {
                 URL -> "url"
                 EMAIL -> "email"
                 ENUMS -> "enums"
-                IMAGE -> "image"
-                VIDEO -> "video"
+                MEDIA -> "media"
             }
 
     companion object {

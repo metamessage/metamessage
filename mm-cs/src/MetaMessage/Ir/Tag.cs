@@ -151,85 +151,73 @@ public class Tag
         if (!string.IsNullOrEmpty(parent.ChildDesc))
         {
             Desc = parent.ChildDesc;
-            ChildDesc = parent.ChildDesc;
         }
 
         if (parent.ChildType != ValueType.Unknown)
         {
             Type = parent.ChildType;
-            ChildType = parent.ChildType;
         }
 
         if (parent.ChildNullable)
         {
             Nullable = parent.ChildNullable;
-            ChildNullable = parent.ChildNullable;
         }
 
         if (parent.ChildAllowEmpty)
         {
             AllowEmpty = parent.ChildAllowEmpty;
-            ChildAllowEmpty = parent.ChildAllowEmpty;
         }
 
         if (parent.ChildUnique)
         {
             Unique = parent.ChildUnique;
-            ChildUnique = parent.ChildUnique;
         }
 
         if (!string.IsNullOrEmpty(parent.ChildDefaultVal))
         {
             DefaultVal = parent.ChildDefaultVal;
-            ChildDefaultVal = parent.ChildDefaultVal;
         }
 
         if (!string.IsNullOrEmpty(parent.ChildMin))
         {
             Min = parent.ChildMin;
-            ChildMin = parent.ChildMin;
         }
 
         if (!string.IsNullOrEmpty(parent.ChildMax))
         {
             Max = parent.ChildMax;
-            ChildMax = parent.ChildMax;
         }
 
         if (parent.ChildSize != 0)
         {
             Size = parent.ChildSize;
-            ChildSize = parent.ChildSize;
         }
 
         if (!string.IsNullOrEmpty(parent.ChildEnums))
         {
             Enums = parent.ChildEnums;
-            ChildEnums = parent.ChildEnums;
+            Type = ValueType.Enums;
         }
 
         if (!string.IsNullOrEmpty(parent.ChildPattern))
         {
             Pattern = parent.ChildPattern;
-            ChildPattern = parent.ChildPattern;
         }
 
         if (parent.ChildLocation != 0)
         {
             Location = parent.ChildLocation;
-            ChildLocation = parent.ChildLocation;
         }
 
         if (parent.ChildVersion != DefaultVersionValue)
         {
             Version = parent.ChildVersion;
-            ChildVersion = parent.ChildVersion;
         }
 
         if (!string.IsNullOrEmpty(parent.ChildMime))
         {
             Mime = parent.ChildMime;
-            ChildMime = parent.ChildMime;
+            Type = ValueType.Media;
         }
     }
 
@@ -364,7 +352,8 @@ public class Tag
             else
             {
                 if ((Type == ValueType.Arr && Size > 0) ||
-                    (Type == ValueType.Enums && !string.IsNullOrEmpty(Enums)))
+                    (Type == ValueType.Enums && !string.IsNullOrEmpty(Enums)) ||
+                    (Type == ValueType.Media && !string.IsNullOrEmpty(Mime)))
                 {
                 }
                 else
@@ -465,6 +454,7 @@ public class Tag
         if (ChildType != ValueType.Unknown)
         {
             if (ChildType == ValueType.Str ||
+                ChildType == ValueType.Bytes ||
                 ChildType == ValueType.I ||
                 ChildType == ValueType.F64 ||
                 ChildType == ValueType.Bool ||
@@ -475,7 +465,8 @@ public class Tag
             else
             {
                 if ((ChildType == ValueType.Arr && ChildSize > 0) ||
-                    (ChildType == ValueType.Enums && !string.IsNullOrEmpty(ChildEnums)))
+                    (ChildType == ValueType.Enums && !string.IsNullOrEmpty(ChildEnums)) ||
+                    (ChildType == ValueType.Media && !string.IsNullOrEmpty(ChildMime)))
                 {
                 }
                 else
@@ -695,6 +686,7 @@ public class Tag
 
                 case TagConstants.TMime:
                     r.Mime = v;
+                    r.Type = ValueType.Media;
                     break;
 
                 case TagConstants.TChildDesc:
@@ -767,6 +759,7 @@ public class Tag
 
                 case TagConstants.TChildMime:
                     r.ChildMime = v;
+                    r.ChildType = ValueType.Media;
                     break;
             }
         }
@@ -915,7 +908,8 @@ public class Tag
             else
             {
                 if ((Type == ValueType.Arr && Size > 0) ||
-                    (Type == ValueType.Enums && !string.IsNullOrEmpty(Enums)))
+                    (Type == ValueType.Enums && !string.IsNullOrEmpty(Enums)) ||
+                    (Type == ValueType.Media && !string.IsNullOrEmpty(Mime)))
                 {
                 }
                 else
@@ -1054,15 +1048,7 @@ public class Tag
         if (!string.IsNullOrEmpty(Mime) && !IsInherit)
         {
             int mimeIndex = MimeWire.ParseMIME(Mime);
-            if (mimeIndex < 7)
-            {
-                bs.Add((byte)((byte)TagKey.KMime | (byte)mimeIndex));
-            }
-            else
-            {
-                bs.Add((byte)((byte)TagKey.KMime | 7));
-                bs.Add((byte)mimeIndex);
-            }
+            EncodeU64(bs, TagKey.KMime, (ulong)mimeIndex);
         }
 
         if (!string.IsNullOrEmpty(ChildDesc))
@@ -1102,7 +1088,8 @@ public class Tag
             else
             {
                 if ((ChildType == ValueType.Arr && ChildSize > 0) ||
-                    (ChildType == ValueType.Enums && !string.IsNullOrEmpty(ChildEnums)))
+                    (ChildType == ValueType.Enums && !string.IsNullOrEmpty(ChildEnums)) ||
+                    (ChildType == ValueType.Media && !string.IsNullOrEmpty(ChildMime)))
                 {
                 }
                 else
@@ -1240,19 +1227,7 @@ public class Tag
 
         if (!string.IsNullOrEmpty(ChildMime))
         {
-            var childMimeBytes = Encoding.UTF8.GetBytes(ChildMime);
-            var l = childMimeBytes.Length;
-            if (l < 7)
-            {
-                bs.Add((byte)((byte)TagKey.KChildMime | (byte)l));
-                bs.AddRange(childMimeBytes);
-            }
-            else
-            {
-                bs.Add((byte)((byte)TagKey.KChildMime | 7));
-                bs.Add((byte)l);
-                bs.AddRange(childMimeBytes);
-            }
+            EncodeU64(bs, TagKey.KChildMime, (ulong)MimeWire.ParseMIME(ChildMime));
         }
 
         if (More != 0)
@@ -1365,6 +1340,7 @@ public class Tag
                     {
                         int strLen = DecodeStringLength(data, ref offset, lenInfo);
                         tag.Enums = Encoding.UTF8.GetString(data, offset, strLen);
+                        tag.Type = ValueType.Enums;
                         offset += strLen;
                         break;
                     }
@@ -1394,9 +1370,10 @@ public class Tag
 
                 case TagKey.KMime:
                     {
-                        int strLen = DecodeStringLengthSimple(data, ref offset, lenInfo);
-                        tag.Mime = Encoding.UTF8.GetString(data, offset, strLen);
-                        offset += strLen;
+                        int byteCount = lenInfo + 1;
+                        int mimeIndex = (int)DecodeU64(data, ref offset, byteCount);
+                        tag.Mime = MimeWire.MimeToString(mimeIndex);
+                        tag.Type = ValueType.Media;
                         break;
                     }
 
@@ -1479,9 +1456,10 @@ public class Tag
 
                 case TagKey.KChildMime:
                     {
-                        int strLen = DecodeStringLengthSimple(data, ref offset, lenInfo);
-                        tag.ChildMime = Encoding.UTF8.GetString(data, offset, strLen);
-                        offset += strLen;
+                        int byteCount = lenInfo + 1;
+                        int childMimeIndex = (int)DecodeU64(data, ref offset, byteCount);
+                        tag.ChildMime = MimeWire.MimeToString(childMimeIndex);
+                        tag.ChildType = ValueType.Media;
                         break;
                     }
 

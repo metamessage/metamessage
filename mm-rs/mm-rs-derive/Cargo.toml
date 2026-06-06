@@ -1,8 +1,8 @@
 [package]
 name = "metamessage-derive"
-version = "0.1.0"
+version = "0.1.19"
 edition = "2021"
-authors = ["MetaMessage Team"]
+authors = ["MetaMessage"]
 description = "MetaMessage derive macros for Rust"
 license = "MIT"
 repository = "https://github.com/metamessage/metamessage"

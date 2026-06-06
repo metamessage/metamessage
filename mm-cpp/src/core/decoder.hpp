@@ -271,6 +271,7 @@ private:
 
     case ir::KEnums: {
       tag.enums = decodeTagString(payload);
+      tag.type = ir::ValueType::Enums;
       return decodeTagStrConsumed(payload, tag.enums.size());
     }
 
@@ -311,6 +312,7 @@ private:
 
     case ir::KChildEnums: {
       tag.child_enums = decodeTagString(payload);
+      tag.childType = ir::ValueType::Enums;
       return decodeTagStrConsumed(payload, tag.child_enums.size());
     }
 
@@ -431,17 +433,11 @@ private:
       uv = readUInt(byteLen);
     }
 
-    if (positive && parentTag) {
-      tag->type = parentTag->type;
-      if (tag->type == ir::ValueType::Unknown)
-        tag->type = ir::ValueType::I;
+    if (parentTag) {
+      if (parentTag->childType == ir::ValueType::Unknown) {
+        tag->type = parentTag->type;
+      }
     }
-    if (!positive && parentTag) {
-      tag->type = parentTag->type;
-      if (tag->type == ir::ValueType::Unknown)
-        tag->type = ir::ValueType::I;
-    }
-
     if (tag->type == ir::ValueType::Unknown)
       tag->type = ir::ValueType::I;
 
@@ -451,7 +447,9 @@ private:
     if (tag->type == ir::ValueType::Datetime) {
       int64_t ts =
           positive ? static_cast<int64_t>(uv) : -static_cast<int64_t>(uv);
-      time_t t = static_cast<time_t>(ts);
+      int64_t loc_offset = static_cast<int64_t>(tag->locationOffset);
+      int64_t adjusted_ts = ts + loc_offset * 3600;
+      time_t t = static_cast<time_t>(adjusted_ts);
       struct tm tm;
       gmtime_r(&t, &tm);
       char buf[64];
@@ -475,6 +473,26 @@ private:
       char buf[16];
       snprintf(buf, sizeof(buf), "%02d:%02d:%02d", hours, mins, sec);
       val->text = buf;
+    } else if (tag->type == ir::ValueType::Enums && !tag->enums.empty()) {
+      int64_t idx =
+          positive ? static_cast<int64_t>(uv) : -static_cast<int64_t>(uv);
+      if (idx >= 0) {
+        const std::string &enums = tag->enums;
+        size_t pos = 0;
+        int current = 0;
+        size_t start = 0;
+        while (pos <= enums.size()) {
+          if (pos == enums.size() || enums[pos] == '|') {
+            if (current == idx) {
+              val->text = enums.substr(start, pos - start);
+              break;
+            }
+            current++;
+            start = pos + 1;
+          }
+          pos++;
+        }
+      }
     }
 
     return val;
@@ -543,6 +561,73 @@ private:
     return val;
   }
 
+  std::string decodeBigInt(const std::vector<uint8_t> &data) {
+    int digitLen = data[0];
+    if (digitLen <= 0)
+      return "0";
+
+    // Read bits from the bit-packed data starting from data[1]
+    const uint8_t *bits = data.data() + 1;
+    size_t bitsLen = data.size() - 1;
+    size_t bitPos = 0;
+
+    auto readBit = [&]() -> int {
+      if (bitPos >= bitsLen * 8)
+        return 0;
+      int byteIdx = static_cast<int>(bitPos / 8);
+      int bitInByte = 7 - static_cast<int>(bitPos % 8);
+      int b = (bits[byteIdx] >> bitInByte) & 1;
+      bitPos++;
+      return b;
+    };
+
+    auto readBits = [&](int n) -> int {
+      int val = 0;
+      for (int i = 0; i < n; i++) {
+        val = (val << 1) | readBit();
+      }
+      return val;
+    };
+
+    int sign = readBit();
+    bool neg = (sign == 1);
+
+    std::string result;
+    int remaining = digitLen;
+    while (remaining > 0) {
+      if (remaining >= 3) {
+        int val = readBits(10);
+        char buf[4];
+        snprintf(buf, sizeof(buf), "%03d", val);
+        result += buf;
+        remaining -= 3;
+      } else if (remaining == 2) {
+        int val = readBits(7);
+        char buf[3];
+        snprintf(buf, sizeof(buf), "%02d", val);
+        result += buf;
+        remaining -= 2;
+      } else {
+        int val = readBits(4);
+        result += std::to_string(val);
+        remaining -= 1;
+      }
+    }
+
+    // Trim leading zeros
+    size_t firstNonZero = result.find_first_not_of('0');
+    std::string trimmed;
+    if (firstNonZero == std::string::npos) {
+      trimmed = "0";
+    } else {
+      trimmed = result.substr(firstNonZero);
+    }
+
+    if (neg && trimmed != "0")
+      return "-" + trimmed;
+    return trimmed;
+  }
+
   std::shared_ptr<ir::Node> decodeBytes(uint8_t b, const ir::Tag *parentTag) {
     auto val = ir::makeValue();
     auto *tag = val->getTag();
@@ -568,14 +653,17 @@ private:
     auto rawBytes = readBytes(len);
     val->text = std::string(rawBytes.begin(), rawBytes.end());
 
-    if (tag->type == ir::ValueType::Uuid && rawBytes.size() == 16) {
+    if (tag->type == ir::ValueType::Bigint && rawBytes.size() > 1) {
+      val->text = decodeBigInt(rawBytes);
+    } else if (tag->type == ir::ValueType::Uuid && rawBytes.size() == 16) {
       char buf[64];
       snprintf(buf, sizeof(buf),
-               "%02x%02x%02x%02x-%02x%02x-%02x%02x-%02x%02x-%02x%02x%02x%02x%02x%02x",
-               rawBytes[0], rawBytes[1], rawBytes[2], rawBytes[3],
-               rawBytes[4], rawBytes[5], rawBytes[6], rawBytes[7],
-               rawBytes[8], rawBytes[9], rawBytes[10], rawBytes[11],
-               rawBytes[12], rawBytes[13], rawBytes[14], rawBytes[15]);
+               "%02x%02x%02x%02x-%02x%02x-%02x%02x-%02x%02x-%02x%02x%02x%02x%"
+               "02x%02x",
+               rawBytes[0], rawBytes[1], rawBytes[2], rawBytes[3], rawBytes[4],
+               rawBytes[5], rawBytes[6], rawBytes[7], rawBytes[8], rawBytes[9],
+               rawBytes[10], rawBytes[11], rawBytes[12], rawBytes[13],
+               rawBytes[14], rawBytes[15]);
       val->text = buf;
     }
 

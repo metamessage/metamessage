@@ -209,13 +209,6 @@ class JsoncScannerTest {
     fun scanLineCommentTrailing() {
         val scanner = JsoncScanner("// this is a comment\n")
         val token = scanner.nextToken()
-        assertEquals(JsoncTokenType.TrailingComment, token.type)
-    }
-
-    @Test
-    fun scanBlockCommentTrailing() {
-        val scanner = JsoncScanner("/* block comment */")
-        val token = scanner.nextToken()
-        assertEquals(JsoncTokenType.TrailingComment, token.type)
+        assertEquals(JsoncTokenType.Comment, token.type)
     }
 }

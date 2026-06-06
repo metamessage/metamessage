@@ -133,8 +133,8 @@ class MmValidator
             return false;
         }
 
-        if ($tag->locationHours !== 0) {
-            $result->addError("type $typeName not support location UTC{$tag->locationHours}");
+        if ($tag->location !== 0) {
+            $result->addError("type $typeName not support location UTC{$tag->location}");
             return false;
         }
 
@@ -940,8 +940,8 @@ class MmValidator
         }
 
         $tz = new \DateTimeZone('UTC');
-        if ($tag->locationHours !== 0) {
-            $offsetSeconds = $tag->locationHours * 3600;
+        if ($tag->location !== 0) {
+            $offsetSeconds = $tag->location * 3600;
             $sign = $offsetSeconds >= 0 ? '+' : '-';
             $offsetSeconds = abs($offsetSeconds);
             $hours = intdiv($offsetSeconds, 3600);
@@ -992,8 +992,8 @@ class MmValidator
         }
 
         $tz = new \DateTimeZone('UTC');
-        if ($tag->locationHours !== 0) {
-            $offsetSeconds = $tag->locationHours * 3600;
+        if ($tag->location !== 0) {
+            $offsetSeconds = $tag->location * 3600;
             $sign = $offsetSeconds >= 0 ? '+' : '-';
             $offsetSeconds = abs($offsetSeconds);
             $hours = intdiv($offsetSeconds, 3600);
@@ -1044,8 +1044,8 @@ class MmValidator
         }
 
         $tz = new \DateTimeZone('UTC');
-        if ($tag->locationHours !== 0) {
-            $offsetSeconds = $tag->locationHours * 3600;
+        if ($tag->location !== 0) {
+            $offsetSeconds = $tag->location * 3600;
             $sign = $offsetSeconds >= 0 ? '+' : '-';
             $offsetSeconds = abs($offsetSeconds);
             $hours = intdiv($offsetSeconds, 3600);
@@ -1279,7 +1279,7 @@ class MmValidator
             return;
         }
 
-        $enums = explode('|', $tag->enumValues);
+        $enums = explode('|', $tag->enums);
         $idx = -1;
         foreach ($enums as $i => $s) {
             if (trim($s) === $val) {
@@ -1364,8 +1364,8 @@ class MmValidator
             return;
         }
 
-        if ($tag->locationHours !== 0) {
-            $result->addError("type array not support location UTC{$tag->locationHours}");
+        if ($tag->location !== 0) {
+            $result->addError("type array not support location UTC{$tag->location}");
             return;
         }
 
@@ -1410,8 +1410,8 @@ class MmValidator
             return;
         }
 
-        if ($tag->locationHours !== 0) {
-            $result->addError("type vec not support location UTC{$tag->locationHours}");
+        if ($tag->location !== 0) {
+            $result->addError("type vec not support location UTC{$tag->location}");
             return;
         }
 
@@ -1454,8 +1454,8 @@ class MmValidator
             return;
         }
 
-        if ($tag->locationHours !== 0) {
-            $result->addError("type struct not support location UTC{$tag->locationHours}");
+        if ($tag->location !== 0) {
+            $result->addError("type struct not support location UTC{$tag->location}");
             return;
         }
     }
@@ -1471,8 +1471,8 @@ class MmValidator
             return;
         }
 
-        if ($tag->locationHours !== 0) {
-            $result->addError("type map not support location UTC{$tag->locationHours}");
+        if ($tag->location !== 0) {
+            $result->addError("type map not support location UTC{$tag->location}");
             return;
         }
     }

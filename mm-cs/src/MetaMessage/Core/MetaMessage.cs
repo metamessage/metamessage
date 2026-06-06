@@ -298,6 +298,20 @@ public static class MetaMessage
             case ValueType.Bytes:
                 encoder.EncodeBytes(value as byte[] ?? Array.Empty<byte>());
                 break;
+            case ValueType.Media:
+                if (value is byte[] mediaBytes)
+                {
+                    encoder.EncodeBytes(mediaBytes);
+                }
+                else if (value is string mediaStr)
+                {
+                    encoder.EncodeBytes(Convert.FromBase64String(mediaStr));
+                }
+                else
+                {
+                    encoder.EncodeBytes(Array.Empty<byte>());
+                }
+                break;
             case ValueType.Bigint:
                 encoder.EncodeBigIntDecimal(value.ToString()!);
                 break;
@@ -538,11 +552,32 @@ public static class MetaMessage
                     }
                     encoder.EncodeInt64(TimeUtil.EpochSeconds(dt));
                 }
+                else if (tag != null && tag.Type == ValueType.Date)
+                {
+                    var dt = System.DateTime.Parse(value.Value?.ToString() ?? "", null, System.Globalization.DateTimeStyles.AssumeUniversal);
+                    encoder.EncodeInt64(TimeUtil.DaysSinceEpochUtc(dt));
+                }
+                else if (tag != null && tag.Type == ValueType.Time)
+                {
+                    var rawVal = value.Value?.ToString() ?? "";
+                    // Parse "HH:mm:ss" manually to avoid timezone issues with DateTime.Parse
+                    int hour = 0, minute = 0, sec = 0;
+                    var parts = rawVal.Split(':');
+                    if (parts.Length >= 2)
+                    {
+                        int.TryParse(parts[0], out hour);
+                        int.TryParse(parts[1], out minute);
+                        if (parts.Length >= 3)
+                            int.TryParse(parts[2], out sec);
+                    }
+                    long secs = hour * 3600L + minute * 60L + sec;
+                    encoder.EncodeInt64(secs);
+                }
                 else if (tag != null && tag.Type == ValueType.Uuid)
                 {
                     encoder.EncodeBytes(UuidToBytes(value.Value?.ToString() ?? ""));
                 }
-                else if (tag != null && (tag.Type == ValueType.Bytes || tag.Type == ValueType.Image || tag.Type == ValueType.Video))
+                else if (tag != null && (tag.Type == ValueType.Bytes || tag.Type == ValueType.Image || tag.Type == ValueType.Video || tag.Type == ValueType.Media))
                 {
                     var base64Str = value.Value?.ToString() ?? "";
                     if (string.IsNullOrEmpty(base64Str))
@@ -707,6 +742,8 @@ public static class MetaMessage
                     result = new JsoncValue { Value = scalar.Data, TokenType = JsoncTokenType.Number };
                     break;
                 case ValueType.Bigint:
+                    result = new JsoncValue { Value = scalar.Text, TokenType = JsoncTokenType.Number };
+                    break;
                 case ValueType.Datetime:
                 case ValueType.Date:
                 case ValueType.Time:
@@ -723,8 +760,15 @@ public static class MetaMessage
                         TokenType = JsoncTokenType.String
                     };
                     break;
+                case ValueType.Media:
+                    result = new JsoncValue
+                    {
+                        Value = scalar.Text,
+                        TokenType = JsoncTokenType.String
+                    };
+                    break;
                 case ValueType.Enums:
-                    result = new JsoncValue { Value = scalar.Data?.ToString(), TokenType = JsoncTokenType.String };
+                    result = new JsoncValue { Value = scalar.Text, TokenType = JsoncTokenType.String };
                     break;
                 default:
                     if (scalar.Data is string s)

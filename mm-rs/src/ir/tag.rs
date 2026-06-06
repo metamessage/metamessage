@@ -1,3 +1,4 @@
+use crate::ir::mime::parse_mime;
 use crate::ir::value_type::ValueType;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -119,93 +120,66 @@ impl Tag {
     }
 
     pub fn inherit(&mut self, parent: &Tag) {
-        let has_child_props = parent.child_type != ValueType::Unknown
-            || parent.child_desc.is_some()
-            || parent.child_nullable
-            || parent.child_allow_empty
-            || parent.child_unique
-            || parent.child_default_val.is_some()
-            || parent.child_min.is_some()
-            || parent.child_max.is_some()
-            || parent.child_size.is_some()
-            || parent.child_enums.is_some()
-            || parent.child_pattern.is_some()
-            || parent.child_location.is_some()
-            || parent.child_version.is_some()
-            || parent.child_mime.is_some();
-
-        self.is_inherit = has_child_props;
+        self.is_inherit = true;
 
         if parent.child_type != ValueType::Unknown {
             self.value_type = parent.child_type;
-            self.child_type = parent.child_type;
         }
 
         if let Some(ref v) = parent.child_desc {
             self.desc = Some(v.clone());
-            self.child_desc = Some(v.clone());
         }
 
         if parent.child_nullable {
             self.nullable = true;
-            self.child_nullable = true;
         }
 
         if parent.child_allow_empty {
             self.allow_empty = true;
-            self.child_allow_empty = true;
         }
 
         if parent.child_unique {
             self.unique = true;
-            self.child_unique = true;
         }
 
         if let Some(ref v) = parent.child_default_val {
             self.default_val = Some(v.clone());
-            self.child_default_val = Some(v.clone());
         }
 
         if let Some(ref v) = parent.child_min {
             self.min = Some(v.clone());
-            self.child_min = Some(v.clone());
         }
 
         if let Some(ref v) = parent.child_max {
             self.max = Some(v.clone());
-            self.child_max = Some(v.clone());
         }
 
         if let Some(v) = parent.child_size {
             self.size = Some(v);
-            self.child_size = Some(v);
         }
 
         if let Some(ref v) = parent.child_enums {
             self.enums = Some(v.clone());
-            self.child_enums = Some(v.clone());
             self.value_type = ValueType::Enum;
-            self.child_type = ValueType::Enum;
         }
 
         if let Some(ref v) = parent.child_pattern {
             self.pattern = Some(v.clone());
-            self.child_pattern = Some(v.clone());
         }
 
         if let Some(v) = parent.child_location {
-            self.location = Some(v);
-            self.child_location = Some(v);
+            if v != 0 {
+                self.location = Some(v);
+            }
         }
 
         if let Some(v) = parent.child_version {
             self.version = Some(v);
-            self.child_version = Some(v);
         }
 
         if let Some(ref v) = parent.child_mime {
             self.mime = Some(v.clone());
-            self.child_mime = Some(v.clone());
+            self.value_type = ValueType::Media;
         }
     }
 
@@ -438,6 +412,7 @@ impl Tag {
                 "mime" => {
                     if let Some(ref v) = value {
                         tag.mime = Some(v.clone());
+                        tag.value_type = ValueType::Media;
                     }
                 }
                 "example" => {
@@ -467,9 +442,6 @@ impl Tag {
                     } else {
                         tag.allow_empty = true;
                     }
-                }
-                "raw" => {
-                    // backward compatibility, no-op
                 }
                 "deprecated" => {
                     if let Some(ref v) = value {
@@ -571,6 +543,7 @@ impl Tag {
                 "child_mime" => {
                     if let Some(ref v) = value {
                         tag.child_mime = Some(v.clone());
+                        tag.child_type = ValueType::Media;
                     }
                 }
                 _ => {}
@@ -594,6 +567,7 @@ impl Tag {
                 | ValueType::Vec => {}
                 ValueType::Arr => if self.size.is_none() || self.size.unwrap_or(0) == 0 {},
                 ValueType::Enum => if self.enums.is_some() {},
+                ValueType::Media => if self.mime.is_some() {},
                 _ => {
                     parts.push(format!("type={}", self.value_type.to_str()));
                 }
@@ -700,6 +674,7 @@ impl Tag {
                     if self.child_size.is_none() || self.child_size.unwrap_or(0) == 0 {}
                 }
                 ValueType::Enum => if self.child_enums.is_some() {},
+                ValueType::Media => if self.child_mime.is_some() {},
                 _ => {
                     parts.push(format!("child_type={}", self.child_type.to_str()));
                 }
@@ -806,6 +781,7 @@ impl Tag {
         if self.value_type != ValueType::Unknown && !self.is_inherit {
             match self.value_type {
                 ValueType::Str
+                | ValueType::Bytes
                 | ValueType::I
                 | ValueType::F64
                 | ValueType::Bool
@@ -813,6 +789,7 @@ impl Tag {
                 | ValueType::Vec => {}
                 ValueType::Arr => if self.size.is_some() && self.size.unwrap_or(0) > 0 {},
                 ValueType::Enum => if self.enums.is_some() {},
+                ValueType::Media => if self.mime.is_some() {},
                 _ => {
                     bs.push(TagKey::Type as u8);
                     bs.push(self.value_type as u8);
@@ -925,14 +902,8 @@ impl Tag {
 
         if let Some(ref v) = self.mime {
             if !self.is_inherit {
-                if let Ok(id) = v.parse::<u8>() {
-                    if id < 7 {
-                        bs.push(TagKey::Mime as u8 | id);
-                    } else {
-                        bs.push(TagKey::Mime as u8 | 7);
-                        bs.push(id);
-                    }
-                }
+                let mime_id = parse_mime(v);
+                Self::encode_u64(&mut bs, TagKey::Mime as u8, mime_id as u64);
             }
         }
 
@@ -965,6 +936,7 @@ impl Tag {
                     if self.child_size.is_some() && self.child_size.unwrap_or(0) > 0 {}
                 }
                 ValueType::Enum => if self.child_enums.is_some() {},
+                ValueType::Media => if self.child_mime.is_some() {},
                 _ => {
                     bs.push(TagKey::ChildType as u8);
                     bs.push(self.child_type as u8);
@@ -1054,9 +1026,11 @@ impl Tag {
         }
 
         if let Some(v) = self.child_location {
-            let s = v.to_string();
-            bs.push(TagKey::ChildLocation as u8 | s.len() as u8);
-            bs.extend_from_slice(s.as_bytes());
+            if v != 0 {
+                let s = v.to_string();
+                bs.push(TagKey::ChildLocation as u8 | s.len() as u8);
+                bs.extend_from_slice(s.as_bytes());
+            }
         }
 
         if let Some(v) = self.child_version {
@@ -1064,18 +1038,12 @@ impl Tag {
         }
 
         if let Some(ref v) = self.child_mime {
-            if let Ok(id) = v.parse::<u8>() {
-                if id < 7 {
-                    bs.push(TagKey::ChildMime as u8 | id);
-                } else {
-                    bs.push(TagKey::ChildMime as u8 | 7);
-                    bs.push(id);
-                }
-            }
+            let mime_id = parse_mime(v);
+            Self::encode_u64(&mut bs, TagKey::ChildMime as u8, mime_id as u64);
         }
 
         if self.more != 0 {
-            bs.push(TagKey::More as u8 | (self.more & 0x07));
+            Self::encode_u64(&mut bs, TagKey::More as u8, self.more as u64);
         }
 
         bs

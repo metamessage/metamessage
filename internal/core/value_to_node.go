@@ -1560,6 +1560,7 @@ func anyToJSONC(obj any, tag *ir.Tag, depth int, path string, example bool) (ir.
 		}
 
 		if val.Len() == 0 {
+			tag.IsEmpty = true
 			keyType := typ.Key()
 			if keyType.Kind() != reflect.String {
 				return nil, fmt.Errorf("map key must be string, got %T", keyType.Kind())
@@ -1631,8 +1632,9 @@ func anyToJSONC(obj any, tag *ir.Tag, depth int, path string, example bool) (ir.
 			Path: path,
 		}
 
+		size := val.Len()
 		setTag := false
-		for i := 0; i < val.Len(); i++ {
+		for i := range size {
 			tagItem := ir.NewTag()
 			tagItem.Inherit(tag)
 
@@ -1665,7 +1667,8 @@ func anyToJSONC(obj any, tag *ir.Tag, depth int, path string, example bool) (ir.
 			node.Items = append(node.Items, itemNode)
 		}
 
-		if val.Len() == 0 {
+		if size == 0 {
+			tag.IsEmpty = true
 			var exampleVal any
 			exampleVal, err = createExampleValue(typ.Elem())
 			if err != nil {
@@ -1760,44 +1763,7 @@ func anyToJSONC(obj any, tag *ir.Tag, depth int, path string, example bool) (ir.
 		}
 
 		if tag.Size == 0 {
-			var exampleVal any
-			exampleVal, err = createExampleValue(typ.Elem())
-			if err != nil {
-				return nil, fmt.Errorf("create example value for empty array: %w", err)
-			}
-
-			tagItem := ir.NewTag()
-			tagItem.Inherit(tag)
-
-			tagItem.Example = true
-
-			p := fmt.Sprintf("%s[%d]", path, 0)
-			itemNode, err := valueToNode(exampleVal, tagItem, depth, p, true)
-			if err != nil {
-				return nil, fmt.Errorf("%s: %w", p, err)
-			}
-
-			tagItem = itemNode.GetTag()
-
-			if !setTag {
-				node.Tag.ChildDesc = tagItem.Desc
-				node.Tag.ChildType = tagItem.Type
-				node.Tag.ChildNullable = tagItem.Nullable
-				node.Tag.ChildAllowEmpty = tagItem.AllowEmpty
-				node.Tag.ChildUnique = tagItem.Unique
-				node.Tag.ChildDefaultVal = tagItem.DefaultVal
-				node.Tag.ChildMin = tagItem.Min
-				node.Tag.ChildMax = tagItem.Max
-				node.Tag.ChildSize = tagItem.Size
-				node.Tag.ChildEnums = tagItem.Enums
-				node.Tag.ChildPattern = tagItem.Pattern
-				node.Tag.ChildLocation = tagItem.Location
-				node.Tag.ChildVersion = tagItem.Version
-				node.Tag.ChildMime = tagItem.Mime
-				setTag = true
-			}
-
-			node.Items = append(node.Items, itemNode)
+			tag.IsEmpty = true
 		}
 
 		if !example {

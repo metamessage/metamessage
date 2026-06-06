@@ -5,6 +5,9 @@
 #include <stdlib.h>
 #include <string.h>
 
+// Debug flag - set to 1 to enable debug output
+#define DEBUG_PARSE 0
+
 typedef struct {
   const char *input;
   size_t pos;
@@ -57,6 +60,19 @@ static void skip_line_comment(parse_ctx_t *ctx) {
   if (comment_len > 0) {
     const char *text = ctx->input + start;
     size_t text_len = comment_len;
+
+    // Skip nested comments (e.g. "// // mm: ...") - if text starts with "//"
+    // (after optional whitespace), the mm: tag belongs to a commented-out
+    // field and should NOT be treated as a pending tag.
+    {
+      const char *p = text;
+      while (p < text + text_len && (*p == ' ' || *p == '\t'))
+        p++;
+      if (p + 1 < text + text_len && p[0] == '/' && p[1] == '/') {
+        return; // nested comment, ignore mm: tags
+      }
+    }
+
     const char *mm_pos = text;
     while (mm_pos < text + text_len && *mm_pos != 'm')
       mm_pos++;

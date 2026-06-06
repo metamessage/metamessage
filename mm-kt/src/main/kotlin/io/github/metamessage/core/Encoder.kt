@@ -241,6 +241,17 @@ object Encoder {
                     tmp.encodeBytes(bytes)
                 }
             }
+            ValueType.MEDIA -> {
+                if (!tag.isNull) {
+                    val bytes =
+                            when (val data = value.data) {
+                                is String -> java.util.Base64.getDecoder().decode(data)
+                                is ByteArray -> data
+                                else -> throw IllegalArgumentException("invalid media data")
+                            }
+                    tmp.encodeBytes(bytes)
+                }
+            }
             ValueType.BIGINT -> {
                 if (!tag.isNull) {
                     tmp.encodeBigIntDecimal(value.text)

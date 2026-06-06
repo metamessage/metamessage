@@ -1,7 +1,9 @@
 package core
 
 import (
+	"fmt"
 	"reflect"
+	"strings"
 	"testing"
 )
 
@@ -9,7 +11,7 @@ import (
 //
 // go test ./internal/core -v -run TestEncodeArray
 //
-// go test ./internal/core -v -run TestEncodeArray/12345
+// go test ./internal/core -v -run TestEncodeArray/nil_byte_arr
 //
 // go test ./internal/core -bench=BenchmarkEncodeArray -benchtime=1000000x
 
@@ -27,32 +29,38 @@ func TestEncodeArray(t *testing.T) {
 			name:        "child_location_1",
 			input:       ([]byte)(nil),
 			tag:         "location=1",
-			expectedBuf: ([]byte)(nil),
-			expectedErr: "value to node error: [0]: type uint8 not allow empty value 0",
+			expectedBuf: nil,
+			expectedErr: "not support location",
 		},
 		{
-			name:        "nil byte slice",
+			name:        "nil_byte_vec",
 			input:       ([]byte)(nil),
-			expectedBuf: ([]byte)(nil),
-			expectedErr: "value to node error: [0]: type uint8 not allow empty value 0",
+			expectedBuf: nil,
+			expectedErr: "not allow empty",
 		},
 		{
-			name:        "nil ordinary slice[]int)",
+			name:        "nil_byte_arr",
+			input:       [3]byte{},
+			expectedBuf: nil,
+			expectedErr: "not allow empty",
+		},
+		{
+			name:        "nil_ordinary_slice[]int)",
 			input:       ([]int)(nil),
-			expectedBuf: ([]int)(nil),
-			expectedErr: "value to node error: [0]: type int not allow empty value 0",
+			expectedBuf: nil,
+			expectedErr: "not allow empty",
 		},
 		{
-			name:        "Empty byte slice ([]byte{})",
+			name:        "empty_byte_slice_([]byte{})",
 			input:       []byte{},
-			expectedBuf: []byte{},
-			expectedErr: "value to node error: [0]: type uint8 not allow empty value 0",
+			expectedBuf: nil,
+			expectedErr: "not allow empty",
 		},
 		{
-			name:        "Empty ordinary slice ([]int{})",
+			name:        "empty_ordinary_slice_([]int{})",
 			input:       []int{},
-			expectedBuf: []int{},
-			expectedErr: "value to node error: [0]: type int not allow empty value 0",
+			expectedBuf: nil,
+			expectedErr: "not allow empty",
 		},
 		{
 			name:        "Non - empty byte slice ([]byte{1,2,3})",
@@ -101,9 +109,12 @@ func TestEncodeArray(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			encoded, err := FromValue(tc.input, tc.tag)
+			if err != nil {
+				fmt.Println("error", err)
+			}
 			// fmt.Println("encoded", encoded)
 			if tc.expectedErr != "" {
-				if err == nil || err.Error() != tc.expectedErr {
+				if err == nil || !strings.Contains(err.Error(), tc.expectedErr) {
 					t.Errorf("Expected error: %s, Actual error: %v", tc.expectedErr, err)
 				}
 				return

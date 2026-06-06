@@ -373,6 +373,8 @@ public enum MetaMessage {
                 .replacingOccurrences(of: "\r", with: "\\r")
                 .replacingOccurrences(of: "\t", with: "\\t")
             return "\"\(escaped)\""
+        case .bigint(let s):
+            return s
         case .data(let d):
             let str = String(data: d, encoding: .utf8) ?? d.map { String(format: "\\x%02x", $0) }.joined()
             let escaped = str

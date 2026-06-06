@@ -117,11 +117,13 @@ class JsoncParser
                 continue;
             }
 
-            $val = $this->parseValue('');
+            $tag = $this->consumeCommentsFor($tok->line);
+
+            $val = $this->parseValue('', $tag);
         }
     }
 
-    private function parseValue(string $path, ?Tag $inheritTag = null): ?Node
+    private function parseValue(string $path, ?Tag $tag = null): ?Node
     {
         while (true) {
             $tok = $this->next();
@@ -130,25 +132,16 @@ class JsoncParser
                     return null;
 
                 case JsoncTokenType::LBrace:
-                    return $this->parseObject($tok->line, $path);
+                    return $this->parseObject($tok->line, $path, $tag);
 
                 case JsoncTokenType::LBracket:
-                    return $this->parseArray($tok->line, $path);
+                    return $this->parseArray($tok->line, $path, $tag);
 
                 case JsoncTokenType::String:
-                    $tag = $this->consumeCommentsFor($tok->line);
-
                     $text = $tok->literal;
 
                     if ($tag === null) {
                         $tag = Tag::newTag();
-                    }
-
-                    if ($tag->type === ValueType::UNKNOWN && $inheritTag !== null && $inheritTag->childType !== ValueType::UNKNOWN) {
-                        $tag->type = $inheritTag->childType;
-                        if ($inheritTag->childType === ValueType::ENUMS && $inheritTag->childEnums !== '') {
-                            $tag->enumValues = $inheritTag->childEnums;
-                        }
                     }
 
                     if ($tag->type === ValueType::UNKNOWN) {
@@ -194,9 +187,9 @@ class JsoncParser
 
                             case ValueType::DATETIME:
                                 $tz = new \DateTimeZone('UTC');
-                                if ($tag->locationHours !== 0) {
-                                    $sign = $tag->locationHours >= 0 ? '+' : '-';
-                                    $tz = new \DateTimeZone(sprintf('%s%02d:00', $sign, abs($tag->locationHours)));
+                                if ($tag->location !== 0) {
+                                    $sign = $tag->location >= 0 ? '+' : '-';
+                                    $tz = new \DateTimeZone(sprintf('%s%02d:00', $sign, abs($tag->location)));
                                 }
 
                                 if ($tag->isNull) {
@@ -219,9 +212,9 @@ class JsoncParser
 
                             case ValueType::DATE:
                                 $tz = new \DateTimeZone('UTC');
-                                if ($tag->locationHours !== 0) {
-                                    $sign = $tag->locationHours >= 0 ? '+' : '-';
-                                    $tz = new \DateTimeZone(sprintf('%s%02d:00', $sign, abs($tag->locationHours)));
+                                if ($tag->location !== 0) {
+                                    $sign = $tag->location >= 0 ? '+' : '-';
+                                    $tz = new \DateTimeZone(sprintf('%s%02d:00', $sign, abs($tag->location)));
                                 }
 
                                 if ($tag->isNull) {
@@ -244,9 +237,9 @@ class JsoncParser
 
                             case ValueType::TIME:
                                 $tz = new \DateTimeZone('UTC');
-                                if ($tag->locationHours !== 0) {
-                                    $sign = $tag->locationHours >= 0 ? '+' : '-';
-                                    $tz = new \DateTimeZone(sprintf('%s%02d:00', $sign, abs($tag->locationHours)));
+                                if ($tag->location !== 0) {
+                                    $sign = $tag->location >= 0 ? '+' : '-';
+                                    $tz = new \DateTimeZone(sprintf('%s%02d:00', $sign, abs($tag->location)));
                                 }
 
                                 if ($tag->isNull) {
@@ -338,7 +331,7 @@ class JsoncParser
                                 break;
 
                             case ValueType::ENUMS:
-                                if ($tag->enumValues === '') {
+                                if ($tag->enums === '') {
                                     throw new \Exception('enum empty');
                                 }
 
@@ -371,6 +364,23 @@ class JsoncParser
                                 }
                                 break;
 
+                            case ValueType::MEDIA:
+                                if ($tag->isNull) {
+                                    if ($text !== '') {
+                                        throw new \Exception(sprintf('invalid media: %s, valid: ""', json_encode($text)));
+                                    }
+                                    $data = '';
+                                } else {
+                                    $decoded = base64_decode($text, true);
+                                    if ($decoded === false) {
+                                        throw new \Exception(sprintf('invalid base64 media %s', json_encode($text)));
+                                    }
+                                    $result = $this->validateImage($tag, $decoded);
+                                    $data = $result[0];
+                                    $text = $result[1];
+                                }
+                                break;
+
                             default:
                                 throw new \Exception(sprintf('unsupported type %s for string literal', $tag->type->wireName()));
                         }
@@ -384,16 +394,10 @@ class JsoncParser
                     return $value;
 
                 case JsoncTokenType::Number:
-                    $tag = $this->consumeCommentsFor($tok->line);
-
                     $text = $tok->literal;
 
                     if ($tag === null) {
                         $tag = Tag::newTag();
-                    }
-
-                    if ($tag->type === ValueType::UNKNOWN && $inheritTag !== null && $inheritTag->childType !== ValueType::UNKNOWN) {
-                        $tag->type = $inheritTag->childType;
                     }
 
                     if (str_contains($text, '.')) {
@@ -734,14 +738,10 @@ class JsoncParser
                     return $value;
 
                 case JsoncTokenType::True:
-                    $tag = $this->consumeCommentsFor($tok->line);
-
                     if ($tag === null) {
                         $tag = Tag::newTag();
                     }
-                    if ($tag->type === ValueType::UNKNOWN && $inheritTag !== null && $inheritTag->childType !== ValueType::UNKNOWN) {
-                        $tag->type = $inheritTag->childType;
-                    }
+
                     if ($tag->type === ValueType::UNKNOWN) {
                         $tag->type = ValueType::BOOL;
                     }
@@ -767,14 +767,10 @@ class JsoncParser
                     return $value;
 
                 case JsoncTokenType::False:
-                    $tag = $this->consumeCommentsFor($tok->line);
-
                     if ($tag === null) {
                         $tag = Tag::newTag();
                     }
-                    if ($tag->type === ValueType::UNKNOWN && $inheritTag !== null && $inheritTag->childType !== ValueType::UNKNOWN) {
-                        $tag->type = $inheritTag->childType;
-                    }
+
                     if ($tag->type === ValueType::UNKNOWN) {
                         $tag->type = ValueType::BOOL;
                     }
@@ -807,14 +803,14 @@ class JsoncParser
         }
     }
 
-    private function parseObject(int $openLine, string $path): Object_
+    private function parseObject(int $openLine, string $path, ?Tag $tag = null): Object_
     {
         $this->depth++;
         if ($this->depth > self::MAX_DEPTH) {
             throw new \Exception(sprintf('max depth: %d', self::MAX_DEPTH));
         }
 
-        $tag = $this->consumeCommentsFor($openLine);
+        // $tag = $this->consumeCommentsFor($openLine);
         if ($tag === null) {
             $tag = Tag::newTag();
         }
@@ -866,18 +862,26 @@ class JsoncParser
 
             $this->next();
 
+            $childTag = null;
+            if ($openLine !== $tok->line) {
+                $childTag = $this->consumeCommentsFor($tok->line);
+            }
+
+            if ($childTag === null) {
+                $childTag = Tag::newTag();
+            }
+
+            if ($childTag->type === ValueType::MAP) {
+                $childTag->inherit($tag);
+            }
+
             $pa = sprintf('%s.%s', $path, $keyStr);
             if ($tag->type === ValueType::MAP) {
                 $pa = sprintf('%s[%s]', $path, $keyStr);
             }
-            $val = $this->parseValue($pa);
+            $val = $this->parseValue($pa, $childTag);
             if ($val === null) {
                 continue;
-            }
-
-            $childTag = $val->getTag();
-            if ($childTag !== null && $tag !== null && $childTag->type === ValueType::MAP) {
-                $childTag->inherit($tag);
             }
 
             $field = new Field();
@@ -903,14 +907,14 @@ class JsoncParser
         return $obj;
     }
 
-    private function parseArray(int $openLine, string $path): Array_
+    private function parseArray(int $openLine, string $path, ?Tag $tag = null): Array_
     {
         $this->depth++;
         if ($this->depth > self::MAX_DEPTH) {
             throw new \Exception(sprintf('max depth: %d', self::MAX_DEPTH));
         }
 
-        $tag = $this->consumeCommentsFor($openLine);
+        // $tag = $this->consumeCommentsFor($openLine);
         if ($tag === null) {
             $tag = Tag::newTag();
         }
@@ -955,15 +959,23 @@ class JsoncParser
                 continue;
             }
 
+            $childTag = null;
+            if ($openLine !== $tok->line) {
+                $childTag = $this->consumeCommentsFor($tok->line);
+            }
+
+            if ($childTag === null) {
+                $childTag = Tag::newTag();
+            }
+
+            $childTag->inherit($tag);
+
             $pa = sprintf('%s[%d]', $path, $i);
-            $item = $this->parseValue($pa, $tag);
+            $item = $this->parseValue($pa, $childTag);
             if ($item === null) {
                 continue;
             }
-            $childTag = $item->getTag();
-            if ($childTag !== null && $tag !== null) {
-                $childTag->inherit($tag);
-            }
+
             $arr->Items[] = $item;
             $i++;
 
@@ -983,7 +995,6 @@ class JsoncParser
                     break;
             }
         }
-
         return $arr;
     }
 
@@ -1787,7 +1798,8 @@ class JsoncParser
             return [$val, $val];
         }
 
-        $enums = explode('|', $tag->enumValues);
+        $enumStr = $tag->enums;
+        $enums = explode('|', $enumStr);
         $idx = -1;
         foreach ($enums as $i => $s) {
             if (trim($s) === $val) {

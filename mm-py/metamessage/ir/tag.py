@@ -38,8 +38,6 @@ class ValueType(IntEnum):
     Url = 28
     Email = 29
     Enums = 30
-    # Image = 31
-    # Video = 32
     Media = 31
 
     def __str__(self) -> str:
@@ -75,8 +73,6 @@ class ValueType(IntEnum):
             ValueType.Url: "url",
             ValueType.Email: "email",
             ValueType.Enums: "enums",
-            # ValueType.Image: "image",
-            # ValueType.Video: "video",
             ValueType.Media: "media",
         }
         return mapping.get(self, "ValueType(%d)" % self.value)
@@ -92,7 +88,6 @@ _str_to_value_type = {
     "bigint": ValueType.Bigint, "datetime": ValueType.Datetime, "date": ValueType.Date, "time": ValueType.Time,
     "uuid": ValueType.Uuid, "decimal": ValueType.Decimal, "ip": ValueType.Ip, "url": ValueType.Url,
     "email": ValueType.Email, "enums": ValueType.Enums,
-    # "image": ValueType.Image, "video": ValueType.Video,
     "media": ValueType.Media,
 }
 
@@ -245,6 +240,7 @@ class Tag:
             self.size = tag.child_size
         if tag.child_enums:
             self.enums = tag.child_enums
+            self.type = ValueType.Enums
         if tag.child_pattern:
             self.pattern = tag.child_pattern
         if tag.child_location is not None and tag.child_location != 0:
@@ -253,6 +249,7 @@ class Tag:
             self.version = tag.child_version
         if tag.child_mime:
             self.mime = tag.child_mime
+            self.type = ValueType.Media
 
     def bytes(self) -> bytes:
         buf = bytearray()
@@ -286,7 +283,8 @@ class Tag:
             if self.type not in (ValueType.Str, ValueType.Bytes, ValueType.I, ValueType.F64,
                                  ValueType.Bool, ValueType.Obj, ValueType.Vec):
                 if not (self.type == ValueType.Arr and self.size > 0) and not (
-                        self.type == ValueType.Enums and self.enums):
+                        self.type == ValueType.Enums and self.enums) and not (
+                        self.type == ValueType.Media and self.mime):
                     buf.append(TagKey.Type)
                     buf.append(self.type)
 
@@ -391,7 +389,8 @@ class Tag:
             if self.child_type not in (ValueType.Str, ValueType.I, ValueType.F64,
                                        ValueType.Bool, ValueType.Obj, ValueType.Vec):
                 if not (self.child_type == ValueType.Arr and self.child_size > 0) and not (
-                        self.child_type == ValueType.Enums and self.child_enums):
+                        self.child_type == ValueType.Enums and self.child_enums) and not (
+                        self.child_type == ValueType.Media and self.child_mime):
                     buf.append(TagKey.ChildType)
                     buf.append(self.child_type)
 
@@ -491,7 +490,8 @@ class Tag:
                 pass
             else:
                 if not (self.type == ValueType.Arr and self.size > 0) and not (
-                        self.type == ValueType.Enums and self.enums):
+                        self.type == ValueType.Enums and self.enums) and not (
+                        self.type == ValueType.Media and self.mime):
                     parts.append("type=%s" % str(self.type))
 
         if self.example:
@@ -507,7 +507,7 @@ class Tag:
         if self.desc and not self.is_inherit:
             parts.append('desc="%s"' % self.desc)
 
-        if self.deprecated:
+        if self.deprecated and not self.is_inherit:
             parts.append("deprecated")
 
         if self.allow_empty and not self.is_inherit:
@@ -558,7 +558,8 @@ class Tag:
             if self.child_type not in (ValueType.Str, ValueType.I, ValueType.F64,
                                        ValueType.Bool, ValueType.Obj, ValueType.Vec):
                 if not (self.child_type == ValueType.Arr and self.child_size > 0) and not (
-                        self.child_type == ValueType.Enums and self.child_enums):
+                        self.child_type == ValueType.Enums and self.child_enums) and not (
+                        self.child_type == ValueType.Media and self.child_mime):
                     parts.append("child_type=%s" % str(self.child_type))
 
         if self.child_nullable:
@@ -613,7 +614,6 @@ TAG_KEY_MAP = {
     "example": "example",
     "desc": "desc",
     "type": "type",
-    "raw": "raw",
     "nullable": "nullable",
     "allow_empty": "allow_empty",
     "unique": "unique",
@@ -702,7 +702,7 @@ def mm_tag(tag_str: str) -> Tag:
             tag.desc = v
         elif k == "type":
             tag.type = parse_value_type(v)
-        elif k == "raw" or k == "deprecated":
+        elif k == "deprecated":
             tag.deprecated = True
         elif k == "nullable":
             tag.nullable = True
@@ -738,6 +738,7 @@ def mm_tag(tag_str: str) -> Tag:
                 pass
         elif k == "mime":
             tag.mime = v
+            tag.type = ValueType.Media
         elif k == "child_desc":
             tag.child_desc = v
         elif k == "child_type":
@@ -776,6 +777,7 @@ def mm_tag(tag_str: str) -> Tag:
                 pass
         elif k == "child_mime":
             tag.child_mime = v
+            tag.child_type = ValueType.Media
 
     return tag
 

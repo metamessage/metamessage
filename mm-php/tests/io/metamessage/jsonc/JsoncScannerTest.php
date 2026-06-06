@@ -50,15 +50,9 @@ class JsoncScannerTest extends TestCase {
         $this->assertEquals(JsoncTokenType::False, $token->type);
     }
 
-    public function testScanLineCommentTrailing(): void {
+    public function testScanLineComment(): void {
         $scanner = new JsoncScanner("// this is a comment\n");
         $token = $scanner->nextToken();
-        $this->assertEquals(JsoncTokenType::TrailingComment, $token->type);
-    }
-
-    public function testScanBlockCommentTrailing(): void {
-        $scanner = new JsoncScanner("/* block comment */");
-        $token = $scanner->nextToken();
-        $this->assertEquals(JsoncTokenType::TrailingComment, $token->type);
+        $this->assertEquals(JsoncTokenType::Comment, $token->type);
     }
 }

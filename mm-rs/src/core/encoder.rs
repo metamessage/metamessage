@@ -7,6 +7,7 @@ use crate::core::prefix::{
 use crate::core::simple_value::SimpleValue;
 use crate::ir::ast::{Array, Node, Object, Value, ValueData};
 use crate::ir::ValueType;
+use chrono::Timelike;
 
 pub struct Encoder {
     buf: Vec<u8>,
@@ -139,10 +140,11 @@ impl Encoder {
         let saved_offset = self.offset;
         self.offset = 0;
 
-        let is_null = val.tag.as_ref().map_or(false, |t| t.is_null);
+        let tag = val.tag.as_ref();
+        let is_null = tag.map_or(false, |t| t.is_null);
 
         if is_null {
-            match val.tag.as_ref().map(|t| t.value_type) {
+            match tag.map(|t| t.value_type) {
                 Some(ValueType::Bool) => self.encode_simple(SimpleValue::NullBool),
                 Some(ValueType::I) => self.encode_simple(SimpleValue::NullInt),
                 Some(ValueType::F64) | Some(ValueType::F32) => {
@@ -152,45 +154,193 @@ impl Encoder {
                 Some(ValueType::Bytes) => self.encode_simple(SimpleValue::NullBytes),
                 _ => self.encode_simple(SimpleValue::NullInt),
             }
-        } else if val.tag.as_ref().map_or(false, |t| t.value_type == ValueType::Enum) {
-            let tag = val.tag.as_ref().unwrap();
-            let s = match &val.data {
-                ValueData::String(s) => s.clone(),
-                _ => val.text.clone(),
-            };
-            if let Some(ref enums) = tag.enums {
-                let enum_list: Vec<&str> = enums.split('|').map(|e| e.trim()).collect();
-                if let Some(pos) = enum_list.iter().position(|e| *e == s) {
-                    self.encode_int64(pos as i64);
-                } else {
-                    self.encode_int64(0);
+        } else if let Some(t) = tag {
+            match t.value_type {
+                ValueType::Bool => match &val.data {
+                    ValueData::Bool(b) => self.encode_bool(*b),
+                    _ => self.encode_bool(val.text == "true"),
+                },
+                ValueType::I | ValueType::I8 | ValueType::I16 | ValueType::I32 | ValueType::I64 => {
+                    match &val.data {
+                        ValueData::Int(i) => self.encode_int64(*i),
+                        _ => {
+                            if let Ok(v) = val.text.parse::<i64>() {
+                                self.encode_int64(v);
+                            } else {
+                                self.encode_int64(0);
+                            }
+                        }
+                    }
                 }
-            } else {
-                self.encode_int64(0);
+                ValueType::U | ValueType::U8 | ValueType::U16 | ValueType::U32 | ValueType::U64 => {
+                    match &val.data {
+                        ValueData::Uint(u) => self.encode_uint64(*u),
+                        _ => {
+                            if let Ok(v) = val.text.parse::<u64>() {
+                                self.encode_uint64(v);
+                            } else {
+                                self.encode_uint64(0);
+                            }
+                        }
+                    }
+                }
+                ValueType::F32 | ValueType::F64 | ValueType::Decimal => {
+                    self.encode_float(&val.text);
+                }
+                ValueType::Str | ValueType::Url | ValueType::Email => {
+                    let s = match &val.data {
+                        ValueData::String(s) => s.clone(),
+                        _ => val.text.clone(),
+                    };
+                    self.encode_string(&s);
+                }
+                ValueType::Bytes => {
+                    let s = match &val.data {
+                        ValueData::String(s) => s.clone(),
+                        _ => val.text.clone(),
+                    };
+                    use base64::{engine::general_purpose, Engine as _};
+                    if let Ok(decoded) = general_purpose::STANDARD.decode(&s) {
+                        self.encode_bytes(&decoded);
+                    } else {
+                        self.encode_string(&s);
+                    }
+                }
+                ValueType::Datetime => {
+                    let timestamp = match &val.data {
+                        ValueData::Int(ts) => *ts,
+                        _ => {
+                            let naive = chrono::NaiveDateTime::parse_from_str(
+                                &val.text,
+                                "%Y-%m-%d %H:%M:%S",
+                            )
+                            .unwrap_or_else(|_| {
+                                chrono::NaiveDateTime::parse_from_str(
+                                    &val.text,
+                                    "%Y-%m-%dT%H:%M:%S",
+                                )
+                                .unwrap_or(
+                                    chrono::NaiveDate::from_ymd_opt(1970, 1, 1)
+                                        .unwrap()
+                                        .and_hms_opt(0, 0, 0)
+                                        .unwrap(),
+                                )
+                            });
+                            let utc_ts = naive.and_utc().timestamp();
+                            if let Some(loc) = t.location {
+                                utc_ts - (loc as i64 * 3600)
+                            } else {
+                                utc_ts
+                            }
+                        }
+                    };
+                    self.encode_int64(timestamp);
+                }
+                ValueType::Date => {
+                    let days = match &val.data {
+                        ValueData::Int(d) => *d,
+                        _ => {
+                            let naive = chrono::NaiveDate::parse_from_str(&val.text, "%Y-%m-%d")
+                                .unwrap_or(chrono::NaiveDate::from_ymd_opt(1970, 1, 2).unwrap());
+                            let epoch = chrono::NaiveDate::from_ymd_opt(1970, 1, 1).unwrap();
+                            let duration = naive.signed_duration_since(epoch);
+                            duration.num_days()
+                        }
+                    };
+                    self.encode_int64(days);
+                }
+                ValueType::Time => {
+                    let seconds = match &val.data {
+                        ValueData::Int(s) => *s,
+                        _ => {
+                            let naive = chrono::NaiveTime::parse_from_str(&val.text, "%H:%M:%S")
+                                .unwrap_or(chrono::NaiveTime::from_hms_opt(0, 0, 0).unwrap());
+                            naive.num_seconds_from_midnight() as i64
+                        }
+                    };
+                    self.encode_int64(seconds);
+                }
+                ValueType::Uuid => match &val.data {
+                    ValueData::Bytes(b) => self.encode_bytes(b),
+                    _ => {
+                        if let Ok(u) = uuid::Uuid::parse_str(&val.text) {
+                            self.encode_bytes(u.as_bytes());
+                        } else {
+                            self.encode_string(&val.text);
+                        }
+                    }
+                },
+                ValueType::Bigint => {
+                    self.encode_big_int(&val.text);
+                }
+                ValueType::Ip => {
+                    if let Some(v) = t.version {
+                        if v == 4 {
+                            if let Ok(ip) = val.text.parse::<std::net::Ipv4Addr>() {
+                                self.encode_bytes(&ip.octets());
+                            } else {
+                                self.encode_string(&val.text);
+                            }
+                        } else if v == 6 {
+                            if let Ok(ip) = val.text.parse::<std::net::Ipv6Addr>() {
+                                self.encode_bytes(&ip.octets());
+                            } else {
+                                self.encode_string(&val.text);
+                            }
+                        } else {
+                            self.encode_string(&val.text);
+                        }
+                    } else {
+                        self.encode_string(&val.text);
+                    }
+                }
+                ValueType::Enum => {
+                    let s = match &val.data {
+                        ValueData::String(s) => s.clone(),
+                        _ => val.text.clone(),
+                    };
+                    if let Some(ref enums) = t.enums {
+                        let enum_list: Vec<&str> = enums.split('|').map(|e| e.trim()).collect();
+                        if let Some(pos) = enum_list.iter().position(|e| *e == s) {
+                            self.encode_int64(pos as i64);
+                        } else {
+                            self.encode_int64(0);
+                        }
+                    } else {
+                        self.encode_int64(0);
+                    }
+                }
+                ValueType::Media => {
+                    let s = match &val.data {
+                        ValueData::String(s) => s.clone(),
+                        _ => val.text.clone(),
+                    };
+                    use base64::{engine::general_purpose, Engine as _};
+                    if let Ok(decoded) = general_purpose::STANDARD.decode(&s) {
+                        self.encode_bytes(&decoded);
+                    } else {
+                        self.encode_string(&s);
+                    }
+                }
+                _ => match &val.data {
+                    ValueData::Bool(b) => self.encode_bool(*b),
+                    ValueData::String(s) => self.encode_string(s),
+                    ValueData::Int(i) => self.encode_int64(*i),
+                    ValueData::Uint(u) => self.encode_uint64(*u),
+                    ValueData::Float(_) => self.encode_float(&val.text),
+                    ValueData::Bytes(b) => self.encode_bytes(b),
+                    ValueData::Null => self.encode_simple(SimpleValue::NullInt),
+                },
             }
         } else {
             match &val.data {
-                ValueData::Bool(b) => {
-                    self.encode_bool(*b);
-                }
-                ValueData::String(s) => {
-                    self.encode_string(s);
-                }
-                ValueData::Int(i) => {
-                    self.encode_int64(*i);
-                }
-                ValueData::Uint(u) => {
-                    self.encode_uint64(*u);
-                }
-                ValueData::Float(_) => {
-                    self.encode_float(&val.text);
-                }
-                ValueData::Bytes(b) => {
-                    self.encode_bytes(b);
-                }
-                ValueData::Null => {
-                    self.encode_simple(SimpleValue::NullInt);
-                }
+                ValueData::Bool(b) => self.encode_bool(*b),
+                ValueData::String(s) => self.encode_string(s),
+                ValueData::Int(i) => self.encode_int64(*i),
+                ValueData::Uint(u) => self.encode_uint64(*u),
+                ValueData::Float(_) => self.encode_float(&val.text),
+                ValueData::Bytes(b) => self.encode_bytes(b),
+                ValueData::Null => self.encode_simple(SimpleValue::NullInt),
             }
         }
 
@@ -206,6 +356,75 @@ impl Encoder {
         }
         self.offset = saved_offset;
         self.write_bytes(&payload);
+    }
+
+    fn encode_big_int(&mut self, s: &str) {
+        let neg = s.starts_with('-');
+        let digits = if neg { &s[1..] } else { s };
+        let digit_len = digits.len();
+        if digit_len == 0 {
+            return;
+        }
+
+        // Calculate total bits needed
+        let groups = digit_len / 3;
+        let rem = digit_len % 3;
+        let total_bits = 1
+            + groups * 10
+            + match rem {
+                2 => 7,
+                1 => 4,
+                _ => 0,
+            };
+        let byte_count = (total_bits + 7) / 8;
+
+        // Build bit-packed bytes
+        let mut bits = vec![0u8; byte_count];
+        let mut bit_offset = 0usize;
+
+        // Write sign bit
+        if neg {
+            bits[0] |= 1 << (7 - bit_offset);
+        }
+        bit_offset += 1;
+
+        // Process digit groups
+        let mut i = 0;
+        while i < digit_len {
+            let rem_group = digit_len - i;
+            let (val, num_bits): (u64, usize) = if rem_group >= 3 {
+                let v = (digits.as_bytes()[i] - b'0') as u64 * 100
+                    + (digits.as_bytes()[i + 1] - b'0') as u64 * 10
+                    + (digits.as_bytes()[i + 2] - b'0') as u64;
+                i += 3;
+                (v, 10)
+            } else if rem_group == 2 {
+                let v = (digits.as_bytes()[i] - b'0') as u64 * 10
+                    + (digits.as_bytes()[i + 1] - b'0') as u64;
+                i += 2;
+                (v, 7)
+            } else {
+                let v = (digits.as_bytes()[i] - b'0') as u64;
+                i += 1;
+                (v, 4)
+            };
+
+            for b in (0..num_bits).rev() {
+                let byte_idx = bit_offset / 8;
+                let bit_in_byte = 7 - (bit_offset % 8);
+                if (val >> b) & 1 == 1 {
+                    bits[byte_idx] |= 1 << bit_in_byte;
+                }
+                bit_offset += 1;
+            }
+        }
+
+        // Build payload: [digit_count_byte] + [bit_data]
+        let mut payload = Vec::with_capacity(1 + byte_count);
+        payload.push(digit_len as u8);
+        payload.extend_from_slice(&bits);
+
+        self.encode_bytes(&payload);
     }
 
     pub fn encode_bool(&mut self, v: bool) {

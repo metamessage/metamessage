@@ -13,6 +13,7 @@ public class Decoder {
         case uint(UInt64)
         case float(Double)
         case string(String)
+        case bigint(String)
         case data(Data)
         case array([DecodedValue])
         case object([String: DecodedValue])
@@ -85,7 +86,7 @@ public class Decoder {
         let (extraBytes, _) = intLen(byte)
 
         var value: UInt64 = 0
-        for i in 0..<extraBytes {
+        for _ in 0..<extraBytes {
             guard let b = buffer.read() else {
                 throw MMError.unexpectedEndOfData
             }
@@ -111,7 +112,7 @@ public class Decoder {
         let (extraBytes, _) = intLen(byte)
 
         var value: UInt64 = 0
-        for i in 0..<extraBytes {
+        for _ in 0..<extraBytes {
             guard let b = buffer.read() else {
                 throw MMError.unexpectedEndOfData
             }
@@ -372,6 +373,121 @@ public class Decoder {
             case TagKey.example:
                 break
 
+            case TagKey.location:
+                if fieldLen <= 5 {
+                    guard pos + fieldLen <= data.count else { break }
+                    let valueBytes = data[pos..<pos+fieldLen]
+                    if let locStr = String(bytes: valueBytes, encoding: .utf8), let loc = Int(locStr) {
+                        tag.location = loc
+                    }
+                    pos += fieldLen
+                } else if fieldLen == 6 {
+                    guard pos < data.count else { break }
+                    let strLen = Int(data[pos])
+                    pos += 1
+                    guard pos + strLen <= data.count else { break }
+                    let valueBytes = data[pos..<pos+strLen]
+                    if let locStr = String(bytes: valueBytes, encoding: .utf8), let loc = Int(locStr) {
+                        tag.location = loc
+                    }
+                    pos += strLen
+                } else if fieldLen == 7 {
+                    guard pos + 1 < data.count else { break }
+                    let strLen = (Int(data[pos]) << 8) | Int(data[pos + 1])
+                    pos += 2
+                    guard pos + strLen <= data.count else { break }
+                    let valueBytes = data[pos..<pos+strLen]
+                    if let locStr = String(bytes: valueBytes, encoding: .utf8), let loc = Int(locStr) {
+                        tag.location = loc
+                    }
+                    pos += strLen
+                }
+
+            case TagKey.enums:
+                if fieldLen <= 5 {
+                    guard pos + fieldLen <= data.count else { break }
+                    if let enumStr = String(bytes: data[pos..<pos+fieldLen], encoding: .utf8) {
+                        tag.enums = enumStr
+                        tag.type = .enums
+                    }
+                    pos += fieldLen
+                } else if fieldLen == 6 {
+                    guard pos < data.count else { break }
+                    let strLen = Int(data[pos])
+                    pos += 1
+                    guard pos + strLen <= data.count else { break }
+                    if let enumStr = String(bytes: data[pos..<pos+strLen], encoding: .utf8) {
+                        tag.enums = enumStr
+                        tag.type = .enums
+                    }
+                    pos += strLen
+                } else if fieldLen == 7 {
+                    guard pos + 1 < data.count else { break }
+                    let strLen = (Int(data[pos]) << 8) | Int(data[pos + 1])
+                    pos += 2
+                    guard pos + strLen <= data.count else { break }
+                    if let enumStr = String(bytes: data[pos..<pos+strLen], encoding: .utf8) {
+                        tag.enums = enumStr
+                        tag.type = .enums
+                    }
+                    pos += strLen
+                }
+
+            case TagKey.mime:
+                let (mimeVal, mimeAdv) = decodeTagFieldU64(data, pos: pos, fieldLen: fieldLen)
+                if mimeAdv > 0 {
+                    tag.mime = Mime.toString(mimeVal)
+                    tag.type = .media
+                    pos += mimeAdv
+                } else {
+                    break
+                }
+
+            case TagKey.childMime:
+                let (childMimeVal, childMimeAdv) = decodeTagFieldU64(data, pos: pos, fieldLen: fieldLen)
+                if childMimeAdv > 0 {
+                    tag.childMime = Mime.toString(childMimeVal)
+                    tag.childType = .media
+                    pos += childMimeAdv
+                } else {
+                    break
+                }
+
+            case TagKey.childType:
+                guard pos < data.count else { break }
+                tag.childType = ValueType(rawValue: data[pos]) ?? .unknown
+                pos += 1
+
+            case TagKey.childEnums:
+                if fieldLen <= 5 {
+                    guard pos + fieldLen <= data.count else { break }
+                    if let enumStr = String(bytes: data[pos..<pos+fieldLen], encoding: .utf8) {
+                        tag.childEnums = enumStr
+                        tag.childType = .enums
+                    }
+                    pos += fieldLen
+                } else if fieldLen == 6 {
+                    guard pos < data.count else { break }
+                    let strLen = Int(data[pos])
+                    pos += 1
+                    guard pos + strLen <= data.count else { break }
+                    if let enumStr = String(bytes: data[pos..<pos+strLen], encoding: .utf8) {
+                        tag.childEnums = enumStr
+                        tag.childType = .enums
+                    }
+                    pos += strLen
+                } else if fieldLen == 7 {
+                    guard pos + 1 < data.count else { break }
+                    let strLen = (Int(data[pos]) << 8) | Int(data[pos + 1])
+                    pos += 2
+                    guard pos + strLen <= data.count else { break }
+                    if let enumStr = String(bytes: data[pos..<pos+strLen], encoding: .utf8) {
+                        tag.childEnums = enumStr
+                        tag.childType = .enums
+                    }
+                    pos += strLen
+                }
+
             default:
                 let isU64Field = key == TagKey.size || key == TagKey.version ||
                                  key == TagKey.more || key == TagKey.childSize ||
@@ -411,6 +527,171 @@ public class Decoder {
         let innerDecoder = Decoder(data: payloadData)
         let value = try innerDecoder.decode()
 
+        if tag.childType != .unknown {
+            switch value {
+            case .array(let elements):
+                var result: [DecodedValue] = []
+                for element in elements {
+                    if tag.childType == .bytes, case .data(let d) = element {
+                        result.append(.string(d.base64EncodedString()))
+                    } else if tag.childType == .media, case .data(let d) = element {
+                        result.append(.string(d.base64EncodedString()))
+                    } else if tag.childType == .bigint, case .data(let d) = element {
+                        result.append(.bigint(Self.decodeBigIntFromBytes(d)))
+                    } else if tag.childType == .time, case .int(let seconds) = element {
+                        let secs = max(0, min(seconds, 86399))
+                        let h = secs / 3600
+                        let m = (secs % 3600) / 60
+                        let s = secs % 60
+                        result.append(.string(String(format: "%02d:%02d:%02d", h, m, s)))
+                    } else if tag.childType == .date, case .int(let days) = element {
+                        let ref = Date(timeIntervalSince1970: 0)
+                        let date = Calendar(identifier: .gregorian).date(byAdding: .day, value: Int(days), to: ref) ?? ref
+                        let formatter = DateFormatter()
+                        formatter.dateFormat = "yyyy-MM-dd"
+                        formatter.timeZone = TimeZone(abbreviation: "UTC")
+                        result.append(.string(formatter.string(from: date)))
+                    } else if tag.childType == .datetime, case .int(let ts) = element {
+                        let date = Date(timeIntervalSince1970: TimeInterval(ts))
+                        let formatter = DateFormatter()
+                        formatter.dateFormat = "yyyy-MM-dd HH:mm:ss"
+                        formatter.timeZone = TimeZone(abbreviation: "UTC")
+                        result.append(.string(formatter.string(from: date)))
+                    } else if tag.childType == .uuid, case .data(let d) = element, d.count == 16 {
+                        let bytes = [UInt8](d)
+                        let hexStr = String(format: "%02x%02x%02x%02x-%02x%02x-%02x%02x-%02x%02x-%02x%02x%02x%02x%02x%02x",
+                            bytes[0], bytes[1], bytes[2], bytes[3],
+                            bytes[4], bytes[5], bytes[6], bytes[7],
+                            bytes[8], bytes[9], bytes[10], bytes[11],
+                            bytes[12], bytes[13], bytes[14], bytes[15])
+                        result.append(.string(hexStr))
+                    } else if tag.childType == .enums {
+                        if !tag.childEnums.isEmpty {
+                            let enumValues = tag.childEnums.split(separator: "|").map { $0.trimmingCharacters(in: .whitespaces) }
+                            if case .int(let idx) = element, idx >= 0, idx < enumValues.count {
+                                result.append(.string(String(enumValues[Int(idx)])))
+                            } else if case .uint(let idx) = element, idx < enumValues.count {
+                                result.append(.string(String(enumValues[Int(idx)])))
+                            } else {
+                                result.append(element)
+                            }
+                        } else {
+                            result.append(element)
+                        }
+                    } else {
+                        result.append(element)
+                    }
+                }
+                return .array(result)
+            case .object(let dict):
+                var result: [String: DecodedValue] = [:]
+                for (key, val) in dict {
+                    if tag.childType == .bytes, case .data(let d) = val {
+                        result[key] = .string(d.base64EncodedString())
+                    } else if tag.childType == .media, case .data(let d) = val {
+                        result[key] = .string(d.base64EncodedString())
+                    } else if tag.childType == .bigint, case .data(let d) = val {
+                        result[key] = .bigint(Self.decodeBigIntFromBytes(d))
+                    } else if tag.childType == .time, case .int(let seconds) = val {
+                        let secs = max(0, min(seconds, 86399))
+                        let h = secs / 3600
+                        let m = (secs % 3600) / 60
+                        let s = secs % 60
+                        result[key] = .string(String(format: "%02d:%02d:%02d", h, m, s))
+                    } else if tag.childType == .date, case .int(let days) = val {
+                        let ref = Date(timeIntervalSince1970: 0)
+                        let date = Calendar(identifier: .gregorian).date(byAdding: .day, value: Int(days), to: ref) ?? ref
+                        let formatter = DateFormatter()
+                        formatter.dateFormat = "yyyy-MM-dd"
+                        formatter.timeZone = TimeZone(abbreviation: "UTC")
+                        result[key] = .string(formatter.string(from: date))
+                    } else if tag.childType == .datetime, case .int(let ts) = val {
+                        let date = Date(timeIntervalSince1970: TimeInterval(ts))
+                        let formatter = DateFormatter()
+                        formatter.dateFormat = "yyyy-MM-dd HH:mm:ss"
+                        formatter.timeZone = TimeZone(abbreviation: "UTC")
+                        result[key] = .string(formatter.string(from: date))
+                    } else if tag.childType == .uuid, case .data(let d) = val, d.count == 16 {
+                        let bytes = [UInt8](d)
+                        let hexStr = String(format: "%02x%02x%02x%02x-%02x%02x-%02x%02x-%02x%02x-%02x%02x%02x%02x%02x%02x",
+                            bytes[0], bytes[1], bytes[2], bytes[3],
+                            bytes[4], bytes[5], bytes[6], bytes[7],
+                            bytes[8], bytes[9], bytes[10], bytes[11],
+                            bytes[12], bytes[13], bytes[14], bytes[15])
+                        result[key] = .string(hexStr)
+                    } else if tag.childType == .enums {
+                        if !tag.childEnums.isEmpty {
+                            let enumValues = tag.childEnums.split(separator: "|").map { $0.trimmingCharacters(in: .whitespaces) }
+                            if case .int(let idx) = val, idx >= 0, idx < enumValues.count {
+                                result[key] = .string(String(enumValues[Int(idx)]))
+                            } else if case .uint(let idx) = val, idx < enumValues.count {
+                                result[key] = .string(String(enumValues[Int(idx)]))
+                            } else {
+                                result[key] = val
+                            }
+                        } else {
+                            result[key] = val
+                        }
+                    } else {
+                        result[key] = val
+                    }
+                }
+                return .object(result)
+            default:
+                if tag.childType == .bytes, case .data(let d) = value {
+                    return .string(d.base64EncodedString())
+                }
+                if tag.childType == .media, case .data(let d) = value {
+                    return .string(d.base64EncodedString())
+                }
+                if tag.childType == .bigint, case .data(let d) = value {
+                    return .bigint(Self.decodeBigIntFromBytes(d))
+                }
+                if tag.childType == .time, case .int(let seconds) = value {
+                    let secs = max(0, min(seconds, 86399))
+                    let h = secs / 3600
+                    let m = (secs % 3600) / 60
+                    let s = secs % 60
+                    return .string(String(format: "%02d:%02d:%02d", h, m, s))
+                }
+                if tag.childType == .date, case .int(let days) = value {
+                    let ref = Date(timeIntervalSince1970: 0)
+                    let date = Calendar(identifier: .gregorian).date(byAdding: .day, value: Int(days), to: ref) ?? ref
+                    let formatter = DateFormatter()
+                    formatter.dateFormat = "yyyy-MM-dd"
+                    formatter.timeZone = TimeZone(abbreviation: "UTC")
+                    return .string(formatter.string(from: date))
+                }
+                if tag.childType == .datetime, case .int(let ts) = value {
+                    let date = Date(timeIntervalSince1970: TimeInterval(ts))
+                    let formatter = DateFormatter()
+                    formatter.dateFormat = "yyyy-MM-dd HH:mm:ss"
+                    formatter.timeZone = TimeZone(abbreviation: "UTC")
+                    return .string(formatter.string(from: date))
+                }
+                if tag.childType == .uuid, case .data(let d) = value, d.count == 16 {
+                    let bytes = [UInt8](d)
+                    let hexStr = String(format: "%02x%02x%02x%02x-%02x%02x-%02x%02x-%02x%02x-%02x%02x%02x%02x%02x%02x",
+                        bytes[0], bytes[1], bytes[2], bytes[3],
+                        bytes[4], bytes[5], bytes[6], bytes[7],
+                        bytes[8], bytes[9], bytes[10], bytes[11],
+                        bytes[12], bytes[13], bytes[14], bytes[15])
+                    return .string(hexStr)
+                }
+                if tag.childType == .enums {
+                    if !tag.childEnums.isEmpty {
+                        let enumValues = tag.childEnums.split(separator: "|").map { $0.trimmingCharacters(in: .whitespaces) }
+                        if case .int(let idx) = value, idx >= 0, idx < enumValues.count {
+                            return .string(String(enumValues[Int(idx)]))
+                        }
+                        if case .uint(let idx) = value, idx < enumValues.count {
+                            return .string(String(enumValues[Int(idx)]))
+                        }
+                    }
+                }
+            }
+        }
+
         if tag.type != .unknown {
             return applyTagType(value, tag: tag)
         }
@@ -427,7 +708,7 @@ public class Decoder {
             return .float(0.0)
         case .bool:
             return .bool(false)
-        case .str, .email, .url, .datetime, .date, .time, .enums:
+        case .str, .email, .url, .datetime, .date, .time, .enums, .media:
             return .string("")
         case .bytes, .uuid, .ip:
             return .data(Data())
@@ -440,14 +721,16 @@ public class Decoder {
         switch tag.type {
         case .datetime:
             if case .int(let ts) = value {
-                let date = Date(timeIntervalSince1970: TimeInterval(ts))
+                let adjustedTs = TimeInterval(ts) + TimeInterval(tag.location * 3600)
+                let date = Date(timeIntervalSince1970: adjustedTs)
                 let formatter = DateFormatter()
                 formatter.dateFormat = "yyyy-MM-dd HH:mm:ss"
                 formatter.timeZone = TimeZone(abbreviation: "UTC")
                 return .string(formatter.string(from: date))
             }
             if case .uint(let ts) = value {
-                let date = Date(timeIntervalSince1970: TimeInterval(ts))
+                let adjustedTs = TimeInterval(ts) + TimeInterval(tag.location * 3600)
+                let date = Date(timeIntervalSince1970: adjustedTs)
                 let formatter = DateFormatter()
                 formatter.dateFormat = "yyyy-MM-dd HH:mm:ss"
                 formatter.timeZone = TimeZone(abbreviation: "UTC")
@@ -508,10 +791,102 @@ public class Decoder {
                 }
             }
 
+        case .media:
+            if case .data(let d) = value {
+                return .string(d.base64EncodedString())
+            }
+
+        case .bytes:
+            if case .data(let d) = value {
+                return .string(d.base64EncodedString())
+            }
+
         default:
             break
         }
 
         return value
+    }
+
+    private func decodeTagFieldU64(_ data: [UInt8], pos: Int, fieldLen: Int) -> (UInt64, Int) {
+        let valueLen = fieldLen + 1
+        guard pos + valueLen <= data.count else { return (0, 0) }
+        var value: UInt64 = 0
+        for i in 0..<valueLen {
+            value = (value << 8) | UInt64(data[pos + i])
+        }
+        return (value, valueLen)
+    }
+
+    /// Decode a bigint from bit-packed bytes.
+    /// Format: [digit_count (1 byte)] + [bit-packed data]
+    /// Bit-packed: sign(1 bit) + groups of 10/7/4 bits for 3/2/1 decimal digits
+    private static func decodeBigIntFromBytes(_ data: Data) -> String {
+        let bytes = [UInt8](data)
+        guard bytes.count > 1 else { return "0" }
+        let digitLen = Int(bytes[0])
+        guard digitLen > 0 else { return "0" }
+
+        let bitData = Array(bytes[1...])
+        let totalBits = bitData.count * 8
+        var bitPos = 0
+
+        func readBit() -> Int {
+            guard bitPos < totalBits else { return 0 }
+            let byteIdx = bitPos / 8
+            let bitInByte = 7 - (bitPos % 8)
+            let bit = (Int(bitData[byteIdx]) >> bitInByte) & 1
+            bitPos += 1
+            return bit
+        }
+
+        func readBits(_ n: Int) -> Int {
+            var val = 0
+            for _ in 0..<n {
+                val = (val << 1) | readBit()
+            }
+            return val
+        }
+
+        let sign = readBit()
+        let neg = sign == 1
+
+        var result = ""
+        var remaining = digitLen
+        while remaining > 0 {
+            if remaining >= 3 {
+                let val = readBits(10)
+                result += String(format: "%03d", val)
+                remaining -= 3
+            } else if remaining == 2 {
+                let val = readBits(7)
+                result += String(format: "%02d", val)
+                remaining -= 2
+            } else {
+                let val = readBits(4)
+                result += String(val)
+                remaining -= 1
+            }
+        }
+
+        // Trim leading zeros only
+        var trimmed = ""
+        var started = false
+        for c in result {
+            if !started {
+                if c != "0" {
+                    started = true
+                    trimmed.append(c)
+                }
+            } else {
+                trimmed.append(c)
+            }
+        }
+        let finalStr = trimmed.isEmpty ? "0" : trimmed
+
+        if neg && finalStr != "0" {
+            return "-" + finalStr
+        }
+        return finalStr
     }
 }

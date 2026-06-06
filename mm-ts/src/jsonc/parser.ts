@@ -259,6 +259,29 @@ export class JSONCParser {
               }
               break;
 
+            case ValueType.Media:
+              if (strTag.isNull) {
+                if (text !== '') {
+                  throw new Error(`invalid media: "${text}", valid: ""`);
+                }
+                data = new Uint8Array();
+              } else {
+                try {
+                  const decoded = base64ToUint8(text);
+                  const result = strTag.validateMedia(decoded);
+                  if (!result.valid) {
+                    throw new Error(result.error || 'Media validation failed');
+                  }
+                  data = result.data;
+                  text = result.text || text;
+                } catch (e) {
+                  throw new Error(
+                    `invalid base64 media "${text}": ${(e as Error).message}`,
+                  );
+                }
+              }
+              break;
+
             case ValueType.Url:
             case ValueType.Ip:
             case ValueType.Decimal:
@@ -640,7 +663,11 @@ export class JSONCParser {
 
       const childTag = val.getTag();
       if (childTag && tag && this.hasChildFields(tag)) {
+        const origType = childTag.type;
         childTag.inherit(tag);
+        if (val instanceof MMValue && origType !== childTag.type) {
+          this.revalidateValue(val, childTag, origType);
+        }
       }
 
       obj.setProperty(keyStr, val);
@@ -709,7 +736,11 @@ export class JSONCParser {
 
       const childTag = item.getTag();
       if (childTag && tag && this.hasChildFields(tag)) {
+        const origType = childTag.type;
         childTag.inherit(tag);
+        if (item instanceof MMValue && origType !== childTag.type) {
+          this.revalidateValue(item, childTag, origType);
+        }
       }
 
       if (item instanceof MMValue) {
@@ -822,6 +853,133 @@ export class JSONCParser {
       tag.childVersion !== 0 ||
       tag.childMime !== ''
     );
+  }
+
+  private revalidateValue(item: MMValue, tag: Tag, origType: ValueType): void {
+    const text = item.getText() || String(item.getValue());
+
+    switch (tag.type) {
+      case ValueType.Bytes: {
+        try {
+          const decoded = base64ToUint8(text);
+          const result = tag.validateBytes(decoded);
+          if (!result.valid) {
+            throw new Error(result.error || 'Bytes validation failed');
+          }
+          item.setValue(result.data);
+          if (result.text) item.setText(result.text);
+        } catch (e) {
+          throw new Error(
+            `invalid base64 bytes "${text}": ${(e as Error).message}`,
+          );
+        }
+        break;
+      }
+
+      case ValueType.Datetime:
+      case ValueType.Date:
+      case ValueType.Time: {
+        let dateValue: Date;
+        if (tag.type === ValueType.Time) {
+          dateValue = new Date(`1970-01-01T${text}Z`);
+        } else {
+          dateValue = new Date(text.replace(' ', 'T') + 'Z');
+        }
+        let result: ValidationResult;
+        if (tag.type === ValueType.Date) {
+          result = tag.validateDate(dateValue);
+        } else if (tag.type === ValueType.Time) {
+          result = tag.validateTime(dateValue);
+        } else {
+          result = tag.validateDatetime(dateValue);
+        }
+        if (!result.valid) {
+          throw new Error(result.error || 'Datetime validation failed');
+        }
+        item.setValue(result.data);
+        break;
+      }
+
+      case ValueType.Uuid: {
+        const result = tag.validateUUID(text);
+        if (!result.valid) {
+          throw new Error(result.error || 'UUID validation failed');
+        }
+        item.setValue(result.data);
+        if (result.text) item.setText(result.text);
+        break;
+      }
+
+      case ValueType.Email: {
+        const result = tag.validateEmail(text);
+        if (!result.valid) {
+          throw new Error(result.error || 'Email validation failed');
+        }
+        item.setValue(result.data);
+        if (result.text) item.setText(result.text);
+        break;
+      }
+
+      case ValueType.Url: {
+        const result = tag.validateURL(text);
+        if (!result.valid) {
+          throw new Error(result.error || 'URL validation failed');
+        }
+        item.setValue(result.data);
+        if (result.text) item.setText(result.text);
+        break;
+      }
+
+      case ValueType.Ip: {
+        const result = tag.validateIP(text);
+        if (!result.valid) {
+          throw new Error(result.error || 'IP validation failed');
+        }
+        item.setValue(result.data);
+        if (result.text) item.setText(result.text);
+        break;
+      }
+
+      case ValueType.Decimal: {
+        const result = tag.validateDecimal(text);
+        if (!result.valid) {
+          throw new Error(result.error || 'Decimal validation failed');
+        }
+        item.setValue(result.data);
+        if (result.text) item.setText(result.text);
+        break;
+      }
+
+      case ValueType.Bigint: {
+        try {
+          const bi = BigInt(text);
+          const result = tag.validateBigint(bi);
+          if (!result.valid) {
+            throw new Error(result.error || 'BigInt validation failed');
+          }
+          item.setValue(result.data);
+          if (result.text) item.setText(result.text);
+        } catch (e) {
+          throw new Error(`invalid bigint "${text}": ${(e as Error).message}`);
+        }
+        break;
+      }
+
+      case ValueType.Enums: {
+        if (tag.enums) {
+          const result = tag.validateEnum(text);
+          if (!result.valid) {
+            throw new Error(result.error || 'Enum validation failed');
+          }
+          item.setValue(result.data);
+          if (result.text) item.setText(result.text);
+        }
+        break;
+      }
+
+      default:
+        break;
+    }
   }
 }
 

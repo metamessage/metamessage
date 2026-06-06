@@ -41,7 +41,7 @@ class AllTypes
     public bool $boolField = true;
     #[MM(type: ValueType::DATETIME)]
     public \DateTime $datetimeField;
-    #[MM(type: ValueType::ENUMS, enumValues: 'red|green|blue')]
+    #[MM(type: ValueType::ENUMS, enums: 'red|green|blue')]
     public int $enumField = 1;
     public array $arrayField = [1, 2, 3];
 

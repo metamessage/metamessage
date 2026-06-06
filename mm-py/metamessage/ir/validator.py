@@ -3,6 +3,7 @@ import base64
 from typing import Any, Optional, List
 
 from .tag import Tag, ValueType
+from .ast import Arr
 
 
 class ValidationResult:
@@ -19,7 +20,7 @@ class MmValidator:
     uuid_regex = re.compile(r'^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$')
 
     @staticmethod
-    def validate_arr(value: List[Any], tag: Tag) -> ValidationResult:
+    def validate_arr(value: Arr, tag: Tag) -> ValidationResult:
         if len(tag.desc) > 65535:
             return ValidationResult(False, "desc length exceeds 65535 bytes")
 
@@ -31,10 +32,10 @@ class MmValidator:
         if location_offset != 0:
             return ValidationResult(False, "type array not support location UTC%d" % location_offset)
 
-        length = len(value)
+        length = len(value.items)
 
         if length == 0:
-            if not tag.allow_empty:
+            if not tag.allow_empty and not tag.example:
                 return ValidationResult(False, "type array not allow empty")
             return ValidationResult(True, data=value, text=str(value))
 

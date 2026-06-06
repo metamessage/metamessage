@@ -806,11 +806,12 @@ export class MMDecoder {
 
       case ValueType.Datetime:
         const ts = isNegative ? -Number(v) : Number(v);
-        data = new Date(ts * 1000);
-        text = data
-          .toISOString()
-          .replace('T', ' ')
-          .replace(/\.\d{3}Z$/, '');
+        const locOffset = tag.location || 0;
+        const adjustedTs = ts + locOffset * 3600;
+        const d = new Date(adjustedTs * 1000);
+        const pad = (n: number) => String(n).padStart(2, '0');
+        text = `${d.getUTCFullYear()}-${pad(d.getUTCMonth() + 1)}-${pad(d.getUTCDate())} ${pad(d.getUTCHours())}:${pad(d.getUTCMinutes())}:${pad(d.getUTCSeconds())}`;
+        data = d;
         break;
       case ValueType.Date:
         const days = isNegative ? -Number(v) : Number(v);
@@ -822,8 +823,9 @@ export class MMDecoder {
         const hours = Math.floor(seconds / 3600);
         const minutes = Math.floor((seconds % 3600) / 60);
         const secs = seconds % 60;
+        const pad2 = (n: number) => String(n).padStart(2, '0');
+        text = `${pad2(hours)}:${pad2(minutes)}:${pad2(secs)}`;
         data = new Date(Date.UTC(1970, 0, 1, hours, minutes, secs));
-        text = data.toTimeString().split(' ')[0];
         break;
       case ValueType.Enums:
         data = Number(v);
@@ -1000,7 +1002,7 @@ export class MMDecoder {
       length = this.readByte();
     } else if (lenBytes === 2) {
       const bytes = this.readBytes(2);
-      length = (bytes[0] ?? 0) | ((bytes[1] ?? 0) << 8);
+      length = ((bytes[0] ?? 0) << 8) | (bytes[1] ?? 0);
     }
 
     const bs = this.readBytes(length);
@@ -1043,7 +1045,7 @@ export class MMDecoder {
       length = this.readByte();
     } else if (lenBytes === 2) {
       const bytes = this.readBytes(2);
-      length = (bytes[0] ?? 0) | ((bytes[1] ?? 0) << 8);
+      length = ((bytes[0] ?? 0) << 8) | (bytes[1] ?? 0);
     }
 
     const bs = this.readBytes(length);
@@ -1132,7 +1134,7 @@ export class MMDecoder {
       length = this.readByte();
     } else if (l1 === 2) {
       const bytes = this.readBytes(2);
-      length = (bytes[0] ?? 0) | ((bytes[1] ?? 0) << 8);
+      length = ((bytes[0] ?? 0) << 8) | (bytes[1] ?? 0);
     }
 
     const arr = new MMArray();
@@ -1176,7 +1178,7 @@ export class MMDecoder {
       length = this.readByte();
     } else if (l1 === 2) {
       const bytes = this.readBytes(2);
-      length = (bytes[0] ?? 0) | ((bytes[1] ?? 0) << 8);
+      length = ((bytes[0] ?? 0) << 8) | (bytes[1] ?? 0);
     }
 
     const lArray = this.readByte();

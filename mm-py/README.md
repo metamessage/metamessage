@@ -2,6 +2,10 @@
 
 MetaMessage - 高性能二进制消息编码库，支持模式标记（schema tags）、JSONC 注释语法，以及 Python 装饰器驱动的序列化。
 
+[pypi.org](https://pypi.org/project/metamessage/)
+
+[github.com](https://github.com/metamessage/metamessage)
+
 ## 功能特性
 
 - **二进制编码/解码** — 将 Python 值高效编码为紧凑二进制格式

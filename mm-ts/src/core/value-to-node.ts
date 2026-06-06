@@ -2,6 +2,7 @@ import { Node, MMValue, MMObject, MMArray } from '../ir/ast';
 import { Tag } from '../ir/tag';
 import { typeToString, ValueType } from '../ir/value-type';
 import { META_KEY } from './mm';
+import { base64ToUint8 } from '../jsonc/printer';
 
 const maxDepth = 32;
 
@@ -330,6 +331,16 @@ function valueToNode(v: any, tag: Tag, depth: number, path: string): Node {
           text = result.text || '';
           break;
         }
+        case ValueType.Media: {
+          const decoded = base64ToUint8(v);
+          const result = tag.validateMedia(decoded);
+          if (!result.valid) {
+            throw new Error(`validate failed: ${result.error}`);
+          }
+          data = result.data;
+          text = result.text || '';
+          break;
+        }
         case ValueType.Datetime: {
           const parsed = new Date(v);
           if (isNaN(parsed.getTime())) {
@@ -391,6 +402,15 @@ function valueToNode(v: any, tag: Tag, depth: number, path: string): Node {
           }
           case ValueType.Image: {
             const result = tag.validateImage(v);
+            if (!result.valid) {
+              throw new Error(`validate failed: ${result.error}`);
+            }
+            data = result.data;
+            text = result.text || '';
+            break;
+          }
+          case ValueType.Media: {
+            const result = tag.validateMedia(v);
             if (!result.valid) {
               throw new Error(`validate failed: ${result.error}`);
             }

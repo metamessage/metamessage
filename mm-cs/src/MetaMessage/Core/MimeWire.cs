@@ -49,6 +49,48 @@ public static class MimeWire
         }
         return 0;
     }
+
+    public static string MimeToString(int code)
+    {
+        return code switch
+        {
+            1 => "image/jpeg",
+            2 => "image/png",
+            3 => "image/gif",
+            4 => "image/webp",
+            5 => "image/svg+xml",
+            6 => "image/avif",
+            7 => "image/bmp",
+            8 => "image/x-icon",
+            9 => "image/tiff",
+            10 => "image/heic",
+            11 => "image/heif",
+            12 => "text/plain",
+            13 => "text/html",
+            14 => "text/css",
+            15 => "text/javascript",
+            16 => "application/json",
+            17 => "text/csv",
+            18 => "text/markdown",
+            19 => "application/pdf",
+            20 => "application/zip",
+            21 => "application/gzip",
+            22 => "application/x-tar",
+            23 => "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            24 => "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+            25 => "application/octet-stream",
+            26 => "video/mp4",
+            27 => "video/webm",
+            28 => "video/mov",
+            29 => "audio/mpeg",
+            30 => "audio/wav",
+            31 => "audio/flac",
+            32 => "font/woff2",
+            33 => "font/ttf",
+            _ => "unknown"
+        };
+    }
+
     public static string MimeForWire(string mimeType)
     {
         return mimeType switch

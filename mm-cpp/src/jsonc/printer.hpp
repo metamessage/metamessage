@@ -2,11 +2,37 @@
 #define MMCPP_JSONC_PRINTER_HPP
 
 #include "../ir/ast.hpp"
+#include <cstdint>
 #include <sstream>
 #include <string>
+#include <vector>
 
 namespace mmc {
 namespace jsonc {
+
+namespace {
+std::string base64_encode(const std::vector<uint8_t> &data) {
+  static const char *chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+                             "abcdefghijklmnopqrstuvwxyz"
+                             "0123456789+/";
+  std::string out;
+  out.reserve(((data.size() + 2) / 3) * 4);
+  for (size_t i = 0; i < data.size(); i += 3) {
+    uint32_t val = 0;
+    int cnt = 0;
+    for (int j = 0; j < 3 && i + j < data.size(); ++j) {
+      val = (val << 8) | data[i + j];
+      cnt++;
+    }
+    val <<= (3 - cnt) * 8;
+    out += chars[(val >> 18) & 0x3F];
+    out += chars[(val >> 12) & 0x3F];
+    out += (cnt >= 2) ? chars[(val >> 6) & 0x3F] : '=';
+    out += (cnt >= 3) ? chars[val & 0x3F] : '=';
+  }
+  return out;
+}
+} // namespace
 
 inline void printIndent(std::ostringstream &os, int indent) {
   for (int i = 0; i < indent; ++i)
@@ -74,9 +100,11 @@ inline void printValue(std::ostringstream &os, std::shared_ptr<ir::Value> val,
     os << "\"";
     break;
   }
-  case ir::ValueType::Bytes:
-    os << "\"" << val->text << "\"";
+  case ir::ValueType::Bytes: {
+    std::vector<uint8_t> bytes(val->text.begin(), val->text.end());
+    os << "\"" << base64_encode(bytes) << "\"";
     break;
+  }
   case ir::ValueType::Bool:
     os << (val->text == "true" || val->text == "1" ? "true" : "false");
     break;

@@ -39,9 +39,7 @@ public enum ValueType: UInt8, Codable {
     case email = 29
 
     case enums = 30
-
-    case image = 31
-    case video = 32
+    case media = 31
 
     public var stringValue: String {
         switch self {
@@ -76,8 +74,7 @@ public enum ValueType: UInt8, Codable {
         case .url: return "url"
         case .email: return "email"
         case .enums: return "enums"
-        case .image: return "image"
-        case .video: return "video"
+        case .media: return "media"
         }
     }
 
@@ -114,8 +111,7 @@ public enum ValueType: UInt8, Codable {
         case "url": return .url
         case "email": return .email
         case "enums": return .enums
-        case "image": return .image
-        case "video": return .video
+        case "media": return .media
         default: return nil
         }
     }

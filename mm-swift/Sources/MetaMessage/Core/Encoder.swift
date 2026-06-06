@@ -318,6 +318,87 @@ public class Encoder {
         buffer.write(bytes)
     }
 
+    public func encodeBigInt(_ s: String) {
+        var text = s
+        let neg = text.hasPrefix("-")
+        if neg {
+            text = String(text.dropFirst())
+        }
+        let digitLen = text.count
+        guard digitLen > 0 else { return }
+
+        let groups = digitLen / 3
+        let rem = digitLen % 3
+        let totalBits = 1 + groups * 10 + (rem == 2 ? 7 : rem == 1 ? 4 : 0)
+        let byteCount = (totalBits + 7) / 8
+
+        var bits = [UInt8](repeating: 0, count: byteCount)
+        var bitOffset = 0
+
+        // Sign bit
+        if neg {
+            bits[0] |= 1 << (7 - bitOffset)
+        }
+        bitOffset += 1
+
+        let chars = Array(text)
+        var i = 0
+        while i < digitLen {
+            let remGroup = digitLen - i
+            var val: UInt64 = 0
+            var numBits: Int = 0
+            var increment: Int = 0
+            if remGroup >= 3 {
+                val = UInt64(chars[i].asciiValue! - 48) * 100
+                    + UInt64(chars[i + 1].asciiValue! - 48) * 10
+                    + UInt64(chars[i + 2].asciiValue! - 48)
+                numBits = 10
+                increment = 3
+            } else if remGroup == 2 {
+                val = UInt64(chars[i].asciiValue! - 48) * 10
+                    + UInt64(chars[i + 1].asciiValue! - 48)
+                numBits = 7
+                increment = 2
+            } else {
+                val = UInt64(chars[i].asciiValue! - 48)
+                numBits = 4
+                increment = 1
+            }
+            i += increment
+
+            for b in (0..<numBits).reversed() {
+                let byteIdx = bitOffset / 8
+                let bitInByte = 7 - (bitOffset % 8)
+                if (val >> b) & 1 == 1 {
+                    bits[byteIdx] |= 1 << bitInByte
+                }
+                bitOffset += 1
+            }
+        }
+
+        var payload = Data(capacity: 1 + byteCount)
+        payload.append(UInt8(digitLen))
+        payload.append(contentsOf: bits)
+        encodeBytes(payload)
+    }
+
+    public func encodeBytes(_ value: Data) {
+        let bytes = [UInt8](value)
+        let len = bytes.count
+
+        if len < 30 {
+            buffer.write(MMPrefix.prefixBytes.rawValue | UInt8(len))
+        } else if len < 256 {
+            buffer.write(MMPrefix.prefixBytes.rawValue | MMConstants.bytesLen1Byte)
+            buffer.write(UInt8(len))
+        } else {
+            buffer.write(MMPrefix.prefixBytes.rawValue | MMConstants.bytesLen2Byte)
+            buffer.write(UInt8((len >> 8) & 0xFF))
+            buffer.write(UInt8(len & 0xFF))
+        }
+        buffer.write(bytes)
+    }
+
     public func encodeArray(_ array: [Bool]) {
         let valBuf = MMBuffer()
 
@@ -595,6 +676,38 @@ extension Encoder {
                 } else {
                     encodeRawValue(node)
                 }
+            case .media:
+                if let strData = node.data as? String {
+                    if let decoded = Data(base64Encoded: strData) {
+                        encode(decoded)
+                    } else {
+                        encode(strData)
+                    }
+                } else if let data = node.data as? Data {
+                    encode(data)
+                } else {
+                    encodeRawValue(node)
+                }
+            case .bytes:
+                if let strData = node.data as? String {
+                    if let decoded = Data(base64Encoded: strData) {
+                        encode(decoded)
+                    } else {
+                        encode(strData)
+                    }
+                } else if let data = node.data as? Data {
+                    encode(data)
+                } else {
+                    encodeRawValue(node)
+                }
+            case .bigint:
+                if let strVal = node.data as? String {
+                    encodeBigInt(strVal)
+                } else if let strVal = node.text as String? {
+                    encodeBigInt(strVal)
+                } else {
+                    encodeRawValue(node)
+                }
             default:
                 encodeRawValue(node)
             }
@@ -622,7 +735,7 @@ extension Encoder {
             buffer.write(MMSimpleValue.nullFloat.rawValue)
         case .str:
             buffer.write(MMSimpleValue.nullString.rawValue)
-        case .bytes:
+        case .bytes, .media:
             buffer.write(MMSimpleValue.nullBytes.rawValue)
         case .bool:
             buffer.write(MMSimpleValue.nullBool.rawValue)
@@ -723,15 +836,17 @@ extension Encoder {
         buffer.write(payload)
         let payloadBytes = Array(buffer.data[payloadStart..<buffer.count])
 
-        let tagBuf = encodeTagToBytes(tag)
-        let tagLenHeader = encodeTagBodyLength(tagBuf.count)
-        let totalLen = tagLenHeader.count + tagBuf.count + payloadBytes.count
-        let saved = Array(buffer.data[payloadStart..<buffer.count])
-        buffer.seek(to: payloadStart)
-        writeTagPrefix(totalLen)
-        buffer.write(tagLenHeader)
-        buffer.write(tagBuf)
-        buffer.write(saved)
+        if needsTagEncoding(tag) {
+            let tagBuf = encodeTagToBytes(tag)
+            let tagLenHeader = encodeTagBodyLength(tagBuf.count)
+            let totalLen = tagLenHeader.count + tagBuf.count + payloadBytes.count
+            let saved = Array(buffer.data[payloadStart..<buffer.count])
+            buffer.seek(to: payloadStart)
+            writeTagPrefix(totalLen)
+            buffer.write(tagLenHeader)
+            buffer.write(tagBuf)
+            buffer.write(saved)
+        }
     }
 
     public func encodeNodeObject(_ node: MMObject) {
@@ -864,7 +979,7 @@ extension Encoder {
             (tag.location != 0 && !tag.isInherit) ||
             (tag.version != 0 && !tag.isInherit) ||
             tag.childDesc != "" ||
-            tag.childType != .unknown ||
+            (tag.childType != .unknown && shouldEncodeChildType(tag.childType, childSize: tag.childSize, childEnums: tag.childEnums, childMime: tag.childMime)) ||
             tag.childNullable ||
             tag.childAllowEmpty ||
             tag.childUnique ||
@@ -880,7 +995,7 @@ extension Encoder {
             tag.more != 0
     }
 
-    private func shouldEncodeType(_ type: ValueType, size: Int, enums: String) -> Bool {
+    private func shouldEncodeType(_ type: ValueType, size: Int, enums: String, mime: String = "") -> Bool {
         switch type {
         case .str, .bytes, .i, .f64, .bool, .obj, .vec:
             return false
@@ -888,6 +1003,23 @@ extension Encoder {
             return size <= 0
         case .enums:
             return enums.isEmpty
+        case .media:
+            return mime.isEmpty
+        default:
+            return true
+        }
+    }
+
+    private func shouldEncodeChildType(_ childType: ValueType, childSize: Int, childEnums: String, childMime: String) -> Bool {
+        switch childType {
+        case .str, .i, .f64, .bool, .obj, .vec:
+            return false
+        case .arr:
+            return childSize <= 0
+        case .enums:
+            return childEnums.isEmpty
+        case .media:
+            return childMime.isEmpty
         default:
             return true
         }
@@ -912,7 +1044,7 @@ extension Encoder {
             bytes.append(contentsOf: encodeTagString(TagKey.desc, value: tag.desc))
         }
 
-        if tag.type != .unknown && !tag.isInherit && shouldEncodeType(tag.type, size: tag.size, enums: tag.enums) {
+        if tag.type != .unknown && !tag.isInherit && shouldEncodeType(tag.type, size: tag.size, enums: tag.enums, mime: tag.mime) {
             bytes.append(TagKey.type)
             bytes.append(UInt8(tag.type.rawValue))
         }
@@ -963,7 +1095,69 @@ extension Encoder {
         }
 
         if !tag.mime.isEmpty && !tag.isInherit {
-            bytes.append(contentsOf: encodeTagString(TagKey.mime, value: tag.mime))
+            bytes.append(contentsOf: encodeTagU64(TagKey.mime, value: Mime.parse(tag.mime)))
+        }
+
+        if !tag.childDesc.isEmpty {
+            bytes.append(contentsOf: encodeTagString(TagKey.childDesc, value: tag.childDesc))
+        }
+
+        if tag.childType != .unknown && shouldEncodeChildType(tag.childType, childSize: tag.childSize, childEnums: tag.childEnums, childMime: tag.childMime) {
+            bytes.append(TagKey.childType)
+            bytes.append(UInt8(tag.childType.rawValue))
+        }
+
+        if tag.childNullable {
+            bytes.append(TagKey.childNullable | 1)
+        }
+
+        if tag.childAllowEmpty {
+            bytes.append(TagKey.childAllowEmpty | 1)
+        }
+
+        if tag.childUnique {
+            bytes.append(TagKey.childUnique | 1)
+        }
+
+        if !tag.childDefaultVal.isEmpty {
+            bytes.append(contentsOf: encodeTagString(TagKey.childDefaultVal, value: tag.childDefaultVal))
+        }
+
+        if !tag.childMin.isEmpty {
+            bytes.append(contentsOf: encodeTagString(TagKey.childMin, value: tag.childMin))
+        }
+
+        if !tag.childMax.isEmpty {
+            bytes.append(contentsOf: encodeTagString(TagKey.childMax, value: tag.childMax))
+        }
+
+        if tag.childSize != 0 {
+            bytes.append(contentsOf: encodeTagU64(TagKey.childSize, value: UInt64(tag.childSize)))
+        }
+
+        if !tag.childEnums.isEmpty {
+            bytes.append(contentsOf: encodeTagString(TagKey.childEnums, value: tag.childEnums))
+        }
+
+        if !tag.childPattern.isEmpty {
+            bytes.append(contentsOf: encodeTagString(TagKey.childPattern, value: tag.childPattern))
+        }
+
+        if tag.childLocation != 0 {
+            let v = "\(tag.childLocation)"
+            bytes.append(contentsOf: encodeTagString(TagKey.childLocation, value: v))
+        }
+
+        if tag.childVersion != 0 {
+            bytes.append(contentsOf: encodeTagU64(TagKey.childVersion, value: UInt64(tag.childVersion)))
+        }
+
+        if !tag.childMime.isEmpty {
+            bytes.append(contentsOf: encodeTagU64(TagKey.childMime, value: Mime.parse(tag.childMime)))
+        }
+
+        if tag.more != 0 {
+            bytes.append(contentsOf: encodeTagU64(TagKey.more, value: UInt64(tag.more)))
         }
 
         return bytes

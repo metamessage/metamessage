@@ -314,9 +314,38 @@ class Encoder:
             return self._encode_i(NegativeInt, uv)
 
     def _encode_big_int(self, s: str) -> int:
-        self._write_byte(len(s))
-        n = _encode_big_int(self._write_byte, s)
-        return self._encode_bytes(self.buf[self.offset - n - 1:self.offset])
+        if not s:
+            return 0
+        neg = s.startswith('-')
+        if neg:
+            s = s[1:]
+
+        bits = [1 if neg else 0]
+        n = len(s)
+        i = 0
+        while i < n:
+            rem = n - i
+            if rem >= 3:
+                num = int(s[i:i + 3])
+                bits.extend(_to_bits(num, 10))
+                i += 3
+            elif rem == 2:
+                num = int(s[i:i + 2])
+                bits.extend(_to_bits(num, 7))
+                i += 2
+            else:
+                num = int(s[i:i + 1])
+                bits.extend(_to_bits(num, 4))
+                i += 1
+
+        payload = bytearray()
+        _write_bits(lambda b: payload.append(b), bits)
+
+        full_payload = bytearray(1 + len(payload))
+        full_payload[0] = n
+        full_payload[1:] = payload
+
+        return self._encode_bytes(bytes(full_payload))
 
     # ===== Floats =====
 
@@ -587,7 +616,7 @@ class Encoder:
         n = n1
         return n
 
-    def _encode_node_array(self, arr: Arr) -> int:
+    def _encode_node_array(self, arr: Arr) -> int:   
         tag = arr.get_tag()
         buf = bytearray()
 
@@ -702,7 +731,8 @@ class Encoder:
             else:
                 data = val.data
                 if isinstance(data, str):
-                    data = data.encode('utf-8')
+                    import base64
+                    data = base64.b64decode(data)
                 elif not isinstance(data, (bytes, bytearray)):
                     data = bytes(data)
                 self._encode_bytes(bytes(data))

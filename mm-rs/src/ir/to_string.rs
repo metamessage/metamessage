@@ -1,5 +1,5 @@
 use crate::ir::ast::{Array, Node, Object, Value, ValueData};
-use crate::ir::value_type::ValueType;
+use crate::ir::ValueType;
 use std::fmt::Write;
 
 const INDENT_UNIT: &str = "\t";
@@ -33,32 +33,33 @@ fn write_node_compact(buf: &mut String, node: &Node) {
 }
 
 fn write_value(buf: &mut String, val: &Value) {
-    let value_type = val.tag.as_ref().map(|t| t.value_type);
+    let tag_type = val.tag.as_ref().map(|t| t.value_type);
+
     match &val.data {
         ValueData::Bool(b) => {
             buf.push_str(if *b { "true" } else { "false" });
         }
-        ValueData::String(s) => {
-            let needs_quotes = val
-                .tag
-                .as_ref()
-                .map(|t| t.value_type.needs_quotes())
-                .unwrap_or(true);
+        ValueData::String(_s) => {
+            let needs_quotes = tag_type.map(|t| t.needs_quotes()).unwrap_or(true);
             if needs_quotes {
-                write_quoted_string(buf, s);
+                write_quoted_string(buf, &val.text);
             } else {
-                buf.push_str(s);
+                buf.push_str(&val.text);
             }
         }
-        ValueData::Int(i) => {
-            if value_type == Some(ValueType::Datetime) {
-                let naive = chrono::DateTime::from_timestamp(*i, 0)
-                    .map(|dt| dt.naive_utc())
-                    .unwrap_or_default();
-                let s = naive.format("%Y-%m-%d %H:%M:%S").to_string();
-                write_quoted_string(buf, &s);
+        ValueData::Int(_i) => {
+            let should_quote = tag_type
+                .map(|t| {
+                    matches!(
+                        t,
+                        ValueType::Datetime | ValueType::Date | ValueType::Time | ValueType::Enum
+                    )
+                })
+                .unwrap_or(false);
+            if should_quote {
+                write_quoted_string(buf, &val.text);
             } else {
-                write!(buf, "{}", i).unwrap();
+                buf.push_str(&val.text);
             }
         }
         ValueData::Uint(u) => {
@@ -68,19 +69,15 @@ fn write_value(buf: &mut String, val: &Value) {
             write!(buf, "{}", f).unwrap();
         }
         ValueData::Bytes(b) => {
-            if value_type == Some(ValueType::Uuid) {
-                let hex = b.iter().map(|x| format!("{:02x}", x)).collect::<String>();
-                let uuid_str = format!(
-                    "{}-{}-{}-{}-{}",
-                    &hex[0..8],
-                    &hex[8..12],
-                    &hex[12..16],
-                    &hex[16..20],
-                    &hex[20..32]
-                );
-                write_quoted_string(buf, &uuid_str);
+            let is_uuid = tag_type.map(|t| t == ValueType::Uuid).unwrap_or(false);
+            let is_bigint = tag_type.map(|t| t == ValueType::Bigint).unwrap_or(false);
+            if is_uuid {
+                write_quoted_string(buf, &val.text);
+            } else if is_bigint {
+                buf.push_str(&val.text);
             } else {
-                write_quoted_string(buf, &format!("{:?}", b));
+                use base64::{engine::general_purpose, Engine as _};
+                write_quoted_string(buf, &general_purpose::STANDARD.encode(b));
             }
         }
         ValueData::Null => {

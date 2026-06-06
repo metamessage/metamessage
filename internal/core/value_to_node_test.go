@@ -152,9 +152,9 @@ func TestValueToNode(t *testing.T) {
 			expectedErr: true,
 		},
 		{
-			name:        "empty slice pointer bool",
+			name:        "empty_slice_pointer_bool",
 			in:          []*bool{},
-			expectedErr: false,
+			expectedErr: true,
 		},
 		{
 			name:        "empty slice slice string",

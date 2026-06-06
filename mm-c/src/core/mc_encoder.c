@@ -2,10 +2,61 @@
 #include "../ir/mc_tag.h"
 #include "../ir/mc_value_type.h"
 #include "mc_constants.h"
+#include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
+
+#define DEBUG_ENCODE 0
+
+static uint8_t base64_decode_char(char c) {
+  if (c >= 'A' && c <= 'Z')
+    return (uint8_t)(c - 'A');
+  if (c >= 'a' && c <= 'z')
+    return (uint8_t)(c - 'a' + 26);
+  if (c >= '0' && c <= '9')
+    return (uint8_t)(c - '0' + 52);
+  if (c == '-' || c == '+')
+    return 62;
+  if (c == '_' || c == '/')
+    return 63;
+  return 0xFF;
+}
+
+static uint8_t *mc_base64_decode_url(const char *text, size_t text_len,
+                                     size_t *decoded_len) {
+  if (!text || text_len == 0) {
+    *decoded_len = 0;
+    return NULL;
+  }
+  size_t padding = 0;
+  if (text_len > 0 && text[text_len - 1] == '=')
+    padding++;
+  if (text_len > 1 && text[text_len - 2] == '=')
+    padding++;
+  size_t out_len = text_len / 4 * 3 - padding;
+  uint8_t *out = (uint8_t *)malloc(out_len + 1);
+  if (!out) {
+    *decoded_len = 0;
+    return NULL;
+  }
+  size_t o = 0;
+  for (size_t i = 0; i < text_len; i += 4) {
+    uint8_t a = base64_decode_char(text[i]);
+    uint8_t b = (i + 1 < text_len) ? base64_decode_char(text[i + 1]) : 0;
+    uint8_t c = (i + 2 < text_len) ? base64_decode_char(text[i + 2]) : 0;
+    uint8_t d = (i + 3 < text_len) ? base64_decode_char(text[i + 3]) : 0;
+    if (o < out_len)
+      out[o++] = (uint8_t)((a << 2) | (b >> 4));
+    if (o < out_len)
+      out[o++] = (uint8_t)((b << 4) | (c >> 2));
+    if (o < out_len)
+      out[o++] = (uint8_t)((c << 6) | d);
+  }
+  *decoded_len = out_len;
+  return out;
+}
 
 typedef struct {
   uint8_t *buf;
@@ -58,6 +109,11 @@ static void enc_encode_i(encoder_t *e, uint8_t sign, const char *text) {
     enc_write_byte(e, (uint8_t)uv);
   } else if (uv <= 0xFFFF) {
     enc_write_byte(e, (uint8_t)(sign | MM_INTLEN2BYTE));
+    enc_write_byte(e, (uint8_t)(uv >> 8));
+    enc_write_byte(e, (uint8_t)uv);
+  } else if (uv <= 0xFFFFFF) {
+    enc_write_byte(e, (uint8_t)(sign | MM_INTLEN3BYTE));
+    enc_write_byte(e, (uint8_t)(uv >> 16));
     enc_write_byte(e, (uint8_t)(uv >> 8));
     enc_write_byte(e, (uint8_t)uv);
   } else if (uv <= 0xFFFFFFFF) {
@@ -208,8 +264,16 @@ static void enc_encode_float(encoder_t *e, const char *text) {
     mantissa_bytes = 1;
   } else if (mantissa <= 0xFFFF) {
     mantissa_bytes = 2;
+  } else if (mantissa <= 0xFFFFFF) {
+    mantissa_bytes = 3;
   } else if (mantissa <= 0xFFFFFFFF) {
     mantissa_bytes = 4;
+  } else if (mantissa <= 0xFFFFFFFFFF) {
+    mantissa_bytes = 5;
+  } else if (mantissa <= 0xFFFFFFFFFFFF) {
+    mantissa_bytes = 6;
+  } else if (mantissa <= 0xFFFFFFFFFFFFFF) {
+    mantissa_bytes = 7;
   } else {
     mantissa_bytes = 8;
   }
@@ -229,7 +293,36 @@ static void enc_encode_float(encoder_t *e, const char *text) {
     enc_write_byte(e, (uint8_t)(mantissa >> 8));
     enc_write_byte(e, (uint8_t)mantissa);
     break;
+  case 3:
+    enc_write_byte(e, (uint8_t)(mantissa >> 16));
+    enc_write_byte(e, (uint8_t)(mantissa >> 8));
+    enc_write_byte(e, (uint8_t)mantissa);
+    break;
   case 4:
+    enc_write_byte(e, (uint8_t)(mantissa >> 24));
+    enc_write_byte(e, (uint8_t)(mantissa >> 16));
+    enc_write_byte(e, (uint8_t)(mantissa >> 8));
+    enc_write_byte(e, (uint8_t)mantissa);
+    break;
+  case 5:
+    enc_write_byte(e, (uint8_t)(mantissa >> 32));
+    enc_write_byte(e, (uint8_t)(mantissa >> 24));
+    enc_write_byte(e, (uint8_t)(mantissa >> 16));
+    enc_write_byte(e, (uint8_t)(mantissa >> 8));
+    enc_write_byte(e, (uint8_t)mantissa);
+    break;
+  case 6:
+    enc_write_byte(e, (uint8_t)(mantissa >> 40));
+    enc_write_byte(e, (uint8_t)(mantissa >> 32));
+    enc_write_byte(e, (uint8_t)(mantissa >> 24));
+    enc_write_byte(e, (uint8_t)(mantissa >> 16));
+    enc_write_byte(e, (uint8_t)(mantissa >> 8));
+    enc_write_byte(e, (uint8_t)mantissa);
+    break;
+  case 7:
+    enc_write_byte(e, (uint8_t)(mantissa >> 48));
+    enc_write_byte(e, (uint8_t)(mantissa >> 40));
+    enc_write_byte(e, (uint8_t)(mantissa >> 32));
     enc_write_byte(e, (uint8_t)(mantissa >> 24));
     enc_write_byte(e, (uint8_t)(mantissa >> 16));
     enc_write_byte(e, (uint8_t)(mantissa >> 8));
@@ -281,6 +374,88 @@ static void enc_encode_bytes(encoder_t *e, const uint8_t *data, size_t len) {
   }
 
   enc_write_bytes(e, data, len);
+}
+
+static void enc_encode_bigint(encoder_t *e, const char *text) {
+  if (!text || !*text)
+    return;
+
+  bool neg = false;
+  if (*text == '-') {
+    neg = true;
+    text++;
+  }
+
+  size_t len = strlen(text);
+  if (len == 0)
+    return;
+
+  size_t groups = len / 3;
+  size_t rem = len % 3;
+  size_t total_bits = 1 + groups * 10;
+  if (rem == 2)
+    total_bits += 7;
+  else if (rem == 1)
+    total_bits += 4;
+
+  size_t byte_count = (total_bits + 7) / 8;
+  uint8_t *bits = calloc(1, byte_count);
+
+  uint8_t current = 0;
+  int bit_offset = 0;
+  size_t byte_idx = 0;
+
+#define WRITE_BIT(b)                                                           \
+  do {                                                                         \
+    current = (current << 1) | ((b) & 1);                                      \
+    bit_offset++;                                                              \
+    if (bit_offset == 8) {                                                     \
+      bits[byte_idx++] = current;                                              \
+      current = 0;                                                             \
+      bit_offset = 0;                                                          \
+    }                                                                          \
+  } while (0)
+
+  WRITE_BIT(neg ? 1 : 0);
+
+  for (size_t i = 0; i < len;) {
+    size_t rem_group = len - i;
+    int val;
+    int num_bits;
+    if (rem_group >= 3) {
+      val = (text[i] - '0') * 100 + (text[i + 1] - '0') * 10 +
+            (text[i + 2] - '0');
+      num_bits = 10;
+      i += 3;
+    } else if (rem_group == 2) {
+      val = (text[i] - '0') * 10 + (text[i + 1] - '0');
+      num_bits = 7;
+      i += 2;
+    } else {
+      val = text[i] - '0';
+      num_bits = 4;
+      i += 1;
+    }
+    for (int b = num_bits - 1; b >= 0; b--) {
+      WRITE_BIT((val >> b) & 1);
+    }
+  }
+
+  if (bit_offset > 0) {
+    current <<= (8 - bit_offset);
+    bits[byte_idx++] = current;
+  }
+
+#undef WRITE_BIT
+
+  uint8_t *payload = malloc(1 + byte_count);
+  payload[0] = (uint8_t)len;
+  memcpy(payload + 1, bits, byte_count);
+
+  enc_encode_bytes(e, payload, 1 + byte_count);
+
+  free(payload);
+  free(bits);
 }
 
 static void enc_encode_simple(encoder_t *e, uint8_t value) {
@@ -439,18 +614,54 @@ static void enc_encode_node_value(encoder_t *e, mm_value_t *val) {
     if (val->tag.is_null) {
       enc_encode_simple(&tmp, MM_SIMPLE_NULLBYTES);
     } else {
-      enc_encode_bytes(&tmp, (const uint8_t *)val->text, strlen(val->text));
+      size_t decoded_len = 0;
+      uint8_t *decoded =
+          mc_base64_decode_url(val->text, strlen(val->text), &decoded_len);
+      if (decoded) {
+        enc_encode_bytes(&tmp, decoded, decoded_len);
+        free(decoded);
+      }
+    }
+    break;
+
+  case MM_VALUE_MEDIA:
+  case MM_VALUE_IMAGE:
+  case MM_VALUE_VIDEO:
+    if (val->tag.is_null) {
+      enc_encode_simple(&tmp, MM_SIMPLE_NULLBYTES);
+    } else {
+      size_t decoded_len = 0;
+      uint8_t *decoded =
+          mc_base64_decode_url(val->text, strlen(val->text), &decoded_len);
+      if (decoded) {
+        enc_encode_bytes(&tmp, decoded, decoded_len);
+        free(decoded);
+      }
+    }
+    break;
+
+  case MM_VALUE_DECIMAL:
+    if (val->tag.is_null) {
+      enc_encode_simple(&tmp, MM_SIMPLE_NULLFLOAT);
+    } else {
+      enc_encode_float(&tmp, val->text);
     }
     break;
 
   case MM_VALUE_EMAIL:
   case MM_VALUE_URL:
-  case MM_VALUE_DECIMAL:
-  case MM_VALUE_BIGINT:
     if (val->tag.is_null) {
       enc_encode_simple(&tmp, MM_SIMPLE_NULLSTRING);
     } else {
       enc_encode_string(&tmp, val->text);
+    }
+    break;
+
+  case MM_VALUE_BIGINT:
+    if (val->tag.is_null) {
+      enc_encode_simple(&tmp, MM_SIMPLE_NULLSTRING);
+    } else {
+      enc_encode_bigint(&tmp, val->text);
     }
     break;
 
@@ -479,19 +690,35 @@ static void enc_encode_node_value(encoder_t *e, mm_value_t *val) {
     break;
 
   case MM_VALUE_DATE:
-  case MM_VALUE_TIME:
     if (val->tag.is_null) {
       enc_encode_simple(&tmp, MM_SIMPLE_NULLINT);
     } else {
       struct tm tm = {0};
-      if (sscanf(val->text, "%d-%d-%d %d:%d:%d", &tm.tm_year, &tm.tm_mon,
-                 &tm.tm_mday, &tm.tm_hour, &tm.tm_min, &tm.tm_sec) >= 3) {
+      if (sscanf(val->text, "%d-%d-%d", &tm.tm_year, &tm.tm_mon, &tm.tm_mday) >=
+          3) {
         tm.tm_year -= 1900;
         tm.tm_mon -= 1;
         tm.tm_isdst = -1;
         int64_t epoch = (int64_t)timegm(&tm);
+        int64_t days = epoch / 86400;
         char buf[24];
-        snprintf(buf, sizeof(buf), "%lld", (long long)epoch);
+        snprintf(buf, sizeof(buf), "%lld", (long long)days);
+        enc_encode_i(&tmp, MM_PREFIX_POSITIVEINT, buf);
+      } else {
+        enc_encode_i(&tmp, MM_PREFIX_POSITIVEINT, "0");
+      }
+    }
+    break;
+
+  case MM_VALUE_TIME:
+    if (val->tag.is_null) {
+      enc_encode_simple(&tmp, MM_SIMPLE_NULLINT);
+    } else {
+      int hour = 0, minute = 0, sec = 0;
+      if (sscanf(val->text, "%d:%d:%d", &hour, &minute, &sec) >= 2) {
+        int total_secs = hour * 3600 + minute * 60 + sec;
+        char buf[24];
+        snprintf(buf, sizeof(buf), "%d", total_secs);
         enc_encode_i(&tmp, MM_PREFIX_POSITIVEINT, buf);
       } else {
         enc_encode_i(&tmp, MM_PREFIX_POSITIVEINT, "0");

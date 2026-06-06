@@ -3,6 +3,7 @@
 #include "../ir/mc_value_type.h"
 #include "mc_constants.h"
 #include <errno.h>
+#include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -106,6 +107,88 @@ static const char *mime_id_to_string(uint8_t id) {
   default:
     return "";
   }
+}
+
+static const char base64_table[] =
+    "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+
+static int base64_decode_char(char c) {
+  if (c >= 'A' && c <= 'Z')
+    return c - 'A';
+  if (c >= 'a' && c <= 'z')
+    return c - 'a' + 26;
+  if (c >= '0' && c <= '9')
+    return c - '0' + 52;
+  if (c == '+')
+    return 62;
+  if (c == '/')
+    return 63;
+  return 0xFF;
+}
+
+static uint8_t *mc_base64_decode(const char *text, size_t text_len,
+                                 size_t *decoded_len) {
+  if (!text || text_len == 0) {
+    *decoded_len = 0;
+    return NULL;
+  }
+  size_t padding = 0;
+  if (text_len > 0 && text[text_len - 1] == '=')
+    padding++;
+  if (text_len > 1 && text[text_len - 2] == '=')
+    padding++;
+  size_t out_len = text_len / 4 * 3 - padding;
+  uint8_t *out = (uint8_t *)malloc(out_len + 1);
+  if (!out) {
+    *decoded_len = 0;
+    return NULL;
+  }
+  size_t o = 0;
+  for (size_t i = 0; i < text_len; i += 4) {
+    uint8_t a = (uint8_t)base64_decode_char(text[i]);
+    uint8_t b =
+        (i + 1 < text_len) ? (uint8_t)base64_decode_char(text[i + 1]) : 0;
+    uint8_t c =
+        (i + 2 < text_len) ? (uint8_t)base64_decode_char(text[i + 2]) : 0;
+    uint8_t d =
+        (i + 3 < text_len) ? (uint8_t)base64_decode_char(text[i + 3]) : 0;
+    if (o < out_len)
+      out[o++] = (uint8_t)((a << 2) | (b >> 4));
+    if (o < out_len)
+      out[o++] = (uint8_t)((b << 4) | (c >> 2));
+    if (o < out_len)
+      out[o++] = (uint8_t)((c << 6) | d);
+  }
+  *decoded_len = out_len;
+  return out;
+}
+
+static char *mc_base64_encode(const uint8_t *data, size_t len) {
+  if (!data || len == 0) {
+    char *empty = (char *)malloc(1);
+    if (empty)
+      empty[0] = '\0';
+    return empty;
+  }
+  size_t out_len = (len + 2) / 3 * 4;
+  char *out = (char *)malloc(out_len + 1);
+  if (!out)
+    return NULL;
+  size_t i = 0, o = 0;
+  while (i < len) {
+    uint32_t n = (uint32_t)data[i] << 16;
+    if (i + 1 < len)
+      n |= (uint32_t)data[i + 1] << 8;
+    if (i + 2 < len)
+      n |= data[i + 2];
+    out[o++] = base64_table[(n >> 18) & 0x3F];
+    out[o++] = base64_table[(n >> 12) & 0x3F];
+    out[o++] = (i + 1 < len) ? base64_table[(n >> 6) & 0x3F] : '=';
+    out[o++] = (i + 2 < len) ? base64_table[n & 0x3F] : '=';
+    i += 3;
+  }
+  out[out_len] = '\0';
+  return out;
 }
 
 static mm_node_t *dec_decode_simple(mm_decoder_t *d, uint8_t b) {
@@ -286,7 +369,96 @@ static mm_node_t *dec_decode_string(mm_decoder_t *d, uint8_t b) {
   return node;
 }
 
-static mm_node_t *dec_decode_bytes(mm_decoder_t *d, uint8_t b) {
+static char *dec_decode_bigint(const uint8_t *data, size_t len) {
+  if (!data || len <= 1) {
+    return strdup("0");
+  }
+
+  // data[0] is digit_count
+  size_t digit_len = (size_t)data[0];
+  if (digit_len == 0) {
+    return strdup("0");
+  }
+
+  // Bit-packed data starts at data[1]
+  const uint8_t *bits = data + 1;
+  size_t bits_len = len - 1;
+  size_t bit_pos = 0;
+
+  // Read sign bit
+  int byte_idx = (int)(bit_pos / 8);
+  int bit_in_byte = 7 - (int)(bit_pos % 8);
+  int sign = (bits[byte_idx] >> bit_in_byte) & 1;
+  bit_pos++;
+
+  // Buffer for result digits
+  char *result = (char *)malloc(digit_len + 2);
+  size_t pos = 0;
+
+  size_t remaining = digit_len;
+  while (remaining > 0) {
+    int val = 0;
+    int num_bits;
+    if (remaining >= 3) {
+      num_bits = 10;
+    } else if (remaining == 2) {
+      num_bits = 7;
+    } else {
+      num_bits = 4;
+    }
+
+    // Read num_bits bits
+    for (int i = 0; i < num_bits; i++) {
+      if (bit_pos >= bits_len * 8)
+        break;
+      byte_idx = (int)(bit_pos / 8);
+      bit_in_byte = 7 - (int)(bit_pos % 8);
+      int b = (bits[byte_idx] >> bit_in_byte) & 1;
+      val = (val << 1) | b;
+      bit_pos++;
+    }
+
+    // Format with leading zeros
+    if (num_bits == 10) {
+      pos += sprintf(result + pos, "%03d", val);
+      remaining -= 3;
+    } else if (num_bits == 7) {
+      pos += sprintf(result + pos, "%02d", val);
+      remaining -= 2;
+    } else {
+      pos += sprintf(result + pos, "%d", val);
+      remaining -= 1;
+    }
+  }
+
+  result[pos] = '\0';
+
+  // Trim leading zeros
+  char *trimmed = result;
+  while (*trimmed == '0' && *(trimmed + 1) != '\0') {
+    trimmed++;
+  }
+
+  char *final_str;
+  if (sign) {
+    final_str = (char *)malloc(strlen(trimmed) + 2);
+    final_str[0] = '-';
+    strcpy(final_str + 1, trimmed);
+  } else {
+    final_str = strdup(trimmed);
+  }
+
+  if (trimmed != result) {
+    // trimmed points into result, free result instead
+    free(result);
+  } else {
+    free(result);
+  }
+
+  return final_str;
+}
+
+static mm_node_t *dec_decode_bytes(mm_decoder_t *d, uint8_t b, mm_tag_t *tag) {
   int extra_len = mm_bytes_extra_len(b);
   int inline_len = mm_bytes_inline_len(b);
   size_t bytes_len;
@@ -304,18 +476,30 @@ static mm_node_t *dec_decode_bytes(mm_decoder_t *d, uint8_t b) {
   mm_node_t *node = mm_node_new_value();
   mm_value_t *val = &node->data.value;
   mm_tag_init(&val->tag);
-  val->tag.type = MM_VALUE_BYTES;
+  if (tag) {
+    val->tag.type = tag->type;
+  } else {
+    val->tag.type = MM_VALUE_BYTES;
+  }
   val->text = NULL;
 
   if (bytes_len > 0) {
     const uint8_t *raw = dec_read_bytes(d, bytes_len);
     if (raw) {
-      char *hex = (char *)malloc(bytes_len * 2 + 1);
-      for (size_t i = 0; i < bytes_len; i++) {
-        sprintf(hex + i * 2, "%02x", raw[i]);
+      if (tag && tag->type == MM_VALUE_BIGINT) {
+        val->text = dec_decode_bigint(raw, bytes_len);
+      } else if (tag && tag->type == MM_VALUE_UUID && bytes_len == 16) {
+        char uuid_buf[37];
+        snprintf(uuid_buf, sizeof(uuid_buf),
+                 "%02x%02x%02x%02x-%02x%02x-%02x%02x-%02x%02x-%02x%02x%"
+                 "02x%02x%02x%02x",
+                 raw[0], raw[1], raw[2], raw[3], raw[4], raw[5], raw[6], raw[7],
+                 raw[8], raw[9], raw[10], raw[11], raw[12], raw[13], raw[14],
+                 raw[15]);
+        val->text = strdup(uuid_buf);
+      } else {
+        val->text = mc_base64_encode(raw, bytes_len);
       }
-      hex[bytes_len * 2] = '\0';
-      val->text = hex;
     }
   }
   if (!val->text) {
@@ -324,6 +508,8 @@ static mm_node_t *dec_decode_bytes(mm_decoder_t *d, uint8_t b) {
 
   return node;
 }
+
+static mm_node_t *dec_decode_node(mm_decoder_t *d, mm_tag_t *parent_tag);
 
 static mm_node_t *dec_decode_array(mm_decoder_t *d, size_t total_len,
                                    mm_tag_t *parent_tag) {
@@ -338,7 +524,31 @@ static mm_node_t *dec_decode_array(mm_decoder_t *d, size_t total_len,
 
   size_t end_offset = d->offset + total_len;
   while (d->offset < end_offset) {
-    mm_node_t *item = mm_decoder_decode(d);
+    mm_tag_t item_tag;
+    mm_tag_init(&item_tag);
+    if (parent_tag) {
+      mm_tag_inherit(&item_tag, parent_tag);
+      if (parent_tag->child_type == MM_VALUE_UNKNOWN) {
+        if (item_tag.type == MM_VALUE_UNKNOWN) {
+          item_tag.type = parent_tag->type;
+        }
+        if (!item_tag.enums && parent_tag->enums) {
+          item_tag.enums = strdup(parent_tag->enums);
+        }
+        if (!item_tag.mime && parent_tag->mime) {
+          item_tag.mime = strdup(parent_tag->mime);
+        }
+        if (item_tag.version == MM_TAG_DEFAULT_VERSION &&
+            parent_tag->version != MM_TAG_DEFAULT_VERSION) {
+          item_tag.version = parent_tag->version;
+        }
+        if (item_tag.location_offset == 0 && parent_tag->location_offset != 0) {
+          item_tag.location_offset = parent_tag->location_offset;
+        }
+      }
+    }
+    mm_node_t *item = dec_decode_node(d, &item_tag);
+    mm_tag_cleanup(&item_tag);
     if (!item)
       break;
     mm_array_add_item(node, item);
@@ -380,7 +590,32 @@ static mm_node_t *dec_decode_object(mm_decoder_t *d, size_t total_len,
       mm_decoder_decode(d);
       continue;
     }
-    mm_node_t *val_node = mm_decoder_decode(d);
+    mm_tag_t field_tag;
+    mm_tag_init(&field_tag);
+    if (parent_tag) {
+      mm_tag_inherit(&field_tag, parent_tag);
+      if (parent_tag->child_type == MM_VALUE_UNKNOWN) {
+        if (field_tag.type == MM_VALUE_UNKNOWN) {
+          field_tag.type = parent_tag->type;
+        }
+        if (!field_tag.enums && parent_tag->enums) {
+          field_tag.enums = strdup(parent_tag->enums);
+        }
+        if (!field_tag.mime && parent_tag->mime) {
+          field_tag.mime = strdup(parent_tag->mime);
+        }
+        if (field_tag.version == MM_TAG_DEFAULT_VERSION &&
+            parent_tag->version != MM_TAG_DEFAULT_VERSION) {
+          field_tag.version = parent_tag->version;
+        }
+        if (field_tag.location_offset == 0 &&
+            parent_tag->location_offset != 0) {
+          field_tag.location_offset = parent_tag->location_offset;
+        }
+      }
+    }
+    mm_node_t *val_node = dec_decode_node(d, &field_tag);
+    mm_tag_cleanup(&field_tag);
     if (val_node) {
       mm_object_add_field(node, key_item->data.value.text, val_node);
     }
@@ -600,14 +835,14 @@ static bool dec_parse_one_tag_entry(mm_decoder_t *d, mm_tag_t *tag) {
   }
 
   case MM_TAG_KMIME: {
-    uint8_t mime_id;
-    if (payload < 7) {
-      mime_id = (uint8_t)payload;
-    } else {
+    int nbytes = payload + 1;
+    uint8_t mime_id = 0;
+    for (int i = 0; i < nbytes; i++) {
       mime_id = dec_read_byte(d);
     }
     free(tag->mime);
     tag->mime = strdup(mime_id_to_string(mime_id));
+    tag->type = MM_VALUE_MEDIA;
     return true;
   }
 
@@ -771,14 +1006,14 @@ static bool dec_parse_one_tag_entry(mm_decoder_t *d, mm_tag_t *tag) {
   }
 
   case MM_TAG_KCHILDMIME: {
-    uint8_t mime_id;
-    if (payload < 7) {
-      mime_id = (uint8_t)payload;
-    } else {
+    int nbytes = payload + 1;
+    uint8_t mime_id = 0;
+    for (int i = 0; i < nbytes; i++) {
       mime_id = dec_read_byte(d);
     }
     free(tag->child_mime);
     tag->child_mime = strdup(mime_id_to_string(mime_id));
+    tag->child_type = MM_VALUE_MEDIA;
     return true;
   }
 
@@ -941,7 +1176,7 @@ static mm_node_t *dec_decode_tag(mm_decoder_t *d, uint8_t b,
       d->offset += remaining;
     }
   } else {
-    inner = mm_decoder_decode(d);
+    inner = dec_decode_node(d, &tag);
     if (inner) {
       if (inner->type == MM_NODE_VALUE) {
         mm_tag_merge(&inner->data.value.tag, &tag);
@@ -953,24 +1188,68 @@ static mm_node_t *dec_decode_tag(mm_decoder_t *d, uint8_t b,
         mm_value_t *val = &inner->data.value;
         if (val->tag.type == MM_VALUE_DATETIME && val->text &&
             val->text[0] != '\0') {
-          long long epoch = strtoll(val->text, NULL, 10);
-          time_t t = (time_t)epoch;
-          struct tm tm;
-          gmtime_r(&t, &tm);
-          char buf[32];
-          snprintf(buf, sizeof(buf), "%04d-%02d-%02d %02d:%02d:%02d",
-                   tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday, tm.tm_hour,
-                   tm.tm_min, tm.tm_sec);
-          free(val->text);
-          val->text = strdup(buf);
+          char *end = NULL;
+          long long ts = strtoll(val->text, &end, 10);
+          if (end && *end == '\0') {
+            time_t t = (time_t)ts + val->tag.location_offset * 3600;
+            struct tm tm;
+            gmtime_r(&t, &tm);
+            char buf[32];
+            strftime(buf, sizeof(buf), "%Y-%m-%d %H:%M:%S", &tm);
+            free(val->text);
+            val->text = strdup(buf);
+          }
+        } else if (val->tag.type == MM_VALUE_DATE && val->text &&
+                   val->text[0] != '\0') {
+          char *end = NULL;
+          long long days = strtoll(val->text, &end, 10);
+          if (end && *end == '\0') {
+            time_t t = (time_t)days * 86400 + val->tag.location_offset * 3600;
+            struct tm tm;
+            gmtime_r(&t, &tm);
+            char buf[16];
+            strftime(buf, sizeof(buf), "%Y-%m-%d", &tm);
+            free(val->text);
+            val->text = strdup(buf);
+          }
+        } else if (val->tag.type == MM_VALUE_TIME && val->text &&
+                   val->text[0] != '\0') {
+          char *end = NULL;
+          long long secs = strtoll(val->text, &end, 10);
+          if (end && *end == '\0') {
+            if (secs > 86399)
+              secs = 86399;
+            if (secs < 0)
+              secs = 0;
+            int hour = (int)(secs / 3600);
+            int min = (int)((secs % 3600) / 60);
+            int sec = (int)(secs % 60);
+            char buf[16];
+            snprintf(buf, sizeof(buf), "%02d:%02d:%02d", hour, min, sec);
+            free(val->text);
+            val->text = strdup(buf);
+          }
         } else if (val->tag.type == MM_VALUE_UUID && val->text &&
-                   strlen(val->text) == 32) {
-          char uuid_str[37];
-          snprintf(uuid_str, sizeof(uuid_str),
-                   "%8.8s-%4.4s-%4.4s-%4.4s-%12.12s", val->text, val->text + 8,
-                   val->text + 12, val->text + 16, val->text + 20);
-          free(val->text);
-          val->text = strdup(uuid_str);
+                   val->text[0] != '\0') {
+          size_t len = strlen(val->text);
+          if (len == 24) {
+            size_t decoded_len = 0;
+            unsigned char *decoded =
+                mc_base64_decode(val->text, len, &decoded_len);
+            if (decoded && decoded_len == 16) {
+              char uuid_buf[37];
+              snprintf(uuid_buf, sizeof(uuid_buf),
+                       "%02x%02x%02x%02x-%02x%02x-%02x%02x-%02x%02x-%02x%02x%"
+                       "02x%02x%02x%02x",
+                       decoded[0], decoded[1], decoded[2], decoded[3],
+                       decoded[4], decoded[5], decoded[6], decoded[7],
+                       decoded[8], decoded[9], decoded[10], decoded[11],
+                       decoded[12], decoded[13], decoded[14], decoded[15]);
+              free(val->text);
+              val->text = strdup(uuid_buf);
+            }
+            free(decoded);
+          }
         }
       } else if (inner->type == MM_NODE_ARRAY) {
         mm_tag_merge(&inner->data.array.tag, &tag);
@@ -991,6 +1270,162 @@ static mm_node_t *dec_decode_tag(mm_decoder_t *d, uint8_t b,
   return inner;
 }
 
+static void dec_apply_tag_conversion(mm_value_t *val) {
+  if (!val || !val->text || val->text[0] == '\0')
+    return;
+
+  if (val->tag.type == MM_VALUE_TIME) {
+    char *end = NULL;
+    long long secs = strtoll(val->text, &end, 10);
+    if (end && *end == '\0') {
+      if (secs > 86399)
+        secs = 86399;
+      if (secs < 0)
+        secs = 0;
+      int hour = (int)(secs / 3600);
+      int min = (int)((secs % 3600) / 60);
+      int sec = (int)(secs % 60);
+      char buf[16];
+      snprintf(buf, sizeof(buf), "%02d:%02d:%02d", hour, min, sec);
+      free(val->text);
+      val->text = strdup(buf);
+    }
+  } else if (val->tag.type == MM_VALUE_DATE) {
+    char *end = NULL;
+    long long days = strtoll(val->text, &end, 10);
+    if (end && *end == '\0') {
+      time_t t = (time_t)days * 86400 + val->tag.location_offset * 3600;
+      struct tm tm;
+      gmtime_r(&t, &tm);
+      char buf[16];
+      strftime(buf, sizeof(buf), "%Y-%m-%d", &tm);
+      free(val->text);
+      val->text = strdup(buf);
+    }
+  } else if (val->tag.type == MM_VALUE_DATETIME) {
+    char *end = NULL;
+    long long ts = strtoll(val->text, &end, 10);
+    if (end && *end == '\0') {
+      time_t t = (time_t)ts + val->tag.location_offset * 3600;
+      struct tm tm;
+      gmtime_r(&t, &tm);
+      char buf[32];
+      strftime(buf, sizeof(buf), "%Y-%m-%d %H:%M:%S", &tm);
+      free(val->text);
+      val->text = strdup(buf);
+    }
+  } else if (val->tag.type == MM_VALUE_UUID) {
+    size_t len = strlen(val->text);
+    if (len == 24) {
+      size_t decoded_len = 0;
+      unsigned char *decoded = mc_base64_decode(val->text, len, &decoded_len);
+      if (decoded && decoded_len == 16) {
+        char uuid_buf[37];
+        snprintf(uuid_buf, sizeof(uuid_buf),
+                 "%02x%02x%02x%02x-%02x%02x-%02x%02x-%02x%02x-%02x%02x%"
+                 "02x%02x%02x%02x",
+                 decoded[0], decoded[1], decoded[2], decoded[3], decoded[4],
+                 decoded[5], decoded[6], decoded[7], decoded[8], decoded[9],
+                 decoded[10], decoded[11], decoded[12], decoded[13],
+                 decoded[14], decoded[15]);
+        free(val->text);
+        val->text = strdup(uuid_buf);
+      }
+      free(decoded);
+    }
+  } else if (val->tag.type == MM_VALUE_ENUMS && val->tag.enums && val->text &&
+             val->text[0] != '\0') {
+    // Only convert if text is a pure numeric string (enum index),
+    // not if it's already been converted to an enum value string
+    char *endptr = NULL;
+    long long idx = strtoll(val->text, &endptr, 10);
+    if (endptr == val->text || *endptr != '\0') {
+      return;
+    }
+    const char *enums = val->tag.enums;
+    int current = 0;
+    const char *start = enums;
+    const char *p = enums;
+    while (*p) {
+      if (*p == '|') {
+        if (current == idx) {
+          size_t len = (size_t)(p - start);
+          char *enum_str = (char *)malloc(len + 1);
+          if (enum_str) {
+            memcpy(enum_str, start, len);
+            enum_str[len] = '\0';
+            free(val->text);
+            val->text = enum_str;
+          }
+          break;
+        }
+        current++;
+        start = p + 1;
+      }
+      p++;
+    }
+    if (current == idx && val->text && val->text[0] != '\0') {
+      size_t len = (size_t)(p - start);
+      char *enum_str = (char *)malloc(len + 1);
+      if (enum_str) {
+        memcpy(enum_str, start, len);
+        enum_str[len] = '\0';
+        free(val->text);
+        val->text = enum_str;
+      }
+    }
+  }
+}
+
+static mm_node_t *dec_decode_node(mm_decoder_t *d, mm_tag_t *parent_tag) {
+  if (!d || d->offset >= d->size) {
+    return NULL;
+  }
+
+  errno = 0;
+  uint8_t b = dec_read_byte(d);
+  if (errno)
+    return NULL;
+
+  int prefix = mm_prefix_of(b);
+  mm_node_t *node = NULL;
+
+  switch (prefix) {
+  case MM_PREFIX_SIMPLE:
+    node = dec_decode_simple(d, b);
+    break;
+  case MM_PREFIX_POSITIVEINT:
+    node = dec_decode_int(d, b, 1);
+    break;
+  case MM_PREFIX_NEGATIVEINT:
+    node = dec_decode_int(d, b, 0);
+    break;
+  case MM_PREFIX_FLOAT:
+    node = dec_decode_float(d, b);
+    break;
+  case MM_PREFIX_STRING:
+    node = dec_decode_string(d, b);
+    break;
+  case MM_PREFIX_BYTES:
+    return dec_decode_bytes(d, b, parent_tag);
+  case MM_PREFIX_CONTAINER:
+    return dec_decode_container(d, b, parent_tag);
+  case MM_PREFIX_TAG:
+    return dec_decode_tag(d, b, parent_tag);
+  default:
+    return NULL;
+  }
+
+  // For VALUE nodes, apply parent tag type and conversion
+  if (node && node->type == MM_NODE_VALUE && parent_tag) {
+    mm_value_t *val = &node->data.value;
+    mm_tag_merge(&val->tag, parent_tag);
+    dec_apply_tag_conversion(val);
+  }
+
+  return node;
+}
+
 mm_decoder_t *mm_decoder_new(const uint8_t *data, size_t size) {
   mm_decoder_t *d = (mm_decoder_t *)malloc(sizeof(mm_decoder_t));
   if (!d)
@@ -1004,35 +1439,5 @@ mm_decoder_t *mm_decoder_new(const uint8_t *data, size_t size) {
 void mm_decoder_free(mm_decoder_t *d) { free(d); }
 
 mm_node_t *mm_decoder_decode(mm_decoder_t *d) {
-  if (!d || d->offset >= d->size) {
-    return NULL;
-  }
-
-  errno = 0;
-  uint8_t b = dec_read_byte(d);
-  if (errno)
-    return NULL;
-
-  int prefix = mm_prefix_of(b);
-
-  switch (prefix) {
-  case MM_PREFIX_SIMPLE:
-    return dec_decode_simple(d, b);
-  case MM_PREFIX_POSITIVEINT:
-    return dec_decode_int(d, b, 1);
-  case MM_PREFIX_NEGATIVEINT:
-    return dec_decode_int(d, b, 0);
-  case MM_PREFIX_FLOAT:
-    return dec_decode_float(d, b);
-  case MM_PREFIX_STRING:
-    return dec_decode_string(d, b);
-  case MM_PREFIX_BYTES:
-    return dec_decode_bytes(d, b);
-  case MM_PREFIX_CONTAINER:
-    return dec_decode_container(d, b, NULL);
-  case MM_PREFIX_TAG:
-    return dec_decode_tag(d, b, NULL);
-  default:
-    return NULL;
-  }
+  return dec_decode_node(d, NULL);
 }

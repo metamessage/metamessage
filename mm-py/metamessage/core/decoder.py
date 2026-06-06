@@ -311,8 +311,9 @@ class Decoder:
             l -= n
 
         if tag.is_null:
-            node = self._decode_null_value(tag, path, prefix)
-            if node is not None:
+            result = self._decode_null_value(tag, path, prefix)
+            if result is not None:
+                node, _ = result
                 length = l1 + 1 + l2
                 return node, length
 
@@ -358,6 +359,8 @@ class Decoder:
             return Val(data='', text='', tag=tag, path=path), 0
         elif tag.type == v.Bigint:
             return Val(data=0, text='0', tag=tag, path=path), 0
+        elif tag.type == v.Media:
+            return Val(data=b'', text='', tag=tag, path=path), 0
         elif tag.type == v.Url:
             return Val(data='', text='', tag=tag, path=path), 0
         elif tag.type == v.Ip:
@@ -436,13 +439,9 @@ class Decoder:
             tag.version = self._read_varint(l)
             return 2 + l
         elif p == TagKey.Mime:
-            if l < 7:
-                tag.mime = str(l)
-            else:
-                tb = self._read_byte()
-                tag.mime = str(tb)
-                return 2
-            return 1
+            tag.type = ValueType.Media
+            tag.mime = str(self._read_varint(l))
+            return 2 + l
         elif p == TagKey.ChildDesc:
             n, s = self._read_length_str(l, True, True)
             tag.child_desc = s
@@ -493,13 +492,8 @@ class Decoder:
             tag.child_version = self._read_varint(l)
             return 2 + l
         elif p == TagKey.ChildMime:
-            if l < 7:
-                tag.child_mime = str(l)
-            else:
-                tb = self._read_byte()
-                tag.child_mime = str(tb)
-                return 2
-            return 1
+            tag.child_mime = str(self._read_varint(l))
+            return 2 + l
         else:
             raise ValueError("invalid data")
 
@@ -670,7 +664,9 @@ class Decoder:
                 data = None
                 text = ""
             else:
-                d = datetime.fromtimestamp(v, tz=timezone.utc)
+                loc_hours = tag.location if tag.location else 0
+                adjusted_v = v + loc_hours * 3600
+                d = datetime.fromtimestamp(adjusted_v, tz=timezone.utc)
                 data = d
                 text = d.strftime('%Y-%m-%d %H:%M:%S')
         elif tag.type == ValueType.Date:
@@ -875,6 +871,10 @@ class Decoder:
             except ValueError:
                 data = text
         elif tag.type == ValueType.Bytes:
+            data = bs
+            import base64
+            text = base64.b64encode(bs).decode('utf-8')
+        elif tag.type == ValueType.Media:
             data = bs
             import base64
             text = base64.b64encode(bs).decode('utf-8')

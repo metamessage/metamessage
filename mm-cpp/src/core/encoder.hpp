@@ -11,6 +11,53 @@
 #include <string>
 #include <vector>
 
+namespace {
+
+std::string base64_decode(const std::string &text) {
+  if (text.empty())
+    return {};
+
+  auto base64_char = [](char c) -> uint8_t {
+    if (c >= 'A' && c <= 'Z')
+      return (uint8_t)(c - 'A');
+    if (c >= 'a' && c <= 'z')
+      return (uint8_t)(c - 'a' + 26);
+    if (c >= '0' && c <= '9')
+      return (uint8_t)(c - '0' + 52);
+    if (c == '-' || c == '+')
+      return 62;
+    if (c == '_' || c == '/')
+      return 63;
+    return 0xFF;
+  };
+
+  size_t padding = 0;
+  if (text.size() > 0 && text.back() == '=')
+    padding++;
+  if (text.size() > 1 && text[text.size() - 2] == '=')
+    padding++;
+
+  size_t out_len = text.size() / 4 * 3 - padding;
+  std::string out(out_len, '\0');
+  size_t o = 0;
+
+  for (size_t i = 0; i < text.size(); i += 4) {
+    uint8_t a = base64_char(text[i]);
+    uint8_t b = (i + 1 < text.size()) ? base64_char(text[i + 1]) : 0;
+    uint8_t c = (i + 2 < text.size()) ? base64_char(text[i + 2]) : 0;
+    uint8_t d = (i + 3 < text.size()) ? base64_char(text[i + 3]) : 0;
+    if (o < out_len)
+      out[o++] = (uint8_t)((a << 2) | (b >> 4));
+    if (o < out_len)
+      out[o++] = (uint8_t)((b << 4) | (c >> 2));
+    if (o < out_len)
+      out[o++] = (uint8_t)((c << 6) | d);
+  }
+  return out;
+}
+
+} // anonymous namespace
+
 namespace mmc {
 namespace core {
 
@@ -547,17 +594,27 @@ private:
       break;
     }
 
-    case ir::ValueType::Date:
-    case ir::ValueType::Time: {
+    case ir::ValueType::Date: {
       struct tm tm = {};
-      if (sscanf(val->text.c_str(), "%d-%d-%d %d:%d:%d", &tm.tm_year,
-                 &tm.tm_mon, &tm.tm_mday, &tm.tm_hour, &tm.tm_min,
-                 &tm.tm_sec) >= 3) {
+      if (sscanf(val->text.c_str(), "%d-%d-%d", &tm.tm_year, &tm.tm_mon,
+                 &tm.tm_mday) >= 3) {
         tm.tm_year -= 1900;
         tm.tm_mon -= 1;
         tm.tm_isdst = -1;
         time_t t = timegm(&tm);
-        n = encodeInt64(static_cast<int64_t>(t));
+        int64_t days = static_cast<int64_t>(t) / 86400;
+        n = encodeInt64(days);
+      } else {
+        n = encodeInt64(0);
+      }
+      break;
+    }
+
+    case ir::ValueType::Time: {
+      int hour = 0, minute = 0, sec = 0;
+      if (sscanf(val->text.c_str(), "%d:%d:%d", &hour, &minute, &sec) >= 2) {
+        int total_secs = hour * 3600 + minute * 60 + sec;
+        n = encodeInt64(total_secs);
       } else {
         n = encodeInt64(0);
       }
@@ -634,12 +691,31 @@ private:
       }
       break;
 
-    case ir::ValueType::Ip:
     case ir::ValueType::Bytes:
       if (tag->isNull)
         n = encodeSimple(SimpleNullBytes);
       else {
-        std::vector<uint8_t> bytes(val->text.begin(), val->text.end());
+        std::string decoded = base64_decode(val->text);
+        std::vector<uint8_t> bytes(decoded.begin(), decoded.end());
+        n = encodeBytes(bytes);
+      }
+      break;
+
+    case ir::ValueType::Ip:
+      if (tag->isNull)
+        n = encodeSimple(SimpleNullString);
+      else
+        n = encodeString(val->text);
+      break;
+
+    case ir::ValueType::Image:
+    case ir::ValueType::Video:
+    case ir::ValueType::Media:
+      if (tag->isNull)
+        n = encodeSimple(SimpleNullBytes);
+      else {
+        std::string decoded = base64_decode(val->text);
+        std::vector<uint8_t> bytes(decoded.begin(), decoded.end());
         n = encodeBytes(bytes);
       }
       break;

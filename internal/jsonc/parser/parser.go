@@ -858,6 +858,10 @@ func (p *Parser) parseObject(openLine int, path string, tag *ir.Tag) (*ir.Object
 		if ir.ValueTypeMap == tag.Type {
 			childTag.Inherit(tag)
 
+			if childTag.Example {
+				tag.IsEmpty = true
+			}
+
 			pa = fmt.Sprintf("%s[%s]", path, keyStr)
 		}
 		example := tag.Example || childTag.Example
@@ -884,17 +888,14 @@ func (p *Parser) parseObject(openLine int, path string, tag *ir.Tag) (*ir.Object
 		switch tag.Type {
 		case ir.ValueTypeMap:
 			err = tag.ValidateMap()
-			if err != nil {
-				err = fmt.Errorf("validate failed: %w", err)
-				return nil, err
-			}
 
 		case ir.ValueTypeObj:
 			err = tag.ValidateObj()
-			if err != nil {
-				err = fmt.Errorf("validate failed: %w", err)
-				return nil, err
-			}
+		}
+
+		if err != nil {
+			err = fmt.Errorf("validate failed: %w", err)
+			return nil, err
 		}
 	}
 
@@ -954,13 +955,20 @@ func (p *Parser) parseArray(openLine int, path string, tag *ir.Tag) (*ir.Array, 
 		}
 
 		var childTag *ir.Tag
-		if childTag, err = p.consumeCommentsFor(tok.Line); err != nil {
-			return nil, err
+		if openLine != tok.Line {
+			if childTag, err = p.consumeCommentsFor(tok.Line); err != nil {
+				return nil, err
+			}
 		}
+
 		if childTag == nil {
 			childTag = ir.NewTag()
 		}
 		childTag.Inherit(tag)
+
+		if childTag.Example {
+			tag.IsEmpty = true
+		}
 
 		pa := fmt.Sprintf("%s[%d]", path, i)
 		example := tag.Example || childTag.Example
@@ -983,17 +991,14 @@ func (p *Parser) parseArray(openLine int, path string, tag *ir.Tag) (*ir.Array, 
 		switch tag.Type {
 		case ir.ValueTypeArr:
 			err = tag.ValidateArr(arr.Items)
-			if err != nil {
-				err = fmt.Errorf("validate failed: %w", err)
-				return nil, err
-			}
 
 		case ir.ValueTypeVec:
 			err = tag.ValidateVec(arr.Items)
-			if err != nil {
-				err = fmt.Errorf("validate failed: %w", err)
-				return nil, err
-			}
+		}
+
+		if err != nil {
+			err = fmt.Errorf("validate failed: %w", err)
+			return nil, err
 		}
 	}
 

@@ -62,9 +62,15 @@ private:
   std::optional<ir::Tag> pendingTag_;
 
   void skipComments() {
+    size_t lastLine = 0;
     while (pos_ < tokens_.size()) {
       auto &tok = tokens_[pos_];
       if (tok.type == TokenType::Comment) {
+        if (lastLine > 0 && tok.line - lastLine > 1) {
+          pendingTag_.reset();
+        }
+        lastLine = tok.line;
+
         std::string comment = tok.literal;
         auto it = comment.find("mm:");
         if (it != std::string::npos) {
@@ -180,7 +186,12 @@ private:
   std::shared_ptr<ir::Node> parseObject() {
     ++pos_;
     auto obj = ir::makeObject();
-    skipComments();
+
+    // Save tag that was set before { (object-level tag from outer scope)
+    auto objTag = pendingTag_;
+    pendingTag_.reset();
+
+    skipComments(); // comments after { are for the first field, not the object
 
     while (pos_ < tokens_.size() && tokens_[pos_].type != TokenType::RBrace) {
       if (tokens_[pos_].type == TokenType::Comma) {
@@ -227,6 +238,7 @@ private:
       ++pos_;
     }
 
+    pendingTag_ = objTag;
     applyTagToNode(obj);
 
     return obj;

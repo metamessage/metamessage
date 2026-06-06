@@ -28,7 +28,7 @@ normalize() {
     python3 -c "
 import sys, json, re
 s = sys.stdin.read()
-s = re.sub(r'//[^\n]*', '', s)
+s = re.sub(r'^\s*//[^\n]*', '', s, flags=re.MULTILINE)
 s = re.sub(r'/\*[\s\S]*?\*/', '', s)
 s = re.sub(r',(\s*[}\]])', r'\1', s)
 try:

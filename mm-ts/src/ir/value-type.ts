@@ -32,6 +32,7 @@ export enum ValueType {
   Enums,
   Image,
   Video,
+  Media,
 }
 
 // 你要的字符串名字，按顺序对应
@@ -69,6 +70,7 @@ export const ValueTypeStr = [
   'enums',
   'image',
   'video',
+  'media',
 ];
 
 export function typeToString(value: ValueType): string {
@@ -141,6 +143,8 @@ export function stringToType(value: string): ValueType {
       return ValueType.Image;
     case 'video':
       return ValueType.Video;
+    case 'media':
+      return ValueType.Media;
     default:
       return ValueType.Unknown;
   }

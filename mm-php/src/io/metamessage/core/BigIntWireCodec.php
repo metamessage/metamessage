@@ -40,7 +40,7 @@ class BigIntWireCodec
         }
         $numStr = '';
         $n = $digitGroups;
-        $idx = 0;
+        $idx = 1; // skip sign bit
         while ($n > 0) {
             if ($n >= 3 && $idx + 10 <= count($bits)) {
                 $num = self::fromBits($bits, $idx, 10);

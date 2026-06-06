@@ -1,5 +1,7 @@
 # MetaMessage
 
+[![jitpack.io](https://jitpack.io/v/metamessage/metamessage.svg)](https://jitpack.io/#metamessage/metamessage)
+
 ## 1. 安装
 
 ### 依赖
@@ -68,6 +70,25 @@ val person = MetaMessage.jsoncToValue(jsoncOutput, Person::class.java)
 
 // 从对象重新生成 JSONC
 val jsoncFromValue = MetaMessage.valueToJsonc(person)
+```
+
+```java
+import io.github.metamessage.MetaMessage;
+import io.github.metamessage.MM;
+
+@MM
+class Person {
+    public String name = "Ed";
+    public int age = 30;
+}
+
+public class Example {
+    public static void main(String[] args) throws Exception {
+        Person person = new Person();
+        byte[] wire = MetaMessage.encodeFromValue(person);
+        Person decoded = MetaMessage.decodeToValue(wire, Person.class);
+    }
+}
 ```
 
 ## 3. 测试方法

@@ -217,10 +217,6 @@ public class WireDecoder
         string text = uv.ToString();
         return tag.Type switch
         {
-            ValueType.Datetime => DateTimeFromInt((long)uv, tag),
-            ValueType.Date => DateFromInt((long)uv, tag),
-            ValueType.Time => TimeFromInt((long)uv, tag),
-            ValueType.Enums => EnumFromInt((int)uv, tag),
             ValueType.I8 => ((sbyte)uv, text),
             ValueType.I16 => ((short)uv, text),
             ValueType.I32 => ((int)uv, text),
@@ -230,8 +226,50 @@ public class WireDecoder
             ValueType.U16 => ((ushort)uv, text),
             ValueType.U32 => ((uint)uv, text),
             ValueType.U64 => (uv, text),
+            ValueType.Datetime => ((long)uv, DateTimeFromInt((long)uv, tag)),
+            ValueType.Date => ((long)uv, DateFromInt((long)uv, tag)),
+            ValueType.Time => ((long)uv, TimeFromInt((long)uv, tag)),
+            ValueType.Enums => ((long)uv, EnumFromInt((int)uv, tag)),
             _ => ((long)uv, text)
         };
+    }
+
+    private static string DateTimeFromInt(long v, Tag tag)
+    {
+        long locationOffset = (tag?.Location ?? 0) * 3600L;
+        long local = v + locationOffset;
+        var dt = DateTime.UnixEpoch.AddSeconds(local);
+        return dt.ToString("yyyy-MM-dd HH:mm:ss");
+    }
+
+    private static string DateFromInt(long v, Tag tag)
+    {
+        long locationOffset = (tag?.Location ?? 0) * 3600L;
+        long local = v + locationOffset;
+        var dt = DateTime.UnixEpoch.AddDays(local);
+        return dt.ToString("yyyy-MM-dd");
+    }
+
+    private static string TimeFromInt(long v, Tag tag)
+    {
+        long locationOffset = (tag?.Location ?? 0) * 3600L;
+        long local = v + locationOffset;
+        var dt = DateTime.UnixEpoch.AddSeconds(local);
+        return dt.ToString("HH:mm:ss");
+    }
+
+    private static string EnumFromInt(int v, Tag tag)
+    {
+        var enumStr = !string.IsNullOrEmpty(tag.Enums) ? tag.Enums : tag.ChildEnums;
+        if (!string.IsNullOrEmpty(enumStr))
+        {
+            var parts = enumStr.Split('|');
+            if (v >= 0 && v < parts.Length)
+            {
+                return parts[v].Trim();
+            }
+        }
+        return v.ToString();
     }
 
     private static (object data, string text) ConvertNegativeIntValue(ulong uv, Tag tag)
@@ -246,46 +284,6 @@ public class WireDecoder
             ValueType.I64 => (-(long)uv, text),
             _ => (-(long)uv, text)
         };
-    }
-
-    private static (object data, string text) DateTimeFromInt(long v, Tag tag)
-    {
-        if (v < 0)
-        {
-            return (TimeUtil.FromEpochSeconds(0), TimeUtil.FromEpochSeconds(0).ToString("yyyy-MM-dd HH:mm:ss"));
-        }
-        var dt = TimeUtil.FromEpochSeconds(v);
-        return (dt, dt.ToString("yyyy-MM-dd HH:mm:ss"));
-    }
-
-    private static (object data, string text) DateFromInt(long v, Tag tag)
-    {
-        var dt = TimeUtil.FromDaysSinceEpoch(v);
-        return (dt, dt.ToString("yyyy-MM-dd"));
-    }
-
-    private static (object data, string text) TimeFromInt(long v, Tag tag)
-    {
-        if (v < 0 || v > 86399)
-        {
-            throw new MmDecodeException("Time value out of range (0-86399)");
-        }
-        var dt = TimeUtil.FromSecondsOfDay(v);
-        return (dt, dt.ToString("HH:mm:ss"));
-    }
-
-    private static (object data, string text) EnumFromInt(int v, Tag tag)
-    {
-        if (!string.IsNullOrEmpty(tag.Enums))
-        {
-            var enumValues = tag.Enums.Split('|');
-            if (v >= 0 && v < enumValues.Length)
-            {
-                return (v, enumValues[v].Trim());
-            }
-            throw new MmDecodeException($"Enum index {v} out of range for values: {tag.Enums}");
-        }
-        return (v, v.ToString());
     }
 
     private IMmTree DecodeFloat(int first, Tag? inherited)
@@ -426,8 +424,10 @@ public class WireDecoder
         return tag.Type switch
         {
             ValueType.Uuid => BytesToUuidResult(bytes, tag),
-            ValueType.Image or ValueType.Video =>
+            ValueType.Media =>
                 new MmScalar(bytes, Convert.ToBase64String(bytes), tag),
+            ValueType.Bigint =>
+                new MmScalar(bytes, BigIntWireCodec.DecodeSignedDecimal(bytes), tag),
             _ => new MmScalar(bytes, Convert.ToBase64String(bytes), tag)
         };
     }

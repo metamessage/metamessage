@@ -542,6 +542,10 @@ func (d *decoder) decodeBytes(prefix byte, tag *ir.Tag, path string) (node ir.No
 			return
 		}
 
+	case ir.ValueTypeMedia:
+		data = bs
+		text = base64.StdEncoding.EncodeToString(bs)
+
 	case ir.ValueTypeBytes:
 		data = bs
 		text = base64.StdEncoding.EncodeToString(bs)

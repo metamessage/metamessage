@@ -17,6 +17,7 @@ import java.time.LocalTime
 import java.time.ZoneId
 import java.time.ZoneOffset
 import java.time.format.DateTimeFormatter
+import java.util.Base64
 import java.util.UUID
 
 class Decoder() {
@@ -318,7 +319,7 @@ class Decoder() {
     private fun decodeEnum(tag: Tag, v: Long): Node {
         if (tag.isNull) return Value(-1, "", tag)
         if (tag.enums.isEmpty()) throw MmDecodeException("enum without labels")
-        val parts = tag.enums.split("\\|")
+        val parts = tag.enums.split("|")
         if (v >= parts.size) throw MmDecodeException("enum index out of range")
         val label = parts[v.toInt()].trim()
         return Value(v.toInt(), label, tag)
@@ -413,7 +414,8 @@ class Decoder() {
         if (tag.type == ValueType.UNKNOWN) tag.type = ValueType.BYTES
         val node =
                 when (tag.type) {
-                    ValueType.BYTES -> Value(bs, "", tag)
+                    ValueType.BYTES -> Value(bs, Base64.getEncoder().encodeToString(bs), tag)
+                    ValueType.MEDIA -> Value(bs, Base64.getEncoder().encodeToString(bs), tag)
                     ValueType.BIGINT -> bigintFromBytes(bs, tag)
                     ValueType.UUID -> {
                         if (bs.size != 16) throw MmDecodeException("uuid length")

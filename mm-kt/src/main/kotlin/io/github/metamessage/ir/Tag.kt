@@ -128,6 +128,7 @@ class Tag(
 
         if (parent.childEnums.isNotEmpty()) {
             enums = parent.childEnums
+            type = ValueType.ENUMS
         }
 
         if (parent.childPattern.isNotEmpty()) {
@@ -144,6 +145,7 @@ class Tag(
 
         if (parent.childMime.isNotEmpty()) {
             mime = parent.childMime
+            type = ValueType.MEDIA
         }
     }
 
@@ -155,18 +157,7 @@ class Tag(
     override fun toString(): String {
         val parts = mutableListOf<String>()
 
-        if (isInherit) {
-            addInheritedParts(parts)
-        } else {
-            addOwnParts(parts)
-            addChildParts(parts)
-        }
-
-        return parts.joinToString("; ")
-    }
-
-    private fun addOwnParts(parts: MutableList<String>) {
-        if (type != ValueType.UNKNOWN) {
+        if (type != ValueType.UNKNOWN && !isInherit) {
             if (!(type == ValueType.STR ||
                             type == ValueType.I ||
                             type == ValueType.F64 ||
@@ -175,7 +166,8 @@ class Tag(
                             type == ValueType.VEC)
             ) {
                 if (!((type == ValueType.ARR && size > 0) ||
-                                (type == ValueType.ENUMS && enums.isNotEmpty()))
+                                (type == ValueType.ENUMS && enums.isNotEmpty()) ||
+                                (type == ValueType.MEDIA && mime.isNotEmpty()))
                 ) {
                     parts.add("${T_TYPE}=${type.toString()}")
                 }
@@ -190,66 +182,62 @@ class Tag(
             parts.add(T_IS_NULL)
         }
 
-        if (nullable) {
-            if (!isNull) {
-                parts.add(T_NULLABLE)
-            }
+        if (nullable && !isNull && !isInherit) {
+            parts.add(T_NULLABLE)
         }
 
-        if (desc.isNotEmpty()) {
+        if (desc.isNotEmpty() && !isInherit) {
             parts.add("${T_DESC}=${quote(desc)}")
         }
 
-        if (deprecated) {
+        if (deprecated && !isInherit) {
             parts.add(T_DEPRECATED)
         }
 
-        if (allowEmpty) {
+        if (allowEmpty && !isInherit) {
             parts.add(T_ALLOW_EMPTY)
         }
 
-        if (unique) {
+        if (unique && !isInherit) {
             parts.add(T_UNIQUE)
         }
 
-        if (default_val.isNotEmpty()) {
+        if (default_val.isNotEmpty() && !isInherit) {
             parts.add("${T_DEFAULT_VAL}=${default_val}")
         }
 
-        if (min.isNotEmpty()) {
+        if (min.isNotEmpty() && !isInherit) {
             parts.add("${T_MIN}=${min}")
         }
 
-        if (max.isNotEmpty()) {
+        if (max.isNotEmpty() && !isInherit) {
             parts.add("${T_MAX}=${max}")
         }
 
-        if (size != 0) {
+        if (size != 0 && !isInherit) {
             parts.add("${T_SIZE}=${size}")
         }
 
-        if (enums.isNotEmpty()) {
+        if (enums.isNotEmpty() && !isInherit) {
             parts.add("${T_ENUM}=${enums}")
         }
 
-        if (pattern.isNotEmpty()) {
+        if (pattern.isNotEmpty() && !isInherit) {
             parts.add("${T_PATTERN}=${pattern}")
         }
 
-        if (location != 0) {
+        if (location != 0 && !isInherit) {
             parts.add("${T_LOCATION}=${location}")
         }
 
-        if (version != DEFAULT_VERSION) {
+        if (version != DEFAULT_VERSION && !isInherit) {
             parts.add("${T_VERSION}=${version}")
         }
 
-        if (mime.isNotEmpty()) {
+        if (mime.isNotEmpty() && !isInherit) {
             parts.add("${T_MIME}=${mime}")
         }
-    }
 
-    private fun addChildParts(parts: MutableList<String>) {
         if (childDesc.isNotEmpty()) {
             parts.add("${T_CHILD_DESC}=${quote(childDesc)}")
         }
@@ -263,7 +251,8 @@ class Tag(
                             childType == ValueType.VEC)
             ) {
                 if (!((childType == ValueType.ARR && childSize > 0) ||
-                                (childType == ValueType.ENUMS && childEnums.isNotEmpty()))
+                                (childType == ValueType.ENUMS && childEnums.isNotEmpty()) ||
+                                (childType == ValueType.MEDIA && childMime.isNotEmpty()))
                 ) {
                     parts.add("${T_CHILD_TYPE}=${childType.toString()}")
                 }
@@ -317,78 +306,8 @@ class Tag(
         if (childMime.isNotEmpty()) {
             parts.add("${T_CHILD_MIME}=${childMime}")
         }
-    }
 
-    private fun addInheritedParts(parts: MutableList<String>) {
-        if (type != ValueType.UNKNOWN) {
-            if (!(type == ValueType.STR ||
-                            type == ValueType.I ||
-                            type == ValueType.F64 ||
-                            type == ValueType.BOOL ||
-                            type == ValueType.OBJ ||
-                            type == ValueType.VEC)
-            ) {
-                if (!((type == ValueType.ARR && size > 0) ||
-                                (type == ValueType.ENUMS && enums.isNotEmpty()))
-                ) {
-                    parts.add("${T_CHILD_TYPE}=${type.toString()}")
-                }
-            }
-        }
-
-        if (desc.isNotEmpty()) {
-            parts.add("${T_CHILD_DESC}=${quote(desc)}")
-        }
-
-        if (nullable) {
-            if (!isNull) {
-                parts.add(T_CHILD_NULLABLE)
-            }
-        }
-
-        if (allowEmpty) {
-            parts.add(T_CHILD_ALLOW_EMPTY)
-        }
-
-        if (unique) {
-            parts.add(T_CHILD_UNIQUE)
-        }
-
-        if (default_val.isNotEmpty()) {
-            parts.add("${T_CHILD_DEFAULT_VAL}=${default_val}")
-        }
-
-        if (min.isNotEmpty()) {
-            parts.add("${T_CHILD_MIN}=${min}")
-        }
-
-        if (max.isNotEmpty()) {
-            parts.add("${T_CHILD_MAX}=${max}")
-        }
-
-        if (size != 0) {
-            parts.add("${T_CHILD_SIZE}=${size}")
-        }
-
-        if (enums.isNotEmpty()) {
-            parts.add("${T_CHILD_ENUMS}=${enums}")
-        }
-
-        if (pattern.isNotEmpty()) {
-            parts.add("${T_CHILD_PATTERN}=${pattern}")
-        }
-
-        if (location != 0) {
-            parts.add("${T_CHILD_LOCATION}=${location}")
-        }
-
-        if (version != DEFAULT_VERSION) {
-            parts.add("${T_CHILD_VERSION}=${version}")
-        }
-
-        if (mime.isNotEmpty()) {
-            parts.add("${T_CHILD_MIME}=${mime}")
-        }
+        return parts.joinToString("; ")
     }
 
     fun toBytes(): ByteArray {
@@ -427,15 +346,7 @@ class Tag(
         }
         if (version != DEFAULT_VERSION && !isInherit)
                 encodeU64(w, TagKey.K_VERSION, version.toLong())
-        if (mime.isNotEmpty() && !isInherit) {
-            val m = Mime.parse(mime)
-            if (m < 7) {
-                w.writeByte((TagKey.K_MIME or m).toByte())
-            } else {
-                w.writeByte((TagKey.K_MIME or 7).toByte())
-                w.writeByte(m.toByte())
-            }
-        }
+        if (mime.isNotEmpty() && !isInherit) encodeU64(w, TagKey.K_MIME, Mime.parse(mime).toLong())
         if (childDesc.isNotEmpty()) writeSizedString(w, TagKey.K_CHILD_DESC, childDesc)
         if (childType != ValueType.UNKNOWN) {
             if (shouldEmitChildType()) {
@@ -460,17 +371,8 @@ class Tag(
         }
         if (childVersion != DEFAULT_VERSION)
                 encodeU64(w, TagKey.K_CHILD_VERSION, childVersion.toLong())
-        if (childMime.isNotEmpty()) {
-            val l = childMime.length
-            if (l < 7) {
-                w.writeByte((TagKey.K_CHILD_MIME or l).toByte())
-                w.writeBytes(childMime.toByteArray(charset("UTF-8")))
-            } else {
-                w.writeByte((TagKey.K_CHILD_MIME or 7).toByte())
-                w.writeByte(l.toByte())
-                w.writeBytes(childMime.toByteArray(charset("UTF-8")))
-            }
-        }
+        if (childMime.isNotEmpty())
+                encodeU64(w, TagKey.K_CHILD_MIME, Mime.parse(childMime).toLong())
         if (more != 0) encodeU64(w, TagKey.K_MORE, more.toLong())
         return w.toByteArray()
     }
@@ -486,6 +388,7 @@ class Tag(
             ValueType.VEC -> false
             ValueType.ARR -> if (size > 0) false else true
             ValueType.ENUMS -> if (enums.isNotEmpty()) false else true
+            ValueType.MEDIA -> if (mime.isNotEmpty()) false else true
             else -> true
         }
     }
@@ -500,6 +403,7 @@ class Tag(
             ValueType.VEC -> false
             ValueType.ARR -> if (childSize > 0) false else true
             ValueType.ENUMS -> if (childEnums.isNotEmpty()) false else true
+            ValueType.MEDIA -> if (childMime.isNotEmpty()) false else true
             else -> true
         }
     }
@@ -880,7 +784,6 @@ class Tag(
                     T_DESC -> r.desc = value
                     T_TYPE -> r.type = ValueType.parseWireName(value)
                     T_DEPRECATED -> r.deprecated = true
-                    "raw" -> r.deprecated = true
                     T_NULLABLE -> r.nullable = true
                     T_ALLOW_EMPTY -> r.allowEmpty = true
                     T_UNIQUE -> r.unique = true
@@ -910,7 +813,10 @@ class Tag(
                             r.version = d
                         }
                     }
-                    T_MIME -> r.mime = value
+                    T_MIME -> {
+                        r.mime = value
+                        r.type = ValueType.MEDIA
+                    }
                     T_CHILD_DESC -> r.childDesc = value
                     T_CHILD_TYPE -> r.childType = ValueType.parseWireName(value)
                     T_CHILD_RAW -> {}
@@ -943,7 +849,10 @@ class Tag(
                             r.childVersion = d
                         }
                     }
-                    T_CHILD_MIME -> r.childMime = value
+                    T_CHILD_MIME -> {
+                        r.childMime = value
+                        r.childType = ValueType.MEDIA
+                    }
                 }
             }
             return r
@@ -2080,14 +1989,14 @@ class Tag(
         return ValidationResult(true, data = idx, text = value)
     }
 
-    fun validateImage(value: ByteArray): ValidationResult {
+    fun validateMedia(value: ByteArray): ValidationResult {
         val length = value.size
 
         if (length == 0) {
             if (allowEmpty) {
                 return ValidationResult(true, data = value, text = "")
             }
-            return ValidationResult(false, "type image not allow empty value []byte{}")
+            return ValidationResult(false, "type media not allow empty value []byte{}")
         }
 
         if (min.isNotEmpty()) {
@@ -2119,7 +2028,7 @@ class Tag(
         }
 
         if (location != 0) {
-            return ValidationResult(false, "type image not support location UTC$location")
+            return ValidationResult(false, "type media not support location UTC$location")
         }
 
         val text = Base64.getEncoder().encodeToString(value)

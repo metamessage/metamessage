@@ -47,8 +47,6 @@ const (
 
 	ValueTypeEnum
 
-	// ValueTypeImage
-	// ValueTypeVideo
 	ValueTypeMedia
 
 	vtUnknownStr = "unknown"
@@ -89,8 +87,6 @@ const (
 
 	vtEnumStr = "enums"
 
-	// vtImageStr = "image"
-	// vtVideoStr = "video"
 	vtMediaStr = "media"
 )
 
@@ -158,10 +154,6 @@ func (v ValueType) String() string {
 		return vtEmailStr
 	case ValueTypeEnum:
 		return vtEnumStr
-	// case ValueTypeImage:
-	// 	return vtImageStr
-	// case ValueTypeVideo:
-	// 	return vtVideoStr
 	case ValueTypeMedia:
 		return vtMediaStr
 	default:
@@ -201,9 +193,7 @@ var strToValueType = map[string]ValueType{
 	vtUrlStr:      ValueTypeUrl,
 	vtEmailStr:    ValueTypeEmail,
 	vtEnumStr:     ValueTypeEnum,
-	// vtImageStr:    ValueTypeImage,
-	// vtVideoStr:    ValueTypeVideo,
-	vtMediaStr: ValueTypeMedia,
+	vtMediaStr:    ValueTypeMedia,
 }
 
 func ParseValueType(s string) (ValueType, error) {

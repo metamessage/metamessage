@@ -105,7 +105,7 @@ class JsoncParser(private val tokens: List<JsoncToken>) {
                                 ValueType.URL -> parseURLValue(text, tag)
                                 ValueType.EMAIL -> parseEmailValue(text, tag)
                                 ValueType.ENUMS -> parseEnumValue(text, tag)
-                                ValueType.IMAGE -> parseImageValue(text, tag)
+                                ValueType.MEDIA -> parseMediaValue(text, tag)
                                 else ->
                                         throw JsoncException(
                                                 "unsupported type ${tag.type} for string literal"
@@ -369,17 +369,17 @@ class JsoncParser(private val tokens: List<JsoncToken>) {
         }
     }
 
-    private fun parseImageValue(text: String, tag: Tag): Pair<Any?, String?> {
+    private fun parseMediaValue(text: String, tag: Tag): Pair<Any?, String?> {
         return if (tag.isNull) {
             if (text != "") {
-                throw JsoncException("invalid image: \"$text\", valid: \"\"")
+                throw JsoncException("invalid media: \"$text\", valid: \"\"")
             }
             ByteArray(0) to ""
         } else {
             val decoded = Base64.getDecoder().decode(text)
-            val result = tag.validateImage(decoded)
+            val result = tag.validateMedia(decoded)
             if (!result.valid) {
-                throw JsoncException(result.error ?: "Image validation failed")
+                throw JsoncException(result.error ?: "Media validation failed")
             }
             result.data to result.text
         }
@@ -938,6 +938,7 @@ class JsoncParser(private val tokens: List<JsoncToken>) {
                                 "vec" -> ValueType.VEC
                                 "obj" -> ValueType.OBJ
                                 "map" -> ValueType.MAP
+                                "media" -> ValueType.MEDIA
                                 else -> ValueType.UNKNOWN
                             }
                 }
@@ -990,6 +991,7 @@ class JsoncParser(private val tokens: List<JsoncToken>) {
                                 "vec" -> ValueType.VEC
                                 "obj" -> ValueType.OBJ
                                 "map" -> ValueType.MAP
+                                "media" -> ValueType.MEDIA
                                 else -> ValueType.UNKNOWN
                             }
                 }

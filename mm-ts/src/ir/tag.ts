@@ -101,72 +101,60 @@ export class Tag {
 
     if (tag.childDesc !== '') {
       this.desc = tag.childDesc;
-      this.childDesc = tag.childDesc;
     }
 
     if (tag.childType !== ValueType.Unknown) {
       this.type = tag.childType;
-      this.childType = tag.childType;
     }
 
     if (tag.childNullable) {
       this.nullable = tag.childNullable;
-      this.childNullable = tag.childNullable;
     }
 
     if (tag.childAllowEmpty) {
       this.allowEmpty = tag.childAllowEmpty;
-      this.childAllowEmpty = tag.childAllowEmpty;
     }
 
     if (tag.childUnique) {
       this.unique = tag.childUnique;
-      this.childUnique = tag.childUnique;
     }
 
     if (tag.childDefaultVal !== '') {
       this.default_val = tag.childDefaultVal;
-      this.childDefaultVal = tag.childDefaultVal;
     }
 
     if (tag.childMin !== '') {
       this.min = tag.childMin;
-      this.childMin = tag.childMin;
     }
 
     if (tag.childMax !== '') {
       this.max = tag.childMax;
-      this.childMax = tag.childMax;
     }
 
     if (tag.childSize !== 0n) {
       this.size = tag.childSize;
-      this.childSize = tag.childSize;
     }
 
     if (tag.childEnums !== '') {
       this.enums = tag.childEnums;
-      this.childEnums = tag.childEnums;
+      this.type = ValueType.Enums;
     }
 
     if (tag.childPattern !== '') {
       this.pattern = tag.childPattern;
-      this.childPattern = tag.childPattern;
     }
 
     if (tag.childLocation !== 0) {
       this.location = tag.childLocation;
-      this.childLocation = tag.childLocation;
     }
 
     if (tag.childVersion !== 0) {
       this.version = tag.childVersion;
-      this.childVersion = tag.childVersion;
     }
 
     if (tag.childMime !== '') {
       this.mime = tag.childMime;
-      this.childMime = tag.childMime;
+      this.type = ValueType.Media;
     }
   }
 
@@ -175,6 +163,7 @@ export class Tag {
     if (!this.isInherit && this.type !== ValueType.Unknown) {
       if (
         this.type === ValueType.Str ||
+        this.type === ValueType.Bytes ||
         this.type === ValueType.I ||
         this.type === ValueType.F64 ||
         this.type === ValueType.Bool ||
@@ -184,7 +173,8 @@ export class Tag {
       } else {
         if (
           (this.type === ValueType.Arr && this.size > 0) ||
-          (this.type === ValueType.Enums && this.enums !== '')
+          (this.type === ValueType.Enums && this.enums !== '') ||
+          (this.type === ValueType.Media && this.mime !== '')
         ) {
         } else {
           parts.push(`type=${typeToString(this.type)}`);
@@ -274,7 +264,8 @@ export class Tag {
       } else {
         if (
           (this.childType === ValueType.Arr && this.childSize > 0) ||
-          (this.childType === ValueType.Enums && this.childEnums)
+          (this.childType === ValueType.Enums && this.childEnums) ||
+          (this.childType === ValueType.Media && this.childMime !== '')
         ) {
         } else {
           parts.push(`child_type=${typeToString(this.childType)}`);
@@ -546,7 +537,8 @@ export class Tag {
       } else {
         if (
           (this.type === ValueType.Arr && this.size > 0) ||
-          (this.type === ValueType.Enums && this.enums !== '')
+          (this.type === ValueType.Enums && this.enums !== '') ||
+          (this.type === ValueType.Media && this.mime !== '')
         ) {
         } else {
           buf.push(KType);
@@ -555,7 +547,7 @@ export class Tag {
       }
     }
 
-    if (this.deprecated) {
+    if (this.deprecated && !this.isInherit) {
       buf.push(KDeprecated | 1);
     }
 
@@ -700,7 +692,8 @@ export class Tag {
       } else {
         if (
           (this.childType === ValueType.Arr && this.childSize > 0) ||
-          (this.childType === ValueType.Enums && this.childEnums !== '')
+          (this.childType === ValueType.Enums && this.childEnums !== '') ||
+          (this.childType === ValueType.Media && this.childMime !== '')
         ) {
         } else {
           buf.push(KChildType);
@@ -1758,6 +1751,60 @@ export class Tag {
     };
   }
 
+  validateMedia(val: Uint8Array | number[]): ValidationResult {
+    const arr = val instanceof Uint8Array ? val : new Uint8Array(val);
+    const length = arr.length;
+
+    if (length === 0) {
+      if (this.allowEmpty) {
+        return { valid: true, data: arr, text: '' };
+      }
+      return {
+        valid: false,
+        error: 'type media not allow empty value []byte{}',
+      };
+    }
+
+    if (this.min) {
+      const mini = parseInt(this.min, 10);
+      if (!isNaN(mini)) {
+        if (length < mini) {
+          return {
+            valid: false,
+            error: `[]byte length ${length} < min ${mini}`,
+          };
+        }
+      }
+    }
+
+    if (this.max) {
+      const maxi = parseInt(this.max, 10);
+      if (!isNaN(maxi)) {
+        if (length > maxi) {
+          return {
+            valid: false,
+            error: `[]byte length ${length} > max ${maxi}`,
+          };
+        }
+      }
+    }
+
+    if (this.size !== 0n) {
+      if (BigInt(length) !== this.size) {
+        return {
+          valid: false,
+          error: `[]byte length ${length} != size ${this.size}`,
+        };
+      }
+    }
+
+    return {
+      valid: true,
+      data: arr,
+      text: uint8ToBase64(arr),
+    };
+  }
+
   validateObj(): ValidationResult {
     if (this.desc && this.desc.length > 65535) {
       return { valid: false, error: 'desc length exceeds 65535 bytes' };
@@ -1936,6 +1983,7 @@ export function parseMMTag(tagStr: string): Tag {
         break;
       case 'mime':
         tag.mime = value;
+        tag.type = ValueType.Media;
         break;
       case 'child_desc':
         tag.childDesc = value.replace(/^"|"$/g, '');
@@ -1966,6 +2014,7 @@ export function parseMMTag(tagStr: string): Tag {
         break;
       case 'child_enums':
         tag.childEnums = value;
+        tag.childType = ValueType.Enums;
         break;
       case 'child_pattern':
         tag.childPattern = value;
@@ -1978,6 +2027,7 @@ export function parseMMTag(tagStr: string): Tag {
         break;
       case 'child_mime':
         tag.childMime = value;
+        tag.childType = ValueType.Media;
         break;
     }
   }

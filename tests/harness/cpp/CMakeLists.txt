@@ -6,5 +6,8 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 set(MMCPP_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../../../mm-cpp")
 
-add_executable(mm_harness_cpp harness.cpp)
+add_executable(mm_harness_cpp
+    harness.cpp
+    ${MMCPP_DIR}/src/jsonc/scanner.cpp
+)
 target_include_directories(mm_harness_cpp PRIVATE ${MMCPP_DIR}/src)

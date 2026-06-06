@@ -1,5 +1,6 @@
 pub mod value_type;
 pub mod tag;
+pub mod mime;
 pub mod ast;
 pub mod binder;
 pub mod to_string;

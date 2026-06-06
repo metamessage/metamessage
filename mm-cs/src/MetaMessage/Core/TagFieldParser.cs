@@ -60,225 +60,226 @@ public static class TagFieldParser
                     break;
 
                 case TagKey.KDesc:
-                {
-                    int strLen = DecodeStringLength(data, ref offset, lenInfo);
-                    if (offset + strLen > data.Length)
-                        throw new MmDecodeException("Tag desc data overflow");
-                    tag.Desc = System.Text.Encoding.UTF8.GetString(data, offset, strLen);
-                    offset += strLen;
-                    break;
-                }
+                    {
+                        int strLen = DecodeStringLength(data, ref offset, lenInfo);
+                        if (offset + strLen > data.Length)
+                            throw new MmDecodeException("Tag desc data overflow");
+                        tag.Desc = System.Text.Encoding.UTF8.GetString(data, offset, strLen);
+                        offset += strLen;
+                        break;
+                    }
 
                 case TagKey.KType:
-                {
-                    if (offset >= data.Length)
-                        throw new MmDecodeException("Unexpected end of tag data");
-                    tag.Type = (ValueType)data[offset++];
-                    break;
-                }
+                    {
+                        if (offset >= data.Length)
+                            throw new MmDecodeException("Unexpected end of tag data");
+                        tag.Type = (ValueType)data[offset++];
+                        break;
+                    }
 
                 case TagKey.KDefault:
-                {
-                    int strLen = DecodeStringLengthSimple(data, ref offset, lenInfo);
-                    if (offset + strLen > data.Length)
-                        throw new MmDecodeException("Tag default value data overflow");
-                    tag.DefaultVal = System.Text.Encoding.UTF8.GetString(data, offset, strLen);
-                    offset += strLen;
-                    break;
-                }
+                    {
+                        int strLen = DecodeStringLengthSimple(data, ref offset, lenInfo);
+                        if (offset + strLen > data.Length)
+                            throw new MmDecodeException("Tag default value data overflow");
+                        tag.DefaultVal = System.Text.Encoding.UTF8.GetString(data, offset, strLen);
+                        offset += strLen;
+                        break;
+                    }
 
                 case TagKey.KMin:
-                {
-                    int strLen = DecodeStringLengthSimple(data, ref offset, lenInfo);
-                    if (offset + strLen > data.Length)
-                        throw new MmDecodeException("Tag min data overflow");
-                    tag.Min = System.Text.Encoding.UTF8.GetString(data, offset, strLen);
-                    offset += strLen;
-                    break;
-                }
+                    {
+                        int strLen = DecodeStringLengthSimple(data, ref offset, lenInfo);
+                        if (offset + strLen > data.Length)
+                            throw new MmDecodeException("Tag min data overflow");
+                        tag.Min = System.Text.Encoding.UTF8.GetString(data, offset, strLen);
+                        offset += strLen;
+                        break;
+                    }
 
                 case TagKey.KMax:
-                {
-                    int strLen = DecodeStringLengthSimple(data, ref offset, lenInfo);
-                    if (offset + strLen > data.Length)
-                        throw new MmDecodeException("Tag max data overflow");
-                    tag.Max = System.Text.Encoding.UTF8.GetString(data, offset, strLen);
-                    offset += strLen;
-                    break;
-                }
+                    {
+                        int strLen = DecodeStringLengthSimple(data, ref offset, lenInfo);
+                        if (offset + strLen > data.Length)
+                            throw new MmDecodeException("Tag max data overflow");
+                        tag.Max = System.Text.Encoding.UTF8.GetString(data, offset, strLen);
+                        offset += strLen;
+                        break;
+                    }
 
                 case TagKey.KSize:
-                {
-                    int byteCount = lenInfo + 1;
-                    if (offset + byteCount > data.Length)
-                        throw new MmDecodeException("Unexpected end of tag data");
-                    tag.Size = (int)DecodeU64(data, ref offset, byteCount);
-                    break;
-                }
+                    {
+                        int byteCount = lenInfo + 1;
+                        if (offset + byteCount > data.Length)
+                            throw new MmDecodeException("Unexpected end of tag data");
+                        tag.Size = (int)DecodeU64(data, ref offset, byteCount);
+                        break;
+                    }
 
                 case TagKey.KEnum:
-                {
-                    int strLen = DecodeStringLength(data, ref offset, lenInfo);
-                    if (offset + strLen > data.Length)
-                        throw new MmDecodeException("Tag enum data overflow");
-                    tag.Enums = System.Text.Encoding.UTF8.GetString(data, offset, strLen);
-                    offset += strLen;
-                    break;
-                }
+                    {
+                        int strLen = DecodeStringLength(data, ref offset, lenInfo);
+                        if (offset + strLen > data.Length)
+                            throw new MmDecodeException("Tag enum data overflow");
+                        tag.Enums = System.Text.Encoding.UTF8.GetString(data, offset, strLen);
+                        tag.Type = ValueType.Enums;
+                        offset += strLen;
+                        break;
+                    }
 
                 case TagKey.KPattern:
-                {
-                    int strLen = DecodeStringLengthSimple(data, ref offset, lenInfo);
-                    if (offset + strLen > data.Length)
-                        throw new MmDecodeException("Tag pattern data overflow");
-                    tag.Pattern = System.Text.Encoding.UTF8.GetString(data, offset, strLen);
-                    offset += strLen;
-                    break;
-                }
+                    {
+                        int strLen = DecodeStringLengthSimple(data, ref offset, lenInfo);
+                        if (offset + strLen > data.Length)
+                            throw new MmDecodeException("Tag pattern data overflow");
+                        tag.Pattern = System.Text.Encoding.UTF8.GetString(data, offset, strLen);
+                        offset += strLen;
+                        break;
+                    }
 
                 case TagKey.KLocation:
-                {
-                    int strLen = lenInfo;
-                    if (offset + strLen > data.Length)
-                        throw new MmDecodeException("Tag location data overflow");
-                    tag.Location = int.Parse(System.Text.Encoding.UTF8.GetString(data, offset, strLen));
-                    offset += strLen;
-                    break;
-                }
+                    {
+                        int strLen = lenInfo;
+                        if (offset + strLen > data.Length)
+                            throw new MmDecodeException("Tag location data overflow");
+                        tag.Location = int.Parse(System.Text.Encoding.UTF8.GetString(data, offset, strLen));
+                        offset += strLen;
+                        break;
+                    }
 
                 case TagKey.KVersion:
-                {
-                    int byteCount = lenInfo + 1;
-                    if (offset + byteCount > data.Length)
-                        throw new MmDecodeException("Unexpected end of tag data");
-                    tag.Version = (int)DecodeU64(data, ref offset, byteCount);
-                    break;
-                }
+                    {
+                        int byteCount = lenInfo + 1;
+                        if (offset + byteCount > data.Length)
+                            throw new MmDecodeException("Unexpected end of tag data");
+                        tag.Version = (int)DecodeU64(data, ref offset, byteCount);
+                        break;
+                    }
 
                 case TagKey.KMime:
-                {
-                    int strLen = DecodeStringLengthSimple(data, ref offset, lenInfo);
-                    if (offset + strLen > data.Length)
-                        throw new MmDecodeException("Tag mime data overflow");
-                    tag.Mime = System.Text.Encoding.UTF8.GetString(data, offset, strLen);
-                    offset += strLen;
-                    break;
-                }
+                    {
+                        int byteCount = lenInfo + 1;
+                        if (offset + byteCount > data.Length)
+                            throw new MmDecodeException("Unexpected end of tag data");
+                        tag.Mime = DecodeU64(data, ref offset, byteCount).ToString();
+                        tag.Type = ValueType.Media;
+                        break;
+                    }
 
                 case TagKey.KChildDesc:
-                {
-                    int strLen = DecodeStringLength(data, ref offset, lenInfo);
-                    if (offset + strLen > data.Length)
-                        throw new MmDecodeException("Tag child desc data overflow");
-                    tag.ChildDesc = System.Text.Encoding.UTF8.GetString(data, offset, strLen);
-                    offset += strLen;
-                    break;
-                }
+                    {
+                        int strLen = DecodeStringLength(data, ref offset, lenInfo);
+                        if (offset + strLen > data.Length)
+                            throw new MmDecodeException("Tag child desc data overflow");
+                        tag.ChildDesc = System.Text.Encoding.UTF8.GetString(data, offset, strLen);
+                        offset += strLen;
+                        break;
+                    }
 
                 case TagKey.KChildType:
-                {
-                    if (offset >= data.Length)
-                        throw new MmDecodeException("Unexpected end of tag data");
-                    tag.ChildType = (ValueType)data[offset++];
-                    break;
-                }
+                    {
+                        if (offset >= data.Length)
+                            throw new MmDecodeException("Unexpected end of tag data");
+                        tag.ChildType = (ValueType)data[offset++];
+                        break;
+                    }
 
                 case TagKey.KChildDefaultVal:
-                {
-                    int strLen = DecodeStringLengthSimple(data, ref offset, lenInfo);
-                    if (offset + strLen > data.Length)
-                        throw new MmDecodeException("Tag child default value data overflow");
-                    tag.ChildDefaultVal = System.Text.Encoding.UTF8.GetString(data, offset, strLen);
-                    offset += strLen;
-                    break;
-                }
+                    {
+                        int strLen = DecodeStringLengthSimple(data, ref offset, lenInfo);
+                        if (offset + strLen > data.Length)
+                            throw new MmDecodeException("Tag child default value data overflow");
+                        tag.ChildDefaultVal = System.Text.Encoding.UTF8.GetString(data, offset, strLen);
+                        offset += strLen;
+                        break;
+                    }
 
                 case TagKey.KChildMin:
-                {
-                    int strLen = DecodeStringLengthSimple(data, ref offset, lenInfo);
-                    if (offset + strLen > data.Length)
-                        throw new MmDecodeException("Tag child min data overflow");
-                    tag.ChildMin = System.Text.Encoding.UTF8.GetString(data, offset, strLen);
-                    offset += strLen;
-                    break;
-                }
+                    {
+                        int strLen = DecodeStringLengthSimple(data, ref offset, lenInfo);
+                        if (offset + strLen > data.Length)
+                            throw new MmDecodeException("Tag child min data overflow");
+                        tag.ChildMin = System.Text.Encoding.UTF8.GetString(data, offset, strLen);
+                        offset += strLen;
+                        break;
+                    }
 
                 case TagKey.KChildMax:
-                {
-                    int strLen = DecodeStringLengthSimple(data, ref offset, lenInfo);
-                    if (offset + strLen > data.Length)
-                        throw new MmDecodeException("Tag child max data overflow");
-                    tag.ChildMax = System.Text.Encoding.UTF8.GetString(data, offset, strLen);
-                    offset += strLen;
-                    break;
-                }
+                    {
+                        int strLen = DecodeStringLengthSimple(data, ref offset, lenInfo);
+                        if (offset + strLen > data.Length)
+                            throw new MmDecodeException("Tag child max data overflow");
+                        tag.ChildMax = System.Text.Encoding.UTF8.GetString(data, offset, strLen);
+                        offset += strLen;
+                        break;
+                    }
 
                 case TagKey.KChildSize:
-                {
-                    int byteCount = lenInfo + 1;
-                    if (offset + byteCount > data.Length)
-                        throw new MmDecodeException("Unexpected end of tag data");
-                    tag.ChildSize = (int)DecodeU64(data, ref offset, byteCount);
-                    break;
-                }
+                    {
+                        int byteCount = lenInfo + 1;
+                        if (offset + byteCount > data.Length)
+                            throw new MmDecodeException("Unexpected end of tag data");
+                        tag.ChildSize = (int)DecodeU64(data, ref offset, byteCount);
+                        break;
+                    }
 
                 case TagKey.KChildEnums:
-                {
-                    int strLen = DecodeStringLength(data, ref offset, lenInfo);
-                    if (offset + strLen > data.Length)
-                        throw new MmDecodeException("Tag child enum data overflow");
-                    tag.ChildEnums = System.Text.Encoding.UTF8.GetString(data, offset, strLen);
-                    offset += strLen;
-                    break;
-                }
+                    {
+                        int strLen = DecodeStringLength(data, ref offset, lenInfo);
+                        if (offset + strLen > data.Length)
+                            throw new MmDecodeException("Tag child enum data overflow");
+                        tag.ChildEnums = System.Text.Encoding.UTF8.GetString(data, offset, strLen);
+                        offset += strLen;
+                        break;
+                    }
 
                 case TagKey.KChildPattern:
-                {
-                    int strLen = DecodeStringLengthSimple(data, ref offset, lenInfo);
-                    if (offset + strLen > data.Length)
-                        throw new MmDecodeException("Tag child pattern data overflow");
-                    tag.ChildPattern = System.Text.Encoding.UTF8.GetString(data, offset, strLen);
-                    offset += strLen;
-                    break;
-                }
+                    {
+                        int strLen = DecodeStringLengthSimple(data, ref offset, lenInfo);
+                        if (offset + strLen > data.Length)
+                            throw new MmDecodeException("Tag child pattern data overflow");
+                        tag.ChildPattern = System.Text.Encoding.UTF8.GetString(data, offset, strLen);
+                        offset += strLen;
+                        break;
+                    }
 
                 case TagKey.KChildLocation:
-                {
-                    int strLen = lenInfo;
-                    if (offset + strLen > data.Length)
-                        throw new MmDecodeException("Tag child location data overflow");
-                    tag.ChildLocation = int.Parse(System.Text.Encoding.UTF8.GetString(data, offset, strLen));
-                    offset += strLen;
-                    break;
-                }
+                    {
+                        int strLen = lenInfo;
+                        if (offset + strLen > data.Length)
+                            throw new MmDecodeException("Tag child location data overflow");
+                        tag.ChildLocation = int.Parse(System.Text.Encoding.UTF8.GetString(data, offset, strLen));
+                        offset += strLen;
+                        break;
+                    }
 
                 case TagKey.KChildVersion:
-                {
-                    int byteCount = lenInfo + 1;
-                    if (offset + byteCount > data.Length)
-                        throw new MmDecodeException("Unexpected end of tag data");
-                    tag.ChildVersion = (int)DecodeU64(data, ref offset, byteCount);
-                    break;
-                }
+                    {
+                        int byteCount = lenInfo + 1;
+                        if (offset + byteCount > data.Length)
+                            throw new MmDecodeException("Unexpected end of tag data");
+                        tag.ChildVersion = (int)DecodeU64(data, ref offset, byteCount);
+                        break;
+                    }
 
                 case TagKey.KChildMime:
-                {
-                    int strLen = DecodeStringLengthSimple(data, ref offset, lenInfo);
-                    if (offset + strLen > data.Length)
-                        throw new MmDecodeException("Tag child mime data overflow");
-                    tag.ChildMime = System.Text.Encoding.UTF8.GetString(data, offset, strLen);
-                    offset += strLen;
-                    break;
-                }
+                    {
+                        int byteCount = lenInfo + 1;
+                        if (offset + byteCount > data.Length)
+                            throw new MmDecodeException("Unexpected end of tag data");
+                        tag.ChildMime = DecodeU64(data, ref offset, byteCount).ToString();
+                        tag.ChildType = ValueType.Media;
+                        break;
+                    }
 
                 case TagKey.KMore:
-                {
-                    int byteCount = lenInfo + 1;
-                    if (offset + byteCount > data.Length)
-                        throw new MmDecodeException("Unexpected end of tag data");
-                    tag.More = (int)DecodeU64(data, ref offset, byteCount);
-                    break;
-                }
+                    {
+                        int byteCount = lenInfo + 1;
+                        if (offset + byteCount > data.Length)
+                            throw new MmDecodeException("Unexpected end of tag data");
+                        tag.More = (int)DecodeU64(data, ref offset, byteCount);
+                        break;
+                    }
 
                 default:
                     if (lenInfo <= 5)

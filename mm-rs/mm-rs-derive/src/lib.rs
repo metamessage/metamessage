@@ -1,7 +1,7 @@
 use proc_macro::TokenStream;
 use proc_macro2::{TokenStream as TokenStream2, TokenTree};
 use quote::quote;
-use syn::{parse_macro_input, DeriveInput, Data, Fields};
+use syn::{parse_macro_input, Data, DeriveInput, Fields};
 
 fn extract_mm_attrs(attrs: &[syn::Attribute]) -> Vec<(String, String)> {
     let mut pairs = Vec::new();
@@ -102,7 +102,7 @@ fn build_tag_code(pairs: &[(String, String)]) -> proc_macro2::TokenStream {
                     setters.push(quote! { tag.unique = false; });
                 }
             }
-            "raw" => {
+            "deprecated" => {
                 if value.is_empty() || value == "true" {
                     setters.push(quote! { tag.deprecated = true; });
                 } else {

@@ -31,8 +31,7 @@ pub enum ValueType {
     Url,
     Email,
     Enum,
-    Image,
-    Video,
+    Media,
 }
 
 impl ValueType {
@@ -70,8 +69,7 @@ impl ValueType {
             "url" => ValueType::Url,
             "email" => ValueType::Email,
             "enum" => ValueType::Enum,
-            "image" => ValueType::Image,
-            "video" => ValueType::Video,
+            "media" => ValueType::Media,
             _ => ValueType::Unknown,
         }
     }
@@ -109,8 +107,7 @@ impl ValueType {
             ValueType::Url => "url",
             ValueType::Email => "email",
             ValueType::Enum => "enum",
-            ValueType::Image => "image",
-            ValueType::Video => "video",
+            ValueType::Media => "media",
         }
     }
 
@@ -164,8 +161,7 @@ impl ValueType {
             28 => ValueType::Url,
             29 => ValueType::Email,
             30 => ValueType::Enum,
-            31 => ValueType::Image,
-            32 => ValueType::Video,
+            31 => ValueType::Media,
             _ => ValueType::Unknown,
         }
     }

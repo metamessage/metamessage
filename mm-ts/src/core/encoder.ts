@@ -261,6 +261,26 @@ export class MMEncoder {
           );
         }
         break;
+      case ValueType.Image:
+      case ValueType.Video:
+      case ValueType.Media:
+        if (!tag.isNull) {
+          const data = val.getValue();
+          let bytes: Uint8Array;
+          if (typeof data === 'string') {
+            const binaryStr = atob(data);
+            bytes = new Uint8Array(binaryStr.length);
+            for (let i = 0; i < binaryStr.length; i++) {
+              bytes[i] = binaryStr.charCodeAt(i);
+            }
+          } else if (data instanceof Uint8Array) {
+            bytes = data;
+          } else {
+            bytes = new Uint8Array(data as ArrayBuffer);
+          }
+          n = this.encodeBytes(bytes);
+        }
+        break;
       case ValueType.Bigint:
         n = this.encodeBigInt(String(val.getValue()));
         break;
@@ -351,7 +371,8 @@ export class MMEncoder {
     } else {
       const prefix = sign | TagLen2Byte;
       this.buffer.writeUint8(prefix);
-      this.buffer.writeUint16LE(length);
+      this.buffer.writeUint8((length >> 8) & 0xff);
+      this.buffer.writeUint8(length & 0xff);
       this.buffer.writeBytes(tag);
       this.buffer.writeBytes(bs);
     }
@@ -376,7 +397,7 @@ export class MMEncoder {
       this.buffer.writeBytes(bs);
     } else {
       this.buffer.writeUint8(255);
-      this.buffer.writeUint16LE(length);
+      this.buffer.writeUint16BE(length);
       this.buffer.writeBytes(bs);
     }
 
@@ -729,7 +750,7 @@ export class MMEncoder {
     } else {
       const prefix = Prefix.String | StringLen2Byte;
       this.buffer.writeUint8(prefix);
-      this.buffer.writeUint16LE(length);
+      this.buffer.writeUint16BE(length);
       n += 3;
     }
 
@@ -776,7 +797,7 @@ export class MMEncoder {
     } else {
       const prefix = Prefix.Bytes | BytesLen2Byte;
       this.buffer.writeUint8(prefix);
-      this.buffer.writeUint16LE(length);
+      this.buffer.writeUint16BE(length);
       n += 3;
     }
 
@@ -873,9 +894,8 @@ export class MMEncoder {
   }
 
   encodeDate(date: Date): number {
-    const utcDate = new Date(date.getTime() + date.getTimezoneOffset() * 60000);
     const defaultTime = new Date('1970-01-01T00:00:00Z');
-    const diff = utcDate.getTime() - defaultTime.getTime();
+    const diff = date.getTime() - defaultTime.getTime();
     const days = Math.floor(diff / (24 * 60 * 60 * 1000));
     return this.encodeInt64(BigInt(days));
   }
@@ -904,7 +924,7 @@ export class MMEncoder {
     } else {
       prefix |= ContainerLen2Byte;
       this.buffer.writeUint8(prefix);
-      this.buffer.writeUint16LE(length);
+      this.buffer.writeUint16BE(length);
     }
 
     this.buffer.writeBytes(value);
@@ -929,7 +949,7 @@ export class MMEncoder {
     } else {
       prefix |= ContainerLen2Byte;
       this.buffer.writeUint8(prefix);
-      this.buffer.writeUint16LE(length);
+      this.buffer.writeUint16BE(length);
       n = 3 + length;
     }
 

@@ -4,10 +4,10 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "metamessage"
-version = "0.1.15"
-description = "High-performance binary message encoding library with schema tag support"
+version = "0.1.19"
+description = "MetaMessage (mm) is a structured data exchange protocol. It is self-describing, self-constraining, and self-exemplifying, enabling lossless data exchange. It is designed as a next-generation universal protocol that natively supports AI, humans, and machines."
 readme = "README.md"
-authors = [{name = "MetaMessage Contributors"}]
+authors = [{name = "MetaMessage"}]
 license = {text = "MIT"}
 requires-python = ">=3.7"
 keywords = ["serialization", "binary", "encoding", "metamessage", "schema"]

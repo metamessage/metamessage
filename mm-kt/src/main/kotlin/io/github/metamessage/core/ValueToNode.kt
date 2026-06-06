@@ -63,8 +63,8 @@ private fun valueToNode(v: Any?, tag: Tag?, depth: Int, path: String): Node {
                     data = result.data
                     text = result.text ?: Null
                 }
-                ValueType.IMAGE -> {
-                    val result = workTag.validateImage(v)
+                ValueType.MEDIA -> {
+                    val result = workTag.validateMedia(v)
                     data = result.data
                     text = result.text ?: Null
                 }
@@ -822,7 +822,7 @@ private fun createExampleValue(type: ValueType): Any? {
         ValueType.F64 -> 0.0
         ValueType.STR, ValueType.DECIMAL, ValueType.EMAIL, ValueType.URL, ValueType.IP -> ""
         ValueType.BOOL -> false
-        ValueType.BYTES, ValueType.IMAGE -> ByteArray(0)
+        ValueType.BYTES, ValueType.MEDIA -> ByteArray(0)
         ValueType.BIGINT -> BigInteger.ZERO
         ValueType.UUID -> UUID(0, 0)
         ValueType.DATETIME -> LocalDateTime.of(1970, 1, 1, 0, 0, 0)

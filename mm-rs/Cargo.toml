@@ -1,9 +1,9 @@
 [package]
 name = "metamessage"
-version = "0.1.0"
+version = "0.1.19"
 edition = "2021"
-authors = ["MetaMessage Team"]
-description = "MetaMessage implementation in Rust"
+authors = ["MetaMessage"]
+description = "MetaMessage (mm) is a structured data exchange protocol. It is self-describing, self-constraining, and self-exemplifying, enabling lossless data exchange. It is designed as a next-generation universal protocol that natively supports AI, humans, and machines."
 license = "MIT"
 repository = "https://github.com/metamessage/metamessage"
 
@@ -15,11 +15,12 @@ regex = "1.10"
 uuid = { version = "1.0", features = ["v4", "serde"] }
 ipnetwork = "0.20"
 chrono = { version = "0.4", features = ["serde"] }
+base64 = "0.22"
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 num-bigint = "0.4"
 num-traits = "0.2"
-metamessage-derive = { path = "mm-rs-derive" }
+metamessage-derive = { version = "0.1.19", path = "mm-rs-derive" }
 
 [dev-dependencies]
 

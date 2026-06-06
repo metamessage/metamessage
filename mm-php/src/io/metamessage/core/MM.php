@@ -21,7 +21,7 @@ class MM
     public string $min = '';
     public string $max = '';
     public int $size = 0;
-    public string $enumValues = '';
+    public string $enums = '';
     public string $pattern = '';
     public int $location = 0;
     public int $version = 0;
@@ -57,7 +57,7 @@ class MM
         string $min = '',
         string $max = '',
         int $size = 0,
-        string $enumValues = '',
+        string $enums = '',
         string $pattern = '',
         int $location = 0,
         int $version = 0,
@@ -91,7 +91,7 @@ class MM
         $this->min = $min;
         $this->max = $max;
         $this->size = $size;
-        $this->enumValues = $enumValues;
+        $this->enums = $enums;
         $this->pattern = $pattern;
         $this->location = $location;
         $this->version = $version;

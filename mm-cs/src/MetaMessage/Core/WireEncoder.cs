@@ -343,10 +343,7 @@ public class WireEncoder
     public int EncodeBigIntDecimal(string s)
     {
         byte[] bits = BigIntWireCodec.EncodeSignedDecimal(s);
-        byte[] inner = new byte[bits.Length + 1];
-        inner[0] = (byte)s.Length;
-        Array.Copy(bits, 0, inner, 1, bits.Length);
-        return EncodeBytes(inner);
+        return EncodeBytes(bits);
     }
 
     public static bool TryEncodeSimpleByName(WireEncoder enc, string name)

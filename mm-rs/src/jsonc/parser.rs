@@ -122,7 +122,13 @@ impl Parser {
                     ValueType::Datetime => {
                         let naive = NaiveDateTime::parse_from_str(&text, "%Y-%m-%d %H:%M:%S")
                             .map_err(|e| format!("invalid datetime '{}': {}", text, e))?;
-                        ValueData::Int(naive.and_utc().timestamp())
+                        let utc_ts = naive.and_utc().timestamp();
+                        let timestamp = if let Some(loc) = tag.location {
+                            utc_ts - (loc as i64 * 3600)
+                        } else {
+                            utc_ts
+                        };
+                        ValueData::Int(timestamp)
                     }
                     ValueType::Uuid => {
                         let hex = text.replace('-', "");
@@ -284,7 +290,9 @@ impl Parser {
             let child_path = format!("{}.{}", obj_path, key);
             if let Some(mut val) = self.parse_node(&child_path)? {
                 if let Some(mut ct) = val.get_tag().cloned() {
-                    ct.inherit(&tag);
+                    if tag.value_type == ValueType::Map {
+                        ct.inherit(&tag);
+                    }
                     if let Some(t) = val.get_tag_mut() {
                         *t = ct;
                     }
@@ -352,11 +360,10 @@ impl Parser {
 
             let item_path = format!("{}[{}]", arr_path, index);
             if let Some(mut item) = self.parse_node(&item_path)? {
-                if let Some(mut ct) = item.get_tag().cloned() {
-                    ct.inherit(&tag);
-                    if let Some(t) = item.get_tag_mut() {
-                        *t = ct;
-                    }
+                let mut ct = item.get_tag().cloned().unwrap_or_default();
+                ct.inherit(&tag);
+                if let Some(t) = item.get_tag_mut() {
+                    *t = ct;
                 }
                 items.push(item);
                 index += 1;

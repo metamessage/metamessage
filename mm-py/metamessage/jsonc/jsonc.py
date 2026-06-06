@@ -9,6 +9,7 @@ from dataclasses import dataclass
 
 from ..ir.tag import Tag, ValueType, mm_tag, MergeTag, NewTag
 from ..ir.ast import Obj, Arr, Val, Field, Node
+from ..ir.validator import MmValidator
 
 
 # ===== Tokenizer =====
@@ -288,7 +289,15 @@ class Parser:
             if self.peek().type == TOKEN_COMMA:
                 self.next()
 
-        tag2 = self._consume_comments_for(anchor_line)
+        # Clear stale trailing comments before collecting tag2.
+        # Use the closing } line as anchor instead of the opening { line.
+        if self.pending:
+            first = self.pending[0]
+            closing_line = self.peek().line  # line of }
+            if closing_line - first.line > 1:
+                self.pending = []
+
+        tag2 = self._consume_comments_for(self.peek().line)
         if tag is None:
             tag = tag2
         elif tag2 is not None:
@@ -305,6 +314,15 @@ class Parser:
         self.depth += 1
 
         tag = self._consume_comments_for(anchor_line)
+
+        if tag is None:
+            tag = NewTag()
+
+        if tag.type == ValueType.Unknown:
+            if tag.size > 0:
+                tag.type = ValueType.Arr
+            else:
+                tag.type = ValueType.Vec
 
         items = []
         index = 0
@@ -330,17 +348,23 @@ class Parser:
             if self.peek().type == TOKEN_COMMA:
                 self.next()
 
-        tag2 = self._consume_comments_for(anchor_line)
-        if tag is None:
-            tag = tag2
-        elif tag2 is not None:
-            tag = MergeTag(tag, tag2)
+        # tag2 = self._consume_comments_for(anchor_line)
+        # if tag is None:
+        #     tag = tag2
+        # elif tag2 is not None:
+        #     tag = MergeTag(tag, tag2)
 
         if self.peek().type == TOKEN_RBRACKET:
             self.next()
 
         self.depth -= 1
-        return Arr(items=items, tag=tag or NewTag(), path=path)
+        arr = Arr(items=items, tag=tag or NewTag(), path=path)
+        r = MmValidator.validate_arr(arr, tag)
+
+        if r.error:
+            raise Exception(f"Validation error at {path}: {r.error}")
+        else:
+            return Arr(items=items, tag=tag or NewTag(), path=path)
 
     def _parse_value(self, path: str, anchor_line: int) -> Val:
         tag = self._consume_comments_for(anchor_line)
@@ -404,11 +428,10 @@ def _get_tag_str(tag) -> str:
     # Build tag string manually to filter inferred types
     parts = []
 
-    type_key = "child_type" if inh else "type"
-    if tag.type != ValueType.Unknown and tag.type not in _INFERRED_TYPES:
+    if tag.type != ValueType.Unknown and tag.type not in _INFERRED_TYPES and not inh:
         if not (tag.type == ValueType.Arr and tag.size > 0 or
                 tag.type == ValueType.Enums and tag.enums):
-            parts.append(f"{type_key}={str(tag.type)}")
+            parts.append(f"type={str(tag.type)}")
 
     if tag.example:
         parts.append("example")
@@ -609,13 +632,8 @@ def write_array_jsonc(b: list, a: Arr, indent: int):
     b.append("[\n")
     for item in a.items:
         item_tag = item.get_tag()
-        comment_tag = item_tag
-        if a.tag is not None and _tag_has_child(a.tag):
-            comment_tag = NewTag()
-            if item_tag is not None:
-                comment_tag = MergeTag(comment_tag, item_tag)
-            comment_tag.inherit(a.tag)
-        write_leading_comments(b, comment_tag, indent + 1)
+        # Only write the item's own comments, not inherited parent child_type
+        write_leading_comments(b, item_tag, indent + 1)
         write_indent(b, indent + 1)
         write_node_jsonc(b, item, indent + 1)
         b.append(",\n")

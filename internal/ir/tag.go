@@ -129,6 +129,7 @@ type Tag struct {
 	ChildMime       int            // child_mime=...
 
 	IsInherit bool
+	IsEmpty   bool
 }
 
 const (
@@ -187,6 +188,7 @@ func (t *Tag) Inherit(tag *Tag) {
 
 	if tag.ChildEnums != "" {
 		t.Enums = tag.ChildEnums
+		t.Type = ValueTypeEnum
 	}
 
 	if tag.ChildPattern != "" {
@@ -203,6 +205,7 @@ func (t *Tag) Inherit(tag *Tag) {
 
 	if tag.ChildMime != 0 {
 		t.Mime = tag.ChildMime
+		t.Type = ValueTypeMedia
 	}
 }
 

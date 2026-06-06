@@ -74,14 +74,15 @@ public class JsoncPrinter
                 else if (v.Tag.Type == ValueType.I || v.Tag.Type == ValueType.I8 || v.Tag.Type == ValueType.I16 ||
                          v.Tag.Type == ValueType.I32 || v.Tag.Type == ValueType.I64 || v.Tag.Type == ValueType.U ||
                          v.Tag.Type == ValueType.U8 || v.Tag.Type == ValueType.U16 || v.Tag.Type == ValueType.U32 ||
-                         v.Tag.Type == ValueType.U64 || v.Tag.Type == ValueType.Bigint || v.Tag.Type == ValueType.F32 ||
+                         v.Tag.Type == ValueType.U64 || v.Tag.Type == ValueType.F32 ||
                          v.Tag.Type == ValueType.F64 || v.Tag.Type == ValueType.Decimal)
                 {
                     b.Append("0");
                 }
                 else if (v.Tag.Type == ValueType.Str || v.Tag.Type == ValueType.Email || v.Tag.Type == ValueType.Url ||
                          v.Tag.Type == ValueType.Enums || v.Tag.Type == ValueType.Datetime || v.Tag.Type == ValueType.Date ||
-                         v.Tag.Type == ValueType.Time || v.Tag.Type == ValueType.Uuid || v.Tag.Type == ValueType.Bytes)
+                         v.Tag.Type == ValueType.Time || v.Tag.Type == ValueType.Uuid || v.Tag.Type == ValueType.Bigint || v.Tag.Type == ValueType.Bytes ||
+                         v.Tag.Type == ValueType.Media || v.Tag.Type == ValueType.Image || v.Tag.Type == ValueType.Video)
                 {
                     b.Append("\"\"");
                 }
@@ -95,19 +96,23 @@ public class JsoncPrinter
             {
                 case ValueType.Str:
                 case ValueType.Bytes:
+                case ValueType.Media:
+                case ValueType.Image:
+                case ValueType.Video:
                 case ValueType.Datetime:
                 case ValueType.Date:
                 case ValueType.Time:
                 case ValueType.Uuid:
+                case ValueType.Enums:
                 case ValueType.Ip:
                 case ValueType.Url:
                 case ValueType.Email:
-                case ValueType.Enums:
                     b.Append('"');
                     b.Append(EscapeString(v.Value?.ToString() ?? ""));
                     b.Append('"');
                     return;
 
+                case ValueType.Bigint:
                 case ValueType.I:
                 case ValueType.I8:
                 case ValueType.I16:
@@ -118,7 +123,6 @@ public class JsoncPrinter
                 case ValueType.U16:
                 case ValueType.U32:
                 case ValueType.U64:
-                case ValueType.Bigint:
                 case ValueType.Decimal:
                     {
                         if (v.Value is string sVal)

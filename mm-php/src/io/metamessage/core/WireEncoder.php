@@ -367,6 +367,18 @@ class WireEncoder
                 }
                 break;
 
+            case ValueType::MEDIA:
+                if ($tag->isNull) {
+                    $n = $this->encodeSimple(SimpleValue::NULL_BYTES);
+                } else {
+                    $data = $val->Data;
+                    if (is_string($data)) {
+                        $data = array_map('ord', str_split($data));
+                    }
+                    $n = $this->encodeBytes($data);
+                }
+                break;
+
             default:
                 throw new \Exception('type error: unsupported type: ' . $val->getTag()->type->name . ', value: ' . var_export($val->Data, true));
         }
@@ -463,12 +475,10 @@ class WireEncoder
 
     public function encodeDate(\DateTime $t): int
     {
-        $default = new \DateTime('1970-01-01 00:00:00', new \DateTimeZone('UTC'));
         $v1 = clone $t;
         $v1->setTimezone(new \DateTimeZone('UTC'));
         $v1->setTime(0, 0, 0);
-        $diff = $v1->diff($default);
-        $v = (int)$diff->format('%r%a');
+        $v = (int)($v1->getTimestamp() / 86400);
         return $this->encodeInt64($v);
     }
 

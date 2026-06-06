@@ -483,16 +483,6 @@ func (e *encoder) encodeInt64(v int64) (n uint32, err error) {
 	return e.encodeInt(sign, uv)
 }
 
-func printBytes(buf []byte) {
-	for i, b := range buf {
-		if i > 0 {
-			fmt.Print(" ")
-		}
-		fmt.Printf("%02x", b)
-	}
-	fmt.Println()
-}
-
 func (e *encoder) encodeBigInt(s string) (n uint32, err error) {
 	e.writeByte(byte(len(s)))
 	n = utils.EncodeBigInt(e, s)

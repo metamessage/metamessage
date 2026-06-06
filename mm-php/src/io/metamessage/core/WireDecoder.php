@@ -331,7 +331,7 @@ class WireDecoder
                         $enum .= chr($this->readByte());
                         $n++;
                     }
-                    $tag->enumValues = $enum;
+                    $tag->enums = $enum;
                 } elseif ($remain === 6) {
                     $l = $this->readByte();
                     $n++;
@@ -340,7 +340,7 @@ class WireDecoder
                         $enum .= chr($this->readByte());
                         $n++;
                     }
-                    $tag->enumValues = $enum;
+                    $tag->enums = $enum;
                 } elseif ($remain === 7) {
                     $lh = $this->readByte();
                     $ll = $this->readByte();
@@ -351,7 +351,7 @@ class WireDecoder
                         $enum .= chr($this->readByte());
                         $n++;
                     }
-                    $tag->enumValues = $enum;
+                    $tag->enums = $enum;
                 }
                 return $n;
 
@@ -383,7 +383,7 @@ class WireDecoder
                     $loc .= chr($this->readByte());
                     $n++;
                 }
-                $tag->locationHours = (int)$loc;
+                $tag->location = (int)$loc;
                 return $n;
 
             case Tag::K_VERSION:
@@ -589,7 +589,7 @@ class WireDecoder
                     $loc .= chr($this->readByte());
                     $n++;
                 }
-                $tag->childLocationHours = (int)$loc;
+                $tag->childLocation = (int)$loc;
                 return $n;
 
             case Tag::K_CHILD_VERSION:
@@ -776,7 +776,9 @@ class WireDecoder
                     if ($v > PHP_INT_MAX) {
                         throw new MmDecodeException('decodeDateTime: time value out of range');
                     }
-                    $dt = new \DateTime('@' . $v, new \DateTimeZone('UTC'));
+                    $locHours = $tag->location ?? 0;
+                    $adjustedV = $v + $locHours * 3600;
+                    $dt = new \DateTime('@' . $adjustedV, new \DateTimeZone('UTC'));
                     $data = $dt;
                     $text = $dt->format('Y-m-d H:i:s');
                 }
@@ -815,8 +817,8 @@ class WireDecoder
                     $data = -1;
                     $text = '';
                 } else {
-                    if ($tag->enumValues !== '') {
-                        $enums = explode('|', $tag->enumValues);
+                    if ($tag->enums !== '') {
+                        $enums = explode('|', $tag->enums);
                         $d = (int)$v;
                         if ($d >= count($enums)) {
                             throw new MmDecodeException('enum index out of range');

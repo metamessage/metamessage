@@ -22,9 +22,9 @@ class Tag
     public string $min = '';
     public string $max = '';
     public int $size = 0;
-    public string $enumValues = '';
+    public string $enums = '';
     public string $pattern = '';
-    public int $locationHours = 0;
+    public int $location = 0;
     public int $version = self::DEFAULT_VERSION;
     public string $mime = '';
     public int $more = 0;
@@ -40,7 +40,7 @@ class Tag
     public int $childSize = 0;
     public string $childEnums = '';
     public string $childPattern = '';
-    public int $childLocationHours = 0;
+    public int $childLocation = 0;
     public int $childVersion = self::DEFAULT_VERSION;
     public string $childMime = '';
 
@@ -169,12 +169,12 @@ class Tag
         $t->min = $ann->min;
         $t->max = $ann->max;
         $t->size = $ann->size;
-        $t->enumValues = $ann->enumValues;
-        if (!empty($t->enumValues)) {
+        $t->enums = $ann->enums;
+        if (!empty($t->enums)) {
             $t->type = ValueType::ENUMS;
         }
         $t->pattern = $ann->pattern;
-        $t->locationHours = $ann->location;
+        $t->location = $ann->location;
         $t->version = $ann->version;
         $t->mime = $ann->mime;
         $t->childDesc = $ann->childDesc;
@@ -191,7 +191,7 @@ class Tag
             $t->childType = ValueType::ENUMS;
         }
         $t->childPattern = $ann->childPattern;
-        $t->childLocationHours = $ann->childLocation;
+        $t->childLocation = $ann->childLocation;
         $t->childVersion = $ann->childVersion;
         $t->childMime = $ann->childMime;
         return $t;
@@ -213,9 +213,9 @@ class Tag
         $copy->min = $this->min;
         $copy->max = $this->max;
         $copy->size = $this->size;
-        $copy->enumValues = $this->enumValues;
+        $copy->enums = $this->enums;
         $copy->pattern = $this->pattern;
-        $copy->locationHours = $this->locationHours;
+        $copy->location = $this->location;
         $copy->version = $this->version;
         $copy->mime = $this->mime;
         $copy->childDesc = $this->childDesc;
@@ -229,7 +229,7 @@ class Tag
         $copy->childSize = $this->childSize;
         $copy->childEnums = $this->childEnums;
         $copy->childPattern = $this->childPattern;
-        $copy->childLocationHours = $this->childLocationHours;
+        $copy->childLocation = $this->childLocation;
         $copy->childVersion = $this->childVersion;
         $copy->childMime = $this->childMime;
         $copy->isInherit = $this->isInherit;
@@ -250,12 +250,13 @@ class Tag
         $this->min = $parent->childMin;
         $this->max = $parent->childMax;
         $this->size = $parent->childSize;
-        $this->enumValues = $parent->childEnums;
+        $this->enums = $parent->childEnums;
         $this->pattern = $parent->childPattern;
-        $this->locationHours = $parent->childLocationHours;
+        $this->location = $parent->childLocation;
         $this->version = $parent->childVersion;
         $this->mime = $parent->childMime;
         $this->isInherit = true;
+
     }
 
     public function toBytes(): array
@@ -304,15 +305,16 @@ class Tag
         }
 
         if ($tag->childEnums !== '') {
-            $this->enumValues = $tag->childEnums;
+            $this->enums = $tag->childEnums;
+            $this->type = ValueType::ENUMS;
         }
 
         if ($tag->childPattern !== '') {
             $this->pattern = $tag->childPattern;
         }
 
-        if ($tag->childLocationHours !== 0) {
-            $this->locationHours = $tag->childLocationHours;
+        if ($tag->childLocation !== 0) {
+            $this->location = $tag->childLocation;
         }
 
         if ($tag->childVersion !== self::DEFAULT_VERSION) {
@@ -321,6 +323,7 @@ class Tag
 
         if ($tag->childMime !== '') {
             $this->mime = $tag->childMime;
+            $this->type = ValueType::MEDIA;
         }
     }
 
@@ -361,7 +364,8 @@ class Tag
             } else {
                 if (
                     $this->type === ValueType::ARR && $this->size > 0 ||
-                    $this->type === ValueType::ENUMS && $this->enumValues !== ''
+                    $this->type === ValueType::ENUMS && $this->enums !== '' ||
+                    $this->type === ValueType::MEDIA && $this->mime !== ''
                 ) {
                 } else {
                     $add(self::T_TYPE . '=' . $this->type->wireName());
@@ -415,16 +419,16 @@ class Tag
             $add(self::T_SIZE . '=' . $this->size);
         }
 
-        if ($this->enumValues !== '' && !$this->isInherit) {
-            $add(self::T_ENUMS . '=' . $this->enumValues);
+        if ($this->enums !== '' && !$this->isInherit) {
+            $add(self::T_ENUMS . '=' . $this->enums);
         }
 
         if ($this->pattern !== '' && !$this->isInherit) {
             $add(self::T_PATTERN . '=' . $this->pattern);
         }
 
-        if ($this->locationHours !== 0 && !$this->isInherit) {
-            $add(self::T_LOCATION . '=' . $this->locationHours);
+        if ($this->location !== 0 && !$this->isInherit) {
+            $add(self::T_LOCATION . '=' . $this->location);
         }
 
         if ($this->version !== self::DEFAULT_VERSION && !$this->isInherit) {
@@ -451,7 +455,8 @@ class Tag
             } else {
                 if (
                     $this->childType === ValueType::ARR && $this->childSize > 0 ||
-                    $this->childType === ValueType::ENUMS && $this->childEnums !== ''
+                    $this->childType === ValueType::ENUMS && $this->childEnums !== '' ||
+                    $this->childType === ValueType::MEDIA && $this->childMime !== ''
                 ) {
                 } else {
                     $add(self::T_CHILD_TYPE . '=' . $this->childType->wireName());
@@ -495,8 +500,8 @@ class Tag
             $add(self::T_CHILD_PATTERN . '=' . $this->childPattern);
         }
 
-        if ($this->childLocationHours !== 0) {
-            $add(self::T_CHILD_LOCATION . '=' . $this->childLocationHours);
+        if ($this->childLocation !== 0) {
+            $add(self::T_CHILD_LOCATION . '=' . $this->childLocation);
         }
 
         if ($this->childVersion !== self::DEFAULT_VERSION) {
@@ -558,7 +563,8 @@ class Tag
             } else {
                 if (
                     $this->type === ValueType::ARR && $this->size > 0 ||
-                    $this->type === ValueType::ENUMS && $this->enumValues !== ''
+                    $this->type === ValueType::ENUMS && $this->enums !== '' ||
+                    $this->type === ValueType::MEDIA && $this->mime !== ''
                 ) {
                 } else {
                     $w->writeByte(self::K_TYPE);
@@ -619,20 +625,20 @@ class Tag
             self::encodeU64Static($w, self::K_SIZE, $this->size);
         }
 
-        if ($this->enumValues !== '' && !$this->isInherit) {
-            $l = strlen($this->enumValues);
+        if ($this->enums !== '' && !$this->isInherit) {
+            $l = strlen($this->enums);
             if ($l <= 5) {
                 $w->writeByte(self::K_ENUMS | $l);
-                $w->writeAscii($this->enumValues);
+                $w->writeAscii($this->enums);
             } elseif ($l <= 0xFF) {
                 $w->writeByte(self::K_ENUMS | 6);
                 $w->writeByte($l);
-                $w->writeAscii($this->enumValues);
+                $w->writeAscii($this->enums);
             } elseif ($l <= 0xFFFF) {
                 $w->writeByte(self::K_ENUMS | 7);
                 $w->writeByte(($l >> 8) & 0xFF);
                 $w->writeByte($l & 0xFF);
-                $w->writeAscii($this->enumValues);
+                $w->writeAscii($this->enums);
             }
         }
 
@@ -648,8 +654,8 @@ class Tag
             }
         }
 
-        if ($this->locationHours !== 0 && !$this->isInherit) {
-            $v = (string)$this->locationHours;
+        if ($this->location !== 0 && !$this->isInherit) {
+            $v = (string)$this->location;
             $w->writeByte(self::K_LOCATION | strlen($v));
             $w->writeAscii($v);
         }
@@ -659,13 +665,7 @@ class Tag
         }
 
         if ($this->mime !== '' && !$this->isInherit) {
-            $l = Mime::parse($this->mime);
-            if ($l < 7) {
-                $w->writeByte(self::K_MIME | $l);
-            } else {
-                $w->writeByte(self::K_MIME | 7);
-                $w->writeByte($l);
-            }
+            self::encodeU64Static($w, self::K_MIME, Mime::parse($this->mime));
         }
 
         if ($this->childDesc !== '') {
@@ -697,7 +697,8 @@ class Tag
             } else {
                 if (
                     $this->childType === ValueType::ARR && $this->childSize > 0 ||
-                    $this->childType === ValueType::ENUMS && $this->childEnums !== ''
+                    $this->childType === ValueType::ENUMS && $this->childEnums !== '' ||
+                    $this->childType === ValueType::MEDIA && $this->childMime !== ''
                 ) {
                 } else {
                     $w->writeByte(self::K_CHILD_TYPE);
@@ -787,8 +788,8 @@ class Tag
             }
         }
 
-        if ($this->childLocationHours !== 0) {
-            $v = (string)$this->childLocationHours;
+        if ($this->childLocation !== 0) {
+            $v = (string)$this->childLocation;
             $w->writeByte(self::K_CHILD_LOCATION | strlen($v));
             $w->writeAscii($v);
         }
@@ -798,15 +799,7 @@ class Tag
         }
 
         if ($this->childMime !== '') {
-            $l = strlen($this->childMime);
-            if ($l < 7) {
-                $w->writeByte(self::K_CHILD_MIME | $l);
-                $w->writeAscii($this->childMime);
-            } else {
-                $w->writeByte(self::K_CHILD_MIME | 7);
-                $w->writeByte($l);
-                $w->writeAscii($this->childMime);
-            }
+            self::encodeU64Static($w, self::K_CHILD_MIME, Mime::parse($this->childMime));
         }
 
         return $w->toByteArray();
@@ -938,16 +931,16 @@ class Tag
             $dst->size = $src->size;
         }
 
-        if ($src->enumValues !== '') {
-            $dst->enumValues = $src->enumValues;
+        if ($src->enums !== '') {
+            $dst->enums = $src->enums;
         }
 
         if ($src->pattern !== '') {
             $dst->pattern = $src->pattern;
         }
 
-        if ($src->locationHours !== 0) {
-            $dst->locationHours = $src->locationHours;
+        if ($src->location !== 0) {
+            $dst->location = $src->location;
         }
 
         if ($src->version !== self::DEFAULT_VERSION) {
@@ -1002,8 +995,8 @@ class Tag
             $dst->childPattern = $src->childPattern;
         }
 
-        if ($src->childLocationHours !== 0) {
-            $dst->childLocationHours = $src->childLocationHours;
+        if ($src->childLocation !== 0) {
+            $dst->childLocation = $src->childLocation;
         }
 
         if ($src->childVersion !== self::DEFAULT_VERSION) {
@@ -1117,11 +1110,11 @@ class Tag
 
                 case self::T_ENUMS:
                     $r->type = ValueType::ENUMS;
-                    $r->enumValues = $v;
+                    $r->enums = $v;
                     break;
 
                 case self::T_LOCATION:
-                    $r->locationHours = (int)$v;
+                    $r->location = (int)$v;
                     break;
 
                 case self::T_VERSION:
@@ -1130,6 +1123,7 @@ class Tag
 
                 case self::T_MIME:
                     $r->mime = $v;
+                    $r->type = ValueType::MEDIA;
                     break;
 
                 case self::T_CHILD_DESC:
@@ -1178,7 +1172,7 @@ class Tag
                     break;
 
                 case self::T_CHILD_LOCATION:
-                    $r->childLocationHours = (int)$v;
+                    $r->childLocation = (int)$v;
                     break;
 
                 case self::T_CHILD_VERSION:
@@ -1187,6 +1181,7 @@ class Tag
 
                 case self::T_CHILD_MIME:
                     $r->childMime = $v;
+                    $r->childType = ValueType::MEDIA;
                     break;
 
                 default:

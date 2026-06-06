@@ -31,13 +31,11 @@ func (t *Tag) ValidateVec(value []Node) (err error) {
 		return
 	}
 
-	l := len(value)
-
-	if l == 0 {
+	if t.IsEmpty || len(value) == 0 {
 		if t.AllowEmpty {
 			return
 		}
-		err = fmt.Errorf("vec not allow empty")
+		err = fmt.Errorf("not allow empty (add 'allow_empty' tag if empty is allowed)")
 		return
 	}
 
@@ -72,21 +70,25 @@ func (t *Tag) ValidateArr(value []Node) (err error) {
 		return
 	}
 
-	l := len(value)
-
-	if l == 0 {
+	if t.IsEmpty {
 		if t.AllowEmpty {
 			return
 		}
-		err = fmt.Errorf("type array not allow empty")
+		err = fmt.Errorf("not allow empty (add 'allow_empty' tag if empty is allowed)")
 		return
 	}
 
-	if t.Size > 0 {
-		if l > t.Size {
-			err = fmt.Errorf("type array over size")
-			return
-		}
+	// TODO len(value) != t.Size
+	// 	// mm: size=10
+	// "items": [
+	// 	1,
+	// 	2,
+	// 	3,
+	// ],
+
+	if t.Size <= 0 || len(value) > t.Size {
+		err = fmt.Errorf("size error")
+		return
 	}
 
 	if value[0].GetType() != NodeTypeValue {
@@ -133,6 +135,15 @@ func (t *Tag) ValidateMap() (err error) {
 		err = fmt.Errorf("type map not support location UTC%d", location)
 		return
 	}
+
+	if t.IsEmpty {
+		if t.AllowEmpty {
+			return
+		}
+		err = fmt.Errorf("not allow empty (add 'allow_empty' tag if empty is allowed)")
+		return
+	}
+
 	return
 }
 

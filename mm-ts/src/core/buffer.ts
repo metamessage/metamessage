@@ -57,6 +57,12 @@ export class MMBuffer {
     this.position += 2;
   }
 
+  writeUint16BE(value: number): void {
+    this.ensureCapacity(2);
+    this.view.setUint16(this.position, value, false);
+    this.position += 2;
+  }
+
   writeInt16LE(value: number): void {
     this.ensureCapacity(2);
     this.view.setInt16(this.position, value, true);

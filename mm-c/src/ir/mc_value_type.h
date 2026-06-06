@@ -36,8 +36,9 @@ typedef enum {
   MM_VALUE_URL = 28,
   MM_VALUE_EMAIL = 29,
   MM_VALUE_ENUMS = 30,
-  MM_VALUE_IMAGE = 31,
-  MM_VALUE_VIDEO = 32
+  MM_VALUE_MEDIA = 31,
+  MM_VALUE_IMAGE = 32,
+  MM_VALUE_VIDEO = 33
 } mm_value_type_t;
 
 static inline const char *mm_value_type_to_string(mm_value_type_t vt) {
@@ -104,6 +105,8 @@ static inline const char *mm_value_type_to_string(mm_value_type_t vt) {
     return "email";
   case MM_VALUE_ENUMS:
     return "enums";
+  case MM_VALUE_MEDIA:
+    return "media";
   case MM_VALUE_IMAGE:
     return "image";
   case MM_VALUE_VIDEO:
@@ -188,6 +191,8 @@ static inline mm_value_type_t mm_value_type_parse(const char *s) {
     return MM_VALUE_EMAIL;
   if (strcmp(lower, "enums") == 0)
     return MM_VALUE_ENUMS;
+  if (strcmp(lower, "media") == 0)
+    return MM_VALUE_MEDIA;
   if (strcmp(lower, "image") == 0)
     return MM_VALUE_IMAGE;
   if (strcmp(lower, "video") == 0)

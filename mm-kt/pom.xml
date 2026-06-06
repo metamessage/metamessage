@@ -6,10 +6,10 @@
 
     <groupId>io.github.metamessage</groupId>
     <artifactId>metamessage</artifactId>
-    <version>0.1.2</version>
+    <version>0.1.19</version>
     <packaging>jar</packaging>
     <name>MetaMessage</name>
-    <description>Kotlin implementation of metamessage binary codec (compatible with github.com/metamessage/metamessage Go mm package). Field metadata via @MM annotation.</description>
+    <description>MetaMessage (mm) is a structured data exchange protocol. It is self-describing, self-constraining, and self-exemplifying, enabling lossless data exchange. It is designed as a next-generation universal protocol that natively supports AI, humans, and machines.</description>
     <url>https://github.com/metamessage/metamessage</url>
 
     <licenses>

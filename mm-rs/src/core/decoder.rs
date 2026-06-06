@@ -1,11 +1,11 @@
 use crate::core::constants::{
     BYTES_LEN_1, CONTAINER_LEN_1, CONTAINER_LEN_MASK, INT_LEN_1, INT_LEN_MASK, STRING_LEN_1,
-    TAG_ALLOW_EMPTY, TAG_CHILD_ALLOW_EMPTY, TAG_CHILD_DEFAULT_VAL, TAG_CHILD_DESC,
-    TAG_CHILD_ENUMS, TAG_CHILD_LOCATION, TAG_CHILD_MAX, TAG_CHILD_MIME, TAG_CHILD_MIN,
-    TAG_CHILD_NULLABLE, TAG_CHILD_PATTERN, TAG_CHILD_SIZE, TAG_CHILD_TYPE, TAG_CHILD_UNIQUE,
-    TAG_CHILD_VERSION, TAG_DEFAULT_VAL, TAG_DEPRECATED, TAG_DESC, TAG_ENUMS, TAG_EXAMPLE,
-    TAG_IS_NULL, TAG_KEY_MASK, TAG_LOCATION, TAG_MAX, TAG_MIME, TAG_MIN, TAG_MORE, TAG_NULLABLE,
-    TAG_PATTERN, TAG_PAYLOAD_MASK, TAG_SIZE, TAG_TYPE, TAG_UNIQUE, TAG_VERSION, TAG_LEN_1,
+    TAG_ALLOW_EMPTY, TAG_CHILD_ALLOW_EMPTY, TAG_CHILD_DEFAULT_VAL, TAG_CHILD_DESC, TAG_CHILD_ENUMS,
+    TAG_CHILD_LOCATION, TAG_CHILD_MAX, TAG_CHILD_MIME, TAG_CHILD_MIN, TAG_CHILD_NULLABLE,
+    TAG_CHILD_PATTERN, TAG_CHILD_SIZE, TAG_CHILD_TYPE, TAG_CHILD_UNIQUE, TAG_CHILD_VERSION,
+    TAG_DEFAULT_VAL, TAG_DEPRECATED, TAG_DESC, TAG_ENUMS, TAG_EXAMPLE, TAG_IS_NULL, TAG_KEY_MASK,
+    TAG_LEN_1, TAG_LOCATION, TAG_MAX, TAG_MIME, TAG_MIN, TAG_MORE, TAG_NULLABLE, TAG_PATTERN,
+    TAG_PAYLOAD_MASK, TAG_SIZE, TAG_TYPE, TAG_UNIQUE, TAG_VERSION,
 };
 use crate::core::prefix::{
     CONTAINER_TYPE_MASK, FLOAT_LEN_1, FLOAT_LEN_MASK, FLOAT_POSITIVE_NEGATIVE_MASK, PREFIX_BYTES,
@@ -14,8 +14,10 @@ use crate::core::prefix::{
 };
 use crate::core::simple_value::SimpleValue;
 use crate::ir::ast::{Array, Field, Node, Object, Value, ValueData};
+use crate::ir::mime::mime_to_str;
 use crate::ir::tag::Tag;
 use crate::ir::ValueType;
+use chrono::TimeZone;
 
 pub struct Decoder {
     data: Vec<u8>,
@@ -125,6 +127,21 @@ impl Decoder {
             inner_tag.inherit(&tag);
             if tag.child_type == ValueType::Unknown {
                 inner_tag.value_type = tag.value_type;
+                if tag.enums.is_some() {
+                    inner_tag.enums = tag.enums.clone();
+                }
+                if tag.mime.is_some() {
+                    inner_tag.mime = tag.mime.clone();
+                }
+                if tag.version.is_some() {
+                    inner_tag.version = tag.version;
+                }
+            }
+            if inner_tag.location.is_none() {
+                inner_tag.location = tag.location;
+            }
+            if inner_tag.version.is_none() {
+                inner_tag.version = tag.version;
             }
             self.decode_node(&inner_tag, "")
         }
@@ -251,12 +268,13 @@ impl Decoder {
                 Ok(2 + payload)
             }
             TAG_MIME => {
+                tag.value_type = ValueType::Media;
                 let mime_id = if payload < 7 {
                     payload as u8
                 } else {
                     self.read_byte()?
                 };
-                tag.mime = Some(mime_id.to_string());
+                tag.mime = Some(mime_to_str(mime_id).to_string());
                 let extra = if payload < 7 { 0 } else { 1 };
                 Ok(1 + extra)
             }
@@ -364,12 +382,13 @@ impl Decoder {
                 Ok(2 + payload)
             }
             TAG_CHILD_MIME => {
+                tag.child_type = ValueType::Media;
                 let mime_id = if payload < 7 {
                     payload as u8
                 } else {
                     self.read_byte()?
                 };
-                tag.child_mime = Some(mime_id.to_string());
+                tag.child_mime = Some(mime_to_str(mime_id).to_string());
                 let extra = if payload < 7 { 0 } else { 1 };
                 Ok(1 + extra)
             }
@@ -454,8 +473,81 @@ impl Decoder {
             v
         };
 
-        let data = ValueData::Int(v as i64);
-        let text = v.to_string();
+        let (data, text): (ValueData, String) = match tag.value_type {
+            ValueType::Datetime => {
+                let naive = chrono::DateTime::from_timestamp(v as i64, 0)
+                    .map(|dt| dt.naive_utc())
+                    .unwrap_or(chrono::NaiveDateTime::default());
+                let offset = if let Some(offset_hours) = tag.location {
+                    chrono::FixedOffset::east_opt(offset_hours * 3600)
+                        .unwrap_or_else(|| chrono::FixedOffset::east_opt(0).unwrap())
+                } else {
+                    chrono::FixedOffset::east_opt(0).unwrap()
+                };
+                let dt = offset.from_utc_datetime(&naive);
+                let text = dt.format("%Y-%m-%d %H:%M:%S").to_string();
+                (ValueData::Int(v as i64), text)
+            }
+            ValueType::Date => {
+                let epoch = chrono::NaiveDate::from_ymd_opt(1970, 1, 1).unwrap();
+                let date = epoch + chrono::Duration::days(v as i64);
+                let text = if let Some(offset_hours) = tag.location {
+                    let dt = date.and_hms_opt(0, 0, 0).unwrap();
+                    let offset = chrono::FixedOffset::east_opt(offset_hours * 3600)
+                        .unwrap_or_else(|| chrono::FixedOffset::east_opt(0).unwrap());
+                    let localized = offset.from_utc_datetime(&dt);
+                    localized.format("%Y-%m-%d").to_string()
+                } else {
+                    date.format("%Y-%m-%d").to_string()
+                };
+                (ValueData::Int(v as i64), text)
+            }
+            ValueType::Time => {
+                let hours = (v / 3600) % 24;
+                let minutes = (v % 3600) / 60;
+                let seconds = v % 60;
+                let text = if let Some(offset_hours) = tag.location {
+                    let base = chrono::NaiveTime::from_hms_opt(0, 0, 0).unwrap();
+                    let time = chrono::NaiveTime::from_hms_opt(
+                        hours as u32,
+                        minutes as u32,
+                        seconds as u32,
+                    )
+                    .unwrap_or(base);
+                    let base_dt = chrono::NaiveDate::from_ymd_opt(1970, 1, 1)
+                        .unwrap()
+                        .and_time(time);
+                    let offset = chrono::FixedOffset::east_opt(offset_hours * 3600)
+                        .unwrap_or_else(|| chrono::FixedOffset::east_opt(0).unwrap());
+                    let localized = offset.from_utc_datetime(&base_dt);
+                    localized.format("%H:%M:%S").to_string()
+                } else {
+                    format!("{:02}:{:02}:{:02}", hours, minutes, seconds)
+                };
+                (ValueData::Int(v as i64), text)
+            }
+            ValueType::Enum => {
+                if let Some(ref enums_str) = tag.enums {
+                    let enums: Vec<&str> = enums_str.split('|').collect();
+                    let idx = v as usize;
+                    if idx < enums.len() {
+                        let text = enums[idx].trim().to_string();
+                        (ValueData::Int(v as i64), text)
+                    } else {
+                        let text = v.to_string();
+                        (ValueData::Int(v as i64), text)
+                    }
+                } else {
+                    let text = v.to_string();
+                    (ValueData::Int(v as i64), text)
+                }
+            }
+            _ => {
+                let text = v.to_string();
+                let data = ValueData::Int(v as i64);
+                (data, text)
+            }
+        };
 
         Ok(Node::Value(Value {
             data,
@@ -571,9 +663,31 @@ impl Decoder {
             vec![]
         };
 
+        let text = match tag.value_type {
+            ValueType::Uuid => {
+                if bytes.len() == 16 {
+                    let mut uuid_bytes = [0u8; 16];
+                    uuid_bytes.copy_from_slice(&bytes);
+                    uuid::Uuid::from_bytes(uuid_bytes).to_string()
+                } else {
+                    use base64::{engine::general_purpose, Engine as _};
+                    general_purpose::STANDARD.encode(&bytes)
+                }
+            }
+            ValueType::Bigint => {
+                let decoded =
+                    crate::core::utils::decode_big_int(&bytes).unwrap_or_else(|_| "0".to_string());
+                decoded
+            }
+            _ => {
+                use base64::{engine::general_purpose, Engine as _};
+                general_purpose::STANDARD.encode(&bytes)
+            }
+        };
+
         Ok(Node::Value(Value {
             data: ValueData::Bytes(bytes.clone()),
-            text: format!("{:?}", bytes),
+            text,
             path: String::new(),
             tag: Some(tag.clone()),
         }))
@@ -607,6 +721,23 @@ impl Decoder {
         while index < total_bytes {
             let mut child_tag = Tag::new();
             child_tag.inherit(tag);
+            if tag.child_type == ValueType::Unknown {
+                if child_tag.value_type == ValueType::Unknown {
+                    child_tag.value_type = tag.value_type;
+                }
+                if child_tag.enums.is_none() {
+                    child_tag.enums = tag.enums.clone();
+                }
+                if child_tag.mime.is_none() {
+                    child_tag.mime = tag.mime.clone();
+                }
+                if child_tag.version.is_none() {
+                    child_tag.version = tag.version;
+                }
+                if child_tag.location.is_none() && tag.location.is_some() {
+                    child_tag.location = tag.location;
+                }
+            }
             let before = self.offset;
             let item = self.decode_node(&child_tag, "")?;
             let consumed = self.offset - before;
@@ -641,6 +772,23 @@ impl Decoder {
 
             let mut child_tag = Tag::new();
             child_tag.inherit(tag);
+            if tag.child_type == ValueType::Unknown {
+                if child_tag.value_type == ValueType::Unknown {
+                    child_tag.value_type = tag.value_type;
+                }
+                if child_tag.enums.is_none() {
+                    child_tag.enums = tag.enums.clone();
+                }
+                if child_tag.mime.is_none() {
+                    child_tag.mime = tag.mime.clone();
+                }
+                if child_tag.version.is_none() {
+                    child_tag.version = tag.version;
+                }
+                if child_tag.location.is_none() && tag.location.is_some() {
+                    child_tag.location = tag.location;
+                }
+            }
             let value = self.decode_node(&child_tag, "")?;
             fields.push(Field { key, value });
         }

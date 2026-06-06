@@ -1,6 +1,6 @@
 {
     "name": "metamessage/metamessage",
-    "description": "PHP implementation of metamessage binary codec (compatible with github.com/metamessage/metamessage Go mm package). Field metadata via attributes.",
+    "description": "MetaMessage (mm) is a structured data exchange protocol. It is self-describing, self-constraining, and self-exemplifying, enabling lossless data exchange. It is designed as a next-generation universal protocol that natively supports AI, humans, and machines.",
     "type": "library",
     "autoload": {
         "classmap": ["src/"],

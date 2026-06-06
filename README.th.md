@@ -298,52 +298,13 @@ func main() {
 
 [jitpack.io](https://jitpack.io/#metamessage/metamessage/)
 
-```java
-import io.github.metamessage.MetaMessage;
-import io.github.metamessage.MM;
-
-@MM
-class Person {
-    public String name = "Ed";
-    public int age = 30;
-}
-
-public class Example {
-    public static void main(String[] args) throws Exception {
-        Person person = new Person();
-        byte[] wire = MetaMessage.encodeFromValue(person);
-        Person decoded = MetaMessage.decodeToValue(wire, Person.class);
-    }
-}
-```
+[mm-kt](./mm-kt)
 
 #### Kotlin
 
 [jitpack.io](https://jitpack.io/#metamessage/metamessage/)
 
-```kotlin
-import io.github.metamessage.MetaMessage
-import io.github.metamessage.MM
-
-@MM(desc="person")
-class Person(var name: String = "Ed", var age: Uint8 = 30.toUint8())
-
-fun main() {
-    val person = Person()
-
-    val wire = MetaMessage.encodeFromValue(person)
-
-    val person = MetaMessage.decodeToValue(wire, Person::class.java)
-
-    val jsonc = MetaMessage.valueToJsonc(person)
-
-    val person = MetaMessage.jsoncToValue(jsoncOutput, Person::class.java)
-
-    val wire = MetaMessage.encodeFromJsonc(jsonc)
-
-    val jsonc = MetaMessage.decodeToJsonc(wire)
-}
-```
+[mm-kt](./mm-kt)
 
 #### TypeScript
 

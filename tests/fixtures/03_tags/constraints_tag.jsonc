@@ -1,7 +1,7 @@
 {
     // mm: min=1; max=100
     "score": 85,
-    // mm: size=10
+    // mm: size=3
     "items": [1, 2, 3],
     // mm: min=1; max=64
     "username": "john_doe"

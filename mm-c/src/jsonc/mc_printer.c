@@ -147,7 +147,11 @@ static void print_value(strbuf_t *sb, const mm_value_t *value, int depth) {
   case MM_VALUE_URL:
   case MM_VALUE_EMAIL:
   case MM_VALUE_ENUMS:
+  case MM_VALUE_MEDIA:
     print_string(sb, value->text);
+    break;
+  case MM_VALUE_BIGINT:
+    sb_puts(sb, value->text);
     break;
   default:
     sb_puts(sb, value->text);

@@ -37,6 +37,7 @@ enum ValueType
     case ENUMS;
     case IMAGE;
     case VIDEO;
+    case MEDIA;
 
     public function code(): int
     {
@@ -85,6 +86,7 @@ enum ValueType
             self::ENUMS => 'enums',
             self::IMAGE => 'image',
             self::VIDEO => 'video',
+            self::MEDIA => 'media',
         };
     }
 

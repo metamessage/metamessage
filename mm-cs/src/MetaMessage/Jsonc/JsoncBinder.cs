@@ -204,38 +204,47 @@ public class JsoncBinder
         if (tree is MmScalar mmScalar)
         {
             JsoncTokenType tokenType;
+            object? value;
             if (mmScalar.Tag != null)
             {
                 switch (mmScalar.Tag.Type)
                 {
                     case ValueType.Str:
                     case ValueType.Bytes:
+                    case ValueType.Media:
+                    case ValueType.Image:
+                    case ValueType.Video:
+                    case ValueType.Uuid:
+                    case ValueType.Bigint:
                     case ValueType.Datetime:
                     case ValueType.Date:
                     case ValueType.Time:
-                    case ValueType.Uuid:
+                    case ValueType.Enums:
                     case ValueType.Ip:
                     case ValueType.Url:
                     case ValueType.Email:
-                    case ValueType.Enums:
                         tokenType = JsoncTokenType.String;
+                        value = mmScalar.Text;
                         break;
                     case ValueType.Bool:
                         tokenType = mmScalar.Text == "true" ? JsoncTokenType.True : JsoncTokenType.False;
+                        value = mmScalar.Data;
                         break;
                     default:
                         tokenType = JsoncTokenType.Number;
+                        value = mmScalar.Data;
                         break;
                 }
             }
             else
             {
                 tokenType = JsoncTokenType.String;
+                value = mmScalar.Text;
             }
 
             return new JsoncValue
             {
-                Value = mmScalar.Data,
+                Value = value,
                 TokenType = tokenType,
                 Tag = mmScalar.Tag,
                 Path = mmScalar.Path
