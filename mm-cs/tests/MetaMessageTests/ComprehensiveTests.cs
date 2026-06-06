@@ -1,3 +1,4 @@
+using System.Linq;
 using Xunit;
 using MetaMessage.Core;
 using MetaMessage.Jsonc;
@@ -330,55 +331,60 @@ public class ComprehensiveTests
     public void TestJsoncParse_SimpleTypes()
     {
         var node = JsoncParser.ParseFromString("true");
-        Assert.IsType<JsoncValue>(node);
-        var val = (JsoncValue)node;
-        Assert.Equal(JsoncTokenType.True, val.TokenType);
+        var scalar = Assert.IsType<MmScalar>(node);
+        Assert.Equal(true, scalar.Data);
+        Assert.Equal("true", scalar.Text);
 
         node = JsoncParser.ParseFromString("false");
-        val = (JsoncValue)node;
-        Assert.Equal(JsoncTokenType.False, val.TokenType);
+        scalar = Assert.IsType<MmScalar>(node);
+        Assert.Equal(false, scalar.Data);
 
         node = JsoncParser.ParseFromString("42");
-        val = (JsoncValue)node;
-        Assert.Equal(JsoncTokenType.Number, val.TokenType);
-        Assert.Equal(42.0, val.Value);
+        scalar = Assert.IsType<MmScalar>(node);
+        Assert.Equal(42.0, scalar.Data);
+        Assert.Equal("42", scalar.Text);
 
         node = JsoncParser.ParseFromString("\"hello\"");
-        val = (JsoncValue)node;
-        Assert.Equal(JsoncTokenType.String, val.TokenType);
-        Assert.Equal("hello", val.Value);
+        scalar = Assert.IsType<MmScalar>(node);
+        Assert.Equal("hello", scalar.Data);
     }
 
     [Fact]
     public void TestJsoncParse_Object()
     {
         var node = JsoncParser.ParseFromString("{\"name\": \"test\", \"value\": 42}");
-        var obj = Assert.IsType<JsoncObject>(node);
-        Assert.Equal(2, obj.Fields.Count);
-        Assert.Equal("test", ((JsoncValue)obj.Fields["name"]).Value);
-        Assert.Equal(42.0, ((JsoncValue)obj.Fields["value"]).Value);
+        var map = Assert.IsType<MmMap>(node);
+        Assert.Equal(2, map.Entries.Count);
+        var nameEntry = map.Entries.First(e => e.Key.Text == "name");
+        var nameVal = Assert.IsType<MmScalar>(nameEntry.Value);
+        Assert.Equal("test", nameVal.Data);
+        var valueEntry = map.Entries.First(e => e.Key.Text == "value");
+        var valueVal = Assert.IsType<MmScalar>(valueEntry.Value);
+        Assert.Equal(42.0, valueVal.Data);
     }
 
     [Fact]
     public void TestJsoncParse_Array()
     {
         var node = JsoncParser.ParseFromString("[1, 2, 3]");
-        var arr = Assert.IsType<JsoncArray>(node);
-        Assert.Equal(3, arr.Elements.Count);
-        Assert.Equal(1.0, ((JsoncValue)arr.Elements[0]).Value);
-        Assert.Equal(2.0, ((JsoncValue)arr.Elements[1]).Value);
-        Assert.Equal(3.0, ((JsoncValue)arr.Elements[2]).Value);
+        var arr = Assert.IsType<MmArray>(node);
+        Assert.Equal(3, arr.Children.Count);
+        Assert.Equal(1.0, Assert.IsType<MmScalar>(arr.Children[0]).Data);
+        Assert.Equal(2.0, Assert.IsType<MmScalar>(arr.Children[1]).Data);
+        Assert.Equal(3.0, Assert.IsType<MmScalar>(arr.Children[2]).Data);
     }
 
     [Fact]
     public void TestJsoncParse_Nested()
     {
         var node = JsoncParser.ParseFromString("{\"items\": [{\"id\": 1}, {\"id\": 2}]}");
-        var obj = Assert.IsType<JsoncObject>(node);
-        var items = Assert.IsType<JsoncArray>(obj.Fields["items"]);
-        Assert.Equal(2, items.Elements.Count);
-        var item0 = Assert.IsType<JsoncObject>(items.Elements[0]);
-        Assert.Equal(1.0, ((JsoncValue)item0.Fields["id"]).Value);
+        var map = Assert.IsType<MmMap>(node);
+        var itemsEntry = map.Entries.First(e => e.Key.Text == "items");
+        var items = Assert.IsType<MmArray>(itemsEntry.Value);
+        Assert.Equal(2, items.Children.Count);
+        var item0 = Assert.IsType<MmMap>(items.Children[0]);
+        var idEntry0 = item0.Entries.First(e => e.Key.Text == "id");
+        Assert.Equal(1.0, Assert.IsType<MmScalar>(idEntry0.Value).Data);
     }
 
     [Fact]
@@ -390,10 +396,12 @@ public class ComprehensiveTests
   // block comment
   ""value"": 42
 }");
-        var obj = Assert.IsType<JsoncObject>(node);
-        Assert.Equal(2, obj.Fields.Count);
-        Assert.Equal("test", ((JsoncValue)obj.Fields["name"]).Value);
-        Assert.Equal(42.0, ((JsoncValue)obj.Fields["value"]).Value);
+        var map = Assert.IsType<MmMap>(node);
+        Assert.Equal(2, map.Entries.Count);
+        var nameEntry = map.Entries.First(e => e.Key.Text == "name");
+        Assert.Equal("test", Assert.IsType<MmScalar>(nameEntry.Value).Data);
+        var valueEntry = map.Entries.First(e => e.Key.Text == "value");
+        Assert.Equal(42.0, Assert.IsType<MmScalar>(valueEntry.Value).Data);
     }
 
     [Fact]
@@ -427,9 +435,11 @@ public class ComprehensiveTests
         var printer = new JsoncPrinter(prettyPrint: true);
         var printed = printer.Print(node);
         var reparsed = JsoncParser.ParseFromString(printed);
-        var obj = Assert.IsType<JsoncObject>(reparsed);
-        Assert.Equal("test", ((JsoncValue)obj.Fields["name"]).Value);
-        Assert.Equal(42.0, ((JsoncValue)obj.Fields["value"]).Value);
+        var map = Assert.IsType<MmMap>(reparsed);
+        var nameEntry = map.Entries.First(e => e.Key.Text == "name");
+        Assert.Equal("test", Assert.IsType<MmScalar>(nameEntry.Value).Data);
+        var valueEntry = map.Entries.First(e => e.Key.Text == "value");
+        Assert.Equal(42.0, Assert.IsType<MmScalar>(valueEntry.Value).Data);
     }
 
     [Fact]

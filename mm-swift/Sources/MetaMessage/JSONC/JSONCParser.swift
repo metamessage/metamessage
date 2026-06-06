@@ -436,11 +436,7 @@ public class JSONCParser {
         }
         if let tag = tag {
             if tag.type == .unknown {
-                if tag.size > 0 {
-                    tag.type = .arr
-                } else {
-                    tag.type = .vec
-                }
+                tag.type = .vec
             }
         }
 

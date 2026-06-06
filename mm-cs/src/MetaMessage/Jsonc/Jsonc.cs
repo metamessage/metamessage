@@ -6,13 +6,13 @@ public static class Jsonc
 {
     private static readonly JsoncPrinter DefaultPrinter = new(prettyPrint: true);
 
-    public static IJsoncNode ParseFromString(string input)
+    public static IMmTree ParseFromString(string input)
     {
         var parser = new JsoncParser(input);
         return parser.Parse();
     }
 
-    public static IJsoncNode ParseFromBytes(byte[] input)
+    public static IMmTree ParseFromBytes(byte[] input)
     {
         var jsoncString = System.Text.Encoding.UTF8.GetString(input);
         return ParseFromString(jsoncString);
@@ -20,101 +20,54 @@ public static class Jsonc
 
     public static IMmTree ParseFromJSONC(string input)
     {
-        var node = ParseFromString(input);
-        var binder = new JsoncBinder();
-        return binder.ToMmTree(node);
+        return ParseFromString(input);
     }
 
     public static string ToJSONC(IMmTree tree)
     {
         if (tree == null)
             return "";
-        var binder = new JsoncBinder();
-        var node = binder.FromMmTree(tree);
-        return DefaultPrinter.Print(node);
+        return DefaultPrinter.Print(tree);
     }
 
-    public static T BindFromString<T>(string input) where T : new()
-    {
-        var node = ParseFromString(input);
-        var binder = new JsoncBinder();
-        return binder.Bind<T>(node);
-    }
-
-    public static T BindFromBytes<T>(byte[] input) where T : new()
-    {
-        var node = ParseFromBytes(input);
-        var binder = new JsoncBinder();
-        return binder.Bind<T>(node);
-    }
-
-    public static void BindFromString(string input, object target)
-    {
-        var node = ParseFromString(input);
-        var binder = new JsoncBinder();
-        binder.Bind(node, target);
-    }
-
-    public static void BindFromBytes(byte[] input, object target)
-    {
-        var node = ParseFromBytes(input);
-        var binder = new JsoncBinder();
-        binder.Bind(node, target);
-    }
-
-    public static string ValueToNodeString(object value)
-    {
-        var binder = new JsoncBinder();
-        var node = binder.StructToNode(value);
-        var printer = new JsoncPrinter(prettyPrint: true);
-        return printer.Print(node);
-    }
-
-    public static string ToString(IJsoncNode node)
+    public static string ToString(IMmTree node)
     {
         var printer = new JsoncPrinter(prettyPrint: true);
         return printer.Print(node);
     }
 
-    public static string ToMinString(IJsoncNode node)
+    public static string ToMinString(IMmTree node)
     {
         var printer = new JsoncPrinter(prettyPrint: false);
         return printer.Print(node);
     }
 
-    public static object? ExtractValue(IJsoncNode node)
+    public static object? ExtractValue(IMmTree node)
     {
-        if (node is JsoncValue value)
+        switch (node)
         {
-            return value.Value;
+            case MmScalar scalar:
+                return scalar.Data;
+            case MmArray array:
+                {
+                    var list = new List<object?>();
+                    foreach (var element in array.Children)
+                    {
+                        list.Add(ExtractValue(element));
+                    }
+                    return list;
+                }
+            case MmMap map:
+                {
+                    var dict = new Dictionary<string, object?>();
+                    foreach (var kvp in map.Entries)
+                    {
+                        dict[kvp.Key.Text] = ExtractValue(kvp.Value);
+                    }
+                    return dict;
+                }
+            default:
+                return null;
         }
-        if (node is JsoncObject obj)
-        {
-            var dict = new Dictionary<string, object?>();
-            foreach (var kvp in obj.Fields)
-            {
-                dict[kvp.Key] = ExtractValue(kvp.Value);
-            }
-            return dict;
-        }
-        if (node is JsoncArray array)
-        {
-            var list = new List<object?>();
-            foreach (var element in array.Elements)
-            {
-                list.Add(ExtractValue(element));
-            }
-            return list;
-        }
-        if (node is JsoncDoc doc)
-        {
-            var dict = new Dictionary<string, object?>();
-            foreach (var kvp in doc.Fields)
-            {
-                dict[kvp.Key] = ExtractValue(kvp.Value);
-            }
-            return dict;
-        }
-        return null;
     }
 }

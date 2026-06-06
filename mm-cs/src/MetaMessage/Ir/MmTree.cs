@@ -11,7 +11,7 @@ public enum MmNodeType
 
 public interface IMmTree
 {
-    Tag Tag { get; }
+    Tag Tag { get; set; }
     string Path { get; set; }
     MmNodeType NodeType { get; }
 }

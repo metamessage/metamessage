@@ -12,6 +12,32 @@
 #include <string>
 #include <vector>
 
+namespace {
+
+std::string base64_encode(const std::vector<uint8_t> &data) {
+  static const char *chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+                             "abcdefghijklmnopqrstuvwxyz"
+                             "0123456789+/";
+  std::string out;
+  out.reserve(((data.size() + 2) / 3) * 4);
+  for (size_t i = 0; i < data.size(); i += 3) {
+    uint32_t val = 0;
+    int cnt = 0;
+    for (int j = 0; j < 3 && i + j < data.size(); ++j) {
+      val = (val << 8) | data[i + j];
+      cnt++;
+    }
+    val <<= (3 - cnt) * 8;
+    out += chars[(val >> 18) & 0x3F];
+    out += chars[(val >> 12) & 0x3F];
+    out += (cnt >= 2) ? chars[(val >> 6) & 0x3F] : '=';
+    out += (cnt >= 3) ? chars[val & 0x3F] : '=';
+  }
+  return out;
+}
+
+} // namespace
+
 namespace mmc {
 namespace core {
 
@@ -136,7 +162,6 @@ private:
     size_t frameEnd = offset_ + l;
 
     ir::Tag tag;
-    tag.isInherit = true;
 
     uint8_t bodyLenByte = readByte();
     int tagBodyLen;
@@ -287,6 +312,7 @@ private:
 
     case ir::KMime: {
       tag.mime = decodeTagString(payload);
+      tag.type = ir::ValueType::Media;
       return decodeTagStrConsumed(payload, tag.mime.size());
     }
 
@@ -328,6 +354,7 @@ private:
 
     case ir::KChildMime: {
       tag.childMime = decodeTagString(payload);
+      tag.childType = ir::ValueType::Media;
       return decodeTagStrConsumed(payload, tag.childMime.size());
     }
 
@@ -653,7 +680,6 @@ private:
     }
 
     auto rawBytes = readBytes(len);
-    val->text = std::string(rawBytes.begin(), rawBytes.end());
 
     if (tag->type == ir::ValueType::Bigint && rawBytes.size() > 1) {
       val->text = decodeBigInt(rawBytes);
@@ -667,6 +693,8 @@ private:
                rawBytes[10], rawBytes[11], rawBytes[12], rawBytes[13],
                rawBytes[14], rawBytes[15]);
       val->text = buf;
+    } else {
+      val->text = base64_encode(rawBytes);
     }
 
     if (tag->type == ir::ValueType::Unknown)

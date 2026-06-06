@@ -579,10 +579,10 @@ public class WireDecoder
         _offset += tagDataLen;
 
         Tag tag = TagFieldParser.Parse(tagBytes);
-        if (inherited != null)
-        {
-            tag.Inherit(inherited);
-        }
+        // NOTE: Do NOT inherit from parent here. Go's decodeTag creates a
+        // fresh tag from wire bytes without parent inheritance. The wire tag
+        // is self-contained. Parent child_* inheritance is only applied when
+        // a value has NO wire tag (done in DecodeContainer).
 
         if (tag.IsNull)
         {

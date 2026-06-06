@@ -125,6 +125,7 @@ impl ValueType {
                 | ValueType::Url
                 | ValueType::Email
                 | ValueType::Enum
+                | ValueType::Media
         )
     }
 

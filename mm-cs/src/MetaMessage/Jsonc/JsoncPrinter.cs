@@ -13,7 +13,7 @@ public class JsoncPrinter
         _prettyPrint = prettyPrint;
     }
 
-    public string Print(IJsoncNode node)
+    public string Print(IMmTree node)
     {
         var sb = new System.Text.StringBuilder();
         WriteLeadingComments(sb, node.Tag, 0);
@@ -21,23 +21,19 @@ public class JsoncPrinter
         return sb.ToString();
     }
 
-    private void PrintNode(IJsoncNode node, System.Text.StringBuilder sb, int indent)
+    private void PrintNode(IMmTree node, System.Text.StringBuilder sb, int indent)
     {
-        if (node is JsoncDoc doc)
+        if (node is MmScalar scalar)
         {
-            WriteObjectJSONC(sb, doc.Fields.Select(f => new KeyValuePair<string, IJsoncNode>(f.Key, f.Value)).ToList(), doc.Tag, indent);
+            WriteScalarJSONC(sb, scalar, indent);
         }
-        else if (node is JsoncObject obj)
+        else if (node is MmArray array)
         {
-            WriteObjectJSONC(sb, obj.Fields.ToList(), obj.Tag, indent);
+            WriteArrayJSONC(sb, array.Children, array.Tag, indent);
         }
-        else if (node is JsoncArray array)
+        else if (node is MmMap map)
         {
-            WriteArrayJSONC(sb, array.Elements, array.Tag, indent);
-        }
-        else if (node is JsoncValue value)
-        {
-            WriteValueJSONC(sb, value, indent);
+            WriteMapJSONC(sb, map.Entries, map.Tag, indent);
         }
     }
 
@@ -61,35 +57,13 @@ public class JsoncPrinter
         }
     }
 
-    private void WriteValueJSONC(System.Text.StringBuilder b, JsoncValue v, int indent)
+    private void WriteScalarJSONC(System.Text.StringBuilder b, MmScalar v, int indent)
     {
         if (v.Tag != null)
         {
             if (v.Tag.IsNull)
             {
-                if (v.Tag.Type == ValueType.Bool)
-                {
-                    b.Append("false");
-                }
-                else if (v.Tag.Type == ValueType.I || v.Tag.Type == ValueType.I8 || v.Tag.Type == ValueType.I16 ||
-                         v.Tag.Type == ValueType.I32 || v.Tag.Type == ValueType.I64 || v.Tag.Type == ValueType.U ||
-                         v.Tag.Type == ValueType.U8 || v.Tag.Type == ValueType.U16 || v.Tag.Type == ValueType.U32 ||
-                         v.Tag.Type == ValueType.U64 || v.Tag.Type == ValueType.F32 ||
-                         v.Tag.Type == ValueType.F64 || v.Tag.Type == ValueType.Decimal)
-                {
-                    b.Append("0");
-                }
-                else if (v.Tag.Type == ValueType.Str || v.Tag.Type == ValueType.Email || v.Tag.Type == ValueType.Url ||
-                         v.Tag.Type == ValueType.Enums || v.Tag.Type == ValueType.Datetime || v.Tag.Type == ValueType.Date ||
-                         v.Tag.Type == ValueType.Time || v.Tag.Type == ValueType.Uuid || v.Tag.Type == ValueType.Bigint || v.Tag.Type == ValueType.Bytes ||
-                         v.Tag.Type == ValueType.Media || v.Tag.Type == ValueType.Image || v.Tag.Type == ValueType.Video)
-                {
-                    b.Append("\"\"");
-                }
-                else
-                {
-                    b.Append("\"\"");
-                }
+                WriteNullDefault(b, v.Tag);
                 return;
             }
             switch (v.Tag.Type)
@@ -108,11 +82,15 @@ public class JsoncPrinter
                 case ValueType.Url:
                 case ValueType.Email:
                     b.Append('"');
-                    b.Append(EscapeString(v.Value?.ToString() ?? ""));
+                    b.Append(EscapeString(v.Text));
                     b.Append('"');
                     return;
 
                 case ValueType.Bigint:
+                case ValueType.Decimal:
+                    b.Append(v.Text);
+                    return;
+
                 case ValueType.I:
                 case ValueType.I8:
                 case ValueType.I16:
@@ -123,89 +101,112 @@ public class JsoncPrinter
                 case ValueType.U16:
                 case ValueType.U32:
                 case ValueType.U64:
-                case ValueType.Decimal:
                     {
-                        if (v.Value is string sVal)
-                        {
-                            b.Append(sVal);
-                        }
-                        else if (v.Value is bool boolVal)
+                        if (v.Data is bool boolVal)
                         {
                             b.Append(boolVal ? "true" : "false");
                         }
                         else
                         {
-                            b.Append(v.Value?.ToString() ?? "0");
+                            b.Append(v.Text);
                         }
                     }
                     return;
 
                 case ValueType.Bool:
                     {
-                        if (v.Value is bool boolVal)
+                        if (v.Data is bool boolVal)
                         {
                             b.Append(boolVal ? "true" : "false");
                         }
                         else
                         {
-                            b.Append(v.Value?.ToString() ?? "false");
+                            b.Append(v.Text);
                         }
                     }
                     return;
 
                 case ValueType.F32:
                 case ValueType.F64:
-                    {
-                        var fStr = v.Value?.ToString() ?? "0";
-                        b.Append(fStr);
-                    }
+                    b.Append(v.Text);
                     return;
 
                 default:
-                    {
-                        var dStr = v.Value?.ToString() ?? "null";
-                        b.Append(dStr);
-                    }
+                    b.Append(v.Text);
                     return;
             }
         }
 
-        switch (v.TokenType)
+        // No tag — infer from data type
+        if (v.Data == null)
         {
-            case JsoncTokenType.String:
-                b.Append('"');
-                b.Append(EscapeString(v.Value?.ToString() ?? ""));
-                b.Append('"');
-                break;
-            case JsoncTokenType.Number:
-                b.Append(v.Value?.ToString() ?? "null");
-                break;
-            case JsoncTokenType.True:
-                b.Append("true");
-                break;
-            case JsoncTokenType.False:
+            b.Append("null");
+        }
+        else if (v.Data is string)
+        {
+            b.Append('"');
+            b.Append(EscapeString(v.Text));
+            b.Append('"');
+        }
+        else if (v.Data is bool bVal)
+        {
+            b.Append(bVal ? "true" : "false");
+        }
+        else
+        {
+            b.Append(v.Text);
+        }
+    }
+
+    private void WriteNullDefault(System.Text.StringBuilder b, Tag tag)
+    {
+        switch (tag.Type)
+        {
+            case ValueType.Bool:
                 b.Append("false");
                 break;
-            case JsoncTokenType.Null:
-                b.Append("null");
+            case ValueType.I:
+            case ValueType.I8:
+            case ValueType.I16:
+            case ValueType.I32:
+            case ValueType.I64:
+            case ValueType.U:
+            case ValueType.U8:
+            case ValueType.U16:
+            case ValueType.U32:
+            case ValueType.U64:
+            case ValueType.Bigint:
+            case ValueType.F32:
+            case ValueType.F64:
+            case ValueType.Decimal:
+                b.Append('0');
                 break;
+            case ValueType.Str:
+            case ValueType.Email:
+            case ValueType.Url:
+            case ValueType.Enums:
+            case ValueType.Datetime:
+            case ValueType.Date:
+            case ValueType.Time:
+            case ValueType.Uuid:
+            case ValueType.Bytes:
             default:
-                b.Append(v.Value?.ToString() ?? "null");
+                b.Append("\"\"");
                 break;
         }
     }
 
-    private void WriteObjectJSONC(System.Text.StringBuilder b, List<KeyValuePair<string, IJsoncNode>> fields, Tag? tag, int indent)
+    private void WriteMapJSONC(System.Text.StringBuilder b, List<KeyValuePair<MmScalar, IMmTree>> entries, Tag? tag, int indent)
     {
         b.Append('{');
         if (!_prettyPrint)
         {
-            foreach (var field in fields)
+            foreach (var entry in entries)
             {
                 b.Append('"');
-                b.Append(field.Key);
+                b.Append(entry.Key.Text);
                 b.Append("\":");
-                PrintNode(field.Value, b, indent);
+                PrintNode(entry.Value, b, indent);
                 b.Append(',');
             }
             b.Append('}');
@@ -213,21 +214,21 @@ public class JsoncPrinter
         }
 
         b.Append('\n');
-        foreach (var field in fields)
+        foreach (var entry in entries)
         {
-            WriteLeadingComments(b, field.Value.Tag, indent + 1);
+            WriteLeadingComments(b, entry.Value.Tag, indent + 1);
             WriteIndent(b, indent + 1);
             b.Append('"');
-            b.Append(field.Key);
+            b.Append(entry.Key.Text);
             b.Append("\": ");
-            PrintNode(field.Value, b, indent + 1);
+            PrintNode(entry.Value, b, indent + 1);
             b.Append(",\n");
         }
         WriteIndent(b, indent);
         b.Append('}');
     }
 
-    private void WriteArrayJSONC(System.Text.StringBuilder b, List<IJsoncNode> items, Tag? tag, int indent)
+    private void WriteArrayJSONC(System.Text.StringBuilder b, List<IMmTree> items, Tag? tag, int indent)
     {
         b.Append('[');
         if (!_prettyPrint)

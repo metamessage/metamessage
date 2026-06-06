@@ -174,7 +174,9 @@ public static class ReflectMmBinder
         }
         else if (targetType.IsEnum)
         {
-            return Enum.ToObject(targetType, data);
+            var underlyingType = Enum.GetUnderlyingType(targetType);
+            var convertedData = Convert.ChangeType(data, underlyingType);
+            return Enum.ToObject(targetType, convertedData);
         }
 
         return data;

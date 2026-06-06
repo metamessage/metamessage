@@ -93,7 +93,8 @@ class JsoncPrinter {
                         ValueType.IP,
                         ValueType.URL,
                         ValueType.EMAIL,
-                        ValueType.ENUMS -> true
+                        ValueType.ENUMS,
+                        ValueType.MEDIA -> true
                         else -> false
                     }
 

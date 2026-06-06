@@ -293,8 +293,10 @@ public enum MetaMessage {
     }
 
     public static func toJSONC(_ data: Data) throws -> String {
-        let node = try decode(data)
-        return nodeToString(node)
+        let decoder = NodeDecoder(data: data)
+        let node = try decoder.decode()
+        let printer = JSONCPrinter()
+        return printer.print(node)
     }
 
     public static func validate(_ value: Any?, tag: Tag) -> ValidationResult {

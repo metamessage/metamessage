@@ -101,6 +101,7 @@ export class JSONCPrinter {
       case ValueType.Url:
       case ValueType.Email:
       case ValueType.Enums:
+      case ValueType.Media:
         return `"${text}"`;
       default:
         return text;

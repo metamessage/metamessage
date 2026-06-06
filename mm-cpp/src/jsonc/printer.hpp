@@ -101,8 +101,7 @@ inline void printValue(std::ostringstream &os, std::shared_ptr<ir::Value> val,
     break;
   }
   case ir::ValueType::Bytes: {
-    std::vector<uint8_t> bytes(val->text.begin(), val->text.end());
-    os << "\"" << base64_encode(bytes) << "\"";
+    os << "\"" << val->text << "\"";
     break;
   }
   case ir::ValueType::Bool:

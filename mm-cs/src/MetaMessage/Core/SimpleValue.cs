@@ -34,6 +34,8 @@ public static class SimpleValue
     public const int EXPIRE_TIME = 29;
     public const int KEY = 30;
     public const int VAL = 31;
+    public const int NULL_BIGINT = 32;
+    public const int NULL_DATETIME = 33;
 
     private static readonly string[] _names = new string[]
     {
@@ -44,7 +46,8 @@ public static class SimpleValue
         "id", "name", "description", "type", "version", "status",
         "url", "create_time", "update_time", "delete_time",
         "account", "token", "expire_time",
-        "key", "val"
+        "key", "val",
+        "null_bigint", "null_datetime"
     };
 
     private static readonly Dictionary<string, int> _valueMap = new(StringComparer.OrdinalIgnoreCase);

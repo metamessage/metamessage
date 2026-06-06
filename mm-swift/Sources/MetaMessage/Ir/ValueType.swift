@@ -118,7 +118,7 @@ public enum ValueType: UInt8, Codable {
 
     public var needsQuotes: Bool {
         switch self {
-        case .str, .bytes, .datetime, .date, .time, .uuid, .ip, .url, .email, .enums, .unknown:
+        case .str, .bytes, .datetime, .date, .time, .uuid, .ip, .url, .email, .enums, .media, .unknown:
             return true
         default:
             return false

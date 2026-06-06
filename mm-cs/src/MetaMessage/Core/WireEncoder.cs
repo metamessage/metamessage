@@ -133,6 +133,26 @@ public class WireEncoder
         return _buf.Length - start;
     }
 
+    public int EncodeInt8(sbyte value) => EncodeInt64(value);
+
+    public int EncodeInt16(short value) => EncodeInt64(value);
+
+    public int EncodeInt32(int value) => EncodeInt64(value);
+
+    public int EncodeUint8(byte value) => EncodeInt64(value);
+
+    public int EncodeUint16(ushort value) => EncodeInt64(value);
+
+    public int EncodeUint32(uint value) => EncodeInt64(value);
+
+    public int EncodeUint64(ulong value) => EncodeUInt64(value);
+
+    public int EncodeFloat(float value) => EncodeFloatString(value.ToString("G"));
+
+    public int EncodeDouble(double value) => EncodeFloatString(value.ToString("G"));
+
+    public int EncodeDatetime(System.DateTime value) => EncodeInt64(new System.DateTimeOffset(value).ToUnixTimeSeconds());
+
     public int EncodeFloatString(string s)
     {
         var (negative, exponent, mantissa) = FloatCodec.ParseDecimalString(s);

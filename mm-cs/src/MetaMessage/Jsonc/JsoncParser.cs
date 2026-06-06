@@ -16,13 +16,13 @@ public class JsoncParser
         _scanner = new JsoncScanner(input);
     }
 
-    public IJsoncNode Parse()
+    public IMmTree Parse()
     {
         while (true)
         {
             var tok = _scanner.NextToken();
             if (tok.Type == JsoncTokenType.EOF)
-                return new JsoncValue { TokenType = JsoncTokenType.Null };
+                return new MmScalar(null, "null", Tag.NewTag());
 
             if (tok.Type == JsoncTokenType.Comment)
             {
@@ -94,15 +94,7 @@ public class JsoncParser
         return null;
     }
 
-    private static void MergeNodeTag(IJsoncNode n, Tag parsed)
-    {
-        if (n == null || parsed == null)
-            return;
-        var existing = n.Tag;
-        n.Tag = Tag.MergeTag(existing, parsed);
-    }
-
-    private IJsoncNode ParseValue(string path, JsoncToken firstTok, bool example)
+    private IMmTree ParseValue(string path, JsoncToken firstTok, bool example)
     {
         var tok = firstTok;
         while (true)
@@ -110,7 +102,7 @@ public class JsoncParser
             switch (tok.Type)
             {
                 case JsoncTokenType.EOF:
-                    return new JsoncValue { TokenType = JsoncTokenType.Null };
+                    return new MmScalar(null, "null", Tag.NewTag());
 
                 case JsoncTokenType.Comment:
                     {
@@ -124,8 +116,8 @@ public class JsoncParser
                         }
                         _pendingComments.Add(tok);
                     }
-                        tok = Advance();
-                        continue;
+                    tok = Advance();
+                    continue;
 
                 case JsoncTokenType.LBrace:
                     return ParseObject(tok.Line, path);
@@ -152,7 +144,7 @@ public class JsoncParser
         }
     }
 
-    private IJsoncNode ParseString(JsoncToken tok, string path, bool example)
+    private IMmTree ParseString(JsoncToken tok, string path, bool example)
     {
         var tag = ConsumeCommentsFor(tok.Line);
         var text = tok.Literal;
@@ -198,19 +190,10 @@ public class JsoncParser
                 break;
         }
 
-        var val = new JsoncValue
-        {
-            Value = text,
-            TokenType = JsoncTokenType.String,
-            Tag = tag,
-            Path = path
-        };
-
-
-        return val;
+        return new MmScalar(text, text, tag) { Path = path };
     }
 
-    private IJsoncNode ParseNumber(JsoncToken tok, string path, bool example)
+    private IMmTree ParseNumber(JsoncToken tok, string path, bool example)
     {
         var tag = ConsumeCommentsFor(tok.Line);
         var text = tok.Literal;
@@ -218,30 +201,31 @@ public class JsoncParser
         if (tag == null)
             tag = Tag.NewTag();
 
+        object data;
         if (text.Contains("."))
         {
             if (tag.Type == ValueType.Unknown)
                 tag.Type = ValueType.F64;
+            data = double.Parse(text);
         }
         else
         {
             if (tag.Type == ValueType.Unknown)
                 tag.Type = ValueType.I;
+            if (long.TryParse(text, out long longVal))
+            {
+                data = (double)longVal;
+            }
+            else
+            {
+                data = text;
+            }
         }
 
-        var val = new JsoncValue
-        {
-            Value = text,
-            TokenType = JsoncTokenType.Number,
-            Tag = tag,
-            Path = path
-        };
-
-
-        return val;
+        return new MmScalar(data, text, tag) { Path = path };
     }
 
-    private IJsoncNode ParseBool(JsoncToken tok, string path, bool example)
+    private IMmTree ParseBool(JsoncToken tok, string path, bool example)
     {
         var tag = ConsumeCommentsFor(tok.Line);
 
@@ -252,19 +236,10 @@ public class JsoncParser
 
         bool boolVal = tok.Type == JsoncTokenType.True;
 
-        var val = new JsoncValue
-        {
-            Value = boolVal,
-            TokenType = tok.Type,
-            Tag = tag,
-            Path = path
-        };
-
-
-        return val;
+        return new MmScalar(boolVal, boolVal ? "true" : "false", tag) { Path = path };
     }
 
-    private IJsoncNode ParseObject(int openLine, string path)
+    private IMmTree ParseObject(int openLine, string path)
     {
         _depth++;
         if (_depth > MaxDepth)
@@ -279,13 +254,9 @@ public class JsoncParser
             path = string.IsNullOrEmpty(path) ? tag.Name : $"{path}.{tag.Name}";
         }
 
-        var obj = new JsoncObject
-        {
-            Tag = tag,
-            Path = path
-        };
+        var entries = new List<KeyValuePair<MmScalar, IMmTree>>();
 
-        IJsoncNode? lastValue = null;
+        IMmTree? lastValue = null;
 
         while (true)
         {
@@ -334,7 +305,8 @@ public class JsoncParser
                 childTag.Inherit(tag);
             }
 
-            obj.Add(keyStr, val);
+            var keyScalar = new MmScalar(keyStr, keyStr, Tag.Empty()) { Path = fieldPath };
+            entries.Add(new KeyValuePair<MmScalar, IMmTree>(keyScalar, val));
             lastValue = val;
 
             var nextTok = Peek();
@@ -344,24 +316,26 @@ public class JsoncParser
             }
         }
 
+        var map = new MmMap(entries, tag!) { Path = path };
+
         if (!tag!.Example)
         {
             switch (tag!.Type)
             {
                 case ValueType.Map:
-                    Validator.Validate(obj, tag);
+                    Validator.Validate(map, tag);
                     break;
                 case ValueType.Obj:
-                    Validator.Validate(obj, tag);
+                    Validator.Validate(map, tag);
                     break;
             }
         }
 
         _depth--;
-        return obj;
+        return map;
     }
 
-    private IJsoncNode ParseArray(int openLine, string path)
+    private IMmTree ParseArray(int openLine, string path)
     {
         _depth++;
         if (_depth > MaxDepth)
@@ -378,13 +352,9 @@ public class JsoncParser
             path = $"{path}.{tag.Name}";
         }
 
-        var arr = new JsoncArray
-        {
-            Tag = tag,
-            Path = path
-        };
+        var children = new List<IMmTree>();
 
-        IJsoncNode? lastItem = null;
+        IMmTree? lastItem = null;
         int i = 0;
 
         while (true)
@@ -421,7 +391,7 @@ public class JsoncParser
                 childTag.Inherit(tag);
             }
 
-            arr.Add(item);
+            children.Add(item);
             lastItem = item;
             i++;
 
@@ -431,6 +401,8 @@ public class JsoncParser
                 Advance();
             }
         }
+
+        var arr = new MmArray(children, tag!) { Path = path };
 
         if (!tag!.Example)
         {

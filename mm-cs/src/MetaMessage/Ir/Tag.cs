@@ -346,6 +346,7 @@ public class Tag
                 Type == ValueType.F64 ||
                 Type == ValueType.Bool ||
                 Type == ValueType.Obj ||
+                Type == ValueType.Map ||
                 Type == ValueType.Vec)
             {
             }
@@ -453,7 +454,6 @@ public class Tag
         if (ChildType != ValueType.Unknown)
         {
             if (ChildType == ValueType.Str ||
-                ChildType == ValueType.Bytes ||
                 ChildType == ValueType.I ||
                 ChildType == ValueType.F64 ||
                 ChildType == ValueType.Bool ||
@@ -900,6 +900,7 @@ public class Tag
                 Type == ValueType.F64 ||
                 Type == ValueType.Bool ||
                 Type == ValueType.Obj ||
+                Type == ValueType.Map ||
                 Type == ValueType.Vec)
             {
             }

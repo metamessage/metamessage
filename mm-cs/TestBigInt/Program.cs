@@ -1,15 +1,16 @@
 using MetaMessage.Core;
 using MetaMessage.Jsonc;
+using MetaMessage.Ir;
 
 // Test 1: Direct bigint encoding
 Console.WriteLine("=== Direct BigIntWireCodec ===");
 byte[] raw = BigIntWireCodec.EncodeSignedDecimal("12345678901234567890");
-Console.WriteLine($"  EncodeSignedDecimal: hex={BitConverter.ToString(raw).Replace("-","").ToLower()}, len={raw.Length}");
+Console.WriteLine($"  EncodeSignedDecimal: hex={BitConverter.ToString(raw).Replace("-", "").ToLower()}, len={raw.Length}");
 
 var enc = new WireEncoder();
 enc.EncodeBigIntDecimal("12345678901234567890");
 byte[] wireResult = enc.ToByteArray();
-Console.WriteLine($"  EncodeBigIntDecimal: hex={BitConverter.ToString(wireResult).Replace("-","").ToLower()}, len={wireResult.Length}");
+Console.WriteLine($"  EncodeBigIntDecimal: hex={BitConverter.ToString(wireResult).Replace("-", "").ToLower()}, len={wireResult.Length}");
 
 // Test 2: Full EncodeFromJsonc flow
 Console.WriteLine("\n=== Full EncodeFromJsonc ===");
@@ -25,14 +26,18 @@ Console.WriteLine($"  Full encode: hex={fullHex}, len={fullResult.Length}");
 // Test 3: Encode with the individual element approach
 Console.WriteLine("\n=== Element-by-element ===");
 var node = MetaMessage.Jsonc.Jsonc.ParseFromString(jsonc);
-if (node is JsoncDoc doc && doc.Fields.Count > 0 && doc.Fields[0].Value is JsoncArray arr)
+if (node is MmMap map)
 {
-    Console.WriteLine($"  Array has {arr.Elements.Count} elements");
-    foreach (var elem in arr.Elements)
+    var arrEntry = map.Entries[0]; // "bigint_arr"
+    if (arrEntry.Value is MmArray arr)
     {
-        if (elem is JsoncValue val)
+        Console.WriteLine($"  Array has {arr.Children.Count} elements");
+        foreach (var elem in arr.Children)
         {
-            Console.WriteLine($"  Element tag type={val.Tag?.Type}, value={val.Value}, value type={val.Value?.GetType()}");
+            if (elem is MmScalar val)
+            {
+                Console.WriteLine($"  Element tag type={val.Tag?.Type}, value={val.Data}, value type={val.Data?.GetType()}");
+            }
         }
     }
 }
@@ -55,7 +60,7 @@ if (goHex != fullHex)
         string cb = i < fullHex.Length ? fullHex.Substring(i, Math.Min(2, fullHex.Length - i)) : "";
         if (gb != cb)
         {
-            Console.WriteLine($"    byte[{i/2}]: Go=0x{gb,-4} C#=0x{cb}");
+            Console.WriteLine($"    byte[{i / 2}]: Go=0x{gb,-4} C#=0x{cb}");
         }
     }
 }

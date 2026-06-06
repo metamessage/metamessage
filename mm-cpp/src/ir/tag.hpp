@@ -103,38 +103,63 @@ struct Tag {
   static Tag create() { return Tag{}; }
 
   void inherit(const Tag &parent) {
-    isInherit = true;
-    if (!parent.childDesc.empty())
+    if (!parent.childDesc.empty()) {
       desc = parent.childDesc;
-    if (parent.childType != ValueType::Unknown)
+      isInherit = true;
+    }
+    if (parent.childType != ValueType::Unknown) {
       type = parent.childType;
-    if (parent.childNullable)
+      isInherit = true;
+    }
+    if (parent.childNullable) {
       nullable = parent.childNullable;
-    if (parent.childAllowEmpty)
+      isInherit = true;
+    }
+    if (parent.childAllowEmpty) {
       allowEmpty = parent.childAllowEmpty;
-    if (parent.childUnique)
+      isInherit = true;
+    }
+    if (parent.childUnique) {
       unique = parent.childUnique;
-    if (!parent.child_default_val.empty())
+      isInherit = true;
+    }
+    if (!parent.child_default_val.empty()) {
       default_val = parent.child_default_val;
-    if (!parent.childMin.empty())
+      isInherit = true;
+    }
+    if (!parent.childMin.empty()) {
       min = parent.childMin;
-    if (!parent.childMax.empty())
+      isInherit = true;
+    }
+    if (!parent.childMax.empty()) {
       max = parent.childMax;
-    if (parent.childSize != 0)
+      isInherit = true;
+    }
+    if (parent.childSize != 0) {
       size = parent.childSize;
+      isInherit = true;
+    }
     if (!parent.child_enums.empty()) {
       enums = parent.child_enums;
       type = ValueType::Enums;
+      isInherit = true;
     }
-    if (!parent.childPattern.empty())
+    if (!parent.childPattern.empty()) {
       pattern = parent.childPattern;
-    if (parent.childLocationOffset != DefaultLocationOffset)
+      isInherit = true;
+    }
+    if (parent.childLocationOffset != DefaultLocationOffset) {
       locationOffset = parent.childLocationOffset;
-    if (parent.childVersion != DefaultVersion)
+      isInherit = true;
+    }
+    if (parent.childVersion != DefaultVersion) {
       version = parent.childVersion;
+      isInherit = true;
+    }
     if (!parent.childMime.empty()) {
       mime = parent.childMime;
       type = ValueType::Media;
+      isInherit = true;
     }
   }
 
@@ -190,9 +215,9 @@ struct Tag {
       add("version=" + std::to_string(version));
     if (!mime.empty() && !isInherit)
       add("mime=" + mime);
-    if (!childDesc.empty())
+    if (!childDesc.empty() && !isInherit)
       add("child_desc=\"" + childDesc + "\"");
-    if (childType != ValueType::Unknown) {
+    if (childType != ValueType::Unknown && !isInherit) {
       bool childSkip =
           (childType == ValueType::Str || childType == ValueType::I ||
            childType == ValueType::F64 || childType == ValueType::Bool ||
@@ -203,29 +228,29 @@ struct Tag {
         add("child_type=" + valueTypeToString(childType));
       }
     }
-    if (childNullable)
+    if (childNullable && !isInherit)
       add("child_nullable");
-    if (childAllowEmpty)
+    if (childAllowEmpty && !isInherit)
       add("child_allow_empty");
-    if (childUnique)
+    if (childUnique && !isInherit)
       add("child_unique");
-    if (!child_default_val.empty())
+    if (!child_default_val.empty() && !isInherit)
       add("child_default_val=" + child_default_val);
-    if (!childMin.empty())
+    if (!childMin.empty() && !isInherit)
       add("child_min=" + childMin);
-    if (!childMax.empty())
+    if (!childMax.empty() && !isInherit)
       add("child_max=" + childMax);
-    if (childSize != 0)
+    if (childSize != 0 && !isInherit)
       add("child_size=" + std::to_string(childSize));
-    if (!child_enums.empty())
+    if (!child_enums.empty() && !isInherit)
       add("child_enums=" + child_enums);
-    if (!childPattern.empty())
+    if (!childPattern.empty() && !isInherit)
       add("child_pattern=" + childPattern);
-    if (childLocationOffset != DefaultLocationOffset)
+    if (childLocationOffset != DefaultLocationOffset && !isInherit)
       add("child_location=" + std::to_string(childLocationOffset));
-    if (childVersion != DefaultVersion)
+    if (childVersion != DefaultVersion && !isInherit)
       add("child_version=" + std::to_string(childVersion));
-    if (!childMime.empty())
+    if (!childMime.empty() && !isInherit)
       add("child_mime=" + childMime);
 
     return b.str();
@@ -400,9 +425,9 @@ struct Tag {
     if (!mime.empty() && !isInherit)
       encodeU64(&bs, KMime, static_cast<uint64_t>(parseMime(mime)));
 
-    if (!childDesc.empty())
+    if (!childDesc.empty() && !isInherit)
       encodeString(&bs, KChildDesc, childDesc);
-    if (childType != ValueType::Unknown) {
+    if (childType != ValueType::Unknown && !isInherit) {
       bool childSkip =
           (childType == ValueType::Str || childType == ValueType::I ||
            childType == ValueType::F64 || childType == ValueType::Bool ||
@@ -414,33 +439,33 @@ struct Tag {
         writeByte(static_cast<uint8_t>(childType));
       }
     }
-    if (childNullable)
+    if (childNullable && !isInherit)
       writeByte(static_cast<uint8_t>(KChildNullable | 1));
-    if (childAllowEmpty)
+    if (childAllowEmpty && !isInherit)
       writeByte(static_cast<uint8_t>(KChildAllowEmpty | 1));
-    if (childUnique)
+    if (childUnique && !isInherit)
       writeByte(static_cast<uint8_t>(KChildUnique | 1));
-    if (!child_default_val.empty())
+    if (!child_default_val.empty() && !isInherit)
       encodeString(&bs, KChildDefaultVal, child_default_val);
-    if (!childMin.empty())
+    if (!childMin.empty() && !isInherit)
       encodeString(&bs, KChildMin, childMin);
-    if (!childMax.empty())
+    if (!childMax.empty() && !isInherit)
       encodeString(&bs, KChildMax, childMax);
-    if (childSize != 0)
+    if (childSize != 0 && !isInherit)
       encodeU64(&bs, KChildSize, static_cast<uint64_t>(childSize));
-    if (!child_enums.empty())
+    if (!child_enums.empty() && !isInherit)
       encodeString(&bs, KChildEnums, child_enums);
-    if (!childPattern.empty())
+    if (!childPattern.empty() && !isInherit)
       encodeString(&bs, KChildPattern, childPattern);
-    if (childLocationOffset != DefaultLocationOffset) {
+    if (childLocationOffset != DefaultLocationOffset && !isInherit) {
       std::string v = std::to_string(childLocationOffset);
       writeByte(static_cast<uint8_t>(KChildLocation) |
                 static_cast<uint8_t>(v.size()));
       writeStr(v);
     }
-    if (childVersion != DefaultVersion)
+    if (childVersion != DefaultVersion && !isInherit)
       encodeU64(&bs, KChildVersion, static_cast<uint64_t>(childVersion));
-    if (!childMime.empty())
+    if (!childMime.empty() && !isInherit)
       encodeU64(&bs, KChildMime, static_cast<uint64_t>(parseMime(childMime)));
 
     if (more != 0)

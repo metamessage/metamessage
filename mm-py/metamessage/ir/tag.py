@@ -369,7 +369,7 @@ class Tag:
         if self.mime and not self.is_inherit:
             _encode_u64(buf, TagKey.Mime, ParseMIME(self.mime))
 
-        if self.child_desc:
+        if self.child_desc and not self.is_inherit:
             child_desc_bytes = self.child_desc.encode('utf-8')
             l = len(child_desc_bytes)
             if l <= 5:
@@ -384,7 +384,7 @@ class Tag:
                 buf.extend([l >> 8, l & 0xFF])
                 buf.extend(child_desc_bytes)
 
-        if self.child_type != ValueType.Unknown:
+        if self.child_type != ValueType.Unknown and not self.is_inherit:
             if self.child_type not in (ValueType.Str, ValueType.I, ValueType.F64,
                                        ValueType.Bool, ValueType.Obj, ValueType.Vec):
                 if not (self.child_type == ValueType.Enums and self.child_enums) and not (
@@ -392,16 +392,16 @@ class Tag:
                     buf.append(TagKey.ChildType)
                     buf.append(self.child_type)
 
-        if self.child_nullable:
+        if self.child_nullable and not self.is_inherit:
             buf.append(TagKey.ChildNullable | 1)
 
-        if self.child_allow_empty:
+        if self.child_allow_empty and not self.is_inherit:
             buf.append(TagKey.ChildAllowEmpty | 1)
 
-        if self.child_unique:
+        if self.child_unique and not self.is_inherit:
             buf.append(TagKey.ChildUnique | 1)
 
-        if self.child_default_val:
+        if self.child_default_val and not self.is_inherit:
             l = len(self.child_default_val)
             if l < 7:
                 buf.append(TagKey.ChildDefault | l)
@@ -410,7 +410,7 @@ class Tag:
                 buf.append(l)
             buf.extend(self.child_default_val.encode('utf-8'))
 
-        if self.child_min:
+        if self.child_min and not self.is_inherit:
             l = len(self.child_min)
             if l < 7:
                 buf.append(TagKey.ChildMin | l)
@@ -419,7 +419,7 @@ class Tag:
                 buf.append(l)
             buf.extend(self.child_min.encode('utf-8'))
 
-        if self.child_max:
+        if self.child_max and not self.is_inherit:
             l = len(self.child_max)
             if l < 7:
                 buf.append(TagKey.ChildMax | l)
@@ -428,10 +428,10 @@ class Tag:
                 buf.append(l)
             buf.extend(self.child_max.encode('utf-8'))
 
-        if self.child_size:
+        if self.child_size and not self.is_inherit:
             _encode_u64(buf, TagKey.ChildSize, self.child_size)
 
-        if self.child_enums:
+        if self.child_enums and not self.is_inherit:
             child_enum_bytes = self.child_enums.encode('utf-8')
             l = len(child_enum_bytes)
             if l <= 5:
@@ -446,7 +446,7 @@ class Tag:
                 buf.extend([l >> 8, l & 0xFF])
                 buf.extend(child_enum_bytes)
 
-        if self.child_pattern:
+        if self.child_pattern and not self.is_inherit:
             l = len(self.child_pattern)
             if l < 7:
                 buf.append(TagKey.ChildPattern | l)
@@ -463,15 +463,15 @@ class Tag:
                     child_location_offset_hour = int(round(child_location_offset_hour / 60))
             except (ValueError, TypeError):
                 pass
-        if child_location_offset_hour != 0:
+        if child_location_offset_hour != 0 and not self.is_inherit:
             loc_str = str(child_location_offset_hour)
             buf.append(TagKey.ChildLocation | len(loc_str))
             buf.extend(loc_str.encode('utf-8'))
 
-        if self.child_version != DefaultVersion:
+        if self.child_version != DefaultVersion and not self.is_inherit:
             _encode_u64(buf, TagKey.ChildVersion, self.child_version)
 
-        if self.child_mime:
+        if self.child_mime and not self.is_inherit:
             _encode_u64(buf, TagKey.ChildMime, ParseMIME(self.child_mime))
 
         if self.more != 0:
@@ -548,41 +548,41 @@ class Tag:
         if self.mime and not self.is_inherit:
             parts.append("mime=%s" % self.mime)
 
-        if self.child_desc:
+        if self.child_desc and not self.is_inherit:
             parts.append('child_desc="%s"' % self.child_desc)
 
-        if self.child_type != ValueType.Unknown:
+        if self.child_type != ValueType.Unknown and not self.is_inherit:
             if self.child_type not in (ValueType.Str, ValueType.I, ValueType.F64,
                                        ValueType.Bool, ValueType.Obj, ValueType.Vec):
                 if not (self.child_type == ValueType.Enums and self.child_enums) and not (
                         self.child_type == ValueType.Media and self.child_mime):
                     parts.append("child_type=%s" % str(self.child_type))
 
-        if self.child_nullable:
+        if self.child_nullable and not self.is_inherit:
             parts.append("child_nullable")
 
-        if self.child_allow_empty:
+        if self.child_allow_empty and not self.is_inherit:
             parts.append("child_allow_empty")
 
-        if self.child_unique:
+        if self.child_unique and not self.is_inherit:
             parts.append("child_unique")
 
-        if self.child_default_val:
+        if self.child_default_val and not self.is_inherit:
             parts.append("child_default_val=%s" % self.child_default_val)
 
-        if self.child_min:
+        if self.child_min and not self.is_inherit:
             parts.append("child_min=%s" % self.child_min)
 
-        if self.child_max:
+        if self.child_max and not self.is_inherit:
             parts.append("child_max=%s" % self.child_max)
 
-        if self.child_size:
+        if self.child_size and not self.is_inherit:
             parts.append("child_size=%d" % self.child_size)
 
-        if self.child_enums:
+        if self.child_enums and not self.is_inherit:
             parts.append("child_enums=%s" % self.child_enums)
 
-        if self.child_pattern:
+        if self.child_pattern and not self.is_inherit:
             parts.append("child_pattern=%s" % self.child_pattern)
 
         child_location_offset_hour = 0
@@ -593,13 +593,13 @@ class Tag:
                     child_location_offset_hour = int(round(child_location_offset_hour / 60))
             except (ValueError, TypeError):
                 pass
-        if child_location_offset_hour != 0:
+        if child_location_offset_hour != 0 and not self.is_inherit:
             parts.append("child_location=%d" % child_location_offset_hour)
 
-        if self.child_version != DefaultVersion:
+        if self.child_version != DefaultVersion and not self.is_inherit:
             parts.append("child_version=%d" % self.child_version)
 
-        if self.child_mime:
+        if self.child_mime and not self.is_inherit:
             parts.append("child_mime=%s" % self.child_mime)
 
         return "; ".join(parts)

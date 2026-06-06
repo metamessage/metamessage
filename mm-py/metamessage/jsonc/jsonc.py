@@ -436,46 +436,46 @@ def _get_tag_str(tag) -> str:
         parts.append("is_null")
 
     nullable_key = "child_nullable" if inh else "nullable"
-    if tag.nullable and not tag.is_null:
+    if tag.nullable and not tag.is_null and not inh:
         parts.append(nullable_key)
 
     desc_key = "child_desc" if inh else "desc"
-    if tag.desc:
+    if tag.desc and not inh:
         parts.append(f'{desc_key}="{tag.desc}"')
 
     if tag.deprecated and not inh:
         parts.append("deprecated")
 
     allow_empty_key = "child_allow_empty" if inh else "allow_empty"
-    if tag.allow_empty:
+    if tag.allow_empty and not inh:
         parts.append(allow_empty_key)
 
     unique_key = "child_unique" if inh else "unique"
-    if tag.unique:
+    if tag.unique and not inh:
         parts.append(unique_key)
 
     default_key = "child_default_val" if inh else "default_val"
-    if tag.default_val:
+    if tag.default_val and not inh:
         parts.append(f"{default_key}={tag.default_val}")
 
     min_key = "child_min" if inh else "min"
-    if tag.min:
+    if tag.min and not inh:
         parts.append(f"{min_key}={tag.min}")
 
     max_key = "child_max" if inh else "max"
-    if tag.max:
+    if tag.max and not inh:
         parts.append(f"{max_key}={tag.max}")
 
     size_key = "child_size" if inh else "size"
-    if tag.size:
+    if tag.size and not inh:
         parts.append(f"{size_key}={tag.size}")
 
     enums_key = "child_enums" if inh else "enums"
-    if tag.enums:
+    if tag.enums and not inh:
         parts.append(f"{enums_key}={tag.enums}")
 
     pattern_key = "child_pattern" if inh else "pattern"
-    if tag.pattern:
+    if tag.pattern and not inh:
         parts.append(f"{pattern_key}={tag.pattern}")
 
     location_offset_hour = 0
@@ -488,11 +488,11 @@ def _get_tag_str(tag) -> str:
         parts.append(f"location={location_offset_hour}")
 
     version_key = "child_version" if inh else "version"
-    if tag.version != 0:
+    if tag.version != 0 and not inh:
         parts.append(f"{version_key}={tag.version}")
 
     mime_key = "child_mime" if inh else "mime"
-    if tag.mime:
+    if tag.mime and not inh:
         parts.append(f"{mime_key}={tag.mime}")
 
     if tag.child_desc and not inh:

@@ -50,6 +50,7 @@ class JsoncPrinter
             case ValueType::URL:
             case ValueType::EMAIL:
             case ValueType::ENUMS:
+            case ValueType::MEDIA:
                 return '"' . $v->Text . '"';
 
             case ValueType::I:

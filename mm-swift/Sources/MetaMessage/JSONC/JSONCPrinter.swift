@@ -203,7 +203,11 @@ public class JSONCPrinter {
         }
 
         if let dataVal = value.data as? Data {
-            return "\"\(escapeString(String(data: dataVal, encoding: .utf8) ?? ""))\""
+            // For encoded types (bytes, media, etc.), use the text representation (base64)
+            if value.text.isEmpty {
+                return "\"\(escapeString(String(data: dataVal, encoding: .utf8) ?? ""))\""
+            }
+            return "\"\(escapeString(value.text))\""
         }
 
         if value.data == nil {
@@ -367,7 +371,11 @@ public class JSONCPrinter {
         }
 
         if let dataVal = value.data as? Data {
-            return "\"\(escapeString(String(data: dataVal, encoding: .utf8) ?? ""))\""
+            // For encoded types (bytes, media, etc.), use the text representation (base64)
+            if value.text.isEmpty {
+                return "\"\(escapeString(String(data: dataVal, encoding: .utf8) ?? ""))\""
+            }
+            return "\"\(escapeString(value.text))\""
         }
 
         if value.data == nil {

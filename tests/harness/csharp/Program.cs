@@ -1,6 +1,7 @@
 // MetaMessage C# test harness - parse JSONC file and re-print to JSONC.
 using MetaMessage.Jsonc;
 using MetaMessage.Core;
+using MetaMessage.Ir;
 using MM = MetaMessage.Core.MetaMessage;
 
 if (args.Length < 1)
@@ -68,7 +69,7 @@ catch (Exception ex)
     Environment.Exit(1);
 }
 
-IJsoncNode node = null!;
+IMmTree node = null!;
 try
 {
     node = Jsonc.ParseFromString(fileContent);
