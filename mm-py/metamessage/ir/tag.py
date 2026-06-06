@@ -282,8 +282,7 @@ class Tag:
         if self.type != ValueType.Unknown and not self.is_inherit:
             if self.type not in (ValueType.Str, ValueType.Bytes, ValueType.I, ValueType.F64,
                                  ValueType.Bool, ValueType.Obj, ValueType.Vec):
-                if not (self.type == ValueType.Arr and self.size > 0) and not (
-                        self.type == ValueType.Enums and self.enums) and not (
+                if not (self.type == ValueType.Enums and self.enums) and not (
                         self.type == ValueType.Media and self.mime):
                     buf.append(TagKey.Type)
                     buf.append(self.type)
@@ -388,8 +387,7 @@ class Tag:
         if self.child_type != ValueType.Unknown:
             if self.child_type not in (ValueType.Str, ValueType.I, ValueType.F64,
                                        ValueType.Bool, ValueType.Obj, ValueType.Vec):
-                if not (self.child_type == ValueType.Arr and self.child_size > 0) and not (
-                        self.child_type == ValueType.Enums and self.child_enums) and not (
+                if not (self.child_type == ValueType.Enums and self.child_enums) and not (
                         self.child_type == ValueType.Media and self.child_mime):
                     buf.append(TagKey.ChildType)
                     buf.append(self.child_type)
@@ -489,8 +487,7 @@ class Tag:
                              ValueType.Obj, ValueType.Vec):
                 pass
             else:
-                if not (self.type == ValueType.Arr and self.size > 0) and not (
-                        self.type == ValueType.Enums and self.enums) and not (
+                if not (self.type == ValueType.Enums and self.enums) and not (
                         self.type == ValueType.Media and self.mime):
                     parts.append("type=%s" % str(self.type))
 
@@ -557,8 +554,7 @@ class Tag:
         if self.child_type != ValueType.Unknown:
             if self.child_type not in (ValueType.Str, ValueType.I, ValueType.F64,
                                        ValueType.Bool, ValueType.Obj, ValueType.Vec):
-                if not (self.child_type == ValueType.Arr and self.child_size > 0) and not (
-                        self.child_type == ValueType.Enums and self.child_enums) and not (
+                if not (self.child_type == ValueType.Enums and self.child_enums) and not (
                         self.child_type == ValueType.Media and self.child_mime):
                     parts.append("child_type=%s" % str(self.child_type))
 

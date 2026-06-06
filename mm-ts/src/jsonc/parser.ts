@@ -693,7 +693,7 @@ export class JSONCParser {
       tag = new Tag();
     }
     if (tag.type === ValueType.Unknown) {
-      tag.type = tag.size > 0 ? ValueType.Arr : ValueType.Vec;
+      tag.type = ValueType.Vec;
     }
 
     if (tag.name) {

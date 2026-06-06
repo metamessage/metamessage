@@ -319,10 +319,7 @@ class Parser:
             tag = NewTag()
 
         if tag.type == ValueType.Unknown:
-            if tag.size > 0:
-                tag.type = ValueType.Arr
-            else:
-                tag.type = ValueType.Vec
+            tag.type = ValueType.Vec
 
         items = []
         index = 0

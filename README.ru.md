@@ -333,50 +333,23 @@ func main() {
 
 ### Примеры на других языках
 
-#### Java
+#### Kotlin & Java
 
-[jitpack.io](https://jitpack.io/#metamessage/metamessage/)
-
-[mm-kt](./mm-kt)
-
-#### Kotlin
-
-[jitpack.io](https://jitpack.io/#metamessage/metamessage/)
+[![jitpack.io](https://jitpack.io/v/metamessage/metamessage.svg)](https://jitpack.io/#metamessage/metamessage)
 
 [mm-kt](./mm-kt)
 
-#### TypeScript
+#### TypeScript & JavaScript
 
-```typescript
-import { encodeFromValue, decodeToValue, mm, ValueType } from "metamessage";
+[npmjs.com](https://www.npmjs.com/package/metamessage)
 
-@mm({ desc: "" })
-class Person {
-  @mm({ desc: "" })
-  name: string = "";
-  @mm({ desc: "" })
-  age: number = 0;
-}
-const person = { name: "Ed", age: 30 };
-const wire = encodeFromValue(person);
-const decoded = decodeToValue(wire, Person);
-```
+[mm-ts](./mm-ts)
 
 #### Python
 
 [pypi.org](https://pypi.org/project/metamessage/)
 
 [mm-py](./mm-py)
-
-#### JavaScript
-
-```javascript
-const { encode, decode } = require("metamessage");
-
-const person = { name: "Ed", age: 30 };
-const wire = encode(person);
-const decoded = decode(wire);
-```
 
 #### C#
 
@@ -399,6 +372,7 @@ const decoded = decode(wire);
 [packagist.org](https://packagist.org/packages/metamessage/metamessage)
 
 [mm-php](./mm-php)
+
 
 ### Примеры
 

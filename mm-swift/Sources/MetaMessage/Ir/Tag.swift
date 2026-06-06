@@ -68,7 +68,7 @@ public class Tag {
         if type != .unknown && !isInherit {
             if type == .str || type == .i || type == .f64 || type == .bool || type == .obj || type == .vec {
             } else {
-                if type == .arr && size > 0 || type == .enums && enums != "" || type == .media && mime != "" {
+                if type == .enums && enums != "" || type == .media && mime != "" {
                 } else {
                     parts.append("type=\(type.stringValue)")
                 }
@@ -146,7 +146,7 @@ public class Tag {
         if childType != .unknown {
             if childType == .str || childType == .i || childType == .f64 || childType == .bool || childType == .obj || childType == .vec {
             } else {
-                if childType == .arr && childSize > 0 || childType == .enums && childEnums != "" || childType == .media && childMime != "" {
+                if childType == .enums && childEnums != "" || childType == .media && childMime != "" {
                 } else {
                     parts.append("child_type=\(childType.stringValue)")
                 }

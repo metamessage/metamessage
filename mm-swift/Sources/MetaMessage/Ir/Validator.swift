@@ -657,6 +657,11 @@ public class Validator {
     
     private func validateArr(_ value: Any, tag: Tag, result: ValidationResult) {
         if let array = value as? [Any] {
+            let length = array.count
+            if tag.size > 0 && length != tag.size {
+                result.addError("size mismatch, want=\(tag.size), got=\(length)")
+                return
+            }
             if array.isEmpty && !tag.allowEmpty {
                 result.addError("value is empty")
             }

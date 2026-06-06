@@ -256,7 +256,6 @@ class Tag
         $this->version = $parent->childVersion;
         $this->mime = $parent->childMime;
         $this->isInherit = true;
-
     }
 
     public function toBytes(): array
@@ -363,7 +362,6 @@ class Tag
             ) {
             } else {
                 if (
-                    $this->type === ValueType::ARR && $this->size > 0 ||
                     $this->type === ValueType::ENUMS && $this->enums !== '' ||
                     $this->type === ValueType::MEDIA && $this->mime !== ''
                 ) {
@@ -454,7 +452,6 @@ class Tag
             ) {
             } else {
                 if (
-                    $this->childType === ValueType::ARR && $this->childSize > 0 ||
                     $this->childType === ValueType::ENUMS && $this->childEnums !== '' ||
                     $this->childType === ValueType::MEDIA && $this->childMime !== ''
                 ) {
@@ -562,7 +559,6 @@ class Tag
             ) {
             } else {
                 if (
-                    $this->type === ValueType::ARR && $this->size > 0 ||
                     $this->type === ValueType::ENUMS && $this->enums !== '' ||
                     $this->type === ValueType::MEDIA && $this->mime !== ''
                 ) {
@@ -696,7 +692,6 @@ class Tag
             ) {
             } else {
                 if (
-                    $this->childType === ValueType::ARR && $this->childSize > 0 ||
                     $this->childType === ValueType::ENUMS && $this->childEnums !== '' ||
                     $this->childType === ValueType::MEDIA && $this->childMime !== ''
                 ) {

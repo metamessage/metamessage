@@ -180,6 +180,12 @@ public class MmValidator
                 return;
             }
 
+            if (tag.Size > 0 && count != tag.Size)
+            {
+                result.AddError($"size mismatch, want={tag.Size}, got={count}");
+                return;
+            }
+
             if (tag.ChildUnique)
             {
                 var seen = new Dictionary<object, bool>();
@@ -237,9 +243,9 @@ public class MmValidator
                 return;
             }
 
-            if (tag.Size > 0 && count > tag.Size)
+            if (tag.Size > 0 && count != tag.Size)
             {
-                result.AddError("type array over size");
+                result.AddError($"size mismatch, want={tag.Size}, got={count}");
                 return;
             }
 

@@ -244,8 +244,7 @@ func (t *Tag) ToString() string {
 			t.Type == ValueTypeObj ||
 			t.Type == ValueTypeVec {
 		} else {
-			if t.Type == ValueTypeArr && t.Size > 0 ||
-				t.Type == ValueTypeEnum && t.Enums != "" ||
+			if t.Type == ValueTypeEnum && t.Enums != "" ||
 				t.Type == ValueTypeMedia && t.Mime != int(MIMEUnknown) {
 
 			} else {
@@ -333,8 +332,7 @@ func (t *Tag) ToString() string {
 			t.ChildType == ValueTypeObj ||
 			t.ChildType == ValueTypeVec {
 		} else {
-			if t.ChildType == ValueTypeArr && t.ChildSize > 0 ||
-				t.ChildType == ValueTypeEnum && t.ChildEnums != "" ||
+			if t.ChildType == ValueTypeEnum && t.ChildEnums != "" ||
 				t.ChildType == ValueTypeMedia && t.ChildMime != int(MIMEUnknown) {
 
 			} else {
@@ -441,8 +439,7 @@ func (t *Tag) Bytes() []byte {
 			t.Type == ValueTypeObj ||
 			t.Type == ValueTypeVec {
 		} else {
-			if t.Type == ValueTypeArr && t.Size > 0 ||
-				t.Type == ValueTypeEnum && t.Enums != "" ||
+			if t.Type == ValueTypeEnum && t.Enums != "" ||
 				t.Type == ValueTypeMedia && t.Mime != int(MIMEUnknown) {
 
 			} else {
@@ -572,6 +569,7 @@ func (t *Tag) Bytes() []byte {
 			// return
 		}
 	}
+
 	if t.ChildType != ValueTypeUnknown {
 		if t.ChildType == ValueTypeStr ||
 			t.ChildType == ValueTypeI ||
@@ -580,8 +578,7 @@ func (t *Tag) Bytes() []byte {
 			t.ChildType == ValueTypeObj ||
 			t.ChildType == ValueTypeVec {
 		} else {
-			if t.ChildType == ValueTypeArr && t.ChildSize > 0 ||
-				t.ChildType == ValueTypeEnum && t.ChildEnums != "" ||
+			if t.ChildType == ValueTypeEnum && t.ChildEnums != "" ||
 				t.ChildType == ValueTypeMedia && t.ChildMime != int(MIMEUnknown) {
 
 			} else {

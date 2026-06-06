@@ -4,13 +4,21 @@
 #include "value_type.hpp"
 #include <algorithm>
 #include <cstdint>
-#include <memory>
 #include <sstream>
 #include <string>
 #include <vector>
 
 namespace mmc {
 namespace ir {
+
+struct ValidationResult {
+  bool isValid;
+  std::string error;
+
+  ValidationResult() : isValid(true) {}
+  explicit ValidationResult(std::string err)
+      : isValid(false), error(std::move(err)) {}
+};
 
 enum TagKey : uint8_t {
   KIsNull = 0 << 3,
@@ -144,8 +152,7 @@ struct Tag {
       bool skip = (type == ValueType::Str || type == ValueType::I ||
                    type == ValueType::F64 || type == ValueType::Bool ||
                    type == ValueType::Obj || type == ValueType::Vec);
-      if (!(skip || (type == ValueType::Arr && size > 0) ||
-            (type == ValueType::Enums && !enums.empty()) ||
+      if (!(skip || (type == ValueType::Enums && !enums.empty()) ||
             (type == ValueType::Media && !mime.empty()))) {
         add("type=" + valueTypeToString(type));
       }
@@ -190,7 +197,7 @@ struct Tag {
           (childType == ValueType::Str || childType == ValueType::I ||
            childType == ValueType::F64 || childType == ValueType::Bool ||
            childType == ValueType::Obj || childType == ValueType::Vec);
-      if (!(childSkip || (childType == ValueType::Arr && childSize > 0) ||
+      if (!(childSkip ||
             (childType == ValueType::Enums && !child_enums.empty()) ||
             (childType == ValueType::Media && !childMime.empty()))) {
         add("child_type=" + valueTypeToString(childType));
@@ -358,8 +365,7 @@ struct Tag {
                    type == ValueType::I || type == ValueType::F64 ||
                    type == ValueType::Bool || type == ValueType::Obj ||
                    type == ValueType::Vec);
-      if (!(skip || (type == ValueType::Arr && size > 0) ||
-            (type == ValueType::Enums && !enums.empty()) ||
+      if (!(skip || (type == ValueType::Enums && !enums.empty()) ||
             (type == ValueType::Media && !mime.empty()))) {
         writeByte(static_cast<uint8_t>(KType));
         writeByte(static_cast<uint8_t>(type));
@@ -401,7 +407,7 @@ struct Tag {
           (childType == ValueType::Str || childType == ValueType::I ||
            childType == ValueType::F64 || childType == ValueType::Bool ||
            childType == ValueType::Obj || childType == ValueType::Vec);
-      if (!(childSkip || (childType == ValueType::Arr && childSize > 0) ||
+      if (!(childSkip ||
             (childType == ValueType::Enums && !child_enums.empty()) ||
             (childType == ValueType::Media && !childMime.empty()))) {
         writeByte(static_cast<uint8_t>(KChildType));
@@ -441,6 +447,66 @@ struct Tag {
       encodeU64(&bs, KMore, static_cast<uint64_t>(more));
 
     return bs;
+  }
+
+  ValidationResult validateVec(size_t itemCount) const {
+    if (desc.size() > 65535) {
+      return ValidationResult("desc length exceeds 65535 bytes");
+    }
+
+    if (locationOffset != 0) {
+      return ValidationResult("type slice not support location UTC" +
+                              std::to_string(locationOffset));
+    }
+
+    if (itemCount == 0) {
+      if (allowEmpty) {
+        return ValidationResult();
+      }
+      return ValidationResult(
+          "not allow empty (add 'allow_empty' tag if empty is allowed)");
+    }
+
+    if (size != 0 && static_cast<int>(itemCount) != size) {
+      return ValidationResult("size mismatch, want=" + std::to_string(size) +
+                              ", got=" + std::to_string(itemCount));
+    }
+
+    if (childUnique) {
+      // Duplicate check requires item data access
+    }
+
+    return ValidationResult();
+  }
+
+  ValidationResult validateArr(size_t itemCount) const {
+    if (desc.size() > 65535) {
+      return ValidationResult("desc length exceeds 65535 bytes");
+    }
+
+    if (locationOffset != 0) {
+      return ValidationResult("type array not support location UTC" +
+                              std::to_string(locationOffset));
+    }
+
+    if (itemCount == 0) {
+      if (allowEmpty) {
+        return ValidationResult();
+      }
+      return ValidationResult(
+          "not allow empty (add 'allow_empty' tag if empty is allowed)");
+    }
+
+    if (size != 0 && static_cast<int>(itemCount) != size) {
+      return ValidationResult("size mismatch, want=" + std::to_string(size) +
+                              ", got=" + std::to_string(itemCount));
+    }
+
+    if (childUnique) {
+      // Duplicate check requires item data access
+    }
+
+    return ValidationResult();
   }
 
 private:

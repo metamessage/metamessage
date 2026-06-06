@@ -39,6 +39,12 @@ func (t *Tag) ValidateVec(value []Node) (err error) {
 		return
 	}
 
+	lenValue := len(value)
+	if t.Size != 0 && lenValue != t.Size {
+		err = fmt.Errorf("size mismatch, want=%d, got=%d", t.Size, lenValue)
+		return
+	}
+
 	if value[0].GetType() != NodeTypeValue {
 		return
 	}
@@ -78,16 +84,9 @@ func (t *Tag) ValidateArr(value []Node) (err error) {
 		return
 	}
 
-	// TODO len(value) != t.Size
-	// 	// mm: size=10
-	// "items": [
-	// 	1,
-	// 	2,
-	// 	3,
-	// ],
-
-	if t.Size <= 0 || len(value) > t.Size {
-		err = fmt.Errorf("size error")
+	lenValue := len(value)
+	if t.Size != 0 && lenValue != t.Size {
+		err = fmt.Errorf("size mismatch, want=%d, got=%d", t.Size, lenValue)
 		return
 	}
 

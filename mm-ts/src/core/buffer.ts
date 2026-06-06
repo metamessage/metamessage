@@ -59,7 +59,8 @@ export class MMBuffer {
 
   writeUint16BE(value: number): void {
     this.ensureCapacity(2);
-    this.view.setUint16(this.position, value, false);
+    this.view.setUint8(this.position, (value >> 8) & 0xff);
+    this.view.setUint8(this.position + 1, value & 0xff);
     this.position += 2;
   }
 
@@ -101,13 +102,13 @@ export class MMBuffer {
 
   writeFloat32(value: number): void {
     this.ensureCapacity(4);
-    this.view.setFloat32(this.position, value, true);
+    this.view.setFloat32(this.position, value, false);
     this.position += 4;
   }
 
   writeFloat64(value: number): void {
     this.ensureCapacity(8);
-    this.view.setFloat64(this.position, value, true);
+    this.view.setFloat64(this.position, value, false);
     this.position += 8;
   }
 
@@ -137,7 +138,9 @@ export class MMBuffer {
     if (this.position + 2 > this.capacity) {
       throw new Error('Buffer underflow');
     }
-    const value = this.view.getUint16(this.position, true);
+    const value =
+      (this.view.getUint8(this.position) << 8) |
+      this.view.getUint8(this.position + 1);
     this.position += 2;
     return value;
   }
@@ -193,7 +196,7 @@ export class MMBuffer {
     if (this.position + 4 > this.capacity) {
       throw new Error('Buffer underflow');
     }
-    const value = this.view.getFloat32(this.position, true);
+    const value = this.view.getFloat32(this.position, false);
     this.position += 4;
     return value;
   }
@@ -202,7 +205,7 @@ export class MMBuffer {
     if (this.position + 8 > this.capacity) {
       throw new Error('Buffer underflow');
     }
-    const value = this.view.getFloat64(this.position, true);
+    const value = this.view.getFloat64(this.position, false);
     this.position += 8;
     return value;
   }

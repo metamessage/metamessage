@@ -545,10 +545,6 @@ function anyToArray(
     tag.type = ValueType.Vec;
   }
 
-  if (tag.size > 0) {
-    tag.type = ValueType.Arr;
-  }
-
   const arrNode = new MMArray();
   arrNode.setTag(tag);
   arrNode.setPath(path);

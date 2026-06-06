@@ -441,8 +441,10 @@ private:
     if (tag->type == ir::ValueType::Unknown)
       tag->type = ir::ValueType::I;
 
-    val->text = positive ? std::to_string(uv)
-                         : std::to_string(-static_cast<int64_t>(uv));
+    int64_t intValue =
+        positive ? static_cast<int64_t>(uv) : -static_cast<int64_t>(uv);
+    val->data = intValue;
+    val->text = std::to_string(intValue);
 
     if (tag->type == ir::ValueType::Datetime) {
       int64_t ts =

@@ -1385,8 +1385,8 @@ class MmValidator
         }
 
         if ($tag->size > 0) {
-            if ($l > $tag->size) {
-                $result->addError('type array over size');
+            if ($l !== $tag->size) {
+                $result->addError("size mismatch, want={$tag->size}, got=$l");
                 return;
             }
         }
@@ -1427,6 +1427,11 @@ class MmValidator
                 return;
             }
             $result->addError('type vec not allow empty');
+            return;
+        }
+
+        if ($tag->size > 0 && $l !== $tag->size) {
+            $result->addError("size mismatch, want={$tag->size}, got=$l");
             return;
         }
 

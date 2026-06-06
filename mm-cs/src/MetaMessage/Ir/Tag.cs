@@ -351,8 +351,7 @@ public class Tag
             }
             else
             {
-                if ((Type == ValueType.Arr && Size > 0) ||
-                    (Type == ValueType.Enums && !string.IsNullOrEmpty(Enums)) ||
+                if ((Type == ValueType.Enums && !string.IsNullOrEmpty(Enums)) ||
                     (Type == ValueType.Media && !string.IsNullOrEmpty(Mime)))
                 {
                 }
@@ -464,8 +463,7 @@ public class Tag
             }
             else
             {
-                if ((ChildType == ValueType.Arr && ChildSize > 0) ||
-                    (ChildType == ValueType.Enums && !string.IsNullOrEmpty(ChildEnums)) ||
+                if ((ChildType == ValueType.Enums && !string.IsNullOrEmpty(ChildEnums)) ||
                     (ChildType == ValueType.Media && !string.IsNullOrEmpty(ChildMime)))
                 {
                 }
@@ -907,8 +905,7 @@ public class Tag
             }
             else
             {
-                if ((Type == ValueType.Arr && Size > 0) ||
-                    (Type == ValueType.Enums && !string.IsNullOrEmpty(Enums)) ||
+                if ((Type == ValueType.Enums && !string.IsNullOrEmpty(Enums)) ||
                     (Type == ValueType.Media && !string.IsNullOrEmpty(Mime)))
                 {
                 }
@@ -1087,8 +1084,7 @@ public class Tag
             }
             else
             {
-                if ((ChildType == ValueType.Arr && ChildSize > 0) ||
-                    (ChildType == ValueType.Enums && !string.IsNullOrEmpty(ChildEnums)) ||
+                if ((ChildType == ValueType.Enums && !string.IsNullOrEmpty(ChildEnums)) ||
                     (ChildType == ValueType.Media && !string.IsNullOrEmpty(ChildMime)))
                 {
                 }

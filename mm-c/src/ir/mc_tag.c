@@ -496,8 +496,7 @@ char *mm_tag_to_string(const mm_tag_t *tag) {
   if (tag->type != MM_VALUE_UNKNOWN && !tag->is_inherit) {
     if (is_simple_type(tag->type)) {
     } else {
-      if ((tag->type == MM_VALUE_ARR && tag->size > 0) ||
-          (tag->type == MM_VALUE_ENUMS && tag->enums) ||
+      if ((tag->type == MM_VALUE_ENUMS && tag->enums) ||
           (tag->type == MM_VALUE_MEDIA && tag->mime)) {
       } else {
         if (!first)
@@ -649,8 +648,7 @@ char *mm_tag_to_string(const mm_tag_t *tag) {
   if (tag->child_type != MM_VALUE_UNKNOWN) {
     if (is_simple_type(tag->child_type)) {
     } else {
-      if ((tag->child_type == MM_VALUE_ARR && tag->child_size > 0) ||
-          (tag->child_type == MM_VALUE_ENUMS && tag->child_enums) ||
+      if ((tag->child_type == MM_VALUE_ENUMS && tag->child_enums) ||
           (tag->child_type == MM_VALUE_MEDIA && tag->child_mime)) {
       } else {
         if (!first)
@@ -1037,8 +1035,7 @@ uint8_t *mm_tag_bytes(const mm_tag_t *tag, size_t *out_len) {
   if (tag->type != MM_VALUE_UNKNOWN && !tag->is_inherit) {
     if (is_bytes_simple_type(tag->type)) {
     } else {
-      if ((tag->type == MM_VALUE_ARR && tag->size > 0) ||
-          (tag->type == MM_VALUE_ENUMS && tag->enums) ||
+      if ((tag->type == MM_VALUE_ENUMS && tag->enums) ||
           (tag->type == MM_VALUE_MEDIA && tag->mime)) {
       } else {
         if (len + 2 > cap) {
@@ -1131,8 +1128,7 @@ uint8_t *mm_tag_bytes(const mm_tag_t *tag, size_t *out_len) {
   if (tag->child_type != MM_VALUE_UNKNOWN) {
     if (is_simple_type(tag->child_type)) {
     } else {
-      if ((tag->child_type == MM_VALUE_ARR && tag->child_size > 0) ||
-          (tag->child_type == MM_VALUE_ENUMS && tag->child_enums) ||
+      if ((tag->child_type == MM_VALUE_ENUMS && tag->child_enums) ||
           (tag->child_type == MM_VALUE_MEDIA && tag->child_mime)) {
       } else {
         if (len + 2 > cap) {
@@ -1366,4 +1362,85 @@ void mm_tag_merge(mm_tag_t *dst, const mm_tag_t *src) {
     free(dst->child_mime);
     dst->child_mime = strdup(src->child_mime);
   }
+}
+
+static int validate_desc_location(const mm_tag_t *tag, const char *type_name,
+                                  char **error_out) {
+  if (tag->desc && strlen(tag->desc) > 65535) {
+    if (error_out)
+      *error_out = strdup("desc length exceeds 65535 bytes");
+    return -1;
+  }
+  if (tag->location_offset != 0) {
+    if (error_out) {
+      char buf[128];
+      snprintf(buf, sizeof(buf), "type %s not support location UTC%d",
+               type_name, tag->location_offset);
+      *error_out = strdup(buf);
+    }
+    return -1;
+  }
+  return 0;
+}
+
+int mm_validate_vec(const mm_tag_t *tag, size_t item_count, char **error_out) {
+  if (validate_desc_location(tag, "slice", error_out) != 0)
+    return -1;
+
+  if (item_count == 0) {
+    if (tag->allow_empty)
+      return 0;
+    if (error_out)
+      *error_out =
+          strdup("not allow empty (add 'allow_empty' tag if empty is allowed)");
+    return -1;
+  }
+
+  if (tag->size != 0 && (int)item_count != tag->size) {
+    if (error_out) {
+      char buf[128];
+      snprintf(buf, sizeof(buf), "size mismatch, want=%d, got=%zu", tag->size,
+               item_count);
+      *error_out = strdup(buf);
+    }
+    return -1;
+  }
+
+  if (tag->child_unique) {
+    // Check for duplicates would require iterating all items and comparing
+    // values. This is a simplified validation without item data access.
+  }
+
+  return 0;
+}
+
+int mm_validate_arr(const mm_tag_t *tag, size_t item_count, char **error_out) {
+  if (validate_desc_location(tag, "array", error_out) != 0)
+    return -1;
+
+  if (item_count == 0) {
+    if (tag->allow_empty)
+      return 0;
+    if (error_out)
+      *error_out =
+          strdup("not allow empty (add 'allow_empty' tag if empty is allowed)");
+    return -1;
+  }
+
+  if (tag->size != 0 && (int)item_count != tag->size) {
+    if (error_out) {
+      char buf[128];
+      snprintf(buf, sizeof(buf), "size mismatch, want=%d, got=%zu", tag->size,
+               item_count);
+      *error_out = strdup(buf);
+    }
+    return -1;
+  }
+
+  if (tag->child_unique) {
+    // Check for duplicates would require iterating all items and comparing
+    // values. This is a simplified validation without item data access.
+  }
+
+  return 0;
 }

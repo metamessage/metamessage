@@ -754,7 +754,7 @@ class JsoncParser(private val tokens: List<JsoncToken>) {
 
         var tag = consumeCommentsFor(openLine) ?: Tag()
         if (tag.type == ValueType.UNKNOWN) {
-            tag.type = if (tag.size > 0) ValueType.ARR else ValueType.VEC
+            tag.type = ValueType.VEC
         }
 
         var currentPath = path

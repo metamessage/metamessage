@@ -79,6 +79,7 @@ public:
 class Value : public Node {
 public:
     std::string text;
+    int64_t data = 0;
     Tag tag;
 
     NodeType getType() const override { return NodeType::Value; }

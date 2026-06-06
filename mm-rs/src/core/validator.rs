@@ -789,6 +789,13 @@ impl MmValidator {
 
     fn validate_arr(&self, value: &dyn Any, tag: &Tag, result: &mut ValidationResult) {
         if let Some(array) = value.downcast_ref::<Vec<Box<dyn Any>>>() {
+            let len = array.len();
+            if let Some(s) = tag.size {
+                if s > 0 && len as u64 != s {
+                    result.add_error(format!("size mismatch, want={}, got={}", s, len));
+                    return;
+                }
+            }
             if array.is_empty() {
                 result.add_error("value is empty".to_string());
             }

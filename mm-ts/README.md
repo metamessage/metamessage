@@ -55,9 +55,19 @@ const wire = encodeFromValue(person);
 console.log('wire', wire);
 ```
 
+```javascript
+const { encode, decode } = require("metamessage");
+
+const person = { name: "Ed", age: 30 };
+const wire = encode(person);
+const decoded = decode(wire);
+```
+
 ### 2.3 类实例编码
 
 ```ts
+import { encodeFromValue, decodeToValue, mm, ValueType } from "metamessage";
+
 @mm({ desc: '用户' })
 class User {
   @mm({ type: ValueType.I64, desc: '用户ID', nullable: false })

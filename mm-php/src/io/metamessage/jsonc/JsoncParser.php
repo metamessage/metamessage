@@ -919,11 +919,7 @@ class JsoncParser
             $tag = Tag::newTag();
         }
         if ($tag->type === ValueType::UNKNOWN) {
-            if ($tag->size > 0) {
-                $tag->type = ValueType::ARR;
-            } else {
-                $tag->type = ValueType::VEC;
-            }
+            $tag->type = ValueType::VEC;
         }
 
         if ($tag->name !== '') {

@@ -165,8 +165,7 @@ class Tag(
                             type == ValueType.OBJ ||
                             type == ValueType.VEC)
             ) {
-                if (!((type == ValueType.ARR && size > 0) ||
-                                (type == ValueType.ENUMS && enums.isNotEmpty()) ||
+                if (!((type == ValueType.ENUMS && enums.isNotEmpty()) ||
                                 (type == ValueType.MEDIA && mime.isNotEmpty()))
                 ) {
                     parts.add("${T_TYPE}=${type.toString()}")
@@ -250,8 +249,7 @@ class Tag(
                             childType == ValueType.OBJ ||
                             childType == ValueType.VEC)
             ) {
-                if (!((childType == ValueType.ARR && childSize > 0) ||
-                                (childType == ValueType.ENUMS && childEnums.isNotEmpty()) ||
+                if (!((childType == ValueType.ENUMS && childEnums.isNotEmpty()) ||
                                 (childType == ValueType.MEDIA && childMime.isNotEmpty()))
                 ) {
                     parts.add("${T_CHILD_TYPE}=${childType.toString()}")
@@ -386,7 +384,7 @@ class Tag(
             ValueType.BOOL,
             ValueType.OBJ,
             ValueType.VEC -> false
-            ValueType.ARR -> if (size > 0) false else true
+            ValueType.ARR -> true
             ValueType.ENUMS -> if (enums.isNotEmpty()) false else true
             ValueType.MEDIA -> if (mime.isNotEmpty()) false else true
             else -> true
@@ -401,7 +399,7 @@ class Tag(
             ValueType.BOOL,
             ValueType.OBJ,
             ValueType.VEC -> false
-            ValueType.ARR -> if (childSize > 0) false else true
+            ValueType.ARR -> true
             ValueType.ENUMS -> if (childEnums.isNotEmpty()) false else true
             ValueType.MEDIA -> if (childMime.isNotEmpty()) false else true
             else -> true
@@ -960,8 +958,8 @@ class Tag(
             return ValidationResult(true, data = value, text = value.toString())
         }
 
-        if (size > 0 && length > size) {
-            return ValidationResult(false, "type array over size")
+        if (size > 0 && length != size) {
+            return ValidationResult(false, "size mismatch, want=$size, got=$length")
         }
 
         if (childUnique) {
@@ -1152,6 +1150,10 @@ class Tag(
                 return ValidationResult(false, "type slice not allow empty")
             }
             return ValidationResult(true)
+        }
+
+        if (size > 0 && length != size) {
+            return ValidationResult(false, "size mismatch, want=$size, got=$length")
         }
 
         if (childUnique) {

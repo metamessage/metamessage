@@ -915,11 +915,7 @@ func (p *Parser) parseArray(openLine int, path string, tag *ir.Tag) (*ir.Array, 
 	var err error
 
 	if tag.Type == ir.ValueTypeUnknown {
-		if tag.Size > 0 {
-			tag.Type = ir.ValueTypeArr
-		} else {
-			tag.Type = ir.ValueTypeVec
-		}
+		tag.Type = ir.ValueTypeVec
 	}
 
 	if tag.Name != "" {

@@ -629,7 +629,9 @@ private:
       if (tag->isNull)
         n = encodeSimple(SimpleNullInt);
       else
-        n = encodeInt64(std::stoll(val->text));
+        n = encodeInt64(val->data != 0 || val->text == "0" || val->text.empty()
+                            ? val->data
+                            : std::stoll(val->text));
       break;
 
     case ir::ValueType::U:
@@ -640,7 +642,10 @@ private:
       if (tag->isNull)
         n = 0;
       else
-        n = encodeU64(std::stoull(val->text));
+        n = encodeU64(static_cast<uint64_t>(
+            val->data != 0 || val->text == "0" || val->text.empty()
+                ? val->data
+                : static_cast<int64_t>(std::stoull(val->text))));
       break;
 
     case ir::ValueType::F32:

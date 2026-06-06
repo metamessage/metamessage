@@ -240,7 +240,7 @@ false
 - deprecated: 廢棄，不建議使用
 - name: 僅用於各語言的數據對象，用於命名。在jsonc等文本格式中，此標籤無效，不建議使用。
 - desc: 摘要，適用所有類型。最大長度 65535 比特
-- type: 數據類型。在文本格式中，字符串、整數（int）、小數（float64）、切片、對象（或類似結構）等沒有歧義時可以不用標注類型，比如當數組 size > 0 時不需要標記類型。在編程語言中，若數組、map 等可以判斷出來的類型，那麼也可以不用標注類型
+- type: 數據類型。在文本格式中，字符串、整數（int）、小數（float64）、切片、對象（或類似結構）等沒有歧義時可以不用標注類型。在編程語言中，若數組、map 等可以判斷出來的類型，那麼也可以不用標注類型
 - nullable: 是否可為null，適用所有類型
 - allow_empty: 除布爾類型外，其他類型默認不允許為空，當設置allow_empty後，可以為空，並允許通過一些規則。
 - unique: 僅適用切片或數組，表示元素不可重複
@@ -354,17 +354,19 @@ make
 - -force, -f: 強制覆蓋輸出文件
 - -lang, -l: 生成目標語言（僅用於 generate 模式，支持 go, java, ts, kt, py, js, cs, rs, swift, php）
 
-### 庫使用
+### 各語言實現
 
-項目提供 Go 庫用於程序調用。
+#### golang
 
-#### 安裝
+[pkg.go.dev](https://pkg.go.dev/github.com/metamessage/metamessage)
+
+##### 安裝
 
 ```bash
 go get github.com/metamessage/metamessage
 ```
 
-#### 示例代碼
+##### 示例代碼
 
 其他語言相同邏輯
 
@@ -444,7 +446,7 @@ func main() {
 }
 ```
 
-#### API 概覽
+##### API 概覽
 
 - `NewEncoder(w io.Writer) Encoder`: 創建編碼器
 - `EncodeFromValue(in any) ([]byte, error)`: 從結構體編碼
@@ -453,38 +455,17 @@ func main() {
 - `DecodeToValue(in []byte, out any) error`: 解碼到結構體
 - `DecodeToJsonc(in []byte) (string, error)`: 解碼到 JSONC 字符串
 
-### 其他語言示例
-
-#### Java
+#### Kotlin & Java
 
 [![jitpack.io](https://jitpack.io/v/metamessage/metamessage.svg)](https://jitpack.io/#metamessage/metamessage)
 
 [mm-kt](./mm-kt)
 
-#### Kotlin
-
-[![jitpack.io](https://jitpack.io/v/metamessage/metamessage.svg)](https://jitpack.io/#metamessage/metamessage)
-
-[mm-kt](./mm-kt)
-
-#### TypeScript
+#### TypeScript & JavaScript
 
 [npmjs.com](https://www.npmjs.com/package/metamessage)
 
-```typescript
-import { encodeFromValue, decodeToValue, mm, ValueType } from "metamessage";
-
-@mm({ desc: "" })
-class Person {
-  @mm({ desc: "" })
-  name: string = "";
-  @mm({ desc: "" })
-  age: number = 0;
-}
-const person = { name: "Ed", age: 30 };
-const wire = encodeFromValue(person);
-const decoded = decodeToValue(wire, Person);
-```
+[mm-ts](./mm-ts)
 
 #### Python
 
@@ -492,19 +473,7 @@ const decoded = decodeToValue(wire, Person);
 
 [mm-py](./mm-py)
 
-#### JavaScript
-
-[npmjs.com](https://www.npmjs.com/package/metamessage)
-
-```javascript
-const { encode, decode } = require("metamessage");
-
-const person = { name: "Ed", age: 30 };
-const wire = encode(person);
-const decoded = decode(wire);
-```
-
-#### C#
+#### C\#
 
 [NuGet](https://www.nuget.org/packages/MetaMessage)
 

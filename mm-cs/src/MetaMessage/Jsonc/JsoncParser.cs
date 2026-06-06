@@ -370,7 +370,7 @@ public class JsoncParser
         Tag tag = ConsumeCommentsFor(openLine) ?? Tag.NewTag();
         if (tag.Type == ValueType.Unknown)
         {
-            tag.Type = tag.Size > 0 ? ValueType.Arr : ValueType.Vec;
+            tag.Type = ValueType.Vec;
         }
 
         if (!string.IsNullOrEmpty(tag.Name))

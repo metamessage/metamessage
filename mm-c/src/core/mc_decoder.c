@@ -1344,31 +1344,26 @@ static void dec_apply_tag_conversion(mm_value_t *val) {
     }
     const char *enums = val->tag.enums;
     int current = 0;
-    const char *start = enums;
-    const char *p = enums;
-    while (*p) {
-      if (*p == '|') {
-        if (current == idx) {
-          size_t len = (size_t)(p - start);
-          char *enum_str = (char *)malloc(len + 1);
-          if (enum_str) {
-            memcpy(enum_str, start, len);
-            enum_str[len] = '\0';
-            free(val->text);
-            val->text = enum_str;
-          }
-          break;
-        }
+    const char *segment = enums;
+
+    // Find the idx-th '|'-separated segment
+    while (*segment) {
+      if (current == idx)
+        break;
+      if (*segment == '|')
         current++;
-        start = p + 1;
-      }
-      p++;
+      segment++;
     }
-    if (current == idx && val->text && val->text[0] != '\0') {
-      size_t len = (size_t)(p - start);
+
+    if (current == idx && *segment) {
+      const char *end = segment;
+      while (*end && *end != '|')
+        end++;
+
+      size_t len = (size_t)(end - segment);
       char *enum_str = (char *)malloc(len + 1);
       if (enum_str) {
-        memcpy(enum_str, start, len);
+        memcpy(enum_str, segment, len);
         enum_str[len] = '\0';
         free(val->text);
         val->text = enum_str;

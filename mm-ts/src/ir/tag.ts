@@ -172,7 +172,6 @@ export class Tag {
       ) {
       } else {
         if (
-          (this.type === ValueType.Arr && this.size > 0) ||
           (this.type === ValueType.Enums && this.enums !== '') ||
           (this.type === ValueType.Media && this.mime !== '')
         ) {
@@ -263,7 +262,6 @@ export class Tag {
       ) {
       } else {
         if (
-          (this.childType === ValueType.Arr && this.childSize > 0) ||
           (this.childType === ValueType.Enums && this.childEnums) ||
           (this.childType === ValueType.Media && this.childMime !== '')
         ) {
@@ -536,7 +534,6 @@ export class Tag {
       ) {
       } else {
         if (
-          (this.type === ValueType.Arr && this.size > 0) ||
           (this.type === ValueType.Enums && this.enums !== '') ||
           (this.type === ValueType.Media && this.mime !== '')
         ) {
@@ -1856,6 +1853,13 @@ export class Tag {
       return { valid: false, error: 'type slice not allow empty' };
     }
 
+    if (this.size !== 0n && BigInt(length) !== this.size) {
+      return {
+        valid: false,
+        error: `size mismatch, want=${this.size}, got=${length}`,
+      };
+    }
+
     if (this.childUnique) {
       const seen = new Set();
       for (let i = 0; i < value.length; i++) {
@@ -1895,8 +1899,11 @@ export class Tag {
       return { valid: false, error: 'type array not allow empty' };
     }
 
-    if (this.size && length > this.size) {
-      return { valid: false, error: 'type array over size' };
+    if (this.size !== 0n && BigInt(length) !== this.size) {
+      return {
+        valid: false,
+        error: `size mismatch, want=${this.size}, got=${length}`,
+      };
     }
 
     if (this.childUnique) {

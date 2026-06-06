@@ -90,4 +90,11 @@ mm_tag_t mm_tag_parse(const char *tag_str);
 uint8_t *mm_tag_bytes(const mm_tag_t *tag, size_t *out_len);
 void mm_tag_merge(mm_tag_t *dst, const mm_tag_t *src);
 
+// Validate a slice (vec) value
+// Returns 0 on success, -1 on error (error message written to error_out if not NULL)
+int mm_validate_vec(const mm_tag_t *tag, size_t item_count, char **error_out);
+// Validate an array value
+// Returns 0 on success, -1 on error (error message written to error_out if not NULL)
+int mm_validate_arr(const mm_tag_t *tag, size_t item_count, char **error_out);
+
 #endif

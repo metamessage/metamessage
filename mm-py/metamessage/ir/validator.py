@@ -39,8 +39,8 @@ class MmValidator:
                 return ValidationResult(False, "type array not allow empty")
             return ValidationResult(True, data=value, text=str(value))
 
-        if tag.size > 0 and length > tag.size:
-            return ValidationResult(False, "type array over size")
+        if tag.size > 0 and length != tag.size:
+            return ValidationResult(False, "size mismatch, want=%d, got=%d" % (tag.size, length))
 
         if tag.child_unique:
             seen = {}
@@ -101,6 +101,9 @@ class MmValidator:
             if not tag.allow_empty:
                 return ValidationResult(False, "type vec not allow empty")
             return ValidationResult(True)
+
+        if tag.size > 0 and length != tag.size:
+            return ValidationResult(False, "size mismatch, want=%d, got=%d" % (tag.size, length))
 
         if tag.child_unique:
             seen = {}
