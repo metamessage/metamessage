@@ -8,7 +8,7 @@
 #include <stddef.h>
 #include <stdint.h>
 
-typedef mm_node_t mm_obj_t;
+typedef node_t mm_obj_t;
 
 typedef struct {
   uint8_t *data;
@@ -64,37 +64,37 @@ typedef struct {
   const char *child_type;
 } mm_container_attr_t;
 
-mm_node_t *mm_value_create_str(const char *text, mm_value_type_t type,
+node_t *mm_value_create_str(const char *text, mm_value_type_t type,
                                mm_field_attr_t attr);
-void mm_container_apply_attr(mm_node_t *container, mm_container_attr_t attr);
+void mm_container_apply_attr(node_t *container, mm_container_attr_t attr);
 
-mm_node_t *mm_int_create(int64_t val, mm_field_attr_t attr);
-mm_node_t *mm_i8_create(int64_t val, mm_field_attr_t attr);
-mm_node_t *mm_i16_create(int64_t val, mm_field_attr_t attr);
-mm_node_t *mm_i32_create(int64_t val, mm_field_attr_t attr);
-mm_node_t *mm_i64_create(int64_t val, mm_field_attr_t attr);
-mm_node_t *mm_uint_create(uint64_t val, mm_field_attr_t attr);
-mm_node_t *mm_u8_create(uint64_t val, mm_field_attr_t attr);
-mm_node_t *mm_u16_create(uint64_t val, mm_field_attr_t attr);
-mm_node_t *mm_u32_create(uint64_t val, mm_field_attr_t attr);
-mm_node_t *mm_u64_create(uint64_t val, mm_field_attr_t attr);
-mm_node_t *mm_str_create(const char *val, mm_field_attr_t attr);
-mm_node_t *mm_bool_create(bool val, mm_field_attr_t attr);
-mm_node_t *mm_float_create(double val, mm_field_attr_t attr);
-mm_node_t *mm_f32_create(double val, mm_field_attr_t attr);
-mm_node_t *mm_bytes_create(const char *val, mm_field_attr_t attr);
-mm_node_t *mm_bigint_create(const char *val, mm_field_attr_t attr);
-mm_node_t *mm_datetime_create(const char *val, mm_field_attr_t attr);
-mm_node_t *mm_date_create(const char *val, mm_field_attr_t attr);
-mm_node_t *mm_time_create(const char *val, mm_field_attr_t attr);
-mm_node_t *mm_uuid_create(const char *val, mm_field_attr_t attr);
-mm_node_t *mm_decimal_create(const char *val, mm_field_attr_t attr);
-mm_node_t *mm_ip_create(const char *val, mm_field_attr_t attr);
-mm_node_t *mm_url_create(const char *val, mm_field_attr_t attr);
-mm_node_t *mm_email_create(const char *val, mm_field_attr_t attr);
-mm_node_t *mm_enum_create(const char *val, mm_field_attr_t attr);
-mm_node_t *mm_image_create(const char *val, mm_field_attr_t attr);
-mm_node_t *mm_video_create(const char *val, mm_field_attr_t attr);
+node_t *mm_int_create(int64_t val, mm_field_attr_t attr);
+node_t *mm_i8_create(int64_t val, mm_field_attr_t attr);
+node_t *mm_i16_create(int64_t val, mm_field_attr_t attr);
+node_t *mm_i32_create(int64_t val, mm_field_attr_t attr);
+node_t *mm_i64_create(int64_t val, mm_field_attr_t attr);
+node_t *mm_uint_create(uint64_t val, mm_field_attr_t attr);
+node_t *mm_u8_create(uint64_t val, mm_field_attr_t attr);
+node_t *mm_u16_create(uint64_t val, mm_field_attr_t attr);
+node_t *mm_u32_create(uint64_t val, mm_field_attr_t attr);
+node_t *mm_u64_create(uint64_t val, mm_field_attr_t attr);
+node_t *mm_str_create(const char *val, mm_field_attr_t attr);
+node_t *mm_bool_create(bool val, mm_field_attr_t attr);
+node_t *mm_float_create(double val, mm_field_attr_t attr);
+node_t *mm_f32_create(double val, mm_field_attr_t attr);
+node_t *mm_bytes_create(const char *val, mm_field_attr_t attr);
+node_t *mm_bigint_create(const char *val, mm_field_attr_t attr);
+node_t *mm_datetime_create(const char *val, mm_field_attr_t attr);
+node_t *mm_date_create(const char *val, mm_field_attr_t attr);
+node_t *mm_time_create(const char *val, mm_field_attr_t attr);
+node_t *mm_uuid_create(const char *val, mm_field_attr_t attr);
+node_t *mm_decimal_create(const char *val, mm_field_attr_t attr);
+node_t *mm_ip_create(const char *val, mm_field_attr_t attr);
+node_t *mm_url_create(const char *val, mm_field_attr_t attr);
+node_t *mm_email_create(const char *val, mm_field_attr_t attr);
+node_t *mm_enum_create(const char *val, mm_field_attr_t attr);
+node_t *mm_image_create(const char *val, mm_field_attr_t attr);
+node_t *mm_video_create(const char *val, mm_field_attr_t attr);
 
 #define mm_i(val, ...)                                                         \
   mm_int_create((int64_t)(val), (mm_field_attr_t){.min = INT64_MIN,            \
@@ -533,18 +533,18 @@ mm_node_t *mm_video_create(const char *val, mm_field_attr_t attr);
                                                          __VA_ARGS__})
 
 mm_obj_t *mm_obj_new(void);
-void mm_obj_set(mm_obj_t *obj, const char *key, mm_node_t *value);
+void mm_obj_set(mm_obj_t *obj, const char *key, node_t *value);
 void mm_obj_free(mm_obj_t *obj);
 
-mm_node_t *mm_arr_new(void);
-void mm_arr_add(mm_node_t *arr, mm_node_t *item);
+node_t *mm_arr_new(void);
+void mm_arr_add(node_t *arr, node_t *item);
 
-mm_buffer_t *mm_encode(mm_node_t *node);
-mm_node_t *mm_decode(const mm_buffer_t *buf);
+mm_buffer_t *mm_encode(node_t *node);
+node_t *mm_decode(const mm_buffer_t *buf);
 void mm_buffer_free(mm_buffer_t *buf);
 
-char *mm_to_jsonc(mm_node_t *node);
-mm_node_t *mm_from_jsonc(const char *jsonc_str);
+char *mm_to_jsonc(node_t *node);
+node_t *mm_from_jsonc(const char *jsonc_str);
 void mm_string_free(char *str);
 
 mm_buffer_t *mm_encode_from_jsonc(const char *jsonc_str);

@@ -2,7 +2,7 @@
 metamessage - A binary message encoding library with schema support
 """
 from .ir.tag import Tag, TagKey, ValueType, mm_tag, def_tag, NewTag, MergeTag
-from .ir.ast import Obj, Arr, Val, Field, NodeType, Node
+from .ir.ast import NodeObject, Arr, NodeScalar, Field, NodeType, Node
 from .core.encoder import Encoder
 from .core.decoder import Decoder
 from .core.value_to_node import value_to_node, node_to_value, mm
@@ -70,23 +70,23 @@ def jsonc_to_value(jsonc, target_type=None):
     """
     node = parse_jsonc(jsonc)
     if target_type is None:
-        return node.data if isinstance(node, Val) else _node_data(node)
+        return node.data if isinstance(node, NodeScalar) else _node_data(node)
     return node_to_value(node, target_type)
 
 
 def _node_data(node):
-    if isinstance(node, Obj):
+    if isinstance(node, NodeObject):
         return {f.key: _node_data(f.value) for f in node.fields}
     elif isinstance(node, Arr):
         return [_node_data(item) for item in node.items]
-    elif isinstance(node, Val):
+    elif isinstance(node, NodeScalar):
         return node.data
     return None
 
 
 __all__ = [
     "Tag", "TagKey", "ValueType", "mm_tag", "def_tag", "NewTag", "MergeTag",
-    "Obj", "Arr", "Val", "Field", "NodeType", "Node",
+    "NodeObject", "Arr", "NodeScalar", "Field", "NodeType", "Node",
     "Encoder", "Decoder",
     "parse_jsonc", "to_jsonc",
     "value_to_node", "node_to_value", "mm",

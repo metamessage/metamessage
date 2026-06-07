@@ -1,4 +1,4 @@
-use crate::ir::ast::{Array, Field, Node, Object, Value, ValueData};
+use crate::ir::ast::{Field, Node, NodeArray, NodeObject, NodeScalar, ValueData};
 use crate::ir::tag::Tag;
 use crate::ir::value_type::ValueType;
 use crate::jsonc::scanner::{Scanner, Token, TokenType};
@@ -144,7 +144,7 @@ impl Parser {
                     }
                     _ => ValueData::String(text.clone()),
                 };
-                let value = Node::Value(Value {
+                let value = Node::Value(NodeScalar {
                     data,
                     text,
                     tag: Some(tag),
@@ -189,7 +189,7 @@ impl Parser {
                     data = ValueData::String(text.clone());
                 }
 
-                let value = Node::Value(Value {
+                let value = Node::Value(NodeScalar {
                     data,
                     text,
                     tag: Some(tag),
@@ -208,7 +208,7 @@ impl Parser {
                 if tag.value_type == ValueType::Unknown {
                     tag.value_type = ValueType::Bool;
                 }
-                let value = Node::Value(Value {
+                let value = Node::Value(NodeScalar {
                     data: ValueData::Bool(true),
                     text: "true".to_string(),
                     tag: Some(tag),
@@ -227,7 +227,7 @@ impl Parser {
                 if tag.value_type == ValueType::Unknown {
                     tag.value_type = ValueType::Bool;
                 }
-                let value = Node::Value(Value {
+                let value = Node::Value(NodeScalar {
                     data: ValueData::Bool(false),
                     text: "false".to_string(),
                     tag: Some(tag),
@@ -306,7 +306,7 @@ impl Parser {
         }
 
         self.depth -= 1;
-        Ok(Node::Object(Object {
+        Ok(Node::Object(NodeObject {
             fields,
             tag: Some(tag),
             path: obj_path,
@@ -367,7 +367,7 @@ impl Parser {
         }
 
         self.depth -= 1;
-        Ok(Node::Array(Array {
+        Ok(Node::Array(NodeArray {
             items,
             tag: Some(tag),
             path: arr_path,

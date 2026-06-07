@@ -23,7 +23,7 @@ func writeIndent(b *strings.Builder, indent int, config *JSONCConfig) {
 	}
 }
 
-func writeValueJSONC(b *strings.Builder, v *ir.Value) {
+func writeValueJSONC(b *strings.Builder, v *ir.NodeScalar) {
 	if v == nil {
 		return
 	}
@@ -61,7 +61,7 @@ func writeValueJSONC(b *strings.Builder, v *ir.Value) {
 	}
 }
 
-func writeArrayJSONC(b *strings.Builder, a *ir.Array, indent int, config *JSONCConfig) {
+func writeArrayJSONC(b *strings.Builder, a *ir.NodeArray, indent int, config *JSONCConfig) {
 	b.WriteString("[\n")
 
 	for _, item := range a.Items {
@@ -78,7 +78,7 @@ func writeArrayJSONC(b *strings.Builder, a *ir.Array, indent int, config *JSONCC
 	b.WriteString("]")
 }
 
-func writeObjectJSONC(b *strings.Builder, o *ir.Object, indent int, config *JSONCConfig) {
+func writeObjectJSONC(b *strings.Builder, o *ir.NodeObject, indent int, config *JSONCConfig) {
 	b.WriteString("{\n")
 
 	for _, f := range o.Fields {
@@ -110,15 +110,15 @@ func writeLeadingComments(b *strings.Builder, tag *ir.Tag, indent int, config *J
 func writeNodeJSONC(b *strings.Builder, n ir.Node, indent int, config *JSONCConfig) {
 	switch v := n.(type) {
 	case *ir.Doc:
-		writeObjectJSONC(b, &ir.Object{Fields: v.Fields, Tag: v.Tag, Path: v.Path}, indent, config)
+		writeObjectJSONC(b, &ir.NodeObject{Fields: v.Fields, Tag: v.Tag, Path: v.Path}, indent, config)
 
-	case *ir.Object:
+	case *ir.NodeObject:
 		writeObjectJSONC(b, v, indent, config)
 
-	case *ir.Array:
+	case *ir.NodeArray:
 		writeArrayJSONC(b, v, indent, config)
 
-	case *ir.Value:
+	case *ir.NodeScalar:
 		writeValueJSONC(b, v)
 
 	case *ir.NodeNull:

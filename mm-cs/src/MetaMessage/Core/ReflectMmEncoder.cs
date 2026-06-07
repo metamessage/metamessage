@@ -9,7 +9,7 @@ public static class ReflectMmEncoder
 {
     private const int MaxDepth = 32;
 
-    public static IMmTree ValueToNode(object root, string tagStr)
+    public static INode ValueToNode(object root, string tagStr)
     {
         Tag? tag = null;
         if (!string.IsNullOrEmpty(tagStr))
@@ -22,7 +22,7 @@ public static class ReflectMmEncoder
         return ValueToNodeRecursive(root, tag, 0, "", false);
     }
 
-    private static IMmTree ValueToNodeRecursive(object? v, Tag tag, int depth, string path, bool example)
+    private static INode ValueToNodeRecursive(object? v, Tag tag, int depth, string path, bool example)
     {
         if (depth > MaxDepth)
         {
@@ -36,7 +36,7 @@ public static class ReflectMmEncoder
             if (tag.Type != ValueType.Unknown)
             {
                 tag.IsNull = true;
-                return new MmScalar(null, "null", tag.Copy());
+                return new NodeScalar(null, "null", tag.Copy());
             }
 
             // Try to infer from property context (will be handled by AnyToNode)
@@ -68,7 +68,7 @@ public static class ReflectMmEncoder
                     throw new Exception($"unsupported type: {tag.Type}");
             }
 
-            return new MmScalar(data, text, tag.Copy());
+            return new NodeScalar(data, text, tag.Copy());
         }
 
         if (type == typeof(bool))
@@ -87,7 +87,7 @@ public static class ReflectMmEncoder
                 default:
                     throw new Exception($"unsupported type: {tag.Type}");
             }
-            return new MmScalar(data, text, tag.Copy());
+            return new NodeScalar(data, text, tag.Copy());
         }
 
         if (type == typeof(int))
@@ -103,7 +103,7 @@ public static class ReflectMmEncoder
                 default:
                     throw new Exception($"unsupported type: {tag.Type}");
             }
-            return new MmScalar(data, text, tag.Copy());
+            return new NodeScalar(data, text, tag.Copy());
         }
 
         if (type == typeof(long))
@@ -119,7 +119,7 @@ public static class ReflectMmEncoder
                 default:
                     throw new Exception($"unsupported type: {tag.Type}");
             }
-            return new MmScalar(data, text, tag.Copy());
+            return new NodeScalar(data, text, tag.Copy());
         }
 
         if (type == typeof(short))
@@ -135,7 +135,7 @@ public static class ReflectMmEncoder
                 default:
                     throw new Exception($"unsupported type: {tag.Type}");
             }
-            return new MmScalar(data, text, tag.Copy());
+            return new NodeScalar(data, text, tag.Copy());
         }
 
         if (type == typeof(sbyte))
@@ -151,7 +151,7 @@ public static class ReflectMmEncoder
                 default:
                     throw new Exception($"unsupported type: {tag.Type}");
             }
-            return new MmScalar(data, text, tag.Copy());
+            return new NodeScalar(data, text, tag.Copy());
         }
 
         if (type == typeof(byte))
@@ -167,7 +167,7 @@ public static class ReflectMmEncoder
                 default:
                     throw new Exception($"unsupported type: {tag.Type}");
             }
-            return new MmScalar(data, text, tag.Copy());
+            return new NodeScalar(data, text, tag.Copy());
         }
 
         if (type == typeof(uint))
@@ -183,7 +183,7 @@ public static class ReflectMmEncoder
                 default:
                     throw new Exception($"unsupported type: {tag.Type}");
             }
-            return new MmScalar(data, text, tag.Copy());
+            return new NodeScalar(data, text, tag.Copy());
         }
 
         if (type == typeof(ushort))
@@ -199,7 +199,7 @@ public static class ReflectMmEncoder
                 default:
                     throw new Exception($"unsupported type: {tag.Type}");
             }
-            return new MmScalar(data, text, tag.Copy());
+            return new NodeScalar(data, text, tag.Copy());
         }
 
         if (type == typeof(ulong))
@@ -215,7 +215,7 @@ public static class ReflectMmEncoder
                 default:
                     throw new Exception($"unsupported type: {tag.Type}");
             }
-            return new MmScalar(data, text, tag.Copy());
+            return new NodeScalar(data, text, tag.Copy());
         }
 
         if (type == typeof(float))
@@ -233,7 +233,7 @@ public static class ReflectMmEncoder
                 default:
                     throw new Exception($"unsupported type: {tag.Type}");
             }
-            return new MmScalar(data, text, tag.Copy());
+            return new NodeScalar(data, text, tag.Copy());
         }
 
         if (type == typeof(double))
@@ -251,7 +251,7 @@ public static class ReflectMmEncoder
                 default:
                     throw new Exception($"unsupported type: {tag.Type}");
             }
-            return new MmScalar(data, text, tag.Copy());
+            return new NodeScalar(data, text, tag.Copy());
         }
 
         if (type == typeof(decimal))
@@ -267,7 +267,7 @@ public static class ReflectMmEncoder
                 default:
                     throw new Exception($"unsupported type: {tag.Type}");
             }
-            return new MmScalar(data, text, tag.Copy());
+            return new NodeScalar(data, text, tag.Copy());
         }
 
         if (type == typeof(string))
@@ -303,7 +303,7 @@ public static class ReflectMmEncoder
                 default:
                     throw new Exception($"unsupported type: {tag.Type}");
             }
-            return new MmScalar(data, text, tag.Copy());
+            return new NodeScalar(data, text, tag.Copy());
         }
 
         if (type == typeof(DateTime))
@@ -327,13 +327,13 @@ public static class ReflectMmEncoder
                 default:
                     throw new Exception($"unsupported type: {tag.Type}");
             }
-            return new MmScalar(data, text, tag.Copy());
+            return new NodeScalar(data, text, tag.Copy());
         }
 
         return AnyToNode(v, tag, depth, path, false);
     }
 
-    private static IMmTree AnyToNode(object obj, Tag tag, int depth, string path, bool example)
+    private static INode AnyToNode(object obj, Tag tag, int depth, string path, bool example)
     {
         depth++;
         if (depth > MaxDepth)
@@ -360,7 +360,7 @@ public static class ReflectMmEncoder
             if (!hasValue)
             {
                 tag.IsNull = true;
-                var nullScalar = new MmScalar(null, "null", tag.Copy());
+                var nullScalar = new NodeScalar(null, "null", tag.Copy());
                 nullScalar.Tag.IsNull = true;
                 return nullScalar;
             }
@@ -397,7 +397,7 @@ public static class ReflectMmEncoder
         {
             tag.Type = ValueType.Map;
             var dict = (IDictionary)val!;
-            var entries = new List<KeyValuePair<MmScalar, IMmTree>>();
+            var entries = new List<KeyValuePair<NodeScalar, INode>>();
 
             foreach (var key in dict.Keys)
             {
@@ -411,19 +411,19 @@ public static class ReflectMmEncoder
                 var p = $"{path}[{keyStr}]";
                 var valNode = ValueToNodeRecursive(dict[key], tagItem, depth, p, false);
 
-                entries.Add(new KeyValuePair<MmScalar, IMmTree>(
-                    new MmScalar(keyStr, keyStr, Tag.Empty()),
+                entries.Add(new KeyValuePair<NodeScalar, INode>(
+                    new NodeScalar(keyStr, keyStr, Tag.Empty()),
                     valNode));
             }
 
-            return new MmMap(entries, tag.Copy());
+            return new NodeObject(entries, tag.Copy());
         }
 
         if (val is IList list)
         {
             tag.Type = ValueType.Vec;
 
-            var items = new List<IMmTree>();
+            var items = new List<INode>();
             foreach (var item in list)
             {
                 var tagItem = Tag.NewTag();
@@ -434,7 +434,7 @@ public static class ReflectMmEncoder
                 items.Add(itemNode);
             }
 
-            return new MmArray(items, tag.Copy());
+            return new NodeArray(items, tag.Copy());
         }
 
         if (typ!.IsArray && typ != typeof(byte[]))
@@ -443,7 +443,7 @@ public static class ReflectMmEncoder
             var arr = (Array)val!;
             tag.Size = arr.Length;
 
-            var items = new List<IMmTree>();
+            var items = new List<INode>();
             for (int i = 0; i < arr.Length; i++)
             {
                 var tagItem = Tag.NewTag();
@@ -454,14 +454,14 @@ public static class ReflectMmEncoder
                 items.Add(itemNode);
             }
 
-            return new MmArray(items, tag.Copy());
+            return new NodeArray(items, tag.Copy());
         }
 
         if (typ!.IsClass || (typ.IsValueType && !typ.IsPrimitive && !typ.IsEnum))
         {
             tag.Type = ValueType.Obj;
 
-            var fields = new List<KeyValuePair<MmScalar, IMmTree>>();
+            var fields = new List<KeyValuePair<NodeScalar, INode>>();
             var properties = typ.GetProperties(BindingFlags.Public | BindingFlags.Instance);
 
             foreach (var property in properties)
@@ -504,19 +504,19 @@ public static class ReflectMmEncoder
 
                 var fieldNode = ValueToNodeRecursive(propVal, tagItem, depth, p, false);
 
-                fields.Add(new KeyValuePair<MmScalar, IMmTree>(
-                    new MmScalar(fieldKey, fieldKey, Tag.Empty()),
+                fields.Add(new KeyValuePair<NodeScalar, INode>(
+                    new NodeScalar(fieldKey, fieldKey, Tag.Empty()),
                     fieldNode));
             }
 
-            return new MmMap(fields, tag.Copy());
+            return new NodeObject(fields, tag.Copy());
         }
 
         if (typ!.IsEnum)
         {
             tag.Type = ValueType.Enums;
             var intVal = Convert.ToInt64(val);
-            return new MmScalar(intVal, intVal.ToString(), tag.Copy());
+            return new NodeScalar(intVal, intVal.ToString(), tag.Copy());
         }
 
         throw new Exception($"unsupported type: {typ.FullName}");

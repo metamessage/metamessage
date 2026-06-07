@@ -261,7 +261,7 @@ func TestEncodeInt(t *testing.T) {
 					t.Fatalf("decode failed: %v", decodeErr)
 				}
 
-				gotData := gotVal.(*ir.Value).Data
+				gotData := gotVal.(*ir.NodeScalar).Data
 				if gotBig, ok := gotData.(big.Int); ok {
 					wantBig := tc.wantDecode.(big.Int)
 					if gotBig.Cmp(&wantBig) != 0 {
@@ -319,7 +319,7 @@ func TestEncodeIntInStruct(t *testing.T) {
 			},
 			wantErr: false,
 			wantCheck: func(val any) bool {
-				t.Log(jsonc.ToJSONC(val.(*ir.Object)))
+				t.Log(jsonc.ToJSONC(val.(*ir.NodeObject)))
 				return true
 			},
 		},
@@ -339,7 +339,7 @@ func TestEncodeIntInStruct(t *testing.T) {
 			},
 			wantErr: false,
 			wantCheck: func(val any) bool {
-				t.Log(jsonc.ToJSONC(val.(*ir.Object)))
+				t.Log(jsonc.ToJSONC(val.(*ir.NodeObject)))
 				return true
 			},
 		},
@@ -359,7 +359,7 @@ func TestEncodeIntInStruct(t *testing.T) {
 			},
 			wantErr: false,
 			wantCheck: func(val any) bool {
-				t.Log(jsonc.ToJSONC(val.(*ir.Object)))
+				t.Log(jsonc.ToJSONC(val.(*ir.NodeObject)))
 				return true
 			},
 		},
@@ -401,8 +401,8 @@ func TestEncodeIntArray(t *testing.T) {
 			input:   []int{1, 2, 3, 100, -50},
 			wantErr: false,
 			wantCheck: func(val any) bool {
-				arr := val.(*ir.Array).Items
-				return len(arr) == 5 && arr[0].(*ir.Value).Data.(int) == int(1)
+				arr := val.(*ir.NodeArray).Items
+				return len(arr) == 5 && arr[0].(*ir.NodeScalar).Data.(int) == int(1)
 			},
 		},
 		{
@@ -410,7 +410,7 @@ func TestEncodeIntArray(t *testing.T) {
 			input:   []int8{10, 20, 127, -128, 1},
 			wantErr: false,
 			wantCheck: func(val any) bool {
-				arr := val.(*ir.Array).Items
+				arr := val.(*ir.NodeArray).Items
 				return len(arr) == 5
 			},
 		},
@@ -419,7 +419,7 @@ func TestEncodeIntArray(t *testing.T) {
 			input:   []uint64{1000, 2000, 3000, 9223372036854775807},
 			wantErr: false,
 			wantCheck: func(val any) bool {
-				arr := val.(*ir.Array).Items
+				arr := val.(*ir.NodeArray).Items
 				return len(arr) == 4
 			},
 		},
@@ -428,7 +428,7 @@ func TestEncodeIntArray(t *testing.T) {
 			input:   []int32{100, -200, 32767, -32768, 1},
 			wantErr: false,
 			wantCheck: func(val any) bool {
-				arr := val.(*ir.Array).Items
+				arr := val.(*ir.NodeArray).Items
 				return len(arr) == 5
 			},
 		},
@@ -437,7 +437,7 @@ func TestEncodeIntArray(t *testing.T) {
 			input:   []uint{1, 100, 1000, 10000},
 			wantErr: false,
 			wantCheck: func(val any) bool {
-				arr := val.(*ir.Array).Items
+				arr := val.(*ir.NodeArray).Items
 				return len(arr) == 4
 			},
 		},
@@ -483,7 +483,7 @@ func TestEncodeIntNullable(t *testing.T) {
 			input:   &val1,
 			wantErr: false,
 			wantCheck: func(v any) bool {
-				return v.(*ir.Value).Data == int(1)
+				return v.(*ir.NodeScalar).Data == int(1)
 			},
 		},
 		{
@@ -491,7 +491,7 @@ func TestEncodeIntNullable(t *testing.T) {
 			input:   &val8,
 			wantErr: false,
 			wantCheck: func(v any) bool {
-				return v.(*ir.Value).Data == int8(10)
+				return v.(*ir.NodeScalar).Data == int8(10)
 			},
 		},
 		{
@@ -499,7 +499,7 @@ func TestEncodeIntNullable(t *testing.T) {
 			input:   &val64,
 			wantErr: false,
 			wantCheck: func(v any) bool {
-				return v.(*ir.Value).Data == int64(999999)
+				return v.(*ir.NodeScalar).Data == int64(999999)
 			},
 		},
 	}
@@ -540,7 +540,7 @@ func TestEncodeIntBoundary(t *testing.T) {
 			input:   int8(-128),
 			wantErr: false,
 			wantCheck: func(v any) bool {
-				return v.(*ir.Value).Data == int8(-128)
+				return v.(*ir.NodeScalar).Data == int8(-128)
 			},
 		},
 		{
@@ -548,7 +548,7 @@ func TestEncodeIntBoundary(t *testing.T) {
 			input:   int8(127),
 			wantErr: false,
 			wantCheck: func(v any) bool {
-				return v.(*ir.Value).Data == int8(127)
+				return v.(*ir.NodeScalar).Data == int8(127)
 			},
 		},
 		{
@@ -556,7 +556,7 @@ func TestEncodeIntBoundary(t *testing.T) {
 			input:   int16(-32768),
 			wantErr: false,
 			wantCheck: func(v any) bool {
-				return v.(*ir.Value).Data == int16(-32768)
+				return v.(*ir.NodeScalar).Data == int16(-32768)
 			},
 		},
 		{
@@ -564,7 +564,7 @@ func TestEncodeIntBoundary(t *testing.T) {
 			input:   int16(32767),
 			wantErr: false,
 			wantCheck: func(v any) bool {
-				return v.(*ir.Value).Data == int16(32767)
+				return v.(*ir.NodeScalar).Data == int16(32767)
 			},
 		},
 		{
@@ -572,7 +572,7 @@ func TestEncodeIntBoundary(t *testing.T) {
 			input:   int32(-2147483648),
 			wantErr: false,
 			wantCheck: func(v any) bool {
-				return v.(*ir.Value).Data == int32(-2147483648)
+				return v.(*ir.NodeScalar).Data == int32(-2147483648)
 			},
 		},
 		{
@@ -580,7 +580,7 @@ func TestEncodeIntBoundary(t *testing.T) {
 			input:   int64(9223372036854775807),
 			wantErr: false,
 			wantCheck: func(v any) bool {
-				return v.(*ir.Value).Data == int64(9223372036854775807)
+				return v.(*ir.NodeScalar).Data == int64(9223372036854775807)
 			},
 		},
 	}
@@ -621,7 +621,7 @@ func TestEncodeIntRepresentation(t *testing.T) {
 			input:   int64(9000000000000000000),
 			wantErr: false,
 			wantCheck: func(v any) bool {
-				return v.(*ir.Value).Data == int64(9000000000000000000)
+				return v.(*ir.NodeScalar).Data == int64(9000000000000000000)
 			},
 		},
 		{
@@ -629,7 +629,7 @@ func TestEncodeIntRepresentation(t *testing.T) {
 			input:   int64(-9000000000000000000),
 			wantErr: false,
 			wantCheck: func(v any) bool {
-				return v.(*ir.Value).Data == int64(-9000000000000000000)
+				return v.(*ir.NodeScalar).Data == int64(-9000000000000000000)
 			},
 		},
 		{
@@ -637,7 +637,7 @@ func TestEncodeIntRepresentation(t *testing.T) {
 			input:   uint64(18000000000000000000),
 			wantErr: false,
 			wantCheck: func(v any) bool {
-				return v.(*ir.Value).Data == uint64(18000000000000000000)
+				return v.(*ir.NodeScalar).Data == uint64(18000000000000000000)
 			},
 		},
 		{
@@ -645,7 +645,7 @@ func TestEncodeIntRepresentation(t *testing.T) {
 			input:   int32(2147483647),
 			wantErr: false,
 			wantCheck: func(v any) bool {
-				return v.(*ir.Value).Data == int32(2147483647)
+				return v.(*ir.NodeScalar).Data == int32(2147483647)
 			},
 		},
 		{
@@ -653,7 +653,7 @@ func TestEncodeIntRepresentation(t *testing.T) {
 			input:   uint32(4294967295),
 			wantErr: false,
 			wantCheck: func(v any) bool {
-				return v.(*ir.Value).Data == uint32(4294967295)
+				return v.(*ir.NodeScalar).Data == uint32(4294967295)
 			},
 		},
 	}

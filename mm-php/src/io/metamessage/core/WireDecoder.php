@@ -2,9 +2,9 @@
 
 namespace io\metamessage\core;
 
-use io\metamessage\ir\Object_;
-use io\metamessage\ir\Array_;
-use io\metamessage\ir\Value;
+use io\metamessage\ir\NodeObject;
+use io\metamessage\ir\NodeArray;
+use io\metamessage\ir\NodeScalar;
 use io\metamessage\ir\Node;
 use io\metamessage\ir\Tag;
 use io\metamessage\ir\Field;
@@ -98,56 +98,56 @@ class WireDecoder
             switch ($tag->type) {
                 case ValueType::DATETIME:
                     $dt = new \DateTime('1970-01-01 00:00:00', new \DateTimeZone('UTC'));
-                    $node = new Value($dt, $dt->format('Y-m-d H:i:s'), $tag, $path);
+                    $node = new NodeScalar($dt, $dt->format('Y-m-d H:i:s'), $tag, $path);
                     break;
                 case ValueType::DATE:
                     $dt = new \DateTime('1970-01-01', new \DateTimeZone('UTC'));
-                    $node = new Value($dt, $dt->format('Y-m-d'), $tag, $path);
+                    $node = new NodeScalar($dt, $dt->format('Y-m-d'), $tag, $path);
                     break;
                 case ValueType::TIME:
                     $dt = new \DateTime('1970-01-01 00:00:00', new \DateTimeZone('UTC'));
-                    $node = new Value($dt, $dt->format('H:i:s'), $tag, $path);
+                    $node = new NodeScalar($dt, $dt->format('H:i:s'), $tag, $path);
                     break;
                 case ValueType::I8:
-                    $node = new Value(0, '0', $tag, $path);
+                    $node = new NodeScalar(0, '0', $tag, $path);
                     break;
                 case ValueType::I16:
-                    $node = new Value(0, '0', $tag, $path);
+                    $node = new NodeScalar(0, '0', $tag, $path);
                     break;
                 case ValueType::I32:
-                    $node = new Value(0, '0', $tag, $path);
+                    $node = new NodeScalar(0, '0', $tag, $path);
                     break;
                 case ValueType::I64:
-                    $node = new Value(0, '0', $tag, $path);
+                    $node = new NodeScalar(0, '0', $tag, $path);
                     break;
                 case ValueType::U:
-                    $node = new Value(0, '0', $tag, $path);
+                    $node = new NodeScalar(0, '0', $tag, $path);
                     break;
                 case ValueType::U8:
-                    $node = new Value(0, '0', $tag, $path);
+                    $node = new NodeScalar(0, '0', $tag, $path);
                     break;
                 case ValueType::U16:
-                    $node = new Value(0, '0', $tag, $path);
+                    $node = new NodeScalar(0, '0', $tag, $path);
                     break;
                 case ValueType::U32:
-                    $node = new Value(0, '0', $tag, $path);
+                    $node = new NodeScalar(0, '0', $tag, $path);
                     break;
                 case ValueType::U64:
-                    $node = new Value(0, '0', $tag, $path);
+                    $node = new NodeScalar(0, '0', $tag, $path);
                     break;
                 case ValueType::F32:
-                    $node = new Value(0.0, '0.0', $tag, $path);
+                    $node = new NodeScalar(0.0, '0.0', $tag, $path);
                     break;
                 case ValueType::EMAIL:
                 case ValueType::UUID:
                 case ValueType::DECIMAL:
-                    $node = new Value('', '', $tag, $path);
+                    $node = new NodeScalar('', '', $tag, $path);
                     break;
                 case ValueType::BIGINT:
-                    $node = new Value('0', '0', $tag, $path);
+                    $node = new NodeScalar('0', '0', $tag, $path);
                     break;
                 case ValueType::URL:
-                    $node = new Value('', '', $tag, $path);
+                    $node = new NodeScalar('', '', $tag, $path);
                     break;
                 case ValueType::IP:
                     switch ($tag->version) {
@@ -163,7 +163,7 @@ class WireDecoder
                         default:
                             throw new MmDecodeException('unsupported IP version: ' . $tag->version);
                     }
-                    $node = new Value('', $text, $tag, $path);
+                    $node = new NodeScalar('', $text, $tag, $path);
                     break;
                 default:
                     $result = $this->decodeNode($tag, $path);
@@ -660,7 +660,7 @@ class WireDecoder
                 throw new MmDecodeException('unsupported string type: ' . $tag->type->name);
         }
 
-        $node = new Value($data, $text, $tag, $path);
+        $node = new NodeScalar($data, $text, $tag, $path);
         $length = $l1 + 1 + $l2;
         return [$node, $length];
     }
@@ -718,7 +718,7 @@ class WireDecoder
                 throw new MmDecodeException('unsupported bytes type: ' . $tag->type->name);
         }
 
-        $node = new Value($data, $text, $tag, $path);
+        $node = new NodeScalar($data, $text, $tag, $path);
         $length = $l1 + 1 + $l2;
         return [$node, $length];
     }
@@ -834,7 +834,7 @@ class WireDecoder
                 throw new MmDecodeException('unsupported value types: ' . $tag->type->name);
         }
 
-        $node = new Value($data, $text, $tag, $path);
+        $node = new NodeScalar($data, $text, $tag, $path);
         $length = $l1 + 1;
         return [$node, $length];
     }
@@ -897,7 +897,7 @@ class WireDecoder
                 throw new MmDecodeException('unsupported value types: ' . $tag->type->name);
         }
 
-        $node = new Value($data, $text, $tag, $path);
+        $node = new NodeScalar($data, $text, $tag, $path);
         $length = $l1 + 1;
         return [$node, $length];
     }
@@ -955,7 +955,7 @@ class WireDecoder
                 throw new MmDecodeException('unsupported value types: ' . $tag->type->name);
         }
 
-        $node = new Value($data, $text, $tag, $path);
+        $node = new NodeScalar($data, $text, $tag, $path);
         return [$node, $length];
     }
 
@@ -970,11 +970,11 @@ class WireDecoder
         switch ($sv) {
             case SimpleValue::FALSE:
                 $tag->type = ValueType::BOOL;
-                $node = new Value(false, Constants::FALSE, $tag, $path);
+                $node = new NodeScalar(false, Constants::FALSE, $tag, $path);
                 break;
             case SimpleValue::TRUE:
                 $tag->type = ValueType::BOOL;
-                $node = new Value(true, Constants::TRUE, $tag, $path);
+                $node = new NodeScalar(true, Constants::TRUE, $tag, $path);
                 break;
             case SimpleValue::NULL_BOOL:
                 if ($tag->type === ValueType::UNKNOWN) {
@@ -982,7 +982,7 @@ class WireDecoder
                 } elseif ($tag->type !== ValueType::BOOL) {
                     throw new MmDecodeException('unsupported value types: ' . $tag->type->name);
                 }
-                $node = new Value(false, Constants::FALSE, $tag, $path);
+                $node = new NodeScalar(false, Constants::FALSE, $tag, $path);
                 break;
             case SimpleValue::NULL_INT:
                 if ($tag->type === ValueType::UNKNOWN) {
@@ -990,7 +990,7 @@ class WireDecoder
                 } elseif ($tag->type !== ValueType::I) {
                     throw new MmDecodeException('unsupported value types: ' . $tag->type->name);
                 }
-                $node = new Value(0, '0', $tag, $path);
+                $node = new NodeScalar(0, '0', $tag, $path);
                 break;
             case SimpleValue::NULL_FLOAT:
                 if ($tag->type === ValueType::UNKNOWN) {
@@ -998,7 +998,7 @@ class WireDecoder
                 } elseif ($tag->type !== ValueType::F64 && $tag->type !== ValueType::F32) {
                     throw new MmDecodeException('unsupported value types: ' . $tag->type->name);
                 }
-                $node = new Value(0.0, '0.0', $tag, $path);
+                $node = new NodeScalar(0.0, '0.0', $tag, $path);
                 break;
             case SimpleValue::NULL_STRING:
                 if ($tag->type === ValueType::UNKNOWN) {
@@ -1006,7 +1006,7 @@ class WireDecoder
                 } elseif ($tag->type !== ValueType::STR) {
                     throw new MmDecodeException('unsupported value types: ' . $tag->type->name);
                 }
-                $node = new Value('', '', $tag, $path);
+                $node = new NodeScalar('', '', $tag, $path);
                 break;
             case SimpleValue::NULL_BYTES:
                 if ($tag->type === ValueType::UNKNOWN) {
@@ -1014,107 +1014,107 @@ class WireDecoder
                 } elseif ($tag->type !== ValueType::BYTES) {
                     throw new MmDecodeException('unsupported value types: ' . $tag->type->name);
                 }
-                $node = new Value([], '', $tag, $path);
+                $node = new NodeScalar([], '', $tag, $path);
                 break;
             case SimpleValue::CODE:
                 $tag->type = ValueType::STR;
-                $node = new Value(null, Constants::SIMPLE_CODE_STR, $tag, $path);
+                $node = new NodeScalar(null, Constants::SIMPLE_CODE_STR, $tag, $path);
                 break;
             case SimpleValue::MESSAGE:
                 $tag->type = ValueType::STR;
-                $node = new Value(null, Constants::SIMPLE_MESSAGE_STR, $tag, $path);
+                $node = new NodeScalar(null, Constants::SIMPLE_MESSAGE_STR, $tag, $path);
                 break;
             case SimpleValue::DATA:
                 $tag->type = ValueType::STR;
-                $node = new Value(null, Constants::SIMPLE_DATA_STR, $tag, $path);
+                $node = new NodeScalar(null, Constants::SIMPLE_DATA_STR, $tag, $path);
                 break;
             case SimpleValue::SUCCESS:
                 $tag->type = ValueType::STR;
-                $node = new Value(null, Constants::SIMPLE_SUCCESS_STR, $tag, $path);
+                $node = new NodeScalar(null, Constants::SIMPLE_SUCCESS_STR, $tag, $path);
                 break;
             case SimpleValue::ERROR:
                 $tag->type = ValueType::STR;
-                $node = new Value(null, Constants::SIMPLE_ERROR_STR, $tag, $path);
+                $node = new NodeScalar(null, Constants::SIMPLE_ERROR_STR, $tag, $path);
                 break;
             case SimpleValue::UNKNOWN:
                 $tag->type = ValueType::STR;
-                $node = new Value(null, Constants::SIMPLE_UNKNOWN_STR, $tag, $path);
+                $node = new NodeScalar(null, Constants::SIMPLE_UNKNOWN_STR, $tag, $path);
                 break;
             case SimpleValue::PAGE:
                 $tag->type = ValueType::STR;
-                $node = new Value(null, Constants::SIMPLE_PAGE_STR, $tag, $path);
+                $node = new NodeScalar(null, Constants::SIMPLE_PAGE_STR, $tag, $path);
                 break;
             case SimpleValue::LIMIT:
                 $tag->type = ValueType::STR;
-                $node = new Value(null, Constants::SIMPLE_LIMIT_STR, $tag, $path);
+                $node = new NodeScalar(null, Constants::SIMPLE_LIMIT_STR, $tag, $path);
                 break;
             case SimpleValue::OFFSET:
                 $tag->type = ValueType::STR;
-                $node = new Value(null, Constants::SIMPLE_OFFSET_STR, $tag, $path);
+                $node = new NodeScalar(null, Constants::SIMPLE_OFFSET_STR, $tag, $path);
                 break;
             case SimpleValue::TOTAL:
                 $tag->type = ValueType::STR;
-                $node = new Value(null, Constants::SIMPLE_TOTAL_STR, $tag, $path);
+                $node = new NodeScalar(null, Constants::SIMPLE_TOTAL_STR, $tag, $path);
                 break;
             case SimpleValue::ID:
                 $tag->type = ValueType::STR;
-                $node = new Value(null, Constants::SIMPLE_ID_STR, $tag, $path);
+                $node = new NodeScalar(null, Constants::SIMPLE_ID_STR, $tag, $path);
                 break;
             case SimpleValue::NAME:
                 $tag->type = ValueType::STR;
-                $node = new Value(null, Constants::SIMPLE_NAME_STR, $tag, $path);
+                $node = new NodeScalar(null, Constants::SIMPLE_NAME_STR, $tag, $path);
                 break;
             case SimpleValue::DESCRIPTION:
                 $tag->type = ValueType::STR;
-                $node = new Value(null, Constants::SIMPLE_DESCRIPTION_STR, $tag, $path);
+                $node = new NodeScalar(null, Constants::SIMPLE_DESCRIPTION_STR, $tag, $path);
                 break;
             case SimpleValue::TYPE:
                 $tag->type = ValueType::STR;
-                $node = new Value(null, Constants::SIMPLE_TYPE_STR, $tag, $path);
+                $node = new NodeScalar(null, Constants::SIMPLE_TYPE_STR, $tag, $path);
                 break;
             case SimpleValue::VERSION:
                 $tag->type = ValueType::STR;
-                $node = new Value(null, Constants::SIMPLE_VERSION_STR, $tag, $path);
+                $node = new NodeScalar(null, Constants::SIMPLE_VERSION_STR, $tag, $path);
                 break;
             case SimpleValue::STATUS:
                 $tag->type = ValueType::STR;
-                $node = new Value(null, Constants::SIMPLE_STATUS_STR, $tag, $path);
+                $node = new NodeScalar(null, Constants::SIMPLE_STATUS_STR, $tag, $path);
                 break;
             case SimpleValue::URL:
                 $tag->type = ValueType::STR;
-                $node = new Value(null, Constants::SIMPLE_URL_STR, $tag, $path);
+                $node = new NodeScalar(null, Constants::SIMPLE_URL_STR, $tag, $path);
                 break;
             case SimpleValue::CREATE_TIME:
                 $tag->type = ValueType::STR;
-                $node = new Value(null, Constants::SIMPLE_CREATE_TIME_STR, $tag, $path);
+                $node = new NodeScalar(null, Constants::SIMPLE_CREATE_TIME_STR, $tag, $path);
                 break;
             case SimpleValue::UPDATE_TIME:
                 $tag->type = ValueType::STR;
-                $node = new Value(null, Constants::SIMPLE_UPDATE_TIME_STR, $tag, $path);
+                $node = new NodeScalar(null, Constants::SIMPLE_UPDATE_TIME_STR, $tag, $path);
                 break;
             case SimpleValue::DELETE_TIME:
                 $tag->type = ValueType::STR;
-                $node = new Value(null, Constants::SIMPLE_DELETE_TIME_STR, $tag, $path);
+                $node = new NodeScalar(null, Constants::SIMPLE_DELETE_TIME_STR, $tag, $path);
                 break;
             case SimpleValue::ACCOUNT:
                 $tag->type = ValueType::STR;
-                $node = new Value(null, Constants::SIMPLE_ACCOUNT_STR, $tag, $path);
+                $node = new NodeScalar(null, Constants::SIMPLE_ACCOUNT_STR, $tag, $path);
                 break;
             case SimpleValue::TOKEN:
                 $tag->type = ValueType::STR;
-                $node = new Value(null, Constants::SIMPLE_TOKEN_STR, $tag, $path);
+                $node = new NodeScalar(null, Constants::SIMPLE_TOKEN_STR, $tag, $path);
                 break;
             case SimpleValue::EXPIRE_TIME:
                 $tag->type = ValueType::STR;
-                $node = new Value(null, Constants::SIMPLE_EXPIRE_TIME_STR, $tag, $path);
+                $node = new NodeScalar(null, Constants::SIMPLE_EXPIRE_TIME_STR, $tag, $path);
                 break;
             case SimpleValue::KEY:
                 $tag->type = ValueType::STR;
-                $node = new Value(null, Constants::SIMPLE_KEY_STR, $tag, $path);
+                $node = new NodeScalar(null, Constants::SIMPLE_KEY_STR, $tag, $path);
                 break;
             case SimpleValue::VAL:
                 $tag->type = ValueType::STR;
-                $node = new Value(null, Constants::SIMPLE_VAL_STR, $tag, $path);
+                $node = new NodeScalar(null, Constants::SIMPLE_VAL_STR, $tag, $path);
                 break;
             default:
                 throw new MmDecodeException('unsupported value: ' . $prefix);
@@ -1160,7 +1160,7 @@ class WireDecoder
             $l2 = ($l[0] << 8) | $l[1];
         }
 
-        $node = new Array_();
+        $node = new NodeArray();
         $node->Tag = $tag;
         $node->Path = $path;
 
@@ -1208,7 +1208,7 @@ class WireDecoder
             $l2 = ($l[0] << 8) | $l[1];
         }
 
-        $node = new Object_();
+        $node = new NodeObject();
         $node->Tag = $tag;
         $node->Path = $path;
 

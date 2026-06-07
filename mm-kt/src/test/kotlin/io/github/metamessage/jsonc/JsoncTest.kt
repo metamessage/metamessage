@@ -1,9 +1,9 @@
 package io.github.metamessage.jsonc
 
-import io.github.metamessage.ir.Array as AstArray
 import io.github.metamessage.ir.Field
-import io.github.metamessage.ir.Object as AstObject
-import io.github.metamessage.ir.Value
+import io.github.metamessage.ir.NodeArray as AstArray
+import io.github.metamessage.ir.NodeObject as AstObject
+import io.github.metamessage.ir.NodeScalar
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 
@@ -31,8 +31,8 @@ class JsoncParserTest {
     fun parseNumber() {
         val source = "123"
         val result = parseJsonc(source)
-        assertTrue(result is Value)
-        val value = result as Value
+        assertTrue(result is NodeScalar)
+        val value = result as NodeScalar
         assertEquals(123L, value.data)
     }
 
@@ -40,8 +40,8 @@ class JsoncParserTest {
     fun parseFloat() {
         val source = "3.14"
         val result = parseJsonc(source)
-        assertTrue(result is Value)
-        val value = result as Value
+        assertTrue(result is NodeScalar)
+        val value = result as NodeScalar
         assertEquals(3.14, value.data)
     }
 
@@ -49,13 +49,13 @@ class JsoncParserTest {
     fun parseBoolean() {
         val sourceTrue = "true"
         val resultTrue = parseJsonc(sourceTrue)
-        assertTrue(resultTrue is Value)
-        assertEquals(true, (resultTrue as Value).data)
+        assertTrue(resultTrue is NodeScalar)
+        assertEquals(true, (resultTrue as NodeScalar).data)
 
         val sourceFalse = "false"
         val resultFalse = parseJsonc(sourceFalse)
-        assertTrue(resultFalse is Value)
-        assertEquals(false, (resultFalse as Value).data)
+        assertTrue(resultFalse is NodeScalar)
+        assertEquals(false, (resultFalse as NodeScalar).data)
     }
 
     // @Test
@@ -137,7 +137,7 @@ class JsoncPrinterTest {
     @Test
     fun printSimpleObject() {
         val obj = AstObject()
-        obj.fields.add(Field("key", Value(data = "value", text = "\"value\"")))
+        obj.fields.add(Field("key", NodeScalar(data = "value", text = "\"value\"")))
         val result = JsoncPrinter.toString(obj)
         assertTrue(result.contains("key"))
     }
@@ -145,7 +145,7 @@ class JsoncPrinterTest {
     @Test
     fun printCompact() {
         val obj = AstObject()
-        obj.fields.add(Field("key", Value(data = "value", text = "\"value\"")))
+        obj.fields.add(Field("key", NodeScalar(data = "value", text = "\"value\"")))
         val result = JsoncPrinter.toCompactString(obj)
         assertFalse(result.contains("\n"))
     }

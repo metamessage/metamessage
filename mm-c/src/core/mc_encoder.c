@@ -64,10 +64,10 @@ typedef struct {
   size_t cap;
 } encoder_t;
 
-static void enc_encode_node_object(encoder_t *e, mm_object_t *obj);
-static void enc_encode_node_array(encoder_t *e, mm_array_t *arr);
-static void enc_encode_node_value(encoder_t *e, mm_value_t *val);
-static void enc_encode_node_doc(encoder_t *e, mm_doc_t *doc);
+static void enc_encode_node_object(encoder_t *e, node_object_t *obj);
+static void enc_encode_node_array(encoder_t *e, node_array_t *arr);
+static void enc_encode_node_value(encoder_t *e, node_scalar_t *val);
+static void enc_encode_node_doc(encoder_t *e, node_doc_t *doc);
 
 static void enc_write_byte(encoder_t *e, uint8_t b) {
   if (e->size >= e->cap) {
@@ -551,7 +551,7 @@ static void enc_encode_tag(encoder_t *e, mm_tag_t *tag,
   free(tag_enc.buf);
 }
 
-static void enc_encode_node_value(encoder_t *e, mm_value_t *val) {
+static void enc_encode_node_value(encoder_t *e, node_scalar_t *val) {
   encoder_t tmp = {0};
 
   switch (val->tag.type) {
@@ -801,12 +801,12 @@ static void enc_encode_node_value(encoder_t *e, mm_value_t *val) {
   free(tmp.buf);
 }
 
-static void enc_encode_node_array(encoder_t *e, mm_array_t *arr) {
+static void enc_encode_node_array(encoder_t *e, node_array_t *arr) {
   encoder_t items = {0};
 
   for (size_t i = 0; i < arr->item_count; i++) {
     encoder_t tmp = {0};
-    mm_node_t *item = arr->items[i];
+    node_t *item = arr->items[i];
 
     switch (item->type) {
     case MM_NODE_OBJECT:
@@ -837,7 +837,7 @@ static void enc_encode_node_array(encoder_t *e, mm_array_t *arr) {
   free(container_enc.buf);
 }
 
-static void enc_encode_node_object(encoder_t *e, mm_object_t *obj) {
+static void enc_encode_node_object(encoder_t *e, node_object_t *obj) {
   encoder_t keys = {0};
   encoder_t vals = {0};
 
@@ -889,7 +889,7 @@ static void enc_encode_node_object(encoder_t *e, mm_object_t *obj) {
   free(container_enc.buf);
 }
 
-static void enc_encode_node_doc(encoder_t *e, mm_doc_t *doc) {
+static void enc_encode_node_doc(encoder_t *e, node_doc_t *doc) {
   encoder_t keys = {0};
   encoder_t vals = {0};
 
@@ -941,7 +941,7 @@ static void enc_encode_node_doc(encoder_t *e, mm_doc_t *doc) {
   free(container_enc.buf);
 }
 
-static void enc_encode(encoder_t *e, mm_node_t *node) {
+static void enc_encode(encoder_t *e, node_t *node) {
   if (node == NULL)
     return;
 
@@ -963,7 +963,7 @@ static void enc_encode(encoder_t *e, mm_node_t *node) {
   }
 }
 
-mm_encoder_buffer_t *mm_encoder_encode(mm_node_t *node) {
+mm_encoder_buffer_t *mm_encoder_encode(node_t *node) {
   encoder_t e = {0};
   enc_encode(&e, node);
   mm_encoder_buffer_t *buf = malloc(sizeof(mm_encoder_buffer_t));

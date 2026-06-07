@@ -20,9 +20,9 @@ func TestParseObjectValNil_EOFAfterColon(t *testing.T) {
 	if node == nil {
 		t.Fatal("expected non-nil node")
 	}
-	obj, ok := node.(*ir.Object)
+	obj, ok := node.(*ir.NodeObject)
 	if !ok {
-		t.Fatalf("expected *ir.Object, got %T", node)
+		t.Fatalf("expected *ir.NodeObject, got %T", node)
 	}
 	if len(obj.Fields) != 0 {
 		t.Fatalf("expected 0 fields (val==nil path), got %d", len(obj.Fields))
@@ -38,9 +38,9 @@ func TestParseObjectValNil_EOFAfterPartialObject(t *testing.T) {
 	if node == nil {
 		t.Fatal("expected non-nil node")
 	}
-	obj, ok := node.(*ir.Object)
+	obj, ok := node.(*ir.NodeObject)
 	if !ok {
-		t.Fatalf("expected *ir.Object, got %T", node)
+		t.Fatalf("expected *ir.NodeObject, got %T", node)
 	}
 	if len(obj.Fields) != 1 {
 		t.Fatalf("expected 1 field (name), got %d", len(obj.Fields))
@@ -59,9 +59,9 @@ func TestParseObjectValNil_EOFAfterComma(t *testing.T) {
 	if node == nil {
 		t.Fatal("expected non-nil node")
 	}
-	obj, ok := node.(*ir.Object)
+	obj, ok := node.(*ir.NodeObject)
 	if !ok {
-		t.Fatalf("expected *ir.Object, got %T", node)
+		t.Fatalf("expected *ir.NodeObject, got %T", node)
 	}
 	if len(obj.Fields) != 1 {
 		t.Fatalf("expected 1 field, got %d", len(obj.Fields))
@@ -77,9 +77,9 @@ func TestParseObjectValNil_ValidObject(t *testing.T) {
 	if node == nil {
 		t.Fatal("expected non-nil node")
 	}
-	obj, ok := node.(*ir.Object)
+	obj, ok := node.(*ir.NodeObject)
 	if !ok {
-		t.Fatalf("expected *ir.Object, got %T", node)
+		t.Fatalf("expected *ir.NodeObject, got %T", node)
 	}
 	if len(obj.Fields) != 2 {
 		t.Fatalf("expected 2 fields, got %d", len(obj.Fields))
@@ -92,9 +92,9 @@ func TestParseObjectValNil_EmptyObject(t *testing.T) {
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
-	obj, ok := node.(*ir.Object)
+	obj, ok := node.(*ir.NodeObject)
 	if !ok {
-		t.Fatalf("expected *ir.Object, got %T", node)
+		t.Fatalf("expected *ir.NodeObject, got %T", node)
 	}
 	if len(obj.Fields) != 0 {
 		t.Fatalf("expected 0 fields, got %d", len(obj.Fields))
@@ -123,9 +123,9 @@ func TestParseArrayValNil_EOFAfterItem(t *testing.T) {
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
-	arr, ok := node.(*ir.Array)
+	arr, ok := node.(*ir.NodeArray)
 	if !ok {
-		t.Fatalf("expected *ir.Array, got %T", node)
+		t.Fatalf("expected *ir.NodeArray, got %T", node)
 	}
 	if len(arr.Items) != 1 {
 		t.Fatalf("expected 1 item, got %d", len(arr.Items))

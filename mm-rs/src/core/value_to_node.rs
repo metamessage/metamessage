@@ -1,5 +1,5 @@
 use crate::core::utils::camel_to_snake;
-use crate::ir::{Array, Field, Node, Object, Tag, Value, ValueData, ValueType};
+use crate::ir::{Field, Node, NodeArray, NodeObject, NodeScalar, Tag, ValueData, ValueType};
 use std::collections::HashMap;
 
 const MAX_DEPTH: usize = 32;
@@ -8,10 +8,10 @@ pub trait ToNode {
     fn to_node(&self, tag: Option<Tag>) -> Node;
 }
 
-pub fn nil_to_node(value_type: ValueType) -> Value {
+pub fn nil_to_node(value_type: ValueType) -> NodeScalar {
     let mut tag = Tag::new();
     tag.value_type = value_type;
-    Value {
+    NodeScalar {
         data: ValueData::Null,
         text: "null".to_string(),
         tag: Some(tag),
@@ -28,7 +28,7 @@ where
     T: ToNode,
 {
     if depth > MAX_DEPTH {
-        return Value {
+        return NodeScalar {
             data: ValueData::Null,
             text: "null".to_string(),
             tag,
@@ -48,7 +48,7 @@ macro_rules! impl_to_node_int {
                     tag.value_type = ValueType::$vt;
                 }
                 let text = self.to_string();
-                Node::Value(Value {
+                Node::Value(NodeScalar {
                     data: ValueData::$f(*self as i64),
                     text,
                     tag: Some(tag),
@@ -68,7 +68,7 @@ macro_rules! impl_to_node_uint {
                     tag.value_type = ValueType::$vt;
                 }
                 let text = self.to_string();
-                Node::Value(Value {
+                Node::Value(NodeScalar {
                     data: ValueData::$f(*self as u64),
                     text,
                     tag: Some(tag),
@@ -97,7 +97,7 @@ impl ToNode for f32 {
             tag.value_type = ValueType::F32;
         }
         let text = crate::core::utils::format_float32(*self);
-        Node::Value(Value {
+        Node::Value(NodeScalar {
             data: ValueData::Float(*self as f64),
             text,
             tag: Some(tag),
@@ -113,7 +113,7 @@ impl ToNode for f64 {
             tag.value_type = ValueType::F64;
         }
         let text = crate::core::utils::format_float64(*self);
-        Node::Value(Value {
+        Node::Value(NodeScalar {
             data: ValueData::Float(*self),
             text,
             tag: Some(tag),
@@ -133,7 +133,7 @@ impl ToNode for bool {
         } else {
             "false".to_string()
         };
-        Node::Value(Value {
+        Node::Value(NodeScalar {
             data: ValueData::Bool(*self),
             text,
             tag: Some(tag),
@@ -148,7 +148,7 @@ impl ToNode for String {
         if tag.value_type == ValueType::Unknown {
             tag.value_type = ValueType::Str;
         }
-        Node::Value(Value {
+        Node::Value(NodeScalar {
             data: ValueData::String(self.clone()),
             text: self.clone(),
             tag: Some(tag),
@@ -163,7 +163,7 @@ impl ToNode for &str {
         if tag.value_type == ValueType::Unknown {
             tag.value_type = ValueType::Str;
         }
-        Node::Value(Value {
+        Node::Value(NodeScalar {
             data: ValueData::String(self.to_string()),
             text: self.to_string(),
             tag: Some(tag),
@@ -216,21 +216,21 @@ impl<T: ToNode> ToNode for Vec<T> {
             let mut example_tag = Tag::new();
             example_tag.inherit(&tag);
             example_tag.example = true;
-            let empty_node: Node = Node::Value(Value {
+            let empty_node: Node = Node::Value(NodeScalar {
                 data: ValueData::String(String::new()),
                 text: String::new(),
                 tag: Some(example_tag),
                 path: "[0]".to_string(),
             });
             let items = vec![empty_node];
-            return Node::Array(Array {
+            return Node::Array(NodeArray {
                 items,
                 tag: Some(tag),
                 path: String::new(),
             });
         }
 
-        Node::Array(Array {
+        Node::Array(NodeArray {
             items,
             tag: Some(tag),
             path: String::new(),
@@ -287,7 +287,7 @@ impl<T: ToNode> ToNode for HashMap<String, T> {
             example_tag.example = true;
             fields.push(Field {
                 key: String::new(),
-                value: Node::Value(Value {
+                value: Node::Value(NodeScalar {
                     data: ValueData::String(String::new()),
                     text: String::new(),
                     tag: Some(example_tag),
@@ -296,7 +296,7 @@ impl<T: ToNode> ToNode for HashMap<String, T> {
             });
         }
 
-        Node::Object(Object {
+        Node::Object(NodeObject {
             fields,
             tag: Some(tag),
             path: String::new(),
@@ -312,7 +312,7 @@ impl<T: ToNode> ToNode for Option<T> {
         match self {
             None => {
                 tag.is_null = true;
-                Node::Value(Value {
+                Node::Value(NodeScalar {
                     data: ValueData::Null,
                     text: "null".to_string(),
                     tag: Some(tag),
@@ -324,20 +324,20 @@ impl<T: ToNode> ToNode for Option<T> {
     }
 }
 
-impl From<Value> for Node {
-    fn from(v: Value) -> Self {
+impl From<NodeScalar> for Node {
+    fn from(v: NodeScalar) -> Self {
         Node::Value(v)
     }
 }
 
-impl From<Object> for Node {
-    fn from(o: Object) -> Self {
+impl From<NodeObject> for Node {
+    fn from(o: NodeObject) -> Self {
         Node::Object(o)
     }
 }
 
-impl From<Array> for Node {
-    fn from(a: Array) -> Self {
+impl From<NodeArray> for Node {
+    fn from(a: NodeArray) -> Self {
         Node::Array(a)
     }
 }
@@ -345,7 +345,7 @@ impl From<Array> for Node {
 trait ToNodeExt: ToNode {
     fn to_node_value_with_depth(&self, tag: Tag, depth: usize, path: &str) -> Node {
         if depth > MAX_DEPTH {
-            return Node::Value(Value {
+            return Node::Value(NodeScalar {
                 data: ValueData::Null,
                 text: "null".to_string(),
                 tag: Some(tag),

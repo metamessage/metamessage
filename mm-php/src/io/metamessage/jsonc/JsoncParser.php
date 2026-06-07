@@ -5,9 +5,9 @@ namespace io\metamessage\jsonc;
 use io\metamessage\ir\Tag;
 use io\metamessage\ir\ValueType;
 use io\metamessage\ir\Node;
-use io\metamessage\ir\Value;
-use io\metamessage\ir\Object_;
-use io\metamessage\ir\Array_;
+use io\metamessage\ir\NodeScalar;
+use io\metamessage\ir\NodeObject;
+use io\metamessage\ir\NodeArray;
 use io\metamessage\ir\Field;
 use io\metamessage\core\CamelToSnake;
 
@@ -386,7 +386,7 @@ class JsoncParser
                         }
                     }
 
-                    $value = new Value();
+                    $value = new NodeScalar();
                     $value->Data = $data;
                     $value->Text = $text;
                     $value->Tag = $tag;
@@ -730,7 +730,7 @@ class JsoncParser
                         }
                     }
 
-                    $value = new Value();
+                    $value = new NodeScalar();
                     $value->Data = $data;
                     $value->Text = $text;
                     $value->Tag = $tag;
@@ -759,7 +759,7 @@ class JsoncParser
                             throw new \Exception(sprintf('unsupported type %s for boolean literal', $tag->type->wireName()));
                     }
 
-                    $value = new Value();
+                    $value = new NodeScalar();
                     $value->Data = true;
                     $value->Text = self::TRUE_STR;
                     $value->Tag = $tag;
@@ -787,7 +787,7 @@ class JsoncParser
                             throw new \Exception(sprintf('unsupported type %s for boolean literal', $tag->type->wireName()));
                     }
 
-                    $value = new Value();
+                    $value = new NodeScalar();
                     $value->Data = false;
                     $value->Text = self::FALSE_STR;
                     $value->Tag = $tag;
@@ -803,7 +803,7 @@ class JsoncParser
         }
     }
 
-    private function parseObject(int $openLine, string $path, ?Tag $tag = null): Object_
+    private function parseObject(int $openLine, string $path, ?Tag $tag = null): NodeObject
     {
         $this->depth++;
         if ($this->depth > self::MAX_DEPTH) {
@@ -826,7 +826,7 @@ class JsoncParser
             }
         }
 
-        $obj = new Object_();
+        $obj = new NodeObject();
         $obj->Tag = $tag;
         $obj->Path = $path;
         $obj->Fields = [];
@@ -907,7 +907,7 @@ class JsoncParser
         return $obj;
     }
 
-    private function parseArray(int $openLine, string $path, ?Tag $tag = null): Array_
+    private function parseArray(int $openLine, string $path, ?Tag $tag = null): NodeArray
     {
         $this->depth++;
         if ($this->depth > self::MAX_DEPTH) {
@@ -926,7 +926,7 @@ class JsoncParser
             $path = sprintf('%s.%s', $path, $tag->name);
         }
 
-        $arr = new Array_();
+        $arr = new NodeArray();
         $arr->Tag = $tag;
         $arr->Path = $path;
         $arr->Items = [];
@@ -1001,11 +1001,11 @@ class JsoncParser
         }
         $existing = $n->getTag();
         $merged = Tag::mergeTag($existing, $parsed);
-        if ($n instanceof Value) {
+        if ($n instanceof NodeScalar) {
             $n->Tag = $merged;
-        } elseif ($n instanceof Object_) {
+        } elseif ($n instanceof NodeObject) {
             $n->Tag = $merged;
-        } elseif ($n instanceof Array_) {
+        } elseif ($n instanceof NodeArray) {
             $n->Tag = $merged;
         }
     }

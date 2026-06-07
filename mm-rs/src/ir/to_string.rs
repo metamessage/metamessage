@@ -1,4 +1,4 @@
-use crate::ir::ast::{Array, Node, Object, Value, ValueData};
+use crate::ir::ast::{Node, NodeArray, NodeObject, NodeScalar, ValueData};
 use crate::ir::ValueType;
 use std::fmt::Write;
 
@@ -32,7 +32,7 @@ fn write_node_compact(buf: &mut String, node: &Node) {
     }
 }
 
-fn write_value(buf: &mut String, val: &Value) {
+fn write_value(buf: &mut String, val: &NodeScalar) {
     let tag_type = val.tag.as_ref().map(|t| t.value_type);
 
     match &val.data {
@@ -101,7 +101,7 @@ fn write_quoted_string(buf: &mut String, s: &str) {
     buf.push('"');
 }
 
-fn write_object(buf: &mut String, obj: &Object, indent: usize) {
+fn write_object(buf: &mut String, obj: &NodeObject, indent: usize) {
     buf.push_str("{\n");
 
     for (_i, field) in obj.fields.iter().enumerate() {
@@ -129,7 +129,7 @@ fn write_object(buf: &mut String, obj: &Object, indent: usize) {
     buf.push('}');
 }
 
-fn write_object_compact(buf: &mut String, obj: &Object) {
+fn write_object_compact(buf: &mut String, obj: &NodeObject) {
     buf.push('{');
 
     for (_i, field) in obj.fields.iter().enumerate() {
@@ -144,7 +144,7 @@ fn write_object_compact(buf: &mut String, obj: &Object) {
     buf.push('}');
 }
 
-fn write_array(buf: &mut String, arr: &Array, indent: usize) {
+fn write_array(buf: &mut String, arr: &NodeArray, indent: usize) {
     buf.push_str("[\n");
 
     for (_i, item) in arr.items.iter().enumerate() {
@@ -170,7 +170,7 @@ fn write_array(buf: &mut String, arr: &Array, indent: usize) {
     buf.push(']');
 }
 
-fn write_array_compact(buf: &mut String, arr: &Array) {
+fn write_array_compact(buf: &mut String, arr: &NodeArray) {
     buf.push('[');
 
     for (_i, item) in arr.items.iter().enumerate() {

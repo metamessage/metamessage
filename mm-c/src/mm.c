@@ -10,9 +10,9 @@
 #include <stdlib.h>
 #include <string.h>
 
-mm_node_t *mm_value_create_str(const char *text, mm_value_type_t type,
+node_t *mm_value_create_str(const char *text, mm_value_type_t type,
                                mm_field_attr_t attr) {
-  mm_node_t *node = mm_node_new_value();
+  node_t *node = node_new_scalar();
   if (!node)
     return NULL;
 
@@ -71,7 +71,7 @@ mm_node_t *mm_value_create_str(const char *text, mm_value_type_t type,
   return node;
 }
 
-void mm_container_apply_attr(mm_node_t *container, mm_container_attr_t attr) {
+void mm_container_apply_attr(node_t *container, mm_container_attr_t attr) {
   if (!container)
     return;
 
@@ -171,154 +171,154 @@ void mm_container_apply_attr(mm_node_t *container, mm_container_attr_t attr) {
   }
 }
 
-mm_node_t *mm_int_create(int64_t val, mm_field_attr_t attr) {
+node_t *mm_int_create(int64_t val, mm_field_attr_t attr) {
   char buf[32];
   snprintf(buf, sizeof(buf), "%lld", (long long)val);
   return mm_value_create_str(buf, MM_VALUE_I, attr);
 }
 
-mm_node_t *mm_str_create(const char *val, mm_field_attr_t attr) {
+node_t *mm_str_create(const char *val, mm_field_attr_t attr) {
   return mm_value_create_str(val, MM_VALUE_STR, attr);
 }
 
-mm_node_t *mm_bool_create(bool val, mm_field_attr_t attr) {
+node_t *mm_bool_create(bool val, mm_field_attr_t attr) {
   const char *text = val ? "true" : "false";
   return mm_value_create_str(text, MM_VALUE_BOOL, attr);
 }
 
-mm_node_t *mm_float_create(double val, mm_field_attr_t attr) {
+node_t *mm_float_create(double val, mm_field_attr_t attr) {
   char buf[64];
   snprintf(buf, sizeof(buf), "%g", val);
   return mm_value_create_str(buf, MM_VALUE_F64, attr);
 }
 
-mm_node_t *mm_i8_create(int64_t val, mm_field_attr_t attr) {
+node_t *mm_i8_create(int64_t val, mm_field_attr_t attr) {
   char buf[32];
   snprintf(buf, sizeof(buf), "%lld", (long long)val);
   return mm_value_create_str(buf, MM_VALUE_I8, attr);
 }
 
-mm_node_t *mm_i16_create(int64_t val, mm_field_attr_t attr) {
+node_t *mm_i16_create(int64_t val, mm_field_attr_t attr) {
   char buf[32];
   snprintf(buf, sizeof(buf), "%lld", (long long)val);
   return mm_value_create_str(buf, MM_VALUE_I16, attr);
 }
 
-mm_node_t *mm_i32_create(int64_t val, mm_field_attr_t attr) {
+node_t *mm_i32_create(int64_t val, mm_field_attr_t attr) {
   char buf[32];
   snprintf(buf, sizeof(buf), "%lld", (long long)val);
   return mm_value_create_str(buf, MM_VALUE_I32, attr);
 }
 
-mm_node_t *mm_i64_create(int64_t val, mm_field_attr_t attr) {
+node_t *mm_i64_create(int64_t val, mm_field_attr_t attr) {
   char buf[32];
   snprintf(buf, sizeof(buf), "%lld", (long long)val);
   return mm_value_create_str(buf, MM_VALUE_I64, attr);
 }
 
-mm_node_t *mm_uint_create(uint64_t val, mm_field_attr_t attr) {
+node_t *mm_uint_create(uint64_t val, mm_field_attr_t attr) {
   char buf[32];
   snprintf(buf, sizeof(buf), "%llu", (unsigned long long)val);
   return mm_value_create_str(buf, MM_VALUE_U, attr);
 }
 
-mm_node_t *mm_u8_create(uint64_t val, mm_field_attr_t attr) {
+node_t *mm_u8_create(uint64_t val, mm_field_attr_t attr) {
   char buf[32];
   snprintf(buf, sizeof(buf), "%llu", (unsigned long long)val);
   return mm_value_create_str(buf, MM_VALUE_U8, attr);
 }
 
-mm_node_t *mm_u16_create(uint64_t val, mm_field_attr_t attr) {
+node_t *mm_u16_create(uint64_t val, mm_field_attr_t attr) {
   char buf[32];
   snprintf(buf, sizeof(buf), "%llu", (unsigned long long)val);
   return mm_value_create_str(buf, MM_VALUE_U16, attr);
 }
 
-mm_node_t *mm_u32_create(uint64_t val, mm_field_attr_t attr) {
+node_t *mm_u32_create(uint64_t val, mm_field_attr_t attr) {
   char buf[32];
   snprintf(buf, sizeof(buf), "%llu", (unsigned long long)val);
   return mm_value_create_str(buf, MM_VALUE_U32, attr);
 }
 
-mm_node_t *mm_u64_create(uint64_t val, mm_field_attr_t attr) {
+node_t *mm_u64_create(uint64_t val, mm_field_attr_t attr) {
   char buf[32];
   snprintf(buf, sizeof(buf), "%llu", (unsigned long long)val);
   return mm_value_create_str(buf, MM_VALUE_U64, attr);
 }
 
-mm_node_t *mm_f32_create(double val, mm_field_attr_t attr) {
+node_t *mm_f32_create(double val, mm_field_attr_t attr) {
   char buf[64];
   snprintf(buf, sizeof(buf), "%g", val);
   return mm_value_create_str(buf, MM_VALUE_F32, attr);
 }
 
-mm_node_t *mm_bytes_create(const char *val, mm_field_attr_t attr) {
+node_t *mm_bytes_create(const char *val, mm_field_attr_t attr) {
   return mm_value_create_str(val, MM_VALUE_BYTES, attr);
 }
 
-mm_node_t *mm_bigint_create(const char *val, mm_field_attr_t attr) {
+node_t *mm_bigint_create(const char *val, mm_field_attr_t attr) {
   return mm_value_create_str(val, MM_VALUE_BIGINT, attr);
 }
 
-mm_node_t *mm_datetime_create(const char *val, mm_field_attr_t attr) {
+node_t *mm_datetime_create(const char *val, mm_field_attr_t attr) {
   return mm_value_create_str(val, MM_VALUE_DATETIME, attr);
 }
 
-mm_node_t *mm_date_create(const char *val, mm_field_attr_t attr) {
+node_t *mm_date_create(const char *val, mm_field_attr_t attr) {
   return mm_value_create_str(val, MM_VALUE_DATE, attr);
 }
 
-mm_node_t *mm_time_create(const char *val, mm_field_attr_t attr) {
+node_t *mm_time_create(const char *val, mm_field_attr_t attr) {
   return mm_value_create_str(val, MM_VALUE_TIME, attr);
 }
 
-mm_node_t *mm_uuid_create(const char *val, mm_field_attr_t attr) {
+node_t *mm_uuid_create(const char *val, mm_field_attr_t attr) {
   return mm_value_create_str(val, MM_VALUE_UUID, attr);
 }
 
-mm_node_t *mm_decimal_create(const char *val, mm_field_attr_t attr) {
+node_t *mm_decimal_create(const char *val, mm_field_attr_t attr) {
   return mm_value_create_str(val, MM_VALUE_DECIMAL, attr);
 }
 
-mm_node_t *mm_ip_create(const char *val, mm_field_attr_t attr) {
+node_t *mm_ip_create(const char *val, mm_field_attr_t attr) {
   return mm_value_create_str(val, MM_VALUE_IP, attr);
 }
 
-mm_node_t *mm_url_create(const char *val, mm_field_attr_t attr) {
+node_t *mm_url_create(const char *val, mm_field_attr_t attr) {
   return mm_value_create_str(val, MM_VALUE_URL, attr);
 }
 
-mm_node_t *mm_email_create(const char *val, mm_field_attr_t attr) {
+node_t *mm_email_create(const char *val, mm_field_attr_t attr) {
   return mm_value_create_str(val, MM_VALUE_EMAIL, attr);
 }
 
-mm_node_t *mm_enum_create(const char *val, mm_field_attr_t attr) {
+node_t *mm_enum_create(const char *val, mm_field_attr_t attr) {
   return mm_value_create_str(val, MM_VALUE_ENUMS, attr);
 }
 
-mm_node_t *mm_image_create(const char *val, mm_field_attr_t attr) {
+node_t *mm_image_create(const char *val, mm_field_attr_t attr) {
   return mm_value_create_str(val, MM_VALUE_IMAGE, attr);
 }
 
-mm_node_t *mm_video_create(const char *val, mm_field_attr_t attr) {
+node_t *mm_video_create(const char *val, mm_field_attr_t attr) {
   return mm_value_create_str(val, MM_VALUE_VIDEO, attr);
 }
 
-mm_obj_t *mm_obj_new(void) { return mm_node_new_object(); }
+mm_obj_t *mm_obj_new(void) { return node_new_object(); }
 
-void mm_obj_set(mm_obj_t *obj, const char *key, mm_node_t *value) {
-  mm_object_add_field(obj, key, value);
+void mm_obj_set(mm_obj_t *obj, const char *key, node_t *value) {
+  node_object_add_field(obj, key, value);
 }
 
-void mm_obj_free(mm_obj_t *obj) { mm_node_free(obj); }
+void mm_obj_free(mm_obj_t *obj) { node_free(obj); }
 
-mm_node_t *mm_arr_new(void) { return mm_node_new_array(); }
+node_t *mm_arr_new(void) { return node_new_array(); }
 
-void mm_arr_add(mm_node_t *arr, mm_node_t *item) {
-  mm_array_add_item(arr, item);
+void mm_arr_add(node_t *arr, node_t *item) {
+  node_array_add_item(arr, item);
 }
 
-mm_buffer_t *mm_encode(mm_node_t *node) {
+mm_buffer_t *mm_encode(node_t *node) {
   mm_encoder_buffer_t *enc = mm_encoder_encode(node);
   if (!enc)
     return NULL;
@@ -345,20 +345,20 @@ mm_buffer_t *mm_encode(mm_node_t *node) {
   return buf;
 }
 
-mm_node_t *mm_decode(const mm_buffer_t *buf) {
+node_t *mm_decode(const mm_buffer_t *buf) {
   mm_decoder_t *d = mm_decoder_new(buf->data, buf->size);
   if (!d)
     return NULL;
 
-  mm_node_t *node = mm_decoder_decode(d);
+  node_t *node = mm_decoder_decode(d);
   mm_decoder_free(d);
 
   return node;
 }
 
-char *mm_to_jsonc(mm_node_t *node) { return mm_printer_to_jsonc(node); }
+char *mm_to_jsonc(node_t *node) { return mm_printer_to_jsonc(node); }
 
-mm_node_t *mm_from_jsonc(const char *jsonc_str) {
+node_t *mm_from_jsonc(const char *jsonc_str) {
   return mm_jsonc_parse(jsonc_str);
 }
 
@@ -372,21 +372,21 @@ void mm_buffer_free(mm_buffer_t *buf) {
 void mm_string_free(char *str) { free(str); }
 
 mm_buffer_t *mm_encode_from_jsonc(const char *jsonc_str) {
-  mm_node_t *node = mm_from_jsonc(jsonc_str);
+  node_t *node = mm_from_jsonc(jsonc_str);
   if (!node)
     return NULL;
 
   mm_buffer_t *buf = mm_encode(node);
-  mm_node_free(node);
+  node_free(node);
   return buf;
 }
 
 char *mm_decode_to_jsonc(const mm_buffer_t *buf) {
-  mm_node_t *node = mm_decode(buf);
+  node_t *node = mm_decode(buf);
   if (!node)
     return NULL;
 
   char *jsonc = mm_to_jsonc(node);
-  mm_node_free(node);
+  node_free(node);
   return jsonc;
 }

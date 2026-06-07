@@ -33,7 +33,7 @@ func valueToNode(_ value: Any?, tag: Tag?, depth: Int, path: String) throws -> N
             effectiveTag.nullable = true
         }
         effectiveTag.isNull = true
-        return Value(data: nil, text: "null", tag: effectiveTag, path: currentPath)
+        return NodeScalar(data: nil, text: "null", tag: effectiveTag, path: currentPath)
     }
 
     return try convertScalar(v, tag: &effectiveTag, depth: depth, path: currentPath)
@@ -47,81 +47,81 @@ private func convertScalar(_ value: Any, tag: inout Tag, depth: Int, path: Strin
 
     if let boolVal = value as? Bool {
         if tag.type == .unknown { tag.type = .bool }
-        return Value(data: boolVal, text: boolVal ? "true" : "false", tag: tag, path: currentPath)
+        return NodeScalar(data: boolVal, text: boolVal ? "true" : "false", tag: tag, path: currentPath)
     }
 
     if let intVal = value as? Int {
         if tag.type == .unknown { tag.type = .i }
-        return Value(data: intVal, text: String(intVal), tag: tag, path: currentPath)
+        return NodeScalar(data: intVal, text: String(intVal), tag: tag, path: currentPath)
     }
 
     if let intVal = value as? Int8 {
         if tag.type == .unknown { tag.type = .i8 }
-        return Value(data: intVal, text: String(intVal), tag: tag, path: currentPath)
+        return NodeScalar(data: intVal, text: String(intVal), tag: tag, path: currentPath)
     }
 
     if let intVal = value as? Int16 {
         if tag.type == .unknown { tag.type = .i16 }
-        return Value(data: intVal, text: String(intVal), tag: tag, path: currentPath)
+        return NodeScalar(data: intVal, text: String(intVal), tag: tag, path: currentPath)
     }
 
     if let intVal = value as? Int32 {
         if tag.type == .unknown { tag.type = .i32 }
-        return Value(data: intVal, text: String(intVal), tag: tag, path: currentPath)
+        return NodeScalar(data: intVal, text: String(intVal), tag: tag, path: currentPath)
     }
 
     if let intVal = value as? Int64 {
         if tag.type == .unknown { tag.type = .i64 }
-        return Value(data: intVal, text: String(intVal), tag: tag, path: currentPath)
+        return NodeScalar(data: intVal, text: String(intVal), tag: tag, path: currentPath)
     }
 
     if let uintVal = value as? UInt {
         if tag.type == .unknown { tag.type = .u }
-        return Value(data: uintVal, text: String(uintVal), tag: tag, path: currentPath)
+        return NodeScalar(data: uintVal, text: String(uintVal), tag: tag, path: currentPath)
     }
 
     if let uintVal = value as? UInt8 {
         if tag.type == .unknown { tag.type = .u8 }
-        return Value(data: uintVal, text: String(uintVal), tag: tag, path: currentPath)
+        return NodeScalar(data: uintVal, text: String(uintVal), tag: tag, path: currentPath)
     }
 
     if let uintVal = value as? UInt16 {
         if tag.type == .unknown { tag.type = .u16 }
-        return Value(data: uintVal, text: String(uintVal), tag: tag, path: currentPath)
+        return NodeScalar(data: uintVal, text: String(uintVal), tag: tag, path: currentPath)
     }
 
     if let uintVal = value as? UInt32 {
         if tag.type == .unknown { tag.type = .u32 }
-        return Value(data: uintVal, text: String(uintVal), tag: tag, path: currentPath)
+        return NodeScalar(data: uintVal, text: String(uintVal), tag: tag, path: currentPath)
     }
 
     if let uintVal = value as? UInt64 {
         if tag.type == .unknown { tag.type = .u64 }
-        return Value(data: uintVal, text: String(uintVal), tag: tag, path: currentPath)
+        return NodeScalar(data: uintVal, text: String(uintVal), tag: tag, path: currentPath)
     }
 
     if let floatVal = value as? Float {
         if tag.type == .unknown { tag.type = .f32 }
-        return Value(data: floatVal, text: String(floatVal), tag: tag, path: currentPath)
+        return NodeScalar(data: floatVal, text: String(floatVal), tag: tag, path: currentPath)
     }
 
     if let doubleVal = value as? Double {
         if tag.type == .unknown { tag.type = .f64 }
-        return Value(data: doubleVal, text: String(doubleVal), tag: tag, path: currentPath)
+        return NodeScalar(data: doubleVal, text: String(doubleVal), tag: tag, path: currentPath)
     }
 
     if let stringVal = value as? String {
         if tag.type == .unknown { tag.type = .str }
         if tag.type == .enums {
-            return Value(data: Int(stringVal), text: stringVal, tag: tag, path: currentPath)
+            return NodeScalar(data: Int(stringVal), text: stringVal, tag: tag, path: currentPath)
         }
-        return Value(data: stringVal, text: stringVal, tag: tag, path: currentPath)
+        return NodeScalar(data: stringVal, text: stringVal, tag: tag, path: currentPath)
     }
 
     if let dataVal = value as? Data {
         if tag.type == .unknown { tag.type = .bytes }
         let text = String(data: dataVal, encoding: .utf8) ?? ""
-        return Value(data: dataVal, text: text, tag: tag, path: currentPath)
+        return NodeScalar(data: dataVal, text: text, tag: tag, path: currentPath)
     }
 
     if let dateVal = value as? Date {
@@ -129,12 +129,12 @@ private func convertScalar(_ value: Any, tag: inout Tag, depth: Int, path: Strin
         let formatter = ISO8601DateFormatter()
         formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
         let text = formatter.string(from: dateVal)
-        return Value(data: dateVal, text: text, tag: tag, path: currentPath)
+        return NodeScalar(data: dateVal, text: text, tag: tag, path: currentPath)
     }
 
     if let uuidVal = value as? UUID {
         if tag.type == .unknown { tag.type = .uuid }
-        return Value(data: uuidVal, text: uuidVal.uuidString, tag: tag, path: currentPath)
+        return NodeScalar(data: uuidVal, text: uuidVal.uuidString, tag: tag, path: currentPath)
     }
 
     let mirror = Mirror(reflecting: value)
@@ -159,7 +159,7 @@ private func convertScalar(_ value: Any, tag: inout Tag, depth: Int, path: Strin
         if !tag.nullable {
             tag.nullable = true
         }
-        return Value(data: nil, text: "null", tag: tag, path: currentPath)
+        return NodeScalar(data: nil, text: "null", tag: tag, path: currentPath)
     }
 
     throw MMValueToNodeError.unsupportedType(String(describing: type(of: value)))
@@ -198,7 +198,7 @@ private func structToNode(_ value: Any, tag: inout Tag, depth: Int, path: String
 
     tag.type = .obj
 
-    let obj = MMObject(tag: tag, path: currentPath)
+    let obj = NodeObject(tag: tag, path: currentPath)
 
     for child in mirror.children {
         guard let label = child.label else { continue }
@@ -234,7 +234,7 @@ private func arrayToNode(_ value: Any, tag: inout Tag, depth: Int, path: String)
 
     tag.type = .vec
 
-    let arr = MMArray(tag: tag, path: path)
+    let arr = NodeArray(tag: tag, path: path)
 
     for child in mirror.children {
         var childTag = Tag()
@@ -254,7 +254,7 @@ private func dictToNode(_ value: Any, tag: inout Tag, depth: Int, path: String) 
 
     tag.type = .map
 
-    let obj = MMObject(tag: tag, path: path)
+    let obj = NodeObject(tag: tag, path: path)
 
     for child in mirror.children {
         guard let label = child.label else { continue }

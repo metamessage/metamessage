@@ -8,20 +8,20 @@ import (
 )
 
 func TestToCSharpGeneratesCode(t *testing.T) {
-	obj := &ir.Object{
+	obj := &ir.NodeObject{
 		Tag: &ir.Tag{Name: "sample"},
 		Fields: []*ir.Field{
-			{Key: "when", Value: &ir.Value{Text: "2024-01-01T00:00:00Z", Tag: &ir.Tag{Type: ir.ValueTypeDatetime}}},
-			{Key: "id", Value: &ir.Value{Text: "123", Tag: &ir.Tag{Type: ir.ValueTypeBigint}}},
-			{Key: "data", Value: &ir.Array{
+			{Key: "when", Value: &ir.NodeScalar{Text: "2024-01-01T00:00:00Z", Tag: &ir.Tag{Type: ir.ValueTypeDatetime}}},
+			{Key: "id", Value: &ir.NodeScalar{Text: "123", Tag: &ir.Tag{Type: ir.ValueTypeBigint}}},
+			{Key: "data", Value: &ir.NodeArray{
 				Tag: &ir.Tag{Name: "data", Type: ir.ValueTypeArr, ChildType: ir.ValueTypeStr},
 				Items: []ir.Node{
-					&ir.Value{Text: "abc", Tag: &ir.Tag{Type: ir.ValueTypeStr}},
+					&ir.NodeScalar{Text: "abc", Tag: &ir.Tag{Type: ir.ValueTypeStr}},
 				},
 			}},
-			{Key: "nested", Value: &ir.Object{
+			{Key: "nested", Value: &ir.NodeObject{
 				Tag:    &ir.Tag{Name: "nested"},
-				Fields: []*ir.Field{{Key: "count", Value: &ir.Value{Tag: &ir.Tag{Type: ir.ValueTypeI}, Text: "5"}}},
+				Fields: []*ir.Field{{Key: "count", Value: &ir.NodeScalar{Tag: &ir.Tag{Type: ir.ValueTypeI}, Text: "5"}}},
 			}},
 		},
 	}

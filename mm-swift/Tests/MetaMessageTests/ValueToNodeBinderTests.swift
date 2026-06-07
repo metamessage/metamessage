@@ -8,7 +8,7 @@ final class ValueToNodeBinderTests: XCTestCase {
     func testValueToNodeBool() throws {
         let node = try valueToNode(true, tag: "bool")
         XCTAssertEqual(node.getType(), .value)
-        guard let val = node as? Value else {
+        guard let val = node as? NodeScalar else {
             XCTFail("Expected Value"); return
         }
         XCTAssertEqual(val.data as? Bool, true)
@@ -17,7 +17,7 @@ final class ValueToNodeBinderTests: XCTestCase {
 
     func testValueToNodeInt() throws {
         let node = try valueToNode(42, tag: "int")
-        guard let val = node as? Value else {
+        guard let val = node as? NodeScalar else {
             XCTFail("Expected Value"); return
         }
         XCTAssertEqual(val.data as? Int, 42)
@@ -26,7 +26,7 @@ final class ValueToNodeBinderTests: XCTestCase {
 
     func testValueToNodeString() throws {
         let node = try valueToNode("hello", tag: "str")
-        guard let val = node as? Value else {
+        guard let val = node as? NodeScalar else {
             XCTFail("Expected Value"); return
         }
         XCTAssertEqual(val.data as? String, "hello")
@@ -34,7 +34,7 @@ final class ValueToNodeBinderTests: XCTestCase {
 
     func testValueToNodeDouble() throws {
         let node = try valueToNode(3.14, tag: "f64")
-        guard let val = node as? Value else {
+        guard let val = node as? NodeScalar else {
             XCTFail("Expected Value"); return
         }
         XCTAssertEqual(val.data as? Double, 3.14)
@@ -43,7 +43,7 @@ final class ValueToNodeBinderTests: XCTestCase {
     func testValueToNodeData() throws {
         let data = Data([0x01, 0x02, 0x03])
         let node = try valueToNode(data, tag: "bytes")
-        guard let val = node as? Value else {
+        guard let val = node as? NodeScalar else {
             XCTFail("Expected Value"); return
         }
         XCTAssertEqual(val.data as? Data, data)
@@ -52,7 +52,7 @@ final class ValueToNodeBinderTests: XCTestCase {
     func testValueToNodeDate() throws {
         let date = Date()
         let node = try valueToNode(date, tag: "datetime")
-        guard let val = node as? Value else {
+        guard let val = node as? NodeScalar else {
             XCTFail("Expected Value"); return
         }
         XCTAssertNotNil(val.data as? Date)
@@ -61,7 +61,7 @@ final class ValueToNodeBinderTests: XCTestCase {
     func testValueToNodeUUID() throws {
         let uuid = UUID()
         let node = try valueToNode(uuid, tag: "uuid")
-        guard let val = node as? Value else {
+        guard let val = node as? NodeScalar else {
             XCTFail("Expected Value"); return
         }
         XCTAssertEqual(val.data as? UUID, uuid)
@@ -69,7 +69,7 @@ final class ValueToNodeBinderTests: XCTestCase {
 
     func testValueToNodeNil() throws {
         let node = try valueToNode(nil, tag: "type=str;nullable")
-        guard let val = node as? Value else {
+        guard let val = node as? NodeScalar else {
             XCTFail("Expected Value"); return
         }
         XCTAssertNil(val.data)
@@ -90,26 +90,26 @@ final class ValueToNodeBinderTests: XCTestCase {
         let user = SimpleUser()
         let node = try valueToNode(user, tag: "user")
         XCTAssertEqual(node.getType(), .object)
-        guard let obj = node as? MMObject else {
-            XCTFail("Expected MMObject"); return
+        guard let obj = node as? NodeObject else {
+            XCTFail("Expected NodeObject"); return
         }
         XCTAssertGreaterThan(obj.fields.count, 0)
 
         let idField = obj.fields.first(where: { $0.key == "id" })
         XCTAssertNotNil(idField)
-        if let val = idField?.value as? Value {
+        if let val = idField?.value as? NodeScalar {
             XCTAssertEqual(val.data as? Int, 1001)
         }
 
         let nameField = obj.fields.first(where: { $0.key == "name" })
         XCTAssertNotNil(nameField)
-        if let val = nameField?.value as? Value {
+        if let val = nameField?.value as? NodeScalar {
             XCTAssertEqual(val.data as? String, "张三")
         }
 
         let activeField = obj.fields.first(where: { $0.key == "is_active" })
         XCTAssertNotNil(activeField)
-        if let val = activeField?.value as? Value {
+        if let val = activeField?.value as? NodeScalar {
             XCTAssertEqual(val.data as? Bool, true)
         }
     }
@@ -129,18 +129,18 @@ final class ValueToNodeBinderTests: XCTestCase {
     func testValueToNodeNestedStruct() throws {
         let user = UserWithAddress()
         let node = try valueToNode(user, tag: "user")
-        guard let obj = node as? MMObject else {
-            XCTFail("Expected MMObject"); return
+        guard let obj = node as? NodeObject else {
+            XCTFail("Expected NodeObject"); return
         }
 
         let addrField = obj.fields.first(where: { $0.key == "addr" })
         XCTAssertNotNil(addrField)
         XCTAssertEqual(addrField?.value.getType(), .object)
 
-        if let addrObj = addrField?.value as? MMObject {
+        if let addrObj = addrField?.value as? NodeObject {
             let provinceField = addrObj.fields.first(where: { $0.key == "province" })
             XCTAssertNotNil(provinceField)
-            if let val = provinceField?.value as? Value {
+            if let val = provinceField?.value as? NodeScalar {
                 XCTAssertEqual(val.data as? String, "北京市")
             }
 
@@ -158,23 +158,23 @@ final class ValueToNodeBinderTests: XCTestCase {
     func testValueToNodeArray() throws {
         let user = UserWithTags()
         let node = try valueToNode(user, tag: "user")
-        guard let obj = node as? MMObject else {
-            XCTFail("Expected MMObject"); return
+        guard let obj = node as? NodeObject else {
+            XCTFail("Expected NodeObject"); return
         }
 
         let tagsField = obj.fields.first(where: { $0.key == "tags" })
         XCTAssertNotNil(tagsField)
         XCTAssertEqual(tagsField?.value.getType(), .array)
 
-        if let arr = tagsField?.value as? MMArray {
+        if let arr = tagsField?.value as? NodeArray {
             XCTAssertEqual(arr.items.count, 3)
         }
     }
 
     func testValueToNodeIntArray() throws {
         let node = try valueToNode([1, 2, 3], tag: "arr_int")
-        guard let arr = node as? MMArray else {
-            XCTFail("Expected MMArray"); return
+        guard let arr = node as? NodeArray else {
+            XCTFail("Expected NodeArray"); return
         }
         XCTAssertEqual(arr.items.count, 3)
     }
@@ -291,7 +291,7 @@ final class ValueToNodeBinderTests: XCTestCase {
     func testValueToNodeOptional() throws {
         let value: Int? = 42
         let node = try valueToNode(value, tag: "int")
-        guard let val = node as? Value else {
+        guard let val = node as? NodeScalar else {
             XCTFail("Expected Value"); return
         }
         XCTAssertEqual(val.data as? Int, 42)
@@ -300,7 +300,7 @@ final class ValueToNodeBinderTests: XCTestCase {
     func testValueToNodeNilOptionalWithTag() throws {
         let value: String? = nil
         let node = try valueToNode(value, tag: "type=str;nullable")
-        guard let val = node as? Value else {
+        guard let val = node as? NodeScalar else {
             XCTFail("Expected Value"); return
         }
         XCTAssertNil(val.data)
@@ -311,7 +311,7 @@ final class ValueToNodeBinderTests: XCTestCase {
 
     func testValueToNodeUInt() throws {
         let node = try valueToNode(UInt(255), tag: "u")
-        guard let val = node as? Value else {
+        guard let val = node as? NodeScalar else {
             XCTFail("Expected Value"); return
         }
         XCTAssertEqual(val.data as? UInt, 255)
@@ -319,7 +319,7 @@ final class ValueToNodeBinderTests: XCTestCase {
 
     func testValueToNodeUInt64() throws {
         let node = try valueToNode(UInt64.max, tag: "u64")
-        guard let val = node as? Value else {
+        guard let val = node as? NodeScalar else {
             XCTFail("Expected Value"); return
         }
         XCTAssertEqual(val.data as? UInt64, UInt64.max)
@@ -329,7 +329,7 @@ final class ValueToNodeBinderTests: XCTestCase {
 
     func testValueToNodeFloat() throws {
         let node = try valueToNode(Float(3.14), tag: "f32")
-        guard let val = node as? Value else {
+        guard let val = node as? NodeScalar else {
             XCTFail("Expected Value"); return
         }
         XCTAssertEqual(val.data as? Float, Float(3.14))
@@ -402,8 +402,8 @@ final class ValueToNodeBinderTests: XCTestCase {
     func testValueToNodeWithTagProvider() throws {
         let tagged = TaggedStruct()
         let node = try valueToNode(tagged, tag: "tagged")
-        guard let obj = node as? MMObject else {
-            XCTFail("Expected MMObject"); return
+        guard let obj = node as? NodeObject else {
+            XCTFail("Expected NodeObject"); return
         }
 
         let nameField = obj.fields.first(where: { $0.key == "name" })
@@ -461,13 +461,13 @@ final class ValueToNodeBinderTests: XCTestCase {
     func testValueToNodeNullable() throws {
         let nullable = NullableFields()
         let node = try valueToNode(nullable, tag: "nullable")
-        guard let obj = node as? MMObject else {
-            XCTFail("Expected MMObject"); return
+        guard let obj = node as? NodeObject else {
+            XCTFail("Expected NodeObject"); return
         }
 
         let nameField = obj.fields.first(where: { $0.key == "name" })
         XCTAssertNotNil(nameField)
-        if let val = nameField?.value as? Value {
+        if let val = nameField?.value as? NodeScalar {
             XCTAssertEqual(val.data as? String, "hello")
         }
 

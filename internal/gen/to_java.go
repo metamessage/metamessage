@@ -72,7 +72,7 @@ func ToJava(n ir.Node) string {
 	}
 
 	topName := "Obj"
-	if obj, ok := n.(*ir.Object); ok && obj.Tag != nil && obj.Tag.Name != "" {
+	if obj, ok := n.(*ir.NodeObject); ok && obj.Tag != nil && obj.Tag.Name != "" {
 		topName = exportJavaClassName(obj.Tag.Name)
 	}
 
@@ -125,7 +125,7 @@ func ToJava(n ir.Node) string {
 	sb.WriteString("return obj;\n")
 	WriteIndent(&sb, 1)
 	sb.WriteString("}\n")
-	objectFactories := make(map[string]*ir.Object)
+	objectFactories := make(map[string]*ir.NodeObject)
 	collectJavaObjectFactories(n, "", objectFactories)
 	if len(objectFactories) > 0 {
 		for _, name := range sortedJavaFactoryNames(objectFactories) {
@@ -159,11 +159,11 @@ func collectJavaImportsRec(n ir.Node, imports map[string]struct{}) {
 	}
 
 	switch v := n.(type) {
-	case *ir.Value:
+	case *ir.NodeScalar:
 		if v.Tag != nil {
 			addJavaImportForType(v.Tag.Type, imports)
 		}
-	case *ir.Array:
+	case *ir.NodeArray:
 		imports["java.util.List"] = struct{}{}
 		if v.Tag != nil && v.Tag.ChildType != ir.ValueTypeUnknown {
 			addJavaImportForType(v.Tag.ChildType, imports)
@@ -171,7 +171,7 @@ func collectJavaImportsRec(n ir.Node, imports map[string]struct{}) {
 		for _, item := range v.Items {
 			collectJavaImportsRec(item, imports)
 		}
-	case *ir.Object:
+	case *ir.NodeObject:
 		for _, f := range v.Fields {
 			if f != nil {
 				collectJavaImportsRec(f.Value, imports)
@@ -197,18 +197,18 @@ func addJavaImportForType(typ ir.ValueType, imports map[string]struct{}) {
 
 func getJavaTypeForField(f *ir.Field) string {
 	switch v := f.Value.(type) {
-	case *ir.Value:
+	case *ir.NodeScalar:
 		return getJavaType(v)
-	case *ir.Object:
+	case *ir.NodeObject:
 		return getJavaObjectType(f.Key, v)
-	case *ir.Array:
+	case *ir.NodeArray:
 		return getJavaArrayType(f.Key, v)
 	default:
 		return "Object"
 	}
 }
 
-func getJavaType(v *ir.Value) string {
+func getJavaType(v *ir.NodeScalar) string {
 	if v != nil && v.Tag != nil {
 		if t, ok := javaTypeMap[v.Tag.Type]; ok {
 			return t
@@ -217,14 +217,14 @@ func getJavaType(v *ir.Value) string {
 	return "Object"
 }
 
-func getJavaObjectType(fieldKey string, obj *ir.Object) string {
+func getJavaObjectType(fieldKey string, obj *ir.NodeObject) string {
 	if obj != nil && obj.Tag != nil && obj.Tag.Name != "" {
 		return exportJavaClassName(obj.Tag.Name)
 	}
 	return exportJavaClassName(fieldKey)
 }
 
-func getJavaArrayType(fieldKey string, a *ir.Array) string {
+func getJavaArrayType(fieldKey string, a *ir.NodeArray) string {
 	if a == nil {
 		return "List<Object>"
 	}
@@ -240,9 +240,9 @@ func getJavaArrayType(fieldKey string, a *ir.Array) string {
 
 	if len(a.Items) > 0 {
 		switch item := a.Items[0].(type) {
-		case *ir.Object:
+		case *ir.NodeObject:
 			return "List<" + getJavaObjectType(fieldKey, item) + ">"
-		case *ir.Value:
+		case *ir.NodeScalar:
 			if item.Tag != nil {
 				if t, ok := javaWrapperTypeMap[item.Tag.Type]; ok {
 					return "List<" + t + ">"
@@ -258,7 +258,7 @@ func getJavaArrayType(fieldKey string, a *ir.Array) string {
 }
 
 func genJavaFields(b *strings.Builder, n ir.Node, indent int) {
-	obj, ok := n.(*ir.Object)
+	obj, ok := n.(*ir.NodeObject)
 	if !ok {
 		return
 	}
@@ -277,7 +277,7 @@ func genJavaFields(b *strings.Builder, n ir.Node, indent int) {
 }
 
 func genJavaNestedClasses(b *strings.Builder, n ir.Node, indent int) {
-	obj, ok := n.(*ir.Object)
+	obj, ok := n.(*ir.NodeObject)
 	if !ok {
 		return
 	}
@@ -288,7 +288,7 @@ func genJavaNestedClasses(b *strings.Builder, n ir.Node, indent int) {
 		}
 
 		switch v := f.Value.(type) {
-		case *ir.Object:
+		case *ir.NodeObject:
 			className := getJavaObjectType(f.Key, v)
 			b.WriteString("\n")
 			WriteIndent(b, indent)
@@ -299,7 +299,7 @@ func genJavaNestedClasses(b *strings.Builder, n ir.Node, indent int) {
 			genJavaNestedClasses(b, v, indent+1)
 			WriteIndent(b, indent)
 			b.WriteString("}\n")
-		case *ir.Array:
+		case *ir.NodeArray:
 			if nestedObj := findFirstObjectInArray(v); nestedObj != nil {
 				className := getJavaObjectType(f.Key, nestedObj)
 				b.WriteString("\n")
@@ -350,7 +350,7 @@ func exportJavaDataClassName(name string) string {
 }
 
 func genJavaDataAssignments(b *strings.Builder, varName string, n ir.Node, indent int) {
-	obj, ok := n.(*ir.Object)
+	obj, ok := n.(*ir.NodeObject)
 	if !ok {
 		return
 	}
@@ -361,13 +361,13 @@ func genJavaDataAssignments(b *strings.Builder, varName string, n ir.Node, inden
 		}
 		prop := varName + "." + exportJavaFieldName(f.Key)
 		switch v := f.Value.(type) {
-		case *ir.Value:
+		case *ir.NodeScalar:
 			WriteIndent(b, indent)
 			b.WriteString(prop)
 			b.WriteString(" = ")
 			b.WriteString(formatJavaValueLiteral(v))
 			b.WriteString(";\n")
-		case *ir.Object:
+		case *ir.NodeObject:
 			className := getJavaObjectType(f.Key, v)
 			WriteIndent(b, indent)
 			b.WriteString(className)
@@ -382,7 +382,7 @@ func genJavaDataAssignments(b *strings.Builder, varName string, n ir.Node, inden
 			b.WriteString(exportJavaFieldName(f.Key))
 			b.WriteString(";\n")
 			genJavaDataAssignments(b, exportJavaFieldName(f.Key), v, indent)
-		case *ir.Array:
+		case *ir.NodeArray:
 			WriteIndent(b, indent)
 			b.WriteString(prop)
 			b.WriteString(" = ")
@@ -396,7 +396,7 @@ func genJavaDataAssignments(b *strings.Builder, varName string, n ir.Node, inden
 	}
 }
 
-func genJavaArrayLiteral(a *ir.Array, fieldKey string) string {
+func genJavaArrayLiteral(a *ir.NodeArray, fieldKey string) string {
 	if a == nil || len(a.Items) == 0 {
 		return "List.of()"
 	}
@@ -408,9 +408,9 @@ func genJavaArrayLiteral(a *ir.Array, fieldKey string) string {
 			sb.WriteString(", ")
 		}
 		switch v := item.(type) {
-		case *ir.Value:
+		case *ir.NodeScalar:
 			sb.WriteString(formatJavaValueLiteral(v))
-		case *ir.Object:
+		case *ir.NodeObject:
 			className := getJavaObjectType(fieldKey, v)
 			sb.WriteString("create")
 			sb.WriteString(className)
@@ -423,21 +423,21 @@ func genJavaArrayLiteral(a *ir.Array, fieldKey string) string {
 	return sb.String()
 }
 
-func collectJavaObjectFactories(n ir.Node, fieldKey string, factories map[string]*ir.Object) {
+func collectJavaObjectFactories(n ir.Node, fieldKey string, factories map[string]*ir.NodeObject) {
 	if n == nil {
 		return
 	}
 
 	switch v := n.(type) {
-	case *ir.Object:
+	case *ir.NodeObject:
 		for _, f := range v.Fields {
 			if f != nil {
 				collectJavaObjectFactories(f.Value, f.Key, factories)
 			}
 		}
-	case *ir.Array:
+	case *ir.NodeArray:
 		for _, item := range v.Items {
-			if obj, ok := item.(*ir.Object); ok {
+			if obj, ok := item.(*ir.NodeObject); ok {
 				factories[getJavaObjectType(fieldKey, obj)] = obj
 			}
 			collectJavaObjectFactories(item, fieldKey, factories)
@@ -445,7 +445,7 @@ func collectJavaObjectFactories(n ir.Node, fieldKey string, factories map[string
 	}
 }
 
-func sortedJavaFactoryNames(factories map[string]*ir.Object) []string {
+func sortedJavaFactoryNames(factories map[string]*ir.NodeObject) []string {
 	names := make([]string, 0, len(factories))
 	for name := range factories {
 		if name != "" {
@@ -456,7 +456,7 @@ func sortedJavaFactoryNames(factories map[string]*ir.Object) []string {
 	return names
 }
 
-func genJavaObjectFactoryMethod(b *strings.Builder, className string, obj *ir.Object, indent int) {
+func genJavaObjectFactoryMethod(b *strings.Builder, className string, obj *ir.NodeObject, indent int) {
 	WriteIndent(b, indent)
 	b.WriteString("private static ")
 	b.WriteString(className)
@@ -475,7 +475,7 @@ func genJavaObjectFactoryMethod(b *strings.Builder, className string, obj *ir.Ob
 	b.WriteString("}\n")
 }
 
-func formatJavaValueLiteral(v *ir.Value) string {
+func formatJavaValueLiteral(v *ir.NodeScalar) string {
 	if v == nil {
 		return "null"
 	}

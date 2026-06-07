@@ -13,7 +13,7 @@ public class JsoncPrinter
         _prettyPrint = prettyPrint;
     }
 
-    public string Print(IMmTree node)
+    public string Print(INode node)
     {
         var sb = new System.Text.StringBuilder();
         WriteLeadingComments(sb, node.Tag, 0);
@@ -21,17 +21,17 @@ public class JsoncPrinter
         return sb.ToString();
     }
 
-    private void PrintNode(IMmTree node, System.Text.StringBuilder sb, int indent)
+    private void PrintNode(INode node, System.Text.StringBuilder sb, int indent)
     {
-        if (node is MmScalar scalar)
+        if (node is NodeScalar scalar)
         {
             WriteScalarJSONC(sb, scalar, indent);
         }
-        else if (node is MmArray array)
+        else if (node is NodeArray array)
         {
             WriteArrayJSONC(sb, array.Children, array.Tag, indent);
         }
-        else if (node is MmMap map)
+        else if (node is NodeObject map)
         {
             WriteMapJSONC(sb, map.Entries, map.Tag, indent);
         }
@@ -57,7 +57,7 @@ public class JsoncPrinter
         }
     }
 
-    private void WriteScalarJSONC(System.Text.StringBuilder b, MmScalar v, int indent)
+    private void WriteScalarJSONC(System.Text.StringBuilder b, NodeScalar v, int indent)
     {
         if (v.Tag != null)
         {
@@ -196,7 +196,7 @@ public class JsoncPrinter
         }
     }
 
-    private void WriteMapJSONC(System.Text.StringBuilder b, List<KeyValuePair<MmScalar, IMmTree>> entries, Tag? tag, int indent)
+    private void WriteMapJSONC(System.Text.StringBuilder b, List<KeyValuePair<NodeScalar, INode>> entries, Tag? tag, int indent)
     {
         b.Append('{');
         if (!_prettyPrint)
@@ -228,7 +228,7 @@ public class JsoncPrinter
         b.Append('}');
     }
 
-    private void WriteArrayJSONC(System.Text.StringBuilder b, List<IMmTree> items, Tag? tag, int indent)
+    private void WriteArrayJSONC(System.Text.StringBuilder b, List<INode> items, Tag? tag, int indent)
     {
         b.Append('[');
         if (!_prettyPrint)

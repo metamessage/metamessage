@@ -39,12 +39,12 @@ inline void printIndent(std::ostringstream &os, int indent) {
     os << "\t";
 }
 
-inline void printValue(std::ostringstream &os, std::shared_ptr<ir::Value> val,
-                       int indent);
-inline void printArray(std::ostringstream &os, std::shared_ptr<ir::Array> arr,
-                       int indent);
-inline void printObject(std::ostringstream &os, std::shared_ptr<ir::Object> obj,
-                        int indent);
+inline void printValue(std::ostringstream &os,
+                       std::shared_ptr<ir::NodeScalar> val, int indent);
+inline void printArray(std::ostringstream &os,
+                       std::shared_ptr<ir::NodeArray> arr, int indent);
+inline void printObject(std::ostringstream &os,
+                        std::shared_ptr<ir::NodeObject> obj, int indent);
 
 inline void printTag(std::ostringstream &os, const ir::Tag *tag) {
   if (tag == nullptr)
@@ -67,8 +67,8 @@ inline void printLeadingComment(std::ostringstream &os, const ir::Tag *tag,
   }
 }
 
-inline void printValue(std::ostringstream &os, std::shared_ptr<ir::Value> val,
-                       int indent) {
+inline void printValue(std::ostringstream &os,
+                       std::shared_ptr<ir::NodeScalar> val, int indent) {
 
   switch (val->getTag()->type) {
   case ir::ValueType::Str:
@@ -157,8 +157,8 @@ inline void printValue(std::ostringstream &os, std::shared_ptr<ir::Value> val,
   }
 }
 
-inline void printArray(std::ostringstream &os, std::shared_ptr<ir::Array> arr,
-                       int indent) {
+inline void printArray(std::ostringstream &os,
+                       std::shared_ptr<ir::NodeArray> arr, int indent) {
   os << "[\n";
 
   if (arr->items.empty()) {
@@ -172,16 +172,16 @@ inline void printArray(std::ostringstream &os, std::shared_ptr<ir::Array> arr,
     printIndent(os, indent + 1);
 
     switch (arr->items[i]->getType()) {
-    case ir::NodeType::Object:
-      printObject(os, std::static_pointer_cast<ir::Object>(arr->items[i]),
+    case ir::NodeType::NodeObject:
+      printObject(os, std::static_pointer_cast<ir::NodeObject>(arr->items[i]),
                   indent + 1);
       break;
-    case ir::NodeType::Array:
-      printArray(os, std::static_pointer_cast<ir::Array>(arr->items[i]),
+    case ir::NodeType::NodeArray:
+      printArray(os, std::static_pointer_cast<ir::NodeArray>(arr->items[i]),
                  indent + 1);
       break;
     case ir::NodeType::Value:
-      printValue(os, std::static_pointer_cast<ir::Value>(arr->items[i]),
+      printValue(os, std::static_pointer_cast<ir::NodeScalar>(arr->items[i]),
                  indent + 1);
       break;
     default:
@@ -196,8 +196,8 @@ inline void printArray(std::ostringstream &os, std::shared_ptr<ir::Array> arr,
   os << "]";
 }
 
-inline void printObject(std::ostringstream &os, std::shared_ptr<ir::Object> obj,
-                        int indent) {
+inline void printObject(std::ostringstream &os,
+                        std::shared_ptr<ir::NodeObject> obj, int indent) {
   os << "{\n";
 
   if (obj->fields.empty()) {
@@ -227,16 +227,16 @@ inline void printObject(std::ostringstream &os, std::shared_ptr<ir::Object> obj,
     os << "\": ";
 
     switch (field.value->getType()) {
-    case ir::NodeType::Object:
-      printObject(os, std::static_pointer_cast<ir::Object>(field.value),
+    case ir::NodeType::NodeObject:
+      printObject(os, std::static_pointer_cast<ir::NodeObject>(field.value),
                   indent + 1);
       break;
-    case ir::NodeType::Array:
-      printArray(os, std::static_pointer_cast<ir::Array>(field.value),
+    case ir::NodeType::NodeArray:
+      printArray(os, std::static_pointer_cast<ir::NodeArray>(field.value),
                  indent + 1);
       break;
     case ir::NodeType::Value:
-      printValue(os, std::static_pointer_cast<ir::Value>(field.value),
+      printValue(os, std::static_pointer_cast<ir::NodeScalar>(field.value),
                  indent + 1);
       break;
     default:
@@ -255,14 +255,14 @@ inline std::string toJSONC(std::shared_ptr<ir::Node> node) {
   std::ostringstream os;
   printLeadingComment(os, node->getTag(), 0);
   switch (node->getType()) {
-  case ir::NodeType::Object:
-    printObject(os, std::static_pointer_cast<ir::Object>(node), 0);
+  case ir::NodeType::NodeObject:
+    printObject(os, std::static_pointer_cast<ir::NodeObject>(node), 0);
     break;
-  case ir::NodeType::Array:
-    printArray(os, std::static_pointer_cast<ir::Array>(node), 0);
+  case ir::NodeType::NodeArray:
+    printArray(os, std::static_pointer_cast<ir::NodeArray>(node), 0);
     break;
   case ir::NodeType::Value:
-    printValue(os, std::static_pointer_cast<ir::Value>(node), 0);
+    printValue(os, std::static_pointer_cast<ir::NodeScalar>(node), 0);
     break;
   default:
     os << "null";

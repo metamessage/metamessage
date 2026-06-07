@@ -1,38 +1,37 @@
 using MetaMessage.Ir;
 using ValueType = MetaMessage.Ir.ValueType;
-
 namespace MetaMessage.Core;
 
 public class Binder
 {
-    public T Bind<T>(IMmTree node) where T : new()
+    public T Bind<T>(INode node) where T : new()
     {
         var result = new T();
         Bind(node, result);
         return result;
     }
 
-    public void Bind(IMmTree node, object target)
+    public void Bind(INode node, object target)
     {
-        if (node is MmMap map && target != null)
+        if (node is NodeObject map && target != null)
         {
             BindObject(map, target);
         }
-        else if (node is MmArray array && target != null)
+        else if (node is NodeArray array && target != null)
         {
             BindArray(array, target);
         }
-        else if (node is MmScalar scalar && target != null)
+        else if (node is NodeScalar scalar && target != null)
         {
             BindValue(scalar, target);
         }
     }
 
-    public IMmTree StructToNode(object value)
+    public INode StructToNode(object value)
     {
         if (value == null)
         {
-            return new MmScalar(null, "null", Tag.NewTag());
+            return new NodeScalar(null, "null", Tag.NewTag());
         }
 
         var type = value.GetType();
@@ -40,81 +39,81 @@ public class Binder
         if (type.IsArray)
         {
             var arr = (Array)value;
-            var children = new List<IMmTree>();
+            var children = new List<INode>();
             for (int i = 0; i < arr.Length; i++)
             {
                 children.Add(StructToNode(arr.GetValue(i)!));
             }
-            return new MmArray(children, Tag.NewTag());
+            return new NodeArray(children, Tag.NewTag());
         }
 
         if (value is System.Collections.IList list)
         {
-            var children = new List<IMmTree>();
+            var children = new List<INode>();
             foreach (var item in list)
             {
                 children.Add(StructToNode(item));
             }
-            return new MmArray(children, Tag.NewTag());
+            return new NodeArray(children, Tag.NewTag());
         }
 
         if (value is string str)
         {
             var tag = Tag.NewTag();
             tag.Type = ValueType.Str;
-            return new MmScalar(str, str, tag);
+            return new NodeScalar(str, str, tag);
         }
 
         if (value is bool b)
         {
             var tag = Tag.NewTag();
             tag.Type = ValueType.Bool;
-            return new MmScalar(b, b ? "true" : "false", tag);
+            return new NodeScalar(b, b ? "true" : "false", tag);
         }
 
         if (value is int intVal)
         {
             var tag = Tag.NewTag();
             tag.Type = ValueType.I;
-            return new MmScalar(intVal, intVal.ToString(), tag);
+            return new NodeScalar(intVal, intVal.ToString(), tag);
         }
 
         if (value is long longVal)
         {
             var tag = Tag.NewTag();
             tag.Type = ValueType.I;
-            return new MmScalar(longVal, longVal.ToString(), tag);
+            return new NodeScalar(longVal, longVal.ToString(), tag);
         }
 
         if (value is double doubleVal)
         {
             var tag = Tag.NewTag();
             tag.Type = ValueType.F64;
-            return new MmScalar(doubleVal, doubleVal.ToString("G"), tag);
+            return new NodeScalar(doubleVal, doubleVal.ToString("G"), tag);
         }
 
         if (value is float floatVal)
         {
             var tag = Tag.NewTag();
             tag.Type = ValueType.F32;
-            return new MmScalar(floatVal, floatVal.ToString("G"), tag);
+            return new NodeScalar(floatVal, floatVal.ToString("G"), tag);
         }
 
         if (value is System.DateTime dt)
         {
             var tag = Tag.NewTag();
             tag.Type = ValueType.Str;
-            return new MmScalar(dt.ToString("yyyy-MM-dd HH:mm:ss"), dt.ToString("yyyy-MM-dd HH:mm:ss"), tag);
+            return new NodeScalar(dt.ToString("yyyy-MM-dd HH:mm:ss"), dt.ToString("yyyy-MM-dd HH:mm:ss"), tag);
         }
 
         if (value is byte[] bytes)
         {
             var tag = Tag.NewTag();
             tag.Type = ValueType.Bytes;
-            return new MmScalar(bytes, Convert.ToBase64String(bytes), tag);
+            return new NodeScalar(bytes, Convert.ToBase64String(bytes), tag);
         }
 
-        var entries = new List<KeyValuePair<MmScalar, IMmTree>>();
+        var entries = new List<KeyValuePair<NodeScalar, INode>>();
         var properties = type.GetProperties();
         foreach (var prop in properties)
         {
@@ -123,14 +122,14 @@ public class Binder
 
             var propValue = prop.GetValue(value);
             var propNode = StructToNode(propValue!);
-            var keyScalar = new MmScalar(prop.Name, prop.Name, Tag.Empty());
-            entries.Add(new KeyValuePair<MmScalar, IMmTree>(keyScalar, propNode));
+            var keyScalar = new NodeScalar(prop.Name, prop.Name, Tag.Empty());
+            entries.Add(new KeyValuePair<NodeScalar, INode>(keyScalar, propNode));
         }
 
-        return new MmMap(entries, Tag.NewTag());
+        return new NodeObject(entries, Tag.NewTag());
     }
 
-    private void BindObject(MmMap map, object target)
+    private void BindObject(NodeObject map, object target)
     {
         var type = target.GetType();
         var properties = type.GetProperties();
@@ -149,13 +148,13 @@ public class Binder
         }
     }
 
-    private void BindNodeToProperty(IMmTree node, System.Reflection.PropertyInfo prop, object target)
+    private void BindNodeToProperty(INode node, System.Reflection.PropertyInfo prop, object target)
     {
         var propType = prop.PropertyType;
 
         if (propType.IsArray)
         {
-            if (node is MmArray array)
+            if (node is NodeArray array)
             {
                 var elementType = propType.GetElementType()!;
                 var arr = Array.CreateInstance(elementType, array.Children.Count);
@@ -171,7 +170,7 @@ public class Binder
 
         if (propType.IsGenericType && propType.GetGenericTypeDefinition() == typeof(List<>))
         {
-            if (node is MmArray array)
+            if (node is NodeArray array)
             {
                 var elementType = propType.GetGenericArguments()[0];
                 var listType = typeof(System.Collections.Generic.List<>).MakeGenericType(elementType);
@@ -186,7 +185,7 @@ public class Binder
             return;
         }
 
-        if (node is MmMap childMap)
+        if (node is NodeObject childMap)
         {
             var childTarget = Activator.CreateInstance(propType)!;
             BindObject(childMap, childTarget);
@@ -194,16 +193,16 @@ public class Binder
             return;
         }
 
-        if (node is MmScalar scalar)
+        if (node is NodeScalar scalar)
         {
             BindValue(scalar, prop, target);
             return;
         }
     }
 
-    private object? ConvertMmTreeValue(IMmTree node, Type targetType)
+    private object? ConvertMmTreeValue(INode node, Type targetType)
     {
-        if (node is MmScalar scalar)
+        if (node is NodeScalar scalar)
         {
             if (targetType == typeof(string))
                 return scalar.Text;
@@ -221,13 +220,13 @@ public class Binder
                 return scalar.Data is byte[] bytes ? bytes : (scalar.Text != null ? Convert.FromBase64String(scalar.Text) : Array.Empty<byte>());
             return scalar.Data;
         }
-        if (node is MmMap childMap)
+        if (node is NodeObject childMap)
         {
             var childTarget = Activator.CreateInstance(targetType)!;
             BindObject(childMap, childTarget);
             return childTarget;
         }
-        if (node is MmArray childArray && targetType.IsGenericType && targetType.GetGenericTypeDefinition() == typeof(List<>))
+        if (node is NodeArray childArray && targetType.IsGenericType && targetType.GetGenericTypeDefinition() == typeof(List<>))
         {
             var elementType = targetType.GetGenericArguments()[0];
             var listType = typeof(System.Collections.Generic.List<>).MakeGenericType(elementType);
@@ -241,7 +240,7 @@ public class Binder
         return null;
     }
 
-    private void BindArray(MmArray array, object target)
+    private void BindArray(NodeArray array, object target)
     {
         var type = target.GetType();
         if (type.IsArray)
@@ -267,13 +266,13 @@ public class Binder
         }
     }
 
-    private void BindValue(MmScalar scalar, object target)
+    private void BindValue(Ir.NodeScalar scalar, object target)
     {
         var type = target.GetType();
         BindValue(scalar, type.GetProperty("Item")!, target);
     }
 
-    private void BindValue(MmScalar scalar, System.Reflection.PropertyInfo prop, object target)
+    private void BindValue(Ir.NodeScalar scalar, System.Reflection.PropertyInfo prop, object target)
     {
         var propType = prop.PropertyType;
         var rawValue = scalar.Data;

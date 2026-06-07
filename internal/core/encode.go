@@ -46,24 +46,24 @@ func (e *encoder) Reset(w io.Writer) {
 	e.w = w
 }
 
-func (e *encoder) encodeNodeObject(obj *ir.Object) (n uint32, err error) {
+func (e *encoder) encodeNodeObject(obj *ir.NodeObject) (n uint32, err error) {
 	var bufKey bytes.Buffer
 	var buf bytes.Buffer
 	tag := obj.GetTag()
 
 	for _, field := range obj.Fields {
 		switch val := field.Value.(type) {
-		case *ir.Object:
+		case *ir.NodeObject:
 			if n, err = e.encodeNodeObject(val); err != nil {
 				return
 			}
 
-		case *ir.Array:
+		case *ir.NodeArray:
 			if n, err = e.encodeNodeArray(val); err != nil {
 				return
 			}
 
-		case *ir.Value:
+		case *ir.NodeScalar:
 			if n, err = e.encodeNodeValue(val); err != nil {
 				err = fmt.Errorf("%s: %w", val.GetPath(), err)
 				return
@@ -133,22 +133,22 @@ func (e *encoder) encodeComment(payload []byte, tag *ir.Tag) (n uint32, err erro
 	return e.encodeTag(payload, e.buf[e.offset-ns:e.offset])
 }
 
-func (e *encoder) encodeNodeArray(arr *ir.Array) (n uint32, err error) {
+func (e *encoder) encodeNodeArray(arr *ir.NodeArray) (n uint32, err error) {
 	var buf bytes.Buffer
 
 	tag := arr.GetTag()
 
 	for _, item := range arr.Items {
 		switch val := item.(type) {
-		case *ir.Object:
+		case *ir.NodeObject:
 			if n, err = e.encodeNodeObject(val); err != nil {
 				return
 			}
-		case *ir.Array:
+		case *ir.NodeArray:
 			if n, err = e.encodeNodeArray(val); err != nil {
 				return
 			}
-		case *ir.Value:
+		case *ir.NodeScalar:
 			if n, err = e.encodeNodeValue(val); err != nil {
 				return
 			}
@@ -182,7 +182,7 @@ func (e *encoder) encodeNodeArray(arr *ir.Array) (n uint32, err error) {
 	return
 }
 
-func (e *encoder) encodeNodeValue(val *ir.Value) (n uint32, err error) {
+func (e *encoder) encodeNodeValue(val *ir.NodeScalar) (n uint32, err error) {
 	// defer func() {
 	// 	fmt.Println("encodeNodeValue:", val.Data, val.Text, val.Tag.Type)
 	// }()
@@ -396,11 +396,11 @@ func (e *encoder) encodeNodeValue(val *ir.Value) (n uint32, err error) {
 func (e *encoder) Encode(node ir.Node) (out []byte, err error) {
 	var n uint32
 	switch val := node.(type) {
-	case *ir.Object:
+	case *ir.NodeObject:
 		n, err = e.encodeNodeObject(val)
-	case *ir.Array:
+	case *ir.NodeArray:
 		n, err = e.encodeNodeArray(val)
-	case *ir.Value:
+	case *ir.NodeScalar:
 		n, err = e.encodeNodeValue(val)
 	default:
 		err = fmt.Errorf("unsupported type %T", val)

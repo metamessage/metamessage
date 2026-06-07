@@ -626,7 +626,7 @@ enum TagKey {
 
 // MARK: - Node encoding
 extension Encoder {
-    public func encodeNodeValue(_ node: Value) {
+    public func encodeNodeValue(_ node: NodeScalar) {
         guard let tag = node.getTag() else {
             encodeRawValue(node)
             return
@@ -770,19 +770,19 @@ extension Encoder {
         encode(UInt64(seconds))
     }
 
-    public func encodeNodeArray(_ node: MMArray) {
+    public func encodeNodeArray(_ node: NodeArray) {
         guard let tag = node.getTag() else {
             let valBuf = MMBuffer()
             for item in node.items {
-                if let val = item as? Value {
+                if let val = item as? NodeScalar {
                     let encoder = Encoder()
                     encoder.encodeNodeValue(val)
                     valBuf.write([UInt8](encoder.buffer.data))
-                } else if let arr = item as? MMArray {
+                } else if let arr = item as? NodeArray {
                     let encoder = Encoder()
                     encoder.encodeNodeArray(arr)
                     valBuf.write([UInt8](encoder.buffer.data))
-                } else if let obj = item as? MMObject {
+                } else if let obj = item as? NodeObject {
                     let encoder = Encoder()
                     encoder.encodeNodeObject(obj)
                     valBuf.write([UInt8](encoder.buffer.data))
@@ -807,15 +807,15 @@ extension Encoder {
         let payloadStart = buffer.count
         let valBuf = MMBuffer()
         for item in node.items {
-            if let val = item as? Value {
+            if let val = item as? NodeScalar {
                 let encoder = Encoder()
                 encoder.encodeNodeValue(val)
                 valBuf.write([UInt8](encoder.buffer.data))
-            } else if let arr = item as? MMArray {
+            } else if let arr = item as? NodeArray {
                 let encoder = Encoder()
                 encoder.encodeNodeArray(arr)
                 valBuf.write([UInt8](encoder.buffer.data))
-            } else if let obj = item as? MMObject {
+            } else if let obj = item as? NodeObject {
                 let encoder = Encoder()
                 encoder.encodeNodeObject(obj)
                 valBuf.write([UInt8](encoder.buffer.data))
@@ -849,7 +849,7 @@ extension Encoder {
         }
     }
 
-    public func encodeNodeObject(_ node: MMObject) {
+    public func encodeNodeObject(_ node: NodeObject) {
         let keyBuf = MMBuffer()
         let valBuf = MMBuffer()
 
@@ -859,11 +859,11 @@ extension Encoder {
             keyBuf.write([UInt8](encoder.buffer.data))
 
             let valEncoder = Encoder()
-            if let val = field.value as? Value {
+            if let val = field.value as? NodeScalar {
                 valEncoder.encodeNodeValue(val)
-            } else if let arr = field.value as? MMArray {
+            } else if let arr = field.value as? NodeArray {
                 valEncoder.encodeNodeArray(arr)
-            } else if let obj = field.value as? MMObject {
+            } else if let obj = field.value as? NodeObject {
                 valEncoder.encodeNodeObject(obj)
             }
             valBuf.write([UInt8](valEncoder.buffer.data))
@@ -916,7 +916,7 @@ extension Encoder {
         }
     }
 
-    private func encodeRawValue(_ node: Value) {
+    private func encodeRawValue(_ node: NodeScalar) {
         guard let data = node.data else {
             encodeNil()
             return

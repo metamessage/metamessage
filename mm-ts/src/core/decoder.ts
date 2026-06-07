@@ -51,7 +51,7 @@ import {
   KVersion,
   Tag,
 } from '../ir/tag';
-import { MMValue, MMObject, MMArray, Node } from '../ir/ast';
+import { NodeScalar, NodeObject, NodeArray, Node } from '../ir/ast';
 import { uint8ToBase64 } from '../jsonc/printer';
 
 export class MMDecoder {
@@ -190,7 +190,7 @@ export class MMDecoder {
         case ValueType.Datetime:
         case ValueType.Date:
         case ValueType.Time:
-          return new MMValue(new Date(0), tag);
+          return new NodeScalar(new Date(0), tag);
         case ValueType.I8:
         case ValueType.I16:
         case ValueType.I32:
@@ -201,24 +201,24 @@ export class MMDecoder {
         case ValueType.U32:
         case ValueType.U64:
         case ValueType.I:
-          return new MMValue(0, tag);
+          return new NodeScalar(0, tag);
         case ValueType.F32:
         case ValueType.F64:
-          return new MMValue(0.0, tag);
+          return new NodeScalar(0.0, tag);
         case ValueType.Email:
         case ValueType.Uuid:
         case ValueType.Decimal:
         case ValueType.Url:
         case ValueType.Str:
-          return new MMValue('', tag);
+          return new NodeScalar('', tag);
         case ValueType.Bigint:
-          return new MMValue(BigInt(0), tag);
+          return new NodeScalar(BigInt(0), tag);
         case ValueType.Bool:
-          return new MMValue(false, tag);
+          return new NodeScalar(false, tag);
         case ValueType.Bytes:
-          return new MMValue(new Uint8Array(0), tag);
+          return new NodeScalar(new Uint8Array(0), tag);
         case ValueType.Ip:
-          return new MMValue(tag.version === 4 ? '0.0.0.0' : '::', tag);
+          return new NodeScalar(tag.version === 4 ? '0.0.0.0' : '::', tag);
         default:
           return this.decodeNode(tag, path).node;
       }
@@ -642,7 +642,11 @@ export class MMDecoder {
     return result;
   }
 
-  private decodeSimple(prefix: number, tag: Tag | null, path: string): MMValue {
+  private decodeSimple(
+    prefix: number,
+    tag: Tag | null,
+    path: string,
+  ): NodeScalar {
     if (!tag) {
       tag = new Tag();
     }
@@ -701,7 +705,7 @@ export class MMDecoder {
         throw new Error(`Unsupported simple value: ${typeToString(value)}`);
     }
 
-    const mv = new MMValue(data, tag);
+    const mv = new NodeScalar(data, tag);
     mv.setText(text);
     return mv;
   }
@@ -710,7 +714,7 @@ export class MMDecoder {
     prefix: number,
     tag: Tag | null,
     path: string,
-  ): MMValue {
+  ): NodeScalar {
     const [l1, l2] = intLen(prefix & 0x1f);
 
     let v = BigInt(l2);
@@ -728,7 +732,7 @@ export class MMDecoder {
     prefix: number,
     tag: Tag | null,
     path: string,
-  ): MMValue {
+  ): NodeScalar {
     const [l1, l2] = intLen(prefix & 0x1f);
 
     let v = BigInt(l2);
@@ -746,7 +750,7 @@ export class MMDecoder {
     v: bigint,
     isNegative: boolean,
     tag: Tag | null,
-  ): MMValue {
+  ): NodeScalar {
     if (!tag) {
       tag = new Tag();
     }
@@ -838,12 +842,16 @@ export class MMDecoder {
         throw new Error(`Unsupported int type: ${typeToString(tag.type)}`);
     }
 
-    const mv = new MMValue(data, tag);
+    const mv = new NodeScalar(data, tag);
     mv.setText(text);
     return mv;
   }
 
-  private decodeFloat(prefix: number, tag: Tag | null, path: string): MMValue {
+  private decodeFloat(
+    prefix: number,
+    tag: Tag | null,
+    path: string,
+  ): NodeScalar {
     const [l1, l2] = floatLen(prefix);
     const p = Prefix.Float;
 
@@ -971,7 +979,7 @@ export class MMDecoder {
         throw new Error(`unsupported value types: ${tag.type}`);
     }
 
-    const mv = new MMValue(data, tag);
+    const mv = new NodeScalar(data, tag);
     mv.setText(text);
     return mv;
   }
@@ -994,7 +1002,11 @@ export class MMDecoder {
     return result;
   }
 
-  private decodeString(prefix: number, tag: Tag | null, path: string): MMValue {
+  private decodeString(
+    prefix: number,
+    tag: Tag | null,
+    path: string,
+  ): NodeScalar {
     const [lenBytes, len] = stringLen(prefix & 0x1f);
     let length = len;
 
@@ -1032,12 +1044,16 @@ export class MMDecoder {
         throw new Error(`Unsupported string type: ${typeToString(tag.type)}`);
     }
 
-    const mv = new MMValue(data, tag);
+    const mv = new NodeScalar(data, tag);
     mv.setText(text);
     return mv;
   }
 
-  private decodeBytes(prefix: number, tag: Tag | null, path: string): MMValue {
+  private decodeBytes(
+    prefix: number,
+    tag: Tag | null,
+    path: string,
+  ): NodeScalar {
     const [lenBytes, len] = bytesLen(prefix & 0x1f);
     let length = len;
 
@@ -1082,7 +1098,7 @@ export class MMDecoder {
         throw new Error(`Unsupported bytes type: ${tag.type}`);
     }
 
-    const value = new MMValue(data, tag);
+    const value = new NodeScalar(data, tag);
     value.setText(text);
     return value;
   }
@@ -1119,7 +1135,7 @@ export class MMDecoder {
     return this.decodeObj(prefix, tag, path);
   }
 
-  private decodeArr(prefix: number, tag: Tag | null, path: string): MMArray {
+  private decodeArr(prefix: number, tag: Tag | null, path: string): NodeArray {
     if (!tag) {
       tag = new Tag();
     }
@@ -1137,7 +1153,7 @@ export class MMDecoder {
       length = ((bytes[0] ?? 0) << 8) | (bytes[1] ?? 0);
     }
 
-    const arr = new MMArray();
+    const arr = new NodeArray();
     arr.setTag(tag);
     arr.setPath(path);
 
@@ -1163,7 +1179,7 @@ export class MMDecoder {
     return arr;
   }
 
-  private decodeObj(prefix: number, tag: Tag | null, path: string): MMObject {
+  private decodeObj(prefix: number, tag: Tag | null, path: string): NodeObject {
     if (!tag) {
       tag = new Tag();
     }
@@ -1184,11 +1200,13 @@ export class MMDecoder {
     const lArray = this.readByte();
     const keysNode = this.decodeArr(lArray, null, path);
 
-    const obj = new MMObject();
+    const obj = new NodeObject();
     obj.setTag(tag);
     obj.setPath(path);
 
-    const keys = keysNode.getElements().map((k) => (k as MMValue).getValue());
+    const keys = keysNode
+      .getElements()
+      .map((k) => (k as NodeScalar).getValue());
 
     for (let i = 0; i < keys.length; i++) {
       const key = keys[i] as string;

@@ -2,9 +2,9 @@
 
 namespace io\metamessage\core;
 
-use io\metamessage\ir\Object_;
-use io\metamessage\ir\Array_;
-use io\metamessage\ir\Value;
+use io\metamessage\ir\NodeObject;
+use io\metamessage\ir\NodeArray;
+use io\metamessage\ir\NodeScalar;
 use io\metamessage\ir\Node;
 use io\metamessage\ir\Tag;
 use io\metamessage\ir\ValueType;
@@ -32,11 +32,11 @@ class WireEncoder
 
     public function encode(Node $node): array
     {
-        if ($node instanceof Object_) {
+        if ($node instanceof NodeObject) {
             $n = $this->encodeNodeObject($node);
-        } elseif ($node instanceof Array_) {
+        } elseif ($node instanceof NodeArray) {
             $n = $this->encodeNodeArray($node);
-        } elseif ($node instanceof Value) {
+        } elseif ($node instanceof NodeScalar) {
             $n = $this->encodeNodeValue($node);
         } else {
             throw new \Exception('encode error: unsupported type ' . get_class($node));
@@ -47,7 +47,7 @@ class WireEncoder
         return $out;
     }
 
-    private function encodeNodeObject(Object_ $obj): int
+    private function encodeNodeObject(NodeObject $obj): int
     {
         $bufKey = [];
         $buf = [];
@@ -55,11 +55,11 @@ class WireEncoder
 
         foreach ($obj->Fields as $field) {
             $val = $field->Value;
-            if ($val instanceof Object_) {
+            if ($val instanceof NodeObject) {
                 $n = $this->encodeNodeObject($val);
-            } elseif ($val instanceof Array_) {
+            } elseif ($val instanceof NodeArray) {
                 $n = $this->encodeNodeArray($val);
-            } elseif ($val instanceof Value) {
+            } elseif ($val instanceof NodeScalar) {
                 $n = $this->encodeNodeValue($val);
             } else {
                 throw new \Exception('unsupported type ' . get_class($val));
@@ -100,17 +100,17 @@ class WireEncoder
         return $this->encodeTag($payload, array_slice($this->buf, $this->offset - $ns, $ns));
     }
 
-    private function encodeNodeArray(Array_ $arr): int
+    private function encodeNodeArray(NodeArray $arr): int
     {
         $buf = [];
         $tag = $arr->getTag();
 
         foreach ($arr->Items as $item) {
-            if ($item instanceof Object_) {
+            if ($item instanceof NodeObject) {
                 $n = $this->encodeNodeObject($item);
-            } elseif ($item instanceof Array_) {
+            } elseif ($item instanceof NodeArray) {
                 $n = $this->encodeNodeArray($item);
-            } elseif ($item instanceof Value) {
+            } elseif ($item instanceof NodeScalar) {
                 $n = $this->encodeNodeValue($item);
             } else {
                 throw new \Exception('unsupported type ' . get_class($item));
@@ -129,7 +129,7 @@ class WireEncoder
         return $n1;
     }
 
-    private function encodeNodeValue(Value $val): int
+    private function encodeNodeValue(NodeScalar $val): int
     {
         $tag = $val->getTag();
 

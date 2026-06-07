@@ -8,19 +8,19 @@ import (
 )
 
 func TestToCppGeneratesCode(t *testing.T) {
-	obj := &ir.Object{
+	obj := &ir.NodeObject{
 		Tag: &ir.Tag{Name: "user"},
 		Fields: []*ir.Field{
-			{Key: "id", Value: &ir.Value{Tag: &ir.Tag{Type: ir.ValueTypeI}, Text: "1"}},
-			{Key: "name", Value: &ir.Value{Tag: &ir.Tag{Type: ir.ValueTypeStr}, Text: "Alice"}},
-			{Key: "active", Value: &ir.Value{Tag: &ir.Tag{Type: ir.ValueTypeBool}, Text: "true"}},
-			{Key: "score", Value: &ir.Value{Tag: &ir.Tag{Type: ir.ValueTypeF64}, Text: "95.5"}},
-			{Key: "tags", Value: &ir.Array{Items: []ir.Node{
-				&ir.Value{Tag: &ir.Tag{Type: ir.ValueTypeStr}, Text: "go"},
-				&ir.Value{Tag: &ir.Tag{Type: ir.ValueTypeStr}, Text: "java"},
+			{Key: "id", Value: &ir.NodeScalar{Tag: &ir.Tag{Type: ir.ValueTypeI}, Text: "1"}},
+			{Key: "name", Value: &ir.NodeScalar{Tag: &ir.Tag{Type: ir.ValueTypeStr}, Text: "Alice"}},
+			{Key: "active", Value: &ir.NodeScalar{Tag: &ir.Tag{Type: ir.ValueTypeBool}, Text: "true"}},
+			{Key: "score", Value: &ir.NodeScalar{Tag: &ir.Tag{Type: ir.ValueTypeF64}, Text: "95.5"}},
+			{Key: "tags", Value: &ir.NodeArray{Items: []ir.Node{
+				&ir.NodeScalar{Tag: &ir.Tag{Type: ir.ValueTypeStr}, Text: "go"},
+				&ir.NodeScalar{Tag: &ir.Tag{Type: ir.ValueTypeStr}, Text: "java"},
 			}}},
-			{Key: "profile", Value: &ir.Object{Fields: []*ir.Field{
-				{Key: "age", Value: &ir.Value{Tag: &ir.Tag{Type: ir.ValueTypeU8}, Text: "30"}},
+			{Key: "profile", Value: &ir.NodeObject{Fields: []*ir.Field{
+				{Key: "age", Value: &ir.NodeScalar{Tag: &ir.Tag{Type: ir.ValueTypeU8}, Text: "30"}},
 			}}},
 		},
 	}
@@ -65,9 +65,9 @@ func TestToCppGeneratesCode(t *testing.T) {
 }
 
 func TestToCppWithNoName(t *testing.T) {
-	obj := &ir.Object{
+	obj := &ir.NodeObject{
 		Fields: []*ir.Field{
-			{Key: "x", Value: &ir.Value{Tag: &ir.Tag{Type: ir.ValueTypeF32}, Text: "1.5"}},
+			{Key: "x", Value: &ir.NodeScalar{Tag: &ir.Tag{Type: ir.ValueTypeF32}, Text: "1.5"}},
 		},
 	}
 
@@ -83,10 +83,10 @@ func TestToCppWithNoName(t *testing.T) {
 }
 
 func TestToCppWithBytes(t *testing.T) {
-	obj := &ir.Object{
+	obj := &ir.NodeObject{
 		Tag: &ir.Tag{Name: "blob"},
 		Fields: []*ir.Field{
-			{Key: "data", Value: &ir.Value{Tag: &ir.Tag{Type: ir.ValueTypeBytes}, Text: "hello"}},
+			{Key: "data", Value: &ir.NodeScalar{Tag: &ir.Tag{Type: ir.ValueTypeBytes}, Text: "hello"}},
 		},
 	}
 
@@ -99,13 +99,13 @@ func TestToCppWithBytes(t *testing.T) {
 }
 
 func TestToCppWithNested(t *testing.T) {
-	obj := &ir.Object{
+	obj := &ir.NodeObject{
 		Tag: &ir.Tag{Name: "order"},
 		Fields: []*ir.Field{
-			{Key: "item", Value: &ir.Object{
+			{Key: "item", Value: &ir.NodeObject{
 				Tag: &ir.Tag{Name: "item"},
 				Fields: []*ir.Field{
-					{Key: "name", Value: &ir.Value{Tag: &ir.Tag{Type: ir.ValueTypeStr}, Text: "widget"}},
+					{Key: "name", Value: &ir.NodeScalar{Tag: &ir.Tag{Type: ir.ValueTypeStr}, Text: "widget"}},
 				},
 			}},
 		},
@@ -123,10 +123,10 @@ func TestToCppWithNested(t *testing.T) {
 }
 
 func TestToCppWithMapType(t *testing.T) {
-	obj := &ir.Object{
+	obj := &ir.NodeObject{
 		Tag: &ir.Tag{Name: "cfg"},
 		Fields: []*ir.Field{
-			{Key: "props", Value: &ir.Value{Tag: &ir.Tag{Type: ir.ValueTypeMap}, Text: ""}},
+			{Key: "props", Value: &ir.NodeScalar{Tag: &ir.Tag{Type: ir.ValueTypeMap}, Text: ""}},
 		},
 	}
 
@@ -142,13 +142,13 @@ func TestToCppWithMapType(t *testing.T) {
 }
 
 func TestToCppArrayNestedObject(t *testing.T) {
-	obj := &ir.Object{
+	obj := &ir.NodeObject{
 		Tag: &ir.Tag{Name: "classroom"},
 		Fields: []*ir.Field{
-			{Key: "students", Value: &ir.Array{Items: []ir.Node{
-				&ir.Object{
+			{Key: "students", Value: &ir.NodeArray{Items: []ir.Node{
+				&ir.NodeObject{
 					Fields: []*ir.Field{
-						{Key: "name", Value: &ir.Value{Tag: &ir.Tag{Type: ir.ValueTypeStr}, Text: "Bob"}},
+						{Key: "name", Value: &ir.NodeScalar{Tag: &ir.Tag{Type: ir.ValueTypeStr}, Text: "Bob"}},
 					},
 				},
 			}}},
@@ -164,7 +164,7 @@ func TestToCppArrayNestedObject(t *testing.T) {
 }
 
 func TestPrintCppStruct(t *testing.T) {
-	val := &ir.Value{
+	val := &ir.NodeScalar{
 		Tag:  &ir.Tag{Name: "name", Type: ir.ValueTypeStr},
 		Text: "hello",
 	}

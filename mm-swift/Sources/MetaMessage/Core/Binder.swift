@@ -9,13 +9,13 @@ public enum MMBindError: Error {
 }
 
 public func bindNode(_ node: Node, to out: AnyObject) throws {
-    guard let obj = node as? MMObject else {
+    guard let obj = node as? NodeObject else {
         throw MMBindError.notAnObject
     }
     try bindObject(obj, to: out)
 }
 
-public func bindObject(_ obj: MMObject, to out: AnyObject) throws {
+public func bindObject(_ obj: NodeObject, to out: AnyObject) throws {
     let mirror = Mirror(reflecting: out)
 
     for field in obj.fields {
@@ -26,10 +26,10 @@ public func bindObject(_ obj: MMObject, to out: AnyObject) throws {
 
         let childValue = field.value
 
-        if let valueNode = childValue as? Value {
+        if let valueNode = childValue as? NodeScalar {
             let boundValue = try extractValue(from: valueNode)
             setProperty(propertyName, value: boundValue, on: out)
-        } else if let childObj = childValue as? MMObject {
+        } else if let childObj = childValue as? NodeObject {
             if childObj.tag?.type == .obj || childObj.tag?.type == .unknown || childObj.tag == nil {
                 if let nestedObject = createNestedInstance(for: propertyName, on: out, mirror: mirror) {
                     try bindObject(childObj, to: nestedObject)
@@ -39,7 +39,7 @@ public func bindObject(_ obj: MMObject, to out: AnyObject) throws {
             }
             let dict = try extractDict(from: childObj)
             setProperty(propertyName, value: dict, on: out)
-        } else if let childArr = childValue as? MMArray {
+        } else if let childArr = childValue as? NodeArray {
             let arr = try extractArray(from: childArr)
             setProperty(propertyName, value: arr, on: out)
         }
@@ -57,7 +57,7 @@ private func findPropertyName(in mirror: Mirror, matching snakeKey: String) -> S
     return nil
 }
 
-private func extractValue(from node: Value) throws -> Any? {
+private func extractValue(from node: NodeScalar) throws -> Any? {
     let tag = node.getTag()
     if tag?.isNull == true {
         return nil
@@ -65,33 +65,33 @@ private func extractValue(from node: Value) throws -> Any? {
     return node.data
 }
 
-private func extractDict(from obj: MMObject) throws -> [String: Any] {
+private func extractDict(from obj: NodeObject) throws -> [String: Any] {
     var result: [String: Any] = [:]
     for field in obj.fields {
-        if let valueNode = field.value as? Value {
+        if let valueNode = field.value as? NodeScalar {
             result[field.key] = valueNode.data ?? NSNull()
-        } else if let childObj = field.value as? MMObject {
+        } else if let childObj = field.value as? NodeObject {
             result[field.key] = try extractDict(from: childObj)
-        } else if let childArr = field.value as? MMArray {
+        } else if let childArr = field.value as? NodeArray {
             result[field.key] = try extractArray(from: childArr)
         }
     }
     return result
 }
 
-private func extractArray(from arr: MMArray) throws -> [Any] {
+private func extractArray(from arr: NodeArray) throws -> [Any] {
     var result: [Any] = []
     for item in arr.items {
-        if let valueNode = item as? Value {
+        if let valueNode = item as? NodeScalar {
             let tag = valueNode.getTag()
             if tag?.isNull == true {
                 result.append(NSNull())
             } else {
                 result.append(valueNode.data ?? NSNull())
             }
-        } else if let childObj = item as? MMObject {
+        } else if let childObj = item as? NodeObject {
             result.append(try extractDict(from: childObj))
-        } else if let childArr = item as? MMArray {
+        } else if let childArr = item as? NodeArray {
             result.append(try extractArray(from: childArr))
         }
     }

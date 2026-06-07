@@ -11,19 +11,19 @@ public static class ReflectMmBinder
         BindTree(tree, target);
     }
 
-    private static void BindTree(IMmTree tree, object target)
+    private static void BindTree(INode tree, object target)
     {
-        if (tree is MmMap map)
+        if (tree is NodeObject map)
         {
             BindMap(map, target);
         }
-        else if (tree is MmScalar scalar)
+        else if (tree is NodeScalar scalar)
         {
             // 处理标量类型
         }
     }
 
-    private static void BindMap(MmMap map, object target)
+    private static void BindMap(NodeObject map, object target)
     {
         var type = target.GetType();
         foreach (var entry in map.Entries)
@@ -73,24 +73,24 @@ public static class ReflectMmBinder
         return result.ToString();
     }
 
-    private static object? ConvertValue(IMmTree tree, Type targetType)
+    private static object? ConvertValue(INode tree, Type targetType)
     {
-        if (tree is MmScalar scalar)
+        if (tree is NodeScalar scalar)
         {
             return ConvertScalar(scalar, targetType);
         }
-        else if (tree is MmArray array)
+        else if (tree is NodeArray array)
         {
             return ConvertArray(array, targetType);
         }
-        else if (tree is MmMap map)
+        else if (tree is NodeObject map)
         {
             return ConvertMap(map, targetType);
         }
         return null;
     }
 
-    private static object? ConvertScalar(MmScalar scalar, Type targetType)
+    private static object? ConvertScalar(NodeScalar scalar, Type targetType)
     {
         if (scalar.Tag.IsNull)
         {
@@ -182,7 +182,7 @@ public static class ReflectMmBinder
         return data;
     }
 
-    private static object? ConvertArray(MmArray array, Type targetType)
+    private static object? ConvertArray(NodeArray array, Type targetType)
     {
         if (targetType.IsArray)
         {
@@ -218,7 +218,7 @@ public static class ReflectMmBinder
         return null;
     }
 
-    private static object? ConvertMap(MmMap map, Type targetType)
+    private static object? ConvertMap(NodeObject map, Type targetType)
     {
         var instance = Activator.CreateInstance(targetType);
         BindMap(map, instance!);

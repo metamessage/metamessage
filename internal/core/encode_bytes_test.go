@@ -83,8 +83,8 @@ func TestEncodeBytes(t *testing.T) {
 
 			bs2, _ := Decode(bs)
 			// fmt.Println("decoded:", Dump(bs2), jsonc.ToJSONC(bs2))
-			if !reflect.DeepEqual(bs2.(*ir.Value).Data, tc.expectedOut) {
-				t.Errorf("Expected output: %v %T, actual output: %v %T", tc.expectedOut, tc.expectedOut, bs2.(*ir.Value).Data, bs2.(*ir.Value).Data)
+			if !reflect.DeepEqual(bs2.(*ir.NodeScalar).Data, tc.expectedOut) {
+				t.Errorf("Expected output: %v %T, actual output: %v %T", tc.expectedOut, tc.expectedOut, bs2.(*ir.NodeScalar).Data, bs2.(*ir.NodeScalar).Data)
 			}
 		})
 	}
@@ -301,14 +301,14 @@ func TestEncodesBytesRepresentation(t *testing.T) {
 				t.Fatalf("decode failed: %v", err)
 			}
 
-			arr, ok := decoded.(*ir.Array)
+			arr, ok := decoded.(*ir.NodeArray)
 			if !ok {
-				t.Fatalf("expected *ir.Array, got %T", decoded)
+				t.Fatalf("expected *ir.NodeArray, got %T", decoded)
 			}
 
 			decodedBytes := make([]byte, len(arr.Items))
 			for i, item := range arr.Items {
-				decodedBytes[i] = item.(*ir.Value).Data.(uint8)
+				decodedBytes[i] = item.(*ir.NodeScalar).Data.(uint8)
 			}
 			if !reflect.DeepEqual(decodedBytes, tc.input) {
 				t.Errorf("value mismatch: expected %v, got %v", tc.input, decodedBytes)
@@ -359,7 +359,7 @@ func TestEncodesLargeBytes(t *testing.T) {
 				t.Fatalf("decode failed: %v", err)
 			}
 
-			decodedBytes := decoded.(*ir.Value).Data.([]byte)
+			decodedBytes := decoded.(*ir.NodeScalar).Data.([]byte)
 			if !reflect.DeepEqual(decodedBytes, tc.input) {
 				t.Errorf("value mismatch for %s: size check failed", tc.name)
 			}
@@ -409,14 +409,14 @@ func TestEncodesUTF8Bytes(t *testing.T) {
 				t.Fatalf("decode failed: %v", err)
 			}
 
-			arr, ok := decoded.(*ir.Array)
+			arr, ok := decoded.(*ir.NodeArray)
 			if !ok {
-				t.Fatalf("expected *ir.Array, got %T", decoded)
+				t.Fatalf("expected *ir.NodeArray, got %T", decoded)
 			}
 
 			decodedBytes := make([]byte, len(arr.Items))
 			for i, item := range arr.Items {
-				decodedBytes[i] = item.(*ir.Value).Data.(uint8)
+				decodedBytes[i] = item.(*ir.NodeScalar).Data.(uint8)
 			}
 			if !reflect.DeepEqual(decodedBytes, tc.input) {
 				t.Errorf("value mismatch: expected %s, got %s", string(tc.input), string(decodedBytes))

@@ -47,7 +47,7 @@ func ToKotlin(n ir.Node) string {
 	}
 
 	topName := "Obj"
-	if obj, ok := n.(*ir.Object); ok && obj.Tag != nil && obj.Tag.Name != "" {
+	if obj, ok := n.(*ir.NodeObject); ok && obj.Tag != nil && obj.Tag.Name != "" {
 		topName = exportKotlinClassName(obj.Tag.Name)
 	}
 
@@ -105,18 +105,18 @@ func collectKotlinImportsRec(n ir.Node, imports map[string]struct{}) {
 	}
 
 	switch v := n.(type) {
-	case *ir.Value:
+	case *ir.NodeScalar:
 		if v.Tag != nil {
 			addKotlinImportForType(v.Tag.Type, imports)
 		}
-	case *ir.Array:
+	case *ir.NodeArray:
 		if v.Tag != nil && v.Tag.ChildType != ir.ValueTypeUnknown {
 			addKotlinImportForType(v.Tag.ChildType, imports)
 		}
 		for _, item := range v.Items {
 			collectKotlinImportsRec(item, imports)
 		}
-	case *ir.Object:
+	case *ir.NodeObject:
 		for _, f := range v.Fields {
 			if f != nil {
 				collectKotlinImportsRec(f.Value, imports)
@@ -140,18 +140,18 @@ func addKotlinImportForType(typ ir.ValueType, imports map[string]struct{}) {
 
 func getKotlinTypeForField(f *ir.Field) string {
 	switch v := f.Value.(type) {
-	case *ir.Value:
+	case *ir.NodeScalar:
 		return getKotlinType(v)
-	case *ir.Object:
+	case *ir.NodeObject:
 		return getKotlinObjectType(f.Key, v)
-	case *ir.Array:
+	case *ir.NodeArray:
 		return getKotlinArrayType(f.Key, v)
 	default:
 		return "Any"
 	}
 }
 
-func getKotlinType(v *ir.Value) string {
+func getKotlinType(v *ir.NodeScalar) string {
 	if v != nil && v.Tag != nil {
 		if t, ok := kotlinTypeMap[v.Tag.Type]; ok {
 			return t
@@ -160,14 +160,14 @@ func getKotlinType(v *ir.Value) string {
 	return "Any"
 }
 
-func getKotlinObjectType(fieldKey string, obj *ir.Object) string {
+func getKotlinObjectType(fieldKey string, obj *ir.NodeObject) string {
 	if obj != nil && obj.Tag != nil && obj.Tag.Name != "" {
 		return exportKotlinClassName(obj.Tag.Name)
 	}
 	return exportKotlinClassName(fieldKey)
 }
 
-func getKotlinArrayType(fieldKey string, a *ir.Array) string {
+func getKotlinArrayType(fieldKey string, a *ir.NodeArray) string {
 	if a == nil {
 		return "List<Any>"
 	}
@@ -180,9 +180,9 @@ func getKotlinArrayType(fieldKey string, a *ir.Array) string {
 
 	if len(a.Items) > 0 {
 		switch item := a.Items[0].(type) {
-		case *ir.Object:
+		case *ir.NodeObject:
 			return "List<" + getKotlinObjectType(fieldKey, item) + ">"
-		case *ir.Value:
+		case *ir.NodeScalar:
 			if item.Tag != nil {
 				if t, ok := kotlinTypeMap[item.Tag.Type]; ok {
 					return "List<" + t + ">"
@@ -196,7 +196,7 @@ func getKotlinArrayType(fieldKey string, a *ir.Array) string {
 
 func getKotlinDefaultValue(node ir.Node) string {
 	switch v := node.(type) {
-	case *ir.Value:
+	case *ir.NodeScalar:
 		if v.Tag != nil {
 			switch v.Tag.Type {
 			case ir.ValueTypeBool:
@@ -217,9 +217,9 @@ func getKotlinDefaultValue(node ir.Node) string {
 			}
 		}
 		return "null"
-	case *ir.Array:
+	case *ir.NodeArray:
 		return "emptyList()"
-	case *ir.Object:
+	case *ir.NodeObject:
 		return "null"
 	default:
 		return "null"
@@ -227,7 +227,7 @@ func getKotlinDefaultValue(node ir.Node) string {
 }
 
 func genKotlinFields(b *strings.Builder, n ir.Node, indent int) {
-	obj, ok := n.(*ir.Object)
+	obj, ok := n.(*ir.NodeObject)
 	if !ok {
 		return
 	}
@@ -259,7 +259,7 @@ func genKotlinFields(b *strings.Builder, n ir.Node, indent int) {
 }
 
 func genKotlinNestedClasses(b *strings.Builder, n ir.Node, indent int) {
-	obj, ok := n.(*ir.Object)
+	obj, ok := n.(*ir.NodeObject)
 	if !ok {
 		return
 	}
@@ -270,7 +270,7 @@ func genKotlinNestedClasses(b *strings.Builder, n ir.Node, indent int) {
 		}
 
 		switch v := f.Value.(type) {
-		case *ir.Object:
+		case *ir.NodeObject:
 			className := getKotlinObjectType(f.Key, v)
 			b.WriteString("\n")
 			WriteIndent(b, indent)
@@ -281,7 +281,7 @@ func genKotlinNestedClasses(b *strings.Builder, n ir.Node, indent int) {
 			genKotlinNestedClasses(b, v, indent+1)
 			WriteIndent(b, indent)
 			b.WriteString("}\n")
-		case *ir.Array:
+		case *ir.NodeArray:
 			if nestedObj := findFirstObjectInArray(v); nestedObj != nil {
 				className := getKotlinObjectType(f.Key, nestedObj)
 				b.WriteString("\n")
@@ -328,7 +328,7 @@ func exportKotlinInstanceName(name string) string {
 }
 
 func genKotlinObjectAssignments(b *strings.Builder, varName string, n ir.Node, indent int) {
-	obj, ok := n.(*ir.Object)
+	obj, ok := n.(*ir.NodeObject)
 	if !ok {
 		return
 	}
@@ -339,13 +339,13 @@ func genKotlinObjectAssignments(b *strings.Builder, varName string, n ir.Node, i
 		}
 		prop := varName + "." + exportKotlinFieldName(f.Key)
 		switch v := f.Value.(type) {
-		case *ir.Value:
+		case *ir.NodeScalar:
 			WriteIndent(b, indent)
 			b.WriteString(prop)
 			b.WriteString(" = ")
 			b.WriteString(formatKotlinValueLiteral(v))
 			b.WriteString("\n")
-		case *ir.Object:
+		case *ir.NodeObject:
 			className := getKotlinObjectType(f.Key, v)
 			WriteIndent(b, indent)
 			b.WriteString(prop)
@@ -353,7 +353,7 @@ func genKotlinObjectAssignments(b *strings.Builder, varName string, n ir.Node, i
 			b.WriteString(className)
 			b.WriteString("()\n")
 			genKotlinObjectAssignments(b, prop, v, indent)
-		case *ir.Array:
+		case *ir.NodeArray:
 			WriteIndent(b, indent)
 			b.WriteString(prop)
 			b.WriteString(" = ")
@@ -367,7 +367,7 @@ func genKotlinObjectAssignments(b *strings.Builder, varName string, n ir.Node, i
 	}
 }
 
-func genKotlinArrayLiteral(a *ir.Array, fieldKey string, indent int) string {
+func genKotlinArrayLiteral(a *ir.NodeArray, fieldKey string, indent int) string {
 	var sb strings.Builder
 	if a == nil || len(a.Items) == 0 {
 		sb.WriteString("listOf()")
@@ -378,9 +378,9 @@ func genKotlinArrayLiteral(a *ir.Array, fieldKey string, indent int) string {
 	for i, item := range a.Items {
 		WriteIndent(&sb, indent)
 		switch v := item.(type) {
-		case *ir.Value:
+		case *ir.NodeScalar:
 			sb.WriteString(formatKotlinValueLiteral(v))
-		case *ir.Object:
+		case *ir.NodeObject:
 			sb.WriteString(genKotlinObjectLiteral(v, fieldKey, indent+1))
 		default:
 			sb.WriteString("null")
@@ -395,7 +395,7 @@ func genKotlinArrayLiteral(a *ir.Array, fieldKey string, indent int) string {
 	return sb.String()
 }
 
-func genKotlinObjectLiteral(obj *ir.Object, fieldKey string, indent int) string {
+func genKotlinObjectLiteral(obj *ir.NodeObject, fieldKey string, indent int) string {
 	var sb strings.Builder
 	className := getKotlinObjectType(fieldKey, obj)
 	sb.WriteString(className)
@@ -408,11 +408,11 @@ func genKotlinObjectLiteral(obj *ir.Object, fieldKey string, indent int) string 
 		sb.WriteString(exportKotlinFieldName(f.Key))
 		sb.WriteString(" = ")
 		switch v := f.Value.(type) {
-		case *ir.Value:
+		case *ir.NodeScalar:
 			sb.WriteString(formatKotlinValueLiteral(v))
-		case *ir.Object:
+		case *ir.NodeObject:
 			sb.WriteString(genKotlinObjectLiteral(v, f.Key, indent+1))
-		case *ir.Array:
+		case *ir.NodeArray:
 			sb.WriteString(genKotlinArrayLiteral(v, f.Key, indent+1))
 		default:
 			sb.WriteString("null")
@@ -424,7 +424,7 @@ func genKotlinObjectLiteral(obj *ir.Object, fieldKey string, indent int) string 
 	return sb.String()
 }
 
-func formatKotlinValueLiteral(v *ir.Value) string {
+func formatKotlinValueLiteral(v *ir.NodeScalar) string {
 	if v == nil {
 		return "null"
 	}

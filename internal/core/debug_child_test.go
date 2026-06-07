@@ -16,13 +16,13 @@ func TestDebugChildTags(t *testing.T) {
 		t.Fatal("decode error:", err)
 	}
 
-	obj := node.(*ir.Object)
+	obj := node.(*ir.NodeObject)
 	for _, f := range obj.Fields {
 		if f.Key == "datetime_arr" {
-			arr := f.Value.(*ir.Array)
+			arr := f.Value.(*ir.NodeArray)
 			fmt.Printf("datetime_arr: tag type=%v, child_type=%v, isInherit=%v\n", arr.Tag.Type, arr.Tag.ChildType, arr.Tag.IsInherit)
 			for i, item := range arr.Items {
-				v := item.(*ir.Value)
+				v := item.(*ir.NodeScalar)
 				fmt.Printf("  child[%d]: type=%v, data=%T(%v), text=%q, isInherit=%v\n",
 					i, v.Tag.Type, v.Data, v.Data, v.Text, v.Tag.IsInherit)
 			}
@@ -35,13 +35,13 @@ func TestDebugChildTags(t *testing.T) {
   // mm: child_type=datetime
   "datetime_arr": ["2024-01-01 00:00:00", "2024-06-15 12:30:00"]
 }`)
-	obj2 := node2.(*ir.Object)
+	obj2 := node2.(*ir.NodeObject)
 	for _, f := range obj2.Fields {
 		if f.Key == "datetime_arr" {
-			arr := f.Value.(*ir.Array)
+			arr := f.Value.(*ir.NodeArray)
 			fmt.Printf("Parsed datetime_arr: tag type=%v, child_type=%v, isInherit=%v\n", arr.Tag.Type, arr.Tag.ChildType, arr.Tag.IsInherit)
 			for i, item := range arr.Items {
-				v := item.(*ir.Value)
+				v := item.(*ir.NodeScalar)
 				fmt.Printf("  Parsed child[%d]: type=%v, child_type=%v, data=%T(%v), text=%q, isInherit=%v\n",
 					i, v.Tag.Type, v.Tag.ChildType, v.Data, v.Data, v.Text, v.Tag.IsInherit)
 				fmt.Printf("  Child tag Bytes() = %v\n", v.Tag.Bytes())
@@ -55,13 +55,13 @@ func TestDebugChildTags(t *testing.T) {
 	fmt.Printf("Encoded hex: %x\n", bs)
 
 	decoded, _ := Decode(bs)
-	obj3 := decoded.(*ir.Object)
+	obj3 := decoded.(*ir.NodeObject)
 	for _, f := range obj3.Fields {
 		if f.Key == "datetime_arr" {
-			arr := f.Value.(*ir.Array)
+			arr := f.Value.(*ir.NodeArray)
 			fmt.Printf("Decoded datetime_arr: tag type=%v, child_type=%v, isInherit=%v\n", arr.Tag.Type, arr.Tag.ChildType, arr.Tag.IsInherit)
 			for i, item := range arr.Items {
-				v := item.(*ir.Value)
+				v := item.(*ir.NodeScalar)
 				fmt.Printf("  Decoded child[%d]: type=%v, child_type=%v, data=%T(%v), text=%q, isInherit=%v\n",
 					i, v.Tag.Type, v.Tag.ChildType, v.Data, v.Data, v.Text, v.Tag.IsInherit)
 			}
@@ -77,9 +77,9 @@ func TestDebugMimeTag(t *testing.T) {
 		t.Fatal("decode error:", err)
 	}
 
-	obj := node.(*ir.Object)
+	obj := node.(*ir.NodeObject)
 	for _, f := range obj.Fields {
-		v := f.Value.(*ir.Value)
+		v := f.Value.(*ir.NodeScalar)
 		fmt.Printf("%s: type=%v, data=%T(%v), text=%q\n", f.Key, v.Tag.Type, v.Data, v.Data, v.Text)
 	}
 }

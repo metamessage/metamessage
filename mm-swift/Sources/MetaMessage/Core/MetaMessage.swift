@@ -342,11 +342,11 @@ public enum MetaMessage {
 
     private static func encodeNode(_ node: Node, with encoder: Encoder) throws -> Data {
         switch node {
-        case let obj as MMObject:
+        case let obj as NodeObject:
             encoder.encodeNodeObject(obj)
-        case let arr as MMArray:
+        case let arr as NodeArray:
             encoder.encodeNodeArray(arr)
-        case let val as Value:
+        case let val as NodeScalar:
             encoder.encodeNodeValue(val)
         default:
             throw MMError.unsupportedType

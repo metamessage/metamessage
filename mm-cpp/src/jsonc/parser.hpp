@@ -45,11 +45,11 @@ public:
     if (!node)
       return;
     switch (node->getType()) {
-    case ir::NodeType::Object:
-      applyTagsToObject(std::static_pointer_cast<ir::Object>(node));
+    case ir::NodeType::NodeObject:
+      applyTagsToObject(std::static_pointer_cast<ir::NodeObject>(node));
       break;
-    case ir::NodeType::Array:
-      applyTagsToArray(std::static_pointer_cast<ir::Array>(node));
+    case ir::NodeType::NodeArray:
+      applyTagsToArray(std::static_pointer_cast<ir::NodeArray>(node));
       break;
     default:
       break;
@@ -100,13 +100,13 @@ private:
     }
   }
 
-  void applyTagsToObject(std::shared_ptr<ir::Object> obj) {
+  void applyTagsToObject(std::shared_ptr<ir::NodeObject> obj) {
     for (auto &field : obj->fields) {
       applyTags(field.value);
     }
   }
 
-  void applyTagsToArray(std::shared_ptr<ir::Array> arr) {
+  void applyTagsToArray(std::shared_ptr<ir::NodeArray> arr) {
     auto *arrTag = arr->getTag();
     for (auto &item : arr->items) {
       auto *childTag = item->getTag();
@@ -152,7 +152,7 @@ private:
     auto &tok = tokens_[pos_];
     ++pos_;
 
-    auto val = ir::makeValue();
+    auto val = ir::makeNodeScalar();
     auto *tag = val->getTag();
     val->text = tok.literal;
 
@@ -185,7 +185,7 @@ private:
 
   std::shared_ptr<ir::Node> parseObject() {
     ++pos_;
-    auto obj = ir::makeObject();
+    auto obj = ir::makeNodeObject();
 
     // Save tag that was set before { (object-level tag from outer scope)
     auto objTag = pendingTag_;
@@ -246,7 +246,7 @@ private:
 
   std::shared_ptr<ir::Node> parseArray() {
     ++pos_;
-    auto arr = ir::makeArray();
+    auto arr = ir::makeNodeArray();
     skipComments();
 
     auto outerTag = pendingTag_;

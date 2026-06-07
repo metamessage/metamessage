@@ -2,7 +2,7 @@ package io.github.metamessage.core
 
 import io.github.metamessage.MM
 import io.github.metamessage.ir.*
-import io.github.metamessage.ir.Array as AstArray
+import io.github.metamessage.ir.NodeArray as AstArray
 import java.math.BigInteger
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -20,71 +20,71 @@ class ValueToNodeTest {
         val user = SimpleUser()
         val encoded = Encoder.encode(user)
         val decoded = Decoder().decode(encoded)
-        assertTrue(decoded is Object)
-        val obj = decoded as Object
+        assertTrue(decoded is NodeObject)
+        val obj = decoded as NodeObject
         assertEquals(2, obj.fields.size)
         val nameField = obj.fields.find { it.key == "name" }
         assertNotNull(nameField)
-        assertEquals("Alice", (nameField!!.value as Value).data)
+        assertEquals("Alice", (nameField!!.value as NodeScalar).data)
         val ageField = obj.fields.find { it.key == "age" }
         assertNotNull(ageField)
-        assertEquals(30L, ((ageField!!.value as Value).data as Number).toLong())
+        assertEquals(30L, ((ageField!!.value as NodeScalar).data as Number).toLong())
     }
 
     @Test
     fun nullToNode() {
         val node = valueToNode(null, Tag.empty().apply { type = ValueType.I }, "")
-        assertTrue(node is Value)
-        assertNull((node as Value).data)
+        assertTrue(node is NodeScalar)
+        assertNull((node as NodeScalar).data)
     }
 
     @Test
     fun stringToNode() {
         val node = valueToNode("hello", Tag.empty().apply { type = ValueType.STR }, "")
-        assertTrue(node is Value)
-        assertEquals("hello", (node as Value).data)
+        assertTrue(node is NodeScalar)
+        assertEquals("hello", (node as NodeScalar).data)
     }
 
     @Test
     fun intToNode() {
         val node = valueToNode(42, Tag.empty().apply { type = ValueType.I }, "")
-        assertTrue(node is Value)
-        assertEquals(42L, ((node as Value).data as Number).toLong())
+        assertTrue(node is NodeScalar)
+        assertEquals(42L, ((node as NodeScalar).data as Number).toLong())
     }
 
     @Test
     fun longToNode() {
         val node = valueToNode(1234567890L, Tag.empty().apply { type = ValueType.I64 }, "")
-        assertTrue(node is Value)
-        assertEquals(1234567890L, (node as Value).data)
+        assertTrue(node is NodeScalar)
+        assertEquals(1234567890L, (node as NodeScalar).data)
     }
 
     @Test
     fun booleanTrueToNode() {
         val node = valueToNode(true, Tag.empty().apply { type = ValueType.BOOL }, "")
-        assertTrue(node is Value)
-        assertEquals(true, (node as Value).data)
+        assertTrue(node is NodeScalar)
+        assertEquals(true, (node as NodeScalar).data)
     }
 
     @Test
     fun booleanFalseToNode() {
         val node = valueToNode(false, Tag.empty().apply { type = ValueType.BOOL }, "")
-        assertTrue(node is Value)
-        assertEquals(false, (node as Value).data)
+        assertTrue(node is NodeScalar)
+        assertEquals(false, (node as NodeScalar).data)
     }
 
     @Test
     fun floatToNode() {
         val node = valueToNode(3.14f, Tag.empty().apply { type = ValueType.F32 }, "")
-        assertTrue(node is Value)
-        assertTrue((node as Value).data is Float)
+        assertTrue(node is NodeScalar)
+        assertTrue((node as NodeScalar).data is Float)
     }
 
     @Test
     fun doubleToNode() {
         val node = valueToNode(3.141592653589793, Tag.empty().apply { type = ValueType.F64 }, "")
-        assertTrue(node is Value)
-        assertTrue((node as Value).data is Double)
+        assertTrue(node is NodeScalar)
+        assertTrue((node as NodeScalar).data is Double)
         assertEquals(3.141592653589793, node.data as Double, 0.0000001)
     }
 
@@ -92,62 +92,62 @@ class ValueToNodeTest {
     fun byteArrayToNode() {
         val data = byteArrayOf(0x12, 0x34, 0x56)
         val node = valueToNode(data, Tag.empty().apply { type = ValueType.BYTES }, "")
-        assertTrue(node is Value)
-        assertArrayEquals(data, (node as Value).data as ByteArray)
+        assertTrue(node is NodeScalar)
+        assertArrayEquals(data, (node as NodeScalar).data as ByteArray)
     }
 
     @Test
     fun localDateTimeToNode() {
         val dt = LocalDateTime.of(2024, 6, 1, 12, 0, 0)
         val node = valueToNode(dt, Tag.empty().apply { type = ValueType.DATETIME }, "")
-        assertTrue(node is Value)
-        assertEquals(dt, (node as Value).data)
+        assertTrue(node is NodeScalar)
+        assertEquals(dt, (node as NodeScalar).data)
     }
 
     @Test
     fun localDateToNode() {
         val d = LocalDate.of(2024, 12, 31)
         val node = valueToNode(d, Tag.empty().apply { type = ValueType.DATE }, "")
-        assertTrue(node is Value)
-        assertEquals(d, (node as Value).data)
+        assertTrue(node is NodeScalar)
+        assertEquals(d, (node as NodeScalar).data)
     }
 
     @Test
     fun localTimeToNode() {
         val t = LocalTime.of(23, 59, 59)
         val node = valueToNode(t, Tag.empty().apply { type = ValueType.TIME }, "")
-        assertTrue(node is Value)
-        assertEquals(t, (node as Value).data)
+        assertTrue(node is NodeScalar)
+        assertEquals(t, (node as NodeScalar).data)
     }
 
     @Test
     fun bigIntegerToNode() {
         val bi = BigInteger("123456789012345678901234567890")
         val node = valueToNode(bi, Tag.empty().apply { type = ValueType.BIGINT }, "")
-        assertTrue(node is Value)
-        assertEquals(bi, (node as Value).data)
+        assertTrue(node is NodeScalar)
+        assertEquals(bi, (node as NodeScalar).data)
     }
 
     @Test
     fun uuidToNode() {
         val uuid = UUID.randomUUID()
         val node = valueToNode(uuid, Tag.empty().apply { type = ValueType.UUID }, "")
-        assertTrue(node is Value)
-        assertTrue((node as Value).data is ByteArray)
+        assertTrue(node is NodeScalar)
+        assertTrue((node as NodeScalar).data is ByteArray)
     }
 
     @Test
     fun byteToNode() {
         val node = valueToNode(42.toByte(), Tag.empty().apply { type = ValueType.I8 }, "")
-        assertTrue(node is Value)
-        assertEquals(42L, ((node as Value).data as Number).toLong())
+        assertTrue(node is NodeScalar)
+        assertEquals(42L, ((node as NodeScalar).data as Number).toLong())
     }
 
     @Test
     fun shortToNode() {
         val node = valueToNode(1234.toShort(), Tag.empty().apply { type = ValueType.I16 }, "")
-        assertTrue(node is Value)
-        assertEquals(1234L, ((node as Value).data as Number).toLong())
+        assertTrue(node is NodeScalar)
+        assertEquals(1234L, ((node as NodeScalar).data as Number).toLong())
     }
 
     @Test
@@ -181,7 +181,7 @@ class ValueToNodeTest {
         val map = mapOf("a" to 1, "b" to 2)
         val tag = Tag.empty().apply { type = ValueType.MAP }
         val node = valueToNode(map, tag, "")
-        assertTrue(node is Object)
+        assertTrue(node is NodeObject)
     }
 
     @Test
@@ -190,8 +190,8 @@ class ValueToNodeTest {
         val obj = Nullables()
         val encoded = Encoder.encode(obj)
         val decoded = Decoder().decode(encoded)
-        assertTrue(decoded is Object)
-        val o = decoded as Object
+        assertTrue(decoded is NodeObject)
+        val o = decoded as NodeObject
         assertTrue(o.fields.size >= 2)
     }
 
@@ -205,8 +205,8 @@ class ValueToNodeTest {
         val event = Event()
         val encoded = Encoder.encode(event)
         val decoded = Decoder().decode(encoded)
-        assertTrue(decoded is Object)
-        val fields = (decoded as Object).fields
+        assertTrue(decoded is NodeObject)
+        val fields = (decoded as NodeObject).fields
         assertTrue(fields.isNotEmpty())
     }
 
@@ -223,8 +223,8 @@ class ValueToNodeTest {
                 )
         for ((vt, _) in values) {
             val node = nilToNode(vt)
-            assertTrue(node is Value)
-            assertNull((node as Value).data)
+            assertTrue(node is NodeScalar)
+            assertNull((node as NodeScalar).data)
             assertEquals(vt, node.tag?.type)
         }
     }

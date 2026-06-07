@@ -13,7 +13,7 @@ use crate::core::prefix::{
     PREFIX_SIMPLE, PREFIX_STRING, PREFIX_TAG,
 };
 use crate::core::simple_value::SimpleValue;
-use crate::ir::ast::{Array, Field, Node, Object, Value, ValueData};
+use crate::ir::ast::{Field, Node, NodeArray, NodeObject, NodeScalar, ValueData};
 use crate::ir::mime::mime_to_str;
 use crate::ir::tag::Tag;
 use crate::ir::ValueType;
@@ -116,7 +116,7 @@ impl Decoder {
                 Node::Value(v) => (v.data.clone(), v.text.clone()),
                 _ => (ValueData::Null, String::new()),
             };
-            Ok(Node::Value(Value {
+            Ok(Node::Value(NodeScalar {
                 data,
                 text,
                 path: String::new(),
@@ -451,7 +451,7 @@ impl Decoder {
             _ => (ValueData::String(String::new()), String::new()),
         };
 
-        Ok(Node::Value(Value {
+        Ok(Node::Value(NodeScalar {
             data,
             text,
             path: String::new(),
@@ -549,7 +549,7 @@ impl Decoder {
             }
         };
 
-        Ok(Node::Value(Value {
+        Ok(Node::Value(NodeScalar {
             data,
             text,
             path: String::new(),
@@ -574,7 +574,7 @@ impl Decoder {
         let data = ValueData::Int(-(v as i64));
         let text = format!("-{}", v);
 
-        Ok(Node::Value(Value {
+        Ok(Node::Value(NodeScalar {
             data,
             text,
             path: String::new(),
@@ -613,7 +613,7 @@ impl Decoder {
             v
         };
 
-        Ok(Node::Value(Value {
+        Ok(Node::Value(NodeScalar {
             data: ValueData::Float(v),
             text: ryu::Buffer::new().format_finite(v).to_string(),
             path: String::new(),
@@ -638,7 +638,7 @@ impl Decoder {
             String::new()
         };
 
-        Ok(Node::Value(Value {
+        Ok(Node::Value(NodeScalar {
             data: ValueData::String(s.clone()),
             text: s,
             path: String::new(),
@@ -685,7 +685,7 @@ impl Decoder {
             }
         };
 
-        Ok(Node::Value(Value {
+        Ok(Node::Value(NodeScalar {
             data: ValueData::Bytes(bytes.clone()),
             text,
             path: String::new(),
@@ -745,7 +745,7 @@ impl Decoder {
             items.push(item);
         }
 
-        Ok(Node::Array(Array {
+        Ok(Node::Array(NodeArray {
             items,
             path: String::new(),
             tag: Some(tag.clone()),
@@ -793,7 +793,7 @@ impl Decoder {
             fields.push(Field { key, value });
         }
 
-        Ok(Node::Object(Object {
+        Ok(Node::Object(NodeObject {
             fields,
             path: String::new(),
             tag: Some(tag.clone()),

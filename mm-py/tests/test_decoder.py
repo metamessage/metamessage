@@ -8,7 +8,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 from metamessage.core.encoder import Encoder
 from metamessage.core.decoder import Decoder
 from metamessage.ir.tag import Tag, ValueType
-from metamessage.ir.ast import Obj, Arr, Val, Field
+from metamessage.ir.ast import NodeObject, Arr, NodeScalar, Field
 
 
 def test_decode_bool():
@@ -86,9 +86,9 @@ def test_decode_array():
     
     # [1, 2, 3]
     arr = Arr(items=[
-        Val(1, '1', Tag(type=ValueType.I)),
-        Val(2, '2', Tag(type=ValueType.I)),
-        Val(3, '3', Tag(type=ValueType.I)),
+        NodeScalar(1, '1', Tag(type=ValueType.I)),
+        NodeScalar(2, '2', Tag(type=ValueType.I)),
+        NodeScalar(3, '3', Tag(type=ValueType.I)),
     ])
     b = enc.encode(arr)
     result = dec(b).decode()
@@ -106,16 +106,16 @@ def test_decode_object():
     enc = Encoder()
     dec = Decoder
     
-    obj = Obj(fields=[
-        Field(key='name', value=Val('Alice', 'Alice', Tag(type=ValueType.Str))),
-        Field(key='age', value=Val(30, '30', Tag(type=ValueType.I))),
+    obj = NodeObject(fields=[
+        Field(key='name', value=NodeScalar('Alice', 'Alice', Tag(type=ValueType.Str))),
+        Field(key='age', value=NodeScalar(30, '30', Tag(type=ValueType.I))),
     ])
     b = enc.encode(obj)
     result = dec(b).decode()
     assert result == {'name': 'Alice', 'age': 30}
     
     # Empty object
-    obj = Obj(fields=[])
+    obj = NodeObject(fields=[])
     b = enc.encode(obj)
     result = dec(b).decode()
     assert result == {}
@@ -126,12 +126,12 @@ def test_decode_nested():
     enc = Encoder()
     dec = Decoder
     
-    nested = Obj(fields=[
-        Field(key='user', value=Obj(fields=[
-            Field(key='name', value=Val('Bob', 'Bob', Tag(type=ValueType.Str))),
+    nested = NodeObject(fields=[
+        Field(key='user', value=NodeObject(fields=[
+            Field(key='name', value=NodeScalar('Bob', 'Bob', Tag(type=ValueType.Str))),
             Field(key='scores', value=Arr(items=[
-                Val(10, '10', Tag(type=ValueType.I)),
-                Val(20, '20', Tag(type=ValueType.I)),
+                NodeScalar(10, '10', Tag(type=ValueType.I)),
+                NodeScalar(20, '20', Tag(type=ValueType.I)),
             ])),
         ])),
     ])
@@ -170,7 +170,7 @@ def test_empty_structures():
         (0, Tag(type=ValueType.I)),
         (True, Tag(type=ValueType.Bool)),
     ]:
-        v = Val(val, str(val), tag)
+        v = NodeScalar(val, str(val), tag)
         b = enc.encode(v)
         result = dec(b).decode()
         assert result == val or (isinstance(result, float) and result == float(val))

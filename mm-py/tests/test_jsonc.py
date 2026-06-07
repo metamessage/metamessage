@@ -110,10 +110,10 @@ def test_roundtrip_keeps_structure():
 def test_to_jsonc():
     """Test JSONC generation."""
     from metamessage.ir.tag import Tag, ValueType
-    from metamessage.ir.ast import Obj, Arr, Val, Field
+    from metamessage.ir.ast import NodeObject, Arr, NodeScalar, Field
     
-    obj = Obj(fields=[
-        Field(key='name', value=Val('Alice', 'Alice', Tag(type=ValueType.Str))),
+    obj = NodeObject(fields=[
+        Field(key='name', value=NodeScalar('Alice', 'Alice', Tag(type=ValueType.Str))),
     ])
     jsonc_out = to_jsonc(obj)
     # Should contain the key
@@ -143,7 +143,7 @@ def test_parse_complex_jsonc():
 
 def test_parse_with_inferred_types():
     """Test that type tags for inferred types (str, int, bool, f64, obj) are omitted in output."""
-    from metamessage.ir.ast import Obj, Field
+    from metamessage.ir.ast import NodeObject, Field
     jsonc = '''{
         "id": 123,
         "name": "test",
@@ -164,12 +164,12 @@ def test_parse_with_inferred_types():
 def test_null_output_has_default():
     """Test that null values output as default values with is_null comment."""
     from metamessage.ir.tag import Tag, ValueType
-    from metamessage.ir.ast import Val, Obj, Field
+    from metamessage.ir.ast import NodeScalar, NodeObject, Field
     
-    obj = Obj(fields=[
-        Field(key='s', value=Val(None, 'null', Tag(type=ValueType.Str, is_null=True))),
-        Field(key='n', value=Val(None, 'null', Tag(type=ValueType.I, is_null=True))),
-        Field(key='b', value=Val(None, 'null', Tag(type=ValueType.Bool, is_null=True))),
+    obj = NodeObject(fields=[
+        Field(key='s', value=NodeScalar(None, 'null', Tag(type=ValueType.Str, is_null=True))),
+        Field(key='n', value=NodeScalar(None, 'null', Tag(type=ValueType.I, is_null=True))),
+        Field(key='b', value=NodeScalar(None, 'null', Tag(type=ValueType.Bool, is_null=True))),
     ])
     jsonc_out = to_jsonc(obj)
     print(f'Null output:\n{jsonc_out}')

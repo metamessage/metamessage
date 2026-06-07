@@ -8,7 +8,7 @@ from typing import Any, List, Optional
 from dataclasses import dataclass
 
 from ..ir.tag import Tag, ValueType, mm_tag, MergeTag, NewTag
-from ..ir.ast import Obj, Arr, Val, Field, Node
+from ..ir.ast import NodeObject, Arr, NodeScalar, Field, Node
 from ..ir.validator import MmValidator
 
 
@@ -259,7 +259,7 @@ class Parser:
         else:
             return self._parse_value(path, tok.line)
 
-    def _parse_object(self, anchor_line: int, path: str) -> Obj:
+    def _parse_object(self, anchor_line: int, path: str) -> NodeObject:
         self.next()  # consume {
         self.depth += 1
 
@@ -307,7 +307,7 @@ class Parser:
             self.next()
 
         self.depth -= 1
-        return Obj(fields=fields, tag=tag or NewTag(), path=path)
+        return NodeObject(fields=fields, tag=tag or NewTag(), path=path)
 
     def _parse_array(self, anchor_line: int, path: str) -> Arr:
         self.next()  # consume [
@@ -363,7 +363,7 @@ class Parser:
         else:
             return Arr(items=items, tag=tag or NewTag(), path=path)
 
-    def _parse_value(self, path: str, anchor_line: int) -> Val:
+    def _parse_value(self, path: str, anchor_line: int) -> NodeScalar:
         tag = self._consume_comments_for(anchor_line)
         tok = self.next()
 
@@ -373,23 +373,23 @@ class Parser:
         if tok.type == TOKEN_STRING:
             if tag.type == ValueType.Unknown:
                 tag.type = ValueType.Str
-            return Val(data=tok.literal, text=str(tok.literal), tag=tag, path=path)
+            return NodeScalar(data=tok.literal, text=str(tok.literal), tag=tag, path=path)
         elif tok.type == TOKEN_NUMBER:
             if tag.type == ValueType.Unknown:
                 tag.type = ValueType.F64 if isinstance(tok.literal, float) else ValueType.I
-            return Val(data=tok.literal, text=str(tok.literal), tag=tag, path=path)
+            return NodeScalar(data=tok.literal, text=str(tok.literal), tag=tag, path=path)
         elif tok.type == TOKEN_TRUE:
             if tag.type == ValueType.Unknown:
                 tag.type = ValueType.Bool
-            return Val(data=True, text="true", tag=tag, path=path)
+            return NodeScalar(data=True, text="true", tag=tag, path=path)
         elif tok.type == TOKEN_FALSE:
             if tag.type == ValueType.Unknown:
                 tag.type = ValueType.Bool
-            return Val(data=False, text="false", tag=tag, path=path)
+            return NodeScalar(data=False, text="false", tag=tag, path=path)
         elif tok.type == TOKEN_NULL:
             raise Exception("null is not supported")
         else:
-            return Val(data=None, text="", tag=tag, path=path)
+            return NodeScalar(data=None, text="", tag=tag, path=path)
 
 
 # ===== Public API =====
@@ -586,15 +586,15 @@ def write_leading_comments(b: list, tag, indent: int):
 
 
 def write_node_jsonc(b: list, n: Node, indent: int):
-    if isinstance(n, Val):
+    if isinstance(n, NodeScalar):
         write_value_jsonc(b, n)
-    elif isinstance(n, Obj):
+    elif isinstance(n, NodeObject):
         write_object_jsonc(b, n, indent)
     elif isinstance(n, Arr):
         write_array_jsonc(b, n, indent)
 
 
-def write_object_jsonc(b: list, o: Obj, indent: int):
+def write_object_jsonc(b: list, o: NodeObject, indent: int):
     b.append("{\n")
     for f in o.fields:
         write_leading_comments(b, f.value.get_tag(), indent + 1)

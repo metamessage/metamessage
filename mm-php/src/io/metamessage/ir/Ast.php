@@ -64,7 +64,7 @@ class Field
     }
 }
 
-class Object_ implements Node
+class NodeObject implements Node
 {
     public array $Fields = [];
     public ?Tag $Tag = null;
@@ -91,7 +91,7 @@ class Object_ implements Node
     }
 }
 
-class Array_ implements Node
+class NodeArray implements Node
 {
     public array $Items = [];
     public ?Tag $Tag = null;
@@ -118,7 +118,7 @@ class Array_ implements Node
     }
 }
 
-class Value implements Node
+class NodeScalar implements Node
 {
     public mixed $Data = null;
     public string $Text = '';

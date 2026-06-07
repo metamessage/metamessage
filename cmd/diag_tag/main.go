@@ -57,7 +57,7 @@ func main() {
 		fmt.Printf("  Array tag JSON: %s\n", arr.Tag.Json())
 
 		for i, item := range arr.Items {
-			val, ok := item.(*ir.Value)
+			val, ok := item.(*ir.NodeScalar)
 			if !ok {
 				continue
 			}

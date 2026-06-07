@@ -182,10 +182,10 @@ static char *parse_raw_string(parse_ctx_t *ctx) {
   return str;
 }
 
-static mm_node_t *parse_value(parse_ctx_t *ctx);
+static node_t *parse_value(parse_ctx_t *ctx);
 
-static mm_node_t *parse_object(parse_ctx_t *ctx) {
-  mm_node_t *obj = mm_node_new_object();
+static node_t *parse_object(parse_ctx_t *ctx) {
+  node_t *obj = node_new_object();
   consume_comments(ctx);
 
   if (ctx->has_pending_tag) {
@@ -196,11 +196,11 @@ static mm_node_t *parse_object(parse_ctx_t *ctx) {
   }
 
   if (ctx->pos >= ctx->len) {
-    mm_node_free(obj);
+    node_free(obj);
     return NULL;
   }
   if (ctx->input[ctx->pos] != '{') {
-    mm_node_free(obj);
+    node_free(obj);
     return NULL;
   }
   ctx->pos++;
@@ -232,7 +232,7 @@ static mm_node_t *parse_object(parse_ctx_t *ctx) {
     }
     consume_comments(ctx);
 
-    mm_node_t *val = parse_value(ctx);
+    node_t *val = parse_value(ctx);
     if (val) {
       if (ctx->has_pending_tag) {
         mm_tag_t tag = mm_tag_parse(ctx->pending_tag);
@@ -259,7 +259,7 @@ static mm_node_t *parse_object(parse_ctx_t *ctx) {
         mm_tag_cleanup(&tag);
         ctx->has_pending_tag = 0;
       }
-      mm_object_add_field(obj, key, val);
+      node_object_add_field(obj, key, val);
     }
     free(key);
 
@@ -276,8 +276,8 @@ static mm_node_t *parse_object(parse_ctx_t *ctx) {
   return obj;
 }
 
-static mm_node_t *parse_array(parse_ctx_t *ctx) {
-  mm_node_t *arr = mm_node_new_array();
+static node_t *parse_array(parse_ctx_t *ctx) {
+  node_t *arr = node_new_array();
 
   if (ctx->has_pending_tag) {
     mm_tag_t tag = mm_tag_parse(ctx->pending_tag);
@@ -287,7 +287,7 @@ static mm_node_t *parse_array(parse_ctx_t *ctx) {
   }
 
   if (ctx->pos >= ctx->len || ctx->input[ctx->pos] != '[') {
-    mm_node_free(arr);
+    node_free(arr);
     return NULL;
   }
   ctx->pos++;
@@ -305,9 +305,9 @@ static mm_node_t *parse_array(parse_ctx_t *ctx) {
       break;
     }
 
-    mm_node_t *item = parse_value(ctx);
+    node_t *item = parse_value(ctx);
     if (item) {
-      mm_array_add_item(arr, item);
+      node_array_add_item(arr, item);
     } else {
       break;
     }
@@ -322,7 +322,7 @@ static mm_node_t *parse_array(parse_ctx_t *ctx) {
   }
 
   for (size_t i = 0; i < arr->data.array.item_count; i++) {
-    mm_node_t *item = arr->data.array.items[i];
+    node_t *item = arr->data.array.items[i];
     if (item->type == MM_NODE_VALUE) {
       mm_tag_inherit(&item->data.value.tag, &arr->data.array.tag);
     } else if (item->type == MM_NODE_ARRAY) {
@@ -335,7 +335,7 @@ static mm_node_t *parse_array(parse_ctx_t *ctx) {
   return arr;
 }
 
-static mm_node_t *parse_value(parse_ctx_t *ctx) {
+static node_t *parse_value(parse_ctx_t *ctx) {
   consume_comments(ctx);
 
   if (ctx->pos >= ctx->len)
@@ -348,7 +348,7 @@ static mm_node_t *parse_value(parse_ctx_t *ctx) {
   if (c == '[')
     return parse_array(ctx);
 
-  mm_node_t *node = mm_node_new_value();
+  node_t *node = node_new_scalar();
 
   if (c == '"') {
     char *str = parse_string(ctx);
@@ -356,7 +356,7 @@ static mm_node_t *parse_value(parse_ctx_t *ctx) {
       node->data.value.text = str;
       node->data.value.tag.type = MM_VALUE_STR;
     } else {
-      mm_node_free(node);
+      node_free(node);
       return NULL;
     }
   } else {
@@ -373,7 +373,7 @@ static mm_node_t *parse_value(parse_ctx_t *ctx) {
         node->data.value.tag.type = MM_VALUE_I;
       }
     } else {
-      mm_node_free(node);
+      node_free(node);
       return NULL;
     }
   }
@@ -388,7 +388,7 @@ static mm_node_t *parse_value(parse_ctx_t *ctx) {
   return node;
 }
 
-mm_node_t *mm_jsonc_parse(const char *input) {
+node_t *mm_jsonc_parse(const char *input) {
   if (!input)
     return NULL;
 
@@ -406,7 +406,7 @@ mm_node_t *mm_jsonc_parse(const char *input) {
   if (ctx.pos >= ctx.len)
     return NULL;
 
-  mm_node_t *root = NULL;
+  node_t *root = NULL;
   if (ctx.input[ctx.pos] == '{') {
     root = parse_object(&ctx);
   } else {
@@ -414,7 +414,7 @@ mm_node_t *mm_jsonc_parse(const char *input) {
   }
 
   if (ctx.error && root) {
-    mm_node_free(root);
+    node_free(root);
     return NULL;
   }
 

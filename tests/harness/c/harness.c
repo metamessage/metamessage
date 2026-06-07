@@ -98,7 +98,7 @@ int main(int argc, char **argv) {
     char *input = read_file(argv[1]);
     if (!input) return 1;
 
-    mm_node_t *node = mm_from_jsonc(input);
+    node_t *node = mm_from_jsonc(input);
     free(input);
     if (!node) {
         fprintf(stderr, "parse error\n");

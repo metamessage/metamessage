@@ -50,7 +50,7 @@ var target = new User();
 MetaMessage.Decode(data, target);
 
 // 解码为树结构
-IMmTree tree = MetaMessage.Decode(data);
+INode tree = MetaMessage.Decode(data);
 ```
 
 ### 2.2 使用 Tag 标注自定义序列化
@@ -163,10 +163,10 @@ Console.WriteLine(JsoncParser.ToMinString(node));
 byte[] bytes = System.Text.Encoding.UTF8.GetBytes(jsonc);
 var nodeFromBytes = JsoncParser.ParseFromBytes(bytes);
 
-// 解析 JSONC 并转换为 IMmTree
-IMmTree tree = JsoncParser.ParseFromJSONC(jsonc);
+// 解析 JSONC 并转换为 INode
+INode tree = JsoncParser.ParseFromJSONC(jsonc);
 
-// 将 IMmTree 转换为 JSONC 字符串
+// 将 INode 转换为 JSONC 字符串
 string output = JsoncParser.ToJSONC(tree);
 ```
 
@@ -224,7 +224,7 @@ var user = new User();
 MetaMessage.BindFromJSONC(jsonc, user);
 
 // 从 JSONC 解析为树
-IMmTree tree = MetaMessage.ParseFromJSONC(jsonc);
+INode tree = MetaMessage.ParseFromJSONC(jsonc);
 ```
 
 ## 4. Tag 系统
@@ -284,59 +284,59 @@ child_enums=<val1>|<val2>|<val3>
 
 ### 4.3 支持的 ValueType
 
-| 值 | 描述 | C# 类型 |
-|---|---|---|
-| `unknown` | 未知 | - |
-| `str` | 字符串 | `string` |
-| `bool` | 布尔 | `bool` |
-| `i` | 整数 (32位) | `int` |
-| `i8` | 有符号 8位 | `sbyte` |
-| `i16` | 有符号 16位 | `short` |
-| `i32` | 有符号 32位 | `int` |
-| `i64` | 有符号 64位 | `long` |
-| `u` | 无符号整数 | `uint` |
-| `u8` | 无符号 8位 | `byte` |
-| `u16` | 无符号 16位 | `ushort` |
-| `u32` | 无符号 32位 | `uint` |
-| `u64` | 无符号 64位 | `ulong` |
-| `f32` | 浮点 (32位) | `float` |
-| `f64` | 浮点 (64位) | `double` |
-| `bytes` | 字节数组 | `byte[]` |
-| `decimal` | 高精度小数 | `decimal`/`string` |
-| `bigint` | 大整数 | `string` |
-| `datetime` | 日期时间 | `DateTime` |
-| `date` | 日期 | `DateTime` |
-| `time` | 时间 | `DateTime` |
-| `uuid` | UUID | `string`/`Guid` |
-| `url` | URL | `string` |
-| `email` | 电子邮件 | `string` |
-| `ip` | IP 地址 | `string` |
-| `enums` | 枚举 | `enum`/`string` |
-| `obj` | 对象 | `class`/`struct` |
-| `map` | 字典 | `Dictionary<K,V>` |
-| `vec` | 数组/列表 | `List<T>`/`T[]` |
-| `arr` | 定长数组 | `T[]` |
-| `doc` | 文档根 | - |
-| `image` | 图片 | `byte[]` |
-| `video` | 视频 | `byte[]` |
+| 值         | 描述        | C# 类型            |
+| ---------- | ----------- | ------------------ |
+| `unknown`  | 未知        | -                  |
+| `str`      | 字符串      | `string`           |
+| `bool`     | 布尔        | `bool`             |
+| `i`        | 整数 (32位) | `int`              |
+| `i8`       | 有符号 8位  | `sbyte`            |
+| `i16`      | 有符号 16位 | `short`            |
+| `i32`      | 有符号 32位 | `int`              |
+| `i64`      | 有符号 64位 | `long`             |
+| `u`        | 无符号整数  | `uint`             |
+| `u8`       | 无符号 8位  | `byte`             |
+| `u16`      | 无符号 16位 | `ushort`           |
+| `u32`      | 无符号 32位 | `uint`             |
+| `u64`      | 无符号 64位 | `ulong`            |
+| `f32`      | 浮点 (32位) | `float`            |
+| `f64`      | 浮点 (64位) | `double`           |
+| `bytes`    | 字节数组    | `byte[]`           |
+| `decimal`  | 高精度小数  | `decimal`/`string` |
+| `bigint`   | 大整数      | `string`           |
+| `datetime` | 日期时间    | `DateTime`         |
+| `date`     | 日期        | `DateTime`         |
+| `time`     | 时间        | `DateTime`         |
+| `uuid`     | UUID        | `string`/`Guid`    |
+| `url`      | URL         | `string`           |
+| `email`    | 电子邮件    | `string`           |
+| `ip`       | IP 地址     | `string`           |
+| `enums`    | 枚举        | `enum`/`string`    |
+| `obj`      | 对象        | `class`/`struct`   |
+| `map`      | 字典        | `Dictionary<K,V>`  |
+| `vec`      | 数组/列表   | `List<T>`/`T[]`    |
+| `arr`      | 定长数组    | `T[]`              |
+| `doc`      | 文档根      | -                  |
+| `image`    | 图片        | `byte[]`           |
+| `video`    | 视频        | `byte[]`           |
 
 ## 5. 树节点类型
 
-MetaMessage 使用 `IMmTree` 接口表示结构化的数据树：
+MetaMessage 使用 `INode` 接口表示结构化的数据树：
 
-| 类型 | 描述 | 特性 |
-|---|---|---|
-| `MmScalar` | 标量值 | `Data`(原始值), `Text`(字符串表示), `Tag` |
-| `MmArray` | 数组/列表 | `Children`(子节点列表), `Tag` |
-| `MmMap` | 对象/字典 | `Entries`(键值对列表), `Tag` |
-| `MmDoc` | 文档根 | `Fields`(顶级字段), `Tag` |
+| 类型         | 描述      | 特性                                      |
+| ------------ | --------- | ----------------------------------------- |
+| `NodeScalar` | 标量值    | `Data`(原始值), `Text`(字符串表示), `Tag` |
+| `MmArray`    | 数组/列表 | `Children`(子节点列表), `Tag`             |
+| `MmMap`      | 对象/字典 | `Entries`(键值对列表), `Tag`              |
+| `MmDoc`      | 文档根    | `Fields`(顶级字段), `Tag`                 |
 
 ```csharp
-IMmTree tree = MetaMessage.Decode(data);
+INode tree = MetaMessage.Decode(data);
 
 switch (tree)
 {
-    case MmScalar scalar:
+    case NodeScalar scalar:
         Console.WriteLine($"{scalar.Data} ({scalar.Text})");
         break;
     case MmArray array:
@@ -372,14 +372,14 @@ encoder.EncodeTaggedPayload(payload.ToByteArray(), tag.ToBytes());
 
 // 手动解码
 var decoder = new WireDecoder(data);
-IMmTree tree = decoder.Decode();
+INode tree = decoder.Decode();
 ```
 
 ### 6.2 从反射编码 (ReflectMmEncoder)
 
 ```csharp
-// 将任意对象转换为 IMmTree
-IMmTree tree = ReflectMmEncoder.ValueToNode(obj, "");
+// 将任意对象转换为 INode
+INode tree = ReflectMmEncoder.ValueToNode(obj, "");
 ```
 
 ### 6.3 绑定 (ReflectMmBinder)
@@ -434,27 +434,27 @@ public class Config
 
 ## 9. 类型映射参考
 
-| C# 类型 | 推断的 ValueType | 编码方式 |
-|---|---|---|
-| `string` | `Str` | UTF-8 字符串 |
-| `bool` | `Bool` | Simple (TRUE/FALSE) |
-| `int` | `I` | 正整数/负整数 |
-| `long` | `I64` | 正整数/负整数 |
-| `short` | `I16` | 正整数/负整数 |
-| `sbyte` | `I8` | 正整数/负整数 |
-| `byte` | `U8` | 正整数 |
-| `uint` | `U` | 正整数 |
-| `ushort` | `U16` | 正整数 |
-| `ulong` | `U64` | 正整数 / BigInt |
-| `float` | `F32` | 浮点数字符串 |
-| `double` | `F64` | 浮点数字符串 |
-| `decimal` | `Decimal` | 浮点数字符串 |
-| `byte[]` | `Bytes` | 字节数组 |
-| `DateTime` | `Datetime` | Unix 时间戳 |
-| `List<T>` | `Vec` | 容器 |
-| `T[]` | `Arr` | 容器 |
-| `Dictionary<K,V>` | `Map` | 容器 |
-| `class`/`struct` | `Obj` | Map 容器 |
+| C# 类型           | 推断的 ValueType | 编码方式            |
+| ----------------- | ---------------- | ------------------- |
+| `string`          | `Str`            | UTF-8 字符串        |
+| `bool`            | `Bool`           | Simple (TRUE/FALSE) |
+| `int`             | `I`              | 正整数/负整数       |
+| `long`            | `I64`            | 正整数/负整数       |
+| `short`           | `I16`            | 正整数/负整数       |
+| `sbyte`           | `I8`             | 正整数/负整数       |
+| `byte`            | `U8`             | 正整数              |
+| `uint`            | `U`              | 正整数              |
+| `ushort`          | `U16`            | 正整数              |
+| `ulong`           | `U64`            | 正整数 / BigInt     |
+| `float`           | `F32`            | 浮点数字符串        |
+| `double`          | `F64`            | 浮点数字符串        |
+| `decimal`         | `Decimal`        | 浮点数字符串        |
+| `byte[]`          | `Bytes`          | 字节数组            |
+| `DateTime`        | `Datetime`       | Unix 时间戳         |
+| `List<T>`         | `Vec`            | 容器                |
+| `T[]`             | `Arr`            | 容器                |
+| `Dictionary<K,V>` | `Map`            | 容器                |
+| `class`/`struct`  | `Obj`            | Map 容器            |
 
 ## 10. 测试
 

@@ -220,8 +220,8 @@ func nodesEqual(a, b ir.Node) bool {
 
 	switch a.GetType() {
 	case ir.NodeTypeValue:
-		va := a.(*ir.Value)
-		vb, ok := b.(*ir.Value)
+		va := a.(*ir.NodeScalar)
+		vb, ok := b.(*ir.NodeScalar)
 		if !ok {
 			return false
 		}

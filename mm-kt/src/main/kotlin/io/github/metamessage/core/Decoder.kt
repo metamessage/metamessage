@@ -1,11 +1,11 @@
 package io.github.metamessage.core
 
-import io.github.metamessage.ir.Array
 import io.github.metamessage.ir.Field
 import io.github.metamessage.ir.Node
-import io.github.metamessage.ir.Object
+import io.github.metamessage.ir.NodeArray
+import io.github.metamessage.ir.NodeObject
+import io.github.metamessage.ir.NodeScalar
 import io.github.metamessage.ir.Tag
-import io.github.metamessage.ir.Value
 import io.github.metamessage.ir.ValueType
 import java.math.BigInteger
 import java.nio.ByteBuffer
@@ -110,30 +110,30 @@ class Decoder() {
             ValueType.DATETIME -> {
                 val z = zoneForHours(tag.location)
                 val dt = LocalDateTime.ofInstant(Instant.EPOCH, z ?: ZoneOffset.UTC)
-                Value(dt, dt.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")), tag)
+                NodeScalar(dt, dt.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")), tag)
             }
             ValueType.DATE -> {
                 val d = LocalDate.of(1970, 1, 1)
-                Value(d, d.toString(), tag)
+                NodeScalar(d, d.toString(), tag)
             }
             ValueType.TIME ->
-                    Value(
+                    NodeScalar(
                             LocalTime.MIDNIGHT,
                             LocalTime.MIDNIGHT.format(DateTimeFormatter.ofPattern("HH:mm:ss")),
                             tag
                     )
-            ValueType.I8 -> Value(0.toByte(), "0", tag)
-            ValueType.I16 -> Value(0.toShort(), "0", tag)
-            ValueType.I32 -> Value(0, "0", tag)
-            ValueType.I64 -> Value(0L, "0", tag)
-            ValueType.U, ValueType.U8, ValueType.U16, ValueType.U32 -> Value(0, "0", tag)
-            ValueType.U64 -> Value(0L, "0", tag)
-            ValueType.F32 -> Value(0f, "0.0", tag)
-            ValueType.F64 -> Value(0.0, "0.0", tag)
-            ValueType.EMAIL, ValueType.UUID, ValueType.DECIMAL -> Value("", "", tag)
-            ValueType.BIGINT -> Value(BigInteger.ZERO, "0", tag)
-            ValueType.URL -> Value("", "", tag)
-            ValueType.IP -> Value(ByteArray(0), ipNullText(tag.version), tag)
+            ValueType.I8 -> NodeScalar(0.toByte(), "0", tag)
+            ValueType.I16 -> NodeScalar(0.toShort(), "0", tag)
+            ValueType.I32 -> NodeScalar(0, "0", tag)
+            ValueType.I64 -> NodeScalar(0L, "0", tag)
+            ValueType.U, ValueType.U8, ValueType.U16, ValueType.U32 -> NodeScalar(0, "0", tag)
+            ValueType.U64 -> NodeScalar(0L, "0", tag)
+            ValueType.F32 -> NodeScalar(0f, "0.0", tag)
+            ValueType.F64 -> NodeScalar(0.0, "0.0", tag)
+            ValueType.EMAIL, ValueType.UUID, ValueType.DECIMAL -> NodeScalar("", "", tag)
+            ValueType.BIGINT -> NodeScalar(BigInteger.ZERO, "0", tag)
+            ValueType.URL -> NodeScalar("", "", tag)
+            ValueType.IP -> NodeScalar(ByteArray(0), ipNullText(tag.version), tag)
             else -> null
         }
     }
@@ -175,11 +175,11 @@ class Decoder() {
         return when (sv) {
             SimpleValue.FALSE -> {
                 tag.type = ValueType.BOOL
-                Value(false, "false", tag)
+                NodeScalar(false, "false", tag)
             }
             SimpleValue.TRUE -> {
                 tag.type = ValueType.BOOL
-                Value(true, "true", tag)
+                NodeScalar(true, "true", tag)
             }
             SimpleValue.NULL_BOOL -> nullBool(tag)
             SimpleValue.NULL_INT -> nullInt(tag)
@@ -187,7 +187,7 @@ class Decoder() {
             SimpleValue.NULL_STRING -> nullString(tag)
             SimpleValue.NULL_BYTES -> nullBytes(tag)
             in SimpleValue.CODE..SimpleValue.VAL ->
-                    Value(SimpleValue.toString(sv), SimpleValue.toString(sv), tag)
+                    NodeScalar(SimpleValue.toString(sv), SimpleValue.toString(sv), tag)
             else -> throw MmDecodeException("unsupported simple: $sv")
         }
     }
@@ -195,13 +195,13 @@ class Decoder() {
     private fun nullBool(tag: Tag): Node {
         if (tag.type == ValueType.UNKNOWN) tag.type = ValueType.BOOL
         if (tag.type != ValueType.BOOL) throw MmDecodeException("null_bool type mismatch")
-        return Value(false, "false", tag)
+        return NodeScalar(false, "false", tag)
     }
 
     private fun nullInt(tag: Tag): Node {
         if (tag.type == ValueType.UNKNOWN) tag.type = ValueType.I
         if (tag.type != ValueType.I) throw MmDecodeException("null_int type mismatch")
-        return Value(0, "0", tag)
+        return NodeScalar(0, "0", tag)
     }
 
     private fun nullFloat(tag: Tag): Node {
@@ -210,22 +210,22 @@ class Decoder() {
             throw MmDecodeException("null_float type mismatch")
         }
         return if (tag.type == ValueType.F32) {
-            Value(0f, "0.0", tag)
+            NodeScalar(0f, "0.0", tag)
         } else {
-            Value(0.0, "0.0", tag)
+            NodeScalar(0.0, "0.0", tag)
         }
     }
 
     private fun nullString(tag: Tag): Node {
         if (tag.type == ValueType.UNKNOWN) tag.type = ValueType.STR
         if (tag.type != ValueType.STR) throw MmDecodeException("null_string type mismatch")
-        return Value("", "", tag)
+        return NodeScalar("", "", tag)
     }
 
     private fun nullBytes(tag: Tag): Node {
         if (tag.type == ValueType.UNKNOWN) tag.type = ValueType.BYTES
         if (tag.type != ValueType.BYTES) throw MmDecodeException("null_bytes type mismatch")
-        return Value(ByteArray(0), "", tag)
+        return NodeScalar(ByteArray(0), "", tag)
     }
 
     private fun decodePositiveInt(first: Int, inherited: Tag?, start: Int): Decoded {
@@ -265,16 +265,16 @@ class Decoder() {
 
     private fun mapUintToTree(tag: Tag, v: Long): Node {
         return when (tag.type) {
-            ValueType.I -> Value(v.toInt(), v.toString(), tag)
-            ValueType.I8 -> Value(v.toByte(), v.toString(), tag)
-            ValueType.I16 -> Value(v.toShort(), v.toString(), tag)
-            ValueType.I32 -> Value(v.toInt(), v.toString(), tag)
-            ValueType.I64 -> Value(v, v.toString(), tag)
-            ValueType.U -> Value(v.toInt(), v.toString(), tag)
-            ValueType.U8 -> Value(v.toShort(), v.toString(), tag)
-            ValueType.U16 -> Value(v.toInt(), v.toString(), tag)
-            ValueType.U32 -> Value(v.toInt(), v.toString(), tag)
-            ValueType.U64 -> Value(v, v.toString(), tag)
+            ValueType.I -> NodeScalar(v.toInt(), v.toString(), tag)
+            ValueType.I8 -> NodeScalar(v.toByte(), v.toString(), tag)
+            ValueType.I16 -> NodeScalar(v.toShort(), v.toString(), tag)
+            ValueType.I32 -> NodeScalar(v.toInt(), v.toString(), tag)
+            ValueType.I64 -> NodeScalar(v, v.toString(), tag)
+            ValueType.U -> NodeScalar(v.toInt(), v.toString(), tag)
+            ValueType.U8 -> NodeScalar(v.toShort(), v.toString(), tag)
+            ValueType.U16 -> NodeScalar(v.toInt(), v.toString(), tag)
+            ValueType.U32 -> NodeScalar(v.toInt(), v.toString(), tag)
+            ValueType.U64 -> NodeScalar(v, v.toString(), tag)
             ValueType.DATETIME -> decodeDateTime(tag, v)
             ValueType.DATE -> decodeDate(tag, v)
             ValueType.TIME -> decodeTime(tag, v)
@@ -285,44 +285,44 @@ class Decoder() {
 
     private fun mapNegativeInt(tag: Tag, v: Long): Node {
         return when (tag.type) {
-            ValueType.I -> Value((-v).toInt(), "-$v", tag)
-            ValueType.I8 -> Value((-v).toByte(), "-$v", tag)
-            ValueType.I16 -> Value((-v).toShort(), "-$v", tag)
-            ValueType.I32 -> Value((-v).toInt(), "-$v", tag)
-            ValueType.I64 -> Value(-v, "-$v", tag)
+            ValueType.I -> NodeScalar((-v).toInt(), "-$v", tag)
+            ValueType.I8 -> NodeScalar((-v).toByte(), "-$v", tag)
+            ValueType.I16 -> NodeScalar((-v).toShort(), "-$v", tag)
+            ValueType.I32 -> NodeScalar((-v).toInt(), "-$v", tag)
+            ValueType.I64 -> NodeScalar(-v, "-$v", tag)
             else -> throw MmDecodeException("unsupported neg int type: ${tag.type}")
         }
     }
 
     private fun decodeDateTime(tag: Tag, v: Long): Node {
-        if (tag.isNull) return Value(null, "", tag)
+        if (tag.isNull) return NodeScalar(null, "", tag)
         val ins = Instant.ofEpochSecond(v)
         val z = zoneForHours(tag.location)
         val ldt = LocalDateTime.ofInstant(ins, z ?: ZoneOffset.UTC)
-        return Value(ldt, ldt.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")), tag)
+        return NodeScalar(ldt, ldt.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")), tag)
     }
 
     private fun decodeDate(tag: Tag, v: Long): Node {
-        if (tag.isNull) return Value(null, "", tag)
+        if (tag.isNull) return NodeScalar(null, "", tag)
         if (v > Integer.MAX_VALUE) throw MmDecodeException("date overflow")
         val d = TimeUtil.dateFromDays(v)
-        return Value(d, d.toString(), tag)
+        return NodeScalar(d, d.toString(), tag)
     }
 
     private fun decodeTime(tag: Tag, v: Long): Node {
-        if (tag.isNull) return Value(null, "", tag)
+        if (tag.isNull) return NodeScalar(null, "", tag)
         if (v > 86399) throw MmDecodeException("time out of range")
         val t = TimeUtil.timeFromSeconds(v.toInt())
-        return Value(t, t.format(DateTimeFormatter.ofPattern("HH:mm:ss")), tag)
+        return NodeScalar(t, t.format(DateTimeFormatter.ofPattern("HH:mm:ss")), tag)
     }
 
     private fun decodeEnum(tag: Tag, v: Long): Node {
-        if (tag.isNull) return Value(-1, "", tag)
+        if (tag.isNull) return NodeScalar(-1, "", tag)
         if (tag.enums.isEmpty()) throw MmDecodeException("enum without labels")
         val parts = tag.enums.split("|")
         if (v >= parts.size) throw MmDecodeException("enum index out of range")
         val label = parts[v.toInt()].trim()
-        return Value(v.toInt(), label, tag)
+        return NodeScalar(v.toInt(), label, tag)
     }
 
     private fun decodeFloat(first: Int, inherited: Tag?, start: Int): Decoded {
@@ -354,8 +354,8 @@ class Decoder() {
                 }
         val node =
                 when (tag.type) {
-                    ValueType.F32 -> Value(`val`.toFloat(), `val`.toString(), tag)
-                    ValueType.F64, ValueType.DECIMAL -> Value(`val`, `val`.toString(), tag)
+                    ValueType.F32 -> NodeScalar(`val`.toFloat(), `val`.toString(), tag)
+                    ValueType.F64, ValueType.DECIMAL -> NodeScalar(`val`, `val`.toString(), tag)
                     else -> throw MmDecodeException("bad float tag ${tag.type}")
                 }
         return Decoded(node, offset - start)
@@ -384,9 +384,9 @@ class Decoder() {
         if (tag.type == ValueType.UNKNOWN) tag.type = ValueType.STR
         val node =
                 when (tag.type) {
-                    ValueType.STR, ValueType.EMAIL -> Value(text, text, tag)
-                    ValueType.URL -> Value(text, text, tag)
-                    ValueType.IP -> Value(text, text, tag)
+                    ValueType.STR, ValueType.EMAIL -> NodeScalar(text, text, tag)
+                    ValueType.URL -> NodeScalar(text, text, tag)
+                    ValueType.IP -> NodeScalar(text, text, tag)
                     else -> throw MmDecodeException("unsupported string type: ${tag.type}")
                 }
         return Decoded(node, offset - start)
@@ -414,15 +414,15 @@ class Decoder() {
         if (tag.type == ValueType.UNKNOWN) tag.type = ValueType.BYTES
         val node =
                 when (tag.type) {
-                    ValueType.BYTES -> Value(bs, Base64.getEncoder().encodeToString(bs), tag)
-                    ValueType.MEDIA -> Value(bs, Base64.getEncoder().encodeToString(bs), tag)
+                    ValueType.BYTES -> NodeScalar(bs, Base64.getEncoder().encodeToString(bs), tag)
+                    ValueType.MEDIA -> NodeScalar(bs, Base64.getEncoder().encodeToString(bs), tag)
                     ValueType.BIGINT -> bigintFromBytes(bs, tag)
                     ValueType.UUID -> {
                         if (bs.size != 16) throw MmDecodeException("uuid length")
                         val u = uuidFromBytes(bs)
-                        Value(u, u.toString(), tag)
+                        NodeScalar(u, u.toString(), tag)
                     }
-                    ValueType.IP -> Value(bs, "", tag)
+                    ValueType.IP -> NodeScalar(bs, "", tag)
                     else -> throw MmDecodeException("unsupported bytes type: ${tag.type}")
                 }
         return Decoded(node, offset - start)
@@ -445,14 +445,14 @@ class Decoder() {
     }
 
     private fun bigintFromBytes(bs: ByteArray, tag: Tag): Node {
-        if (bs.isEmpty()) return Value(BigInteger.ZERO, "0", tag)
+        if (bs.isEmpty()) return NodeScalar(BigInteger.ZERO, "0", tag)
         val n = bs[0].toInt() and 0xFF
         val body = bs.copyOfRange(1, bs.size)
         val bits = bigintBits(body)
         val neg = bits.isNotEmpty() && bits[0] == 1
         val digits = BigIntWireCodec.decodePositive(body, n, skipFirstBit = true)
         val bi = BigInteger(if (neg) "-$digits" else digits)
-        return Value(bi, bi.toString(), tag)
+        return NodeScalar(bi, bi.toString(), tag)
     }
 
     private fun bigintBits(data: ByteArray): List<Int> {
@@ -504,7 +504,7 @@ class Decoder() {
         if (offset != bodyEnd) {
             throw MmDecodeException("array body misaligned")
         }
-        return Decoded(Array(items, tag = tag), offset - start)
+        return Decoded(NodeArray(items, tag = tag), offset - start)
     }
 
     private fun decodeObj(first: Int, inherited: Tag?, start: Int): Decoded {
@@ -525,20 +525,20 @@ class Decoder() {
         val keyPrefixPos = offset
         val keyPrefix = data[offset++].toInt() and 0xFF
         val keysDec = decodeArr(keyPrefix, null, keyPrefixPos)
-        val keys = keysDec.node as Array
+        val keys = keysDec.node as NodeArray
         val fields = mutableListOf<Field>()
         var i = 0
         while (offset < innerEnd && i < keys.items.size) {
             val elemTag = Tag.empty()
             elemTag.inheritFromArrayParent(tag)
             val `val` = decodeNode(elemTag)
-            val key = (keys.items[i] as Value).text
+            val key = (keys.items[i] as NodeScalar).text
             fields.add(Field(key, `val`.node))
             i++
         }
         // Ensure offset reaches innerEnd
         offset = innerEnd
-        return Decoded(Object(fields, tag = tag), offset - start)
+        return Decoded(NodeObject(fields, tag = tag), offset - start)
     }
 
     private fun containerLen(first: Int): IntArray {

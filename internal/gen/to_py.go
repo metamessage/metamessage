@@ -48,7 +48,7 @@ func ToPy(n ir.Node) string {
 	}
 
 	topName := "Obj"
-	if obj, ok := n.(*ir.Object); ok && obj.Tag != nil && obj.Tag.Name != "" {
+	if obj, ok := n.(*ir.NodeObject); ok && obj.Tag != nil && obj.Tag.Name != "" {
 		topName = exportPyClassName(obj.Tag.Name)
 	}
 
@@ -80,18 +80,18 @@ func ToPy(n ir.Node) string {
 
 func getPyTypeForField(f *ir.Field) string {
 	switch v := f.Value.(type) {
-	case *ir.Value:
+	case *ir.NodeScalar:
 		return getPyType(v)
-	case *ir.Object:
+	case *ir.NodeObject:
 		return getPyObjectType(f.Key, v)
-	case *ir.Array:
+	case *ir.NodeArray:
 		return getPyArrayType(f.Key, v)
 	default:
 		return "Any"
 	}
 }
 
-func getPyType(v *ir.Value) string {
+func getPyType(v *ir.NodeScalar) string {
 	if v != nil && v.Tag != nil {
 		if t, ok := pyTypeMap[v.Tag.Type]; ok {
 			return t
@@ -100,14 +100,14 @@ func getPyType(v *ir.Value) string {
 	return "Any"
 }
 
-func getPyObjectType(fieldKey string, obj *ir.Object) string {
+func getPyObjectType(fieldKey string, obj *ir.NodeObject) string {
 	if obj != nil && obj.Tag != nil && obj.Tag.Name != "" {
 		return exportPyClassName(obj.Tag.Name)
 	}
 	return exportPyClassName(fieldKey)
 }
 
-func getPyArrayType(fieldKey string, a *ir.Array) string {
+func getPyArrayType(fieldKey string, a *ir.NodeArray) string {
 	if a == nil {
 		return "List[Any]"
 	}
@@ -120,9 +120,9 @@ func getPyArrayType(fieldKey string, a *ir.Array) string {
 
 	if len(a.Items) > 0 {
 		switch item := a.Items[0].(type) {
-		case *ir.Object:
+		case *ir.NodeObject:
 			return "List[" + getPyObjectType(fieldKey, item) + "]"
-		case *ir.Value:
+		case *ir.NodeScalar:
 			return "List[" + getPyType(item) + "]"
 		}
 	}
@@ -131,7 +131,7 @@ func getPyArrayType(fieldKey string, a *ir.Array) string {
 }
 
 func genPyFields(b *strings.Builder, n ir.Node, indent int) {
-	obj, ok := n.(*ir.Object)
+	obj, ok := n.(*ir.NodeObject)
 	if !ok {
 		return
 	}
@@ -168,7 +168,7 @@ func genPyFields(b *strings.Builder, n ir.Node, indent int) {
 }
 
 func genPyNestedClasses(b *strings.Builder, n ir.Node, generated map[string]struct{}) {
-	obj, ok := n.(*ir.Object)
+	obj, ok := n.(*ir.NodeObject)
 	if !ok {
 		return
 	}
@@ -179,7 +179,7 @@ func genPyNestedClasses(b *strings.Builder, n ir.Node, generated map[string]stru
 		}
 
 		switch v := f.Value.(type) {
-		case *ir.Object:
+		case *ir.NodeObject:
 			className := getPyObjectType(f.Key, v)
 			if _, ok := generated[className]; ok {
 				continue
@@ -192,7 +192,7 @@ func genPyNestedClasses(b *strings.Builder, n ir.Node, generated map[string]stru
 			genPyFields(b, v, 1)
 			b.WriteString("\n")
 			genPyNestedClasses(b, v, generated)
-		case *ir.Array:
+		case *ir.NodeArray:
 			if nestedObj := findFirstObjectInArray(v); nestedObj != nil {
 				className := getPyObjectType(f.Key, nestedObj)
 				if _, ok := generated[className]; ok {
@@ -254,18 +254,18 @@ func exportPyInstanceName(name string) string {
 
 func genPyValue(b *strings.Builder, n ir.Node, fieldKey string, indent int) {
 	switch v := n.(type) {
-	case *ir.Value:
+	case *ir.NodeScalar:
 		b.WriteString(formatPyValueLiteral(v))
-	case *ir.Object:
+	case *ir.NodeObject:
 		genPyObjectInstance(b, v, fieldKey, indent)
-	case *ir.Array:
+	case *ir.NodeArray:
 		genPyArrayInstance(b, v, fieldKey, indent)
 	default:
 		b.WriteString("None")
 	}
 }
 
-func genPyObjectInstance(b *strings.Builder, obj *ir.Object, fieldKey string, indent int) {
+func genPyObjectInstance(b *strings.Builder, obj *ir.NodeObject, fieldKey string, indent int) {
 	className := getPyObjectType(fieldKey, obj)
 	if obj == nil || len(obj.Fields) == 0 {
 		b.WriteString(className)
@@ -289,7 +289,7 @@ func genPyObjectInstance(b *strings.Builder, obj *ir.Object, fieldKey string, in
 	b.WriteString(")")
 }
 
-func genPyArrayInstance(b *strings.Builder, a *ir.Array, fieldKey string, indent int) {
+func genPyArrayInstance(b *strings.Builder, a *ir.NodeArray, fieldKey string, indent int) {
 	if a == nil || len(a.Items) == 0 {
 		b.WriteString("[]")
 		return
@@ -299,9 +299,9 @@ func genPyArrayInstance(b *strings.Builder, a *ir.Array, fieldKey string, indent
 	for _, item := range a.Items {
 		WriteIndent(b, indent+1)
 		switch v := item.(type) {
-		case *ir.Object:
+		case *ir.NodeObject:
 			genPyObjectInstance(b, v, fieldKey, indent+1)
-		case *ir.Value:
+		case *ir.NodeScalar:
 			b.WriteString(formatPyValueLiteral(v))
 		default:
 			b.WriteString("None")
@@ -312,7 +312,7 @@ func genPyArrayInstance(b *strings.Builder, a *ir.Array, fieldKey string, indent
 	b.WriteString("]")
 }
 
-func formatPyValueLiteral(v *ir.Value) string {
+func formatPyValueLiteral(v *ir.NodeScalar) string {
 	if v == nil {
 		return "None"
 	}

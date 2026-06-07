@@ -191,11 +191,11 @@ static char *mc_base64_encode(const uint8_t *data, size_t len) {
   return out;
 }
 
-static mm_node_t *dec_decode_simple(mm_decoder_t *d, uint8_t b) {
+static node_t *dec_decode_simple(mm_decoder_t *d, uint8_t b) {
   (void)d;
   int suffix = mm_suffix_of(b);
-  mm_node_t *node = mm_node_new_value();
-  mm_value_t *val = &node->data.value;
+  node_t *node = node_new_scalar();
+  node_scalar_t *val = &node->data.value;
   mm_tag_init(&val->tag);
 
   switch (suffix) {
@@ -235,7 +235,7 @@ static mm_node_t *dec_decode_simple(mm_decoder_t *d, uint8_t b) {
   return node;
 }
 
-static mm_node_t *dec_decode_int(mm_decoder_t *d, uint8_t b, int is_positive) {
+static node_t *dec_decode_int(mm_decoder_t *d, uint8_t b, int is_positive) {
   int byte_len = mm_int_len(b);
   uint64_t uv;
 
@@ -245,8 +245,8 @@ static mm_node_t *dec_decode_int(mm_decoder_t *d, uint8_t b, int is_positive) {
     uv = dec_read_uint64_be(d, byte_len);
   }
 
-  mm_node_t *node = mm_node_new_value();
-  mm_value_t *val = &node->data.value;
+  node_t *node = node_new_scalar();
+  node_scalar_t *val = &node->data.value;
   mm_tag_init(&val->tag);
 
   if (is_positive) {
@@ -264,7 +264,7 @@ static mm_node_t *dec_decode_int(mm_decoder_t *d, uint8_t b, int is_positive) {
   return node;
 }
 
-static mm_node_t *dec_decode_float(mm_decoder_t *d, uint8_t b) {
+static node_t *dec_decode_float(mm_decoder_t *d, uint8_t b) {
   int byte_len = mm_float_len(b);
   int suffix = mm_suffix_of(b);
   int is_negative = (b & 0x10) != 0;
@@ -320,8 +320,8 @@ static mm_node_t *dec_decode_float(mm_decoder_t *d, uint8_t b) {
     }
   }
 
-  mm_node_t *node = mm_node_new_value();
-  mm_value_t *val = &node->data.value;
+  node_t *node = node_new_scalar();
+  node_scalar_t *val = &node->data.value;
   mm_tag_init(&val->tag);
   val->tag.type = MM_VALUE_F64;
   char text_buf[64];
@@ -331,7 +331,7 @@ static mm_node_t *dec_decode_float(mm_decoder_t *d, uint8_t b) {
   return node;
 }
 
-static mm_node_t *dec_decode_string(mm_decoder_t *d, uint8_t b) {
+static node_t *dec_decode_string(mm_decoder_t *d, uint8_t b) {
   int extra_len = mm_string_extra_len(b);
   int inline_len = mm_string_inline_len(b);
   size_t str_len;
@@ -360,8 +360,8 @@ static mm_node_t *dec_decode_string(mm_decoder_t *d, uint8_t b) {
     text = strdup("");
   }
 
-  mm_node_t *node = mm_node_new_value();
-  mm_value_t *val = &node->data.value;
+  node_t *node = node_new_scalar();
+  node_scalar_t *val = &node->data.value;
   mm_tag_init(&val->tag);
   val->tag.type = MM_VALUE_STR;
   val->text = text;
@@ -458,7 +458,7 @@ static char *dec_decode_bigint(const uint8_t *data, size_t len) {
   return final_str;
 }
 
-static mm_node_t *dec_decode_bytes(mm_decoder_t *d, uint8_t b, mm_tag_t *tag) {
+static node_t *dec_decode_bytes(mm_decoder_t *d, uint8_t b, mm_tag_t *tag) {
   int extra_len = mm_bytes_extra_len(b);
   int inline_len = mm_bytes_inline_len(b);
   size_t bytes_len;
@@ -473,8 +473,8 @@ static mm_node_t *dec_decode_bytes(mm_decoder_t *d, uint8_t b, mm_tag_t *tag) {
     bytes_len = ((size_t)hi << 8) | (size_t)lo;
   }
 
-  mm_node_t *node = mm_node_new_value();
-  mm_value_t *val = &node->data.value;
+  node_t *node = node_new_scalar();
+  node_scalar_t *val = &node->data.value;
   mm_tag_init(&val->tag);
   if (tag) {
     val->tag.type = tag->type;
@@ -509,12 +509,12 @@ static mm_node_t *dec_decode_bytes(mm_decoder_t *d, uint8_t b, mm_tag_t *tag) {
   return node;
 }
 
-static mm_node_t *dec_decode_node(mm_decoder_t *d, mm_tag_t *parent_tag);
+static node_t *dec_decode_node(mm_decoder_t *d, mm_tag_t *parent_tag);
 
-static mm_node_t *dec_decode_array(mm_decoder_t *d, size_t total_len,
+static node_t *dec_decode_array(mm_decoder_t *d, size_t total_len,
                                    mm_tag_t *parent_tag) {
-  mm_node_t *node = mm_node_new_array();
-  mm_array_t *arr = &node->data.array;
+  node_t *node = node_new_array();
+  node_array_t *arr = &node->data.array;
   if (parent_tag) {
     mm_tag_inherit(&arr->tag, parent_tag);
   }
@@ -547,11 +547,11 @@ static mm_node_t *dec_decode_array(mm_decoder_t *d, size_t total_len,
         }
       }
     }
-    mm_node_t *item = dec_decode_node(d, &item_tag);
+    node_t *item = dec_decode_node(d, &item_tag);
     mm_tag_cleanup(&item_tag);
     if (!item)
       break;
-    mm_array_add_item(node, item);
+    node_array_add_item(node, item);
   }
 
   if (d->offset < end_offset) {
@@ -561,10 +561,10 @@ static mm_node_t *dec_decode_array(mm_decoder_t *d, size_t total_len,
   return node;
 }
 
-static mm_node_t *dec_decode_object(mm_decoder_t *d, size_t total_len,
+static node_t *dec_decode_object(mm_decoder_t *d, size_t total_len,
                                     mm_tag_t *parent_tag) {
-  mm_node_t *node = mm_node_new_object();
-  mm_object_t *obj = &node->data.object;
+  node_t *node = node_new_object();
+  node_object_t *obj = &node->data.object;
   if (parent_tag) {
     mm_tag_inherit(&obj->tag, parent_tag);
   }
@@ -575,17 +575,17 @@ static mm_node_t *dec_decode_object(mm_decoder_t *d, size_t total_len,
   size_t start_offset = d->offset;
   size_t end_offset = start_offset + total_len;
 
-  mm_node_t *key_array = mm_decoder_decode(d);
+  node_t *key_array = mm_decoder_decode(d);
   if (!key_array || key_array->type != MM_NODE_ARRAY) {
     if (key_array)
-      mm_node_free(key_array);
+      node_free(key_array);
     d->offset = end_offset;
     return node;
   }
 
   for (size_t i = 0;
        i < key_array->data.array.item_count && d->offset < end_offset; i++) {
-    mm_node_t *key_item = key_array->data.array.items[i];
+    node_t *key_item = key_array->data.array.items[i];
     if (key_item->type != MM_NODE_VALUE || !key_item->data.value.text) {
       mm_decoder_decode(d);
       continue;
@@ -614,20 +614,20 @@ static mm_node_t *dec_decode_object(mm_decoder_t *d, size_t total_len,
         }
       }
     }
-    mm_node_t *val_node = dec_decode_node(d, &field_tag);
+    node_t *val_node = dec_decode_node(d, &field_tag);
     mm_tag_cleanup(&field_tag);
     if (val_node) {
-      mm_object_add_field(node, key_item->data.value.text, val_node);
+      node_object_add_field(node, key_item->data.value.text, val_node);
     }
   }
 
-  mm_node_free(key_array);
+  node_free(key_array);
   d->offset = end_offset;
 
   return node;
 }
 
-static mm_node_t *dec_decode_container(mm_decoder_t *d, uint8_t b,
+static node_t *dec_decode_container(mm_decoder_t *d, uint8_t b,
                                        mm_tag_t *parent_tag) {
   int is_array = mm_is_array_container(b);
   int extra_len = mm_container_extra_len(b);
@@ -1058,7 +1058,7 @@ static mm_tag_t dec_read_tag_bytes(mm_decoder_t *d) {
   return tag;
 }
 
-static mm_node_t *dec_decode_tag(mm_decoder_t *d, uint8_t b,
+static node_t *dec_decode_tag(mm_decoder_t *d, uint8_t b,
                                  mm_tag_t *parent_tag) {
   int extra_len = mm_tag_extra_len(b);
   int inline_len = mm_tag_inline_len(b);
@@ -1083,11 +1083,11 @@ static mm_node_t *dec_decode_tag(mm_decoder_t *d, uint8_t b,
 
   size_t tag_bytes_consumed = d->offset - tag_data_start;
 
-  mm_node_t *inner = NULL;
+  node_t *inner = NULL;
 
   if (tag.is_null) {
-    inner = mm_node_new_value();
-    mm_value_t *val = &inner->data.value;
+    inner = node_new_scalar();
+    node_scalar_t *val = &inner->data.value;
     mm_tag_cleanup(&val->tag);
     val->tag = tag;
 
@@ -1185,7 +1185,7 @@ static mm_node_t *dec_decode_tag(mm_decoder_t *d, uint8_t b,
           inner->data.value.tag.type = MM_VALUE_STR;
         }
 
-        mm_value_t *val = &inner->data.value;
+        node_scalar_t *val = &inner->data.value;
         if (val->tag.type == MM_VALUE_DATETIME && val->text &&
             val->text[0] != '\0') {
           char *end = NULL;
@@ -1270,7 +1270,7 @@ static mm_node_t *dec_decode_tag(mm_decoder_t *d, uint8_t b,
   return inner;
 }
 
-static void dec_apply_tag_conversion(mm_value_t *val) {
+static void dec_apply_tag_conversion(node_scalar_t *val) {
   if (!val || !val->text || val->text[0] == '\0')
     return;
 
@@ -1372,7 +1372,7 @@ static void dec_apply_tag_conversion(mm_value_t *val) {
   }
 }
 
-static mm_node_t *dec_decode_node(mm_decoder_t *d, mm_tag_t *parent_tag) {
+static node_t *dec_decode_node(mm_decoder_t *d, mm_tag_t *parent_tag) {
   if (!d || d->offset >= d->size) {
     return NULL;
   }
@@ -1383,7 +1383,7 @@ static mm_node_t *dec_decode_node(mm_decoder_t *d, mm_tag_t *parent_tag) {
     return NULL;
 
   int prefix = mm_prefix_of(b);
-  mm_node_t *node = NULL;
+  node_t *node = NULL;
 
   switch (prefix) {
   case MM_PREFIX_SIMPLE:
@@ -1413,7 +1413,7 @@ static mm_node_t *dec_decode_node(mm_decoder_t *d, mm_tag_t *parent_tag) {
 
   // For VALUE nodes, apply parent tag type and conversion
   if (node && node->type == MM_NODE_VALUE && parent_tag) {
-    mm_value_t *val = &node->data.value;
+    node_scalar_t *val = &node->data.value;
     mm_tag_merge(&val->tag, parent_tag);
     dec_apply_tag_conversion(val);
   }
@@ -1433,6 +1433,6 @@ mm_decoder_t *mm_decoder_new(const uint8_t *data, size_t size) {
 
 void mm_decoder_free(mm_decoder_t *d) { free(d); }
 
-mm_node_t *mm_decoder_decode(mm_decoder_t *d) {
+node_t *mm_decoder_decode(mm_decoder_t *d) {
   return dec_decode_node(d, NULL);
 }

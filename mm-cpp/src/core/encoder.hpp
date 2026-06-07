@@ -72,14 +72,14 @@ public:
 
     uint32_t n = 0;
     switch (node->getType()) {
-    case ir::NodeType::Object:
-      n = encodeNodeObject(std::static_pointer_cast<ir::Object>(node));
+    case ir::NodeType::NodeObject:
+      n = encodeNodeObject(std::static_pointer_cast<ir::NodeObject>(node));
       break;
-    case ir::NodeType::Array:
-      n = encodeNodeArray(std::static_pointer_cast<ir::Array>(node));
+    case ir::NodeType::NodeArray:
+      n = encodeNodeArray(std::static_pointer_cast<ir::NodeArray>(node));
       break;
     case ir::NodeType::Value:
-      n = encodeNodeValue(std::static_pointer_cast<ir::Value>(node));
+      n = encodeNodeValue(std::static_pointer_cast<ir::NodeScalar>(node));
       break;
     default:
       throw std::runtime_error("unsupported node type");
@@ -432,7 +432,7 @@ private:
     return encodeTag(payload, tagData);
   }
 
-  uint32_t encodeNodeObject(std::shared_ptr<ir::Object> obj) {
+  uint32_t encodeNodeObject(std::shared_ptr<ir::NodeObject> obj) {
     std::vector<uint8_t> bufKey, buf;
 
     auto *tag = obj->getTag();
@@ -440,14 +440,16 @@ private:
     for (auto &field : obj->fields) {
       uint32_t n = 0;
       switch (field.value->getType()) {
-      case ir::NodeType::Object:
-        n = encodeNodeObject(std::static_pointer_cast<ir::Object>(field.value));
+      case ir::NodeType::NodeObject:
+        n = encodeNodeObject(std::static_pointer_cast<ir::NodeObject>(field.value));
         break;
-      case ir::NodeType::Array:
-        n = encodeNodeArray(std::static_pointer_cast<ir::Array>(field.value));
+      case ir::NodeType::NodeArray:
+        n = encodeNodeArray(
+            std::static_pointer_cast<ir::NodeArray>(field.value));
         break;
       case ir::NodeType::Value:
-        n = encodeNodeValue(std::static_pointer_cast<ir::Value>(field.value));
+        n = encodeNodeValue(
+            std::static_pointer_cast<ir::NodeScalar>(field.value));
         break;
       default:
         throw std::runtime_error("unsupported field type");
@@ -474,21 +476,21 @@ private:
     return n1;
   }
 
-  uint32_t encodeNodeArray(std::shared_ptr<ir::Array> arr) {
+  uint32_t encodeNodeArray(std::shared_ptr<ir::NodeArray> arr) {
     std::vector<uint8_t> buf;
     auto *tag = arr->getTag();
 
     for (auto &item : arr->items) {
       uint32_t n = 0;
       switch (item->getType()) {
-      case ir::NodeType::Object:
-        n = encodeNodeObject(std::static_pointer_cast<ir::Object>(item));
+      case ir::NodeType::NodeObject:
+        n = encodeNodeObject(std::static_pointer_cast<ir::NodeObject>(item));
         break;
-      case ir::NodeType::Array:
-        n = encodeNodeArray(std::static_pointer_cast<ir::Array>(item));
+      case ir::NodeType::NodeArray:
+        n = encodeNodeArray(std::static_pointer_cast<ir::NodeArray>(item));
         break;
       case ir::NodeType::Value:
-        n = encodeNodeValue(std::static_pointer_cast<ir::Value>(item));
+        n = encodeNodeValue(std::static_pointer_cast<ir::NodeScalar>(item));
         break;
       default:
         throw std::runtime_error("unsupported item type");
@@ -572,7 +574,7 @@ private:
     return out;
   }
 
-  uint32_t encodeNodeValue(std::shared_ptr<ir::Value> val) {
+  uint32_t encodeNodeValue(std::shared_ptr<ir::NodeScalar> val) {
     uint32_t n = 0;
     auto *tag = val->getTag();
 

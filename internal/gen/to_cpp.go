@@ -45,23 +45,23 @@ var cppTypeMap = map[ir.ValueType]string{
 
 type cppStructCollector struct {
 	structs map[string]*cppStructDef
-	nodeMap map[*ir.Object]string
+	nodeMap map[*ir.NodeObject]string
 }
 
 type cppStructDef struct {
 	name   string
 	fields []*ir.Field
-	node   *ir.Object
+	node   *ir.NodeObject
 }
 
 func newCppStructCollector() *cppStructCollector {
 	return &cppStructCollector{
 		structs: make(map[string]*cppStructDef),
-		nodeMap: make(map[*ir.Object]string),
+		nodeMap: make(map[*ir.NodeObject]string),
 	}
 }
 
-func (sc *cppStructCollector) addStruct(name string, obj *ir.Object) string {
+func (sc *cppStructCollector) addStruct(name string, obj *ir.NodeObject) string {
 	if existingName, exists := sc.nodeMap[obj]; exists {
 		return existingName
 	}
@@ -100,7 +100,7 @@ func ToCpp(n ir.Node) string {
 	}
 
 	topName := "Obj"
-	if obj, ok := n.(*ir.Object); ok && obj.Tag != nil && obj.Tag.Name != "" {
+	if obj, ok := n.(*ir.NodeObject); ok && obj.Tag != nil && obj.Tag.Name != "" {
 		topName = exportCppStructName(obj.Tag.Name)
 	}
 
@@ -121,7 +121,7 @@ func ToCpp(n ir.Node) string {
 	sb.WriteString("\n")
 
 	// Collect all structs
-	if obj, ok := n.(*ir.Object); ok {
+	if obj, ok := n.(*ir.NodeObject); ok {
 		collector.addStruct(topName, obj)
 		collectCppNestedStructs(obj, collector)
 	}
@@ -171,18 +171,18 @@ func collectCppImportsRec(n ir.Node, imports map[string]struct{}) {
 		return
 	}
 	switch v := n.(type) {
-	case *ir.Value:
+	case *ir.NodeScalar:
 		if v.Tag != nil {
 			addCppImportForType(v.Tag.Type, imports)
 		}
-	case *ir.Array:
+	case *ir.NodeArray:
 		if v.Tag != nil && v.Tag.ChildType != ir.ValueTypeUnknown {
 			addCppImportForType(v.Tag.ChildType, imports)
 		}
 		for _, item := range v.Items {
 			collectCppImportsRec(item, imports)
 		}
-	case *ir.Object:
+	case *ir.NodeObject:
 		for _, f := range v.Fields {
 			if f != nil {
 				collectCppImportsRec(f.Value, imports)
@@ -205,10 +205,10 @@ func collectCppNestedStructs(n ir.Node, collector *cppStructCollector) {
 		return
 	}
 	switch v := n.(type) {
-	case *ir.Object:
+	case *ir.NodeObject:
 		for _, f := range v.Fields {
 			if f != nil {
-				if obj, ok := f.Value.(*ir.Object); ok {
+				if obj, ok := f.Value.(*ir.NodeObject); ok {
 					name := ""
 					if obj.Tag != nil && obj.Tag.Name != "" {
 						name = obj.Tag.Name
@@ -220,9 +220,9 @@ func collectCppNestedStructs(n ir.Node, collector *cppStructCollector) {
 				}
 			}
 		}
-	case *ir.Array:
+	case *ir.NodeArray:
 		for _, item := range v.Items {
-			if obj, ok := item.(*ir.Object); ok {
+			if obj, ok := item.(*ir.NodeObject); ok {
 				name := ""
 				if obj.Tag != nil && obj.Tag.Name != "" {
 					name = obj.Tag.Name
@@ -241,18 +241,18 @@ func getCppTypeForField(f *ir.Field, collector *cppStructCollector) string {
 		return "std::any"
 	}
 	switch v := f.Value.(type) {
-	case *ir.Value:
+	case *ir.NodeScalar:
 		return getCppValueType(v)
-	case *ir.Object:
+	case *ir.NodeObject:
 		return getCppObjectType(f.Key, v, collector)
-	case *ir.Array:
+	case *ir.NodeArray:
 		return getCppArrayType(f.Key, v, collector)
 	default:
 		return "std::any"
 	}
 }
 
-func getCppValueType(v *ir.Value) string {
+func getCppValueType(v *ir.NodeScalar) string {
 	if v != nil && v.Tag != nil {
 		if t, ok := cppTypeMap[v.Tag.Type]; ok {
 			return t
@@ -261,14 +261,14 @@ func getCppValueType(v *ir.Value) string {
 	return "std::any"
 }
 
-func getCppObjectType(fieldKey string, obj *ir.Object, _ *cppStructCollector) string {
+func getCppObjectType(fieldKey string, obj *ir.NodeObject, _ *cppStructCollector) string {
 	if obj != nil && obj.Tag != nil && obj.Tag.Name != "" {
 		return exportCppStructName(obj.Tag.Name)
 	}
 	return exportCppStructName(fieldKey)
 }
 
-func getCppArrayType(fieldKey string, a *ir.Array, collector *cppStructCollector) string {
+func getCppArrayType(fieldKey string, a *ir.NodeArray, collector *cppStructCollector) string {
 	if a == nil {
 		return "std::vector<std::any>"
 	}
@@ -281,9 +281,9 @@ func getCppArrayType(fieldKey string, a *ir.Array, collector *cppStructCollector
 
 	if len(a.Items) > 0 {
 		switch item := a.Items[0].(type) {
-		case *ir.Object:
+		case *ir.NodeObject:
 			return "std::vector<" + getCppObjectType(fieldKey, item, collector) + ">"
-		case *ir.Value:
+		case *ir.NodeScalar:
 			if item.Tag != nil {
 				if t, ok := cppTypeMap[item.Tag.Type]; ok {
 					return "std::vector<" + t + ">"
@@ -310,18 +310,18 @@ func genCppFields(b *strings.Builder, fields []*ir.Field, indent int, collector 
 
 func genCppLiteral(b *strings.Builder, n ir.Node, fieldKey string, indent int) {
 	switch v := n.(type) {
-	case *ir.Value:
+	case *ir.NodeScalar:
 		b.WriteString(formatCppValueLiteral(v))
-	case *ir.Object:
+	case *ir.NodeObject:
 		genCppObjectLiteral(b, v, fieldKey, indent)
-	case *ir.Array:
+	case *ir.NodeArray:
 		genCppArrayLiteral(b, v, fieldKey, indent)
 	default:
 		b.WriteString("{}")
 	}
 }
 
-func genCppObjectLiteral(b *strings.Builder, obj *ir.Object, fieldKey string, indent int) {
+func genCppObjectLiteral(b *strings.Builder, obj *ir.NodeObject, fieldKey string, indent int) {
 	if obj == nil {
 		b.WriteString("{}")
 		return
@@ -342,7 +342,7 @@ func genCppObjectLiteral(b *strings.Builder, obj *ir.Object, fieldKey string, in
 	b.WriteString("}")
 }
 
-func genCppArrayLiteral(b *strings.Builder, a *ir.Array, fieldKey string, indent int) {
+func genCppArrayLiteral(b *strings.Builder, a *ir.NodeArray, fieldKey string, indent int) {
 	if a == nil || len(a.Items) == 0 {
 		b.WriteString("{}")
 		return
@@ -356,9 +356,9 @@ func genCppArrayLiteral(b *strings.Builder, a *ir.Array, fieldKey string, indent
 		}
 	} else if len(a.Items) > 0 {
 		switch item := a.Items[0].(type) {
-		case *ir.Object:
+		case *ir.NodeObject:
 			itemType = getCppObjectType(fieldKey, item, newCppStructCollector())
-		case *ir.Value:
+		case *ir.NodeScalar:
 			if item.Tag != nil {
 				if t, ok := cppTypeMap[item.Tag.Type]; ok {
 					itemType = t
@@ -379,7 +379,7 @@ func genCppArrayLiteral(b *strings.Builder, a *ir.Array, fieldKey string, indent
 	b.WriteString("}")
 }
 
-func formatCppValueLiteral(v *ir.Value) string {
+func formatCppValueLiteral(v *ir.NodeScalar) string {
 	if v == nil {
 		return "{}"
 	}

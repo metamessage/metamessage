@@ -1,5 +1,5 @@
 import { JSONCScanner, TokenType, Token } from './scanner';
-import { MMValue, MMObject, MMArray, MMDoc } from '../ir/ast';
+import { NodeScalar, NodeObject, NodeArray, MMDoc } from '../ir/ast';
 import { ValidationResult } from '../ir/tag';
 import { ValueType } from '../ir/value-type';
 import { Tag, parseMMTag } from '../ir/tag';
@@ -41,7 +41,7 @@ export class JSONCParser {
 
       val = this.parseValue('');
     }
-    return new MMDoc(val || new MMObject());
+    return new MMDoc(val || new NodeObject());
   }
 
   private peek(): Token {
@@ -307,7 +307,7 @@ export class JSONCParser {
               break;
           }
 
-          const strValue = new MMValue(data, strTag);
+          const strValue = new NodeScalar(data, strTag);
           strValue.setPath(path);
           strValue.setText(text);
           this.depth--;
@@ -486,7 +486,7 @@ export class JSONCParser {
             }
           }
 
-          const numValue = new MMValue(data, numTag);
+          const numValue = new NodeScalar(data, numTag);
           numValue.setPath(path);
           numValue.setText(text);
           this.depth--;
@@ -516,7 +516,7 @@ export class JSONCParser {
             );
           }
 
-          const trueValue = new MMValue(true, trueTag);
+          const trueValue = new NodeScalar(true, trueTag);
           trueValue.setPath(path);
           trueValue.setText('true');
           this.depth--;
@@ -544,7 +544,7 @@ export class JSONCParser {
             );
           }
 
-          const falseValue = new MMValue(false, falseTag);
+          const falseValue = new NodeScalar(false, falseTag);
           falseValue.setPath(path);
           falseValue.setText('false');
           this.depth--;
@@ -609,7 +609,7 @@ export class JSONCParser {
     return result.data;
   }
 
-  private parseObject(openLine: number, path: string): MMObject {
+  private parseObject(openLine: number, path: string): NodeObject {
     let tag = new Tag();
     if (tag.type === ValueType.Unknown) {
       tag.type = ValueType.Obj;
@@ -619,7 +619,7 @@ export class JSONCParser {
       path = path ? `${path}.${tag.name}` : tag.name;
     }
 
-    const obj = new MMObject();
+    const obj = new NodeObject();
     obj.setTag(tag);
     obj.setPath(path);
 
@@ -665,7 +665,7 @@ export class JSONCParser {
       if (childTag && tag && this.hasChildFields(tag)) {
         const origType = childTag.type;
         childTag.inherit(tag);
-        if (val instanceof MMValue && origType !== childTag.type) {
+        if (val instanceof NodeScalar && origType !== childTag.type) {
           this.revalidateValue(val, childTag, origType);
         }
       }
@@ -687,7 +687,7 @@ export class JSONCParser {
     return obj;
   }
 
-  private parseArray(openLine: number, path: string): MMArray {
+  private parseArray(openLine: number, path: string): NodeArray {
     let tag = this.consumeCommentsFor(openLine);
     if (!tag) {
       tag = new Tag();
@@ -700,7 +700,7 @@ export class JSONCParser {
       path = `${path}.${tag.name}`;
     }
 
-    const arr = new MMArray();
+    const arr = new NodeArray();
     arr.setTag(tag);
     arr.setPath(path);
 
@@ -738,12 +738,12 @@ export class JSONCParser {
       if (childTag && tag && this.hasChildFields(tag)) {
         const origType = childTag.type;
         childTag.inherit(tag);
-        if (item instanceof MMValue && origType !== childTag.type) {
+        if (item instanceof NodeScalar && origType !== childTag.type) {
           this.revalidateValue(item, childTag, origType);
         }
       }
 
-      if (item instanceof MMValue) {
+      if (item instanceof NodeScalar) {
         const itemTag = item.getTag();
         if (
           itemTag.type === ValueType.Datetime ||
@@ -855,7 +855,11 @@ export class JSONCParser {
     );
   }
 
-  private revalidateValue(item: MMValue, tag: Tag, origType: ValueType): void {
+  private revalidateValue(
+    item: NodeScalar,
+    tag: Tag,
+    origType: ValueType,
+  ): void {
     const text = item.getText() || String(item.getValue());
 
     switch (tag.type) {

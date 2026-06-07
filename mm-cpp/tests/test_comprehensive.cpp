@@ -142,14 +142,14 @@ void testTag() {
 void testAST() {
   std::cout << "\n=== AST Tests ===\n";
 
-  auto obj = ir::makeObject();
-  TEST("Object type", obj->getType() == ir::NodeType::Object);
+  auto obj = ir::makeNodeObject();
+  TEST("Object type", obj->getType() == ir::NodeType::NodeObject);
   TEST("Object tag not null", obj->getTag() != nullptr);
 
-  auto arr = ir::makeArray();
-  TEST("Array type", arr->getType() == ir::NodeType::Array);
+  auto arr = ir::makeNodeArray();
+  TEST("Array type", arr->getType() == ir::NodeType::NodeArray);
 
-  auto val = ir::makeValue();
+  auto val = ir::makeNodeScalar();
   TEST("Value type", val->getType() == ir::NodeType::Value);
   val->text = "hello";
   TEST("Value text", val->text == "hello");
@@ -161,7 +161,7 @@ void testAST() {
   TEST("Object has 1 field", obj->fields.size() == 1);
   TEST("Field key", obj->fields[0].key == "name");
 
-  ir::Field field("age", ir::makeValue());
+  ir::Field field("age", ir::makeNodeScalar());
   TEST("Field key from constructor", field.key == "age");
 
   obj->setPath("/root");
@@ -184,8 +184,8 @@ void testJSONCScannerParser() {
   auto parser = jsonc::Parser(tokens);
   auto node = parser.parse();
   TEST("Parse produces node", node != nullptr);
-  TEST("Parsed node is Object", node->getType() == ir::NodeType::Object);
-  auto obj = std::static_pointer_cast<ir::Object>(node);
+  TEST("Parsed node is Object", node->getType() == ir::NodeType::NodeObject);
+  auto obj = std::static_pointer_cast<ir::NodeObject>(node);
   TEST("Object has 2 fields", obj->fields.size() == 2);
 
   std::string taggedInput = R"({
@@ -198,10 +198,11 @@ void testJSONCScannerParser() {
   auto parser2 = jsonc::Parser(tokens2);
   auto node2 = parser2.parse();
   parser2.applyTags(node2);
-  auto obj2 = std::static_pointer_cast<ir::Object>(node2);
+  auto obj2 = std::static_pointer_cast<ir::NodeObject>(node2);
 
   if (obj2 && obj2->fields.size() >= 2) {
-    auto ageVal = std::static_pointer_cast<ir::Value>(obj2->fields[1].value);
+    auto ageVal =
+        std::static_pointer_cast<ir::NodeScalar>(obj2->fields[1].value);
     TEST("Age field has type from mm tag",
          ageVal->getTag()->type == ir::ValueType::U8);
     TEST("Age field has min from mm tag", ageVal->getTag()->min == "0");
@@ -215,8 +216,8 @@ void testJSONCScannerParser() {
   auto tokens3 = scanner3.scanAll();
   auto parser3 = jsonc::Parser(tokens3);
   auto node3 = parser3.parse();
-  TEST("Array parse", node3->getType() == ir::NodeType::Array);
-  auto arr3 = std::static_pointer_cast<ir::Array>(node3);
+  TEST("Array parse", node3->getType() == ir::NodeType::NodeArray);
+  auto arr3 = std::static_pointer_cast<ir::NodeArray>(node3);
   TEST("Array has 3 items", arr3->items.size() == 3);
 }
 
@@ -237,15 +238,15 @@ void testJSONCPrinter() {
 void testEncoderDecoder() {
   std::cout << "\n=== Encoder/Decoder Tests ===\n";
 
-  auto obj = ir::makeObject();
+  auto obj = ir::makeNodeObject();
   obj->tag.type = ir::ValueType::Obj;
 
-  auto nameVal = ir::makeValue();
+  auto nameVal = ir::makeNodeScalar();
   nameVal->text = "alice";
   nameVal->tag.type = ir::ValueType::Str;
   obj->fields.emplace_back("name", nameVal);
 
-  auto ageVal = ir::makeValue();
+  auto ageVal = ir::makeNodeScalar();
   ageVal->text = "30";
   ageVal->tag.type = ir::ValueType::U8;
   obj->fields.emplace_back("age", ageVal);
@@ -258,12 +259,12 @@ void testEncoderDecoder() {
   core::Decoder decoder;
   auto decoded = decoder.decode(encoded);
   TEST("Decoded node not null", decoded != nullptr);
-  TEST("Decoded is Object", decoded->getType() == ir::NodeType::Object);
-  auto decodedObj = std::static_pointer_cast<ir::Object>(decoded);
+  TEST("Decoded is Object", decoded->getType() == ir::NodeType::NodeObject);
+  auto decodedObj = std::static_pointer_cast<ir::NodeObject>(decoded);
   TEST("Decoded has 2 fields", decodedObj->fields.size() == 2);
   if (decodedObj->fields.size() >= 1) {
     auto nameField =
-        std::static_pointer_cast<ir::Value>(decodedObj->fields[0].value);
+        std::static_pointer_cast<ir::NodeScalar>(decodedObj->fields[0].value);
     if (nameField) {
       TEST("Decoded name field exists", decodedObj->fields[0].key == "name");
     }
@@ -357,7 +358,7 @@ void testFullRoundTrip() {
 void testValueTypeEncodeDecode() {
   std::cout << "\n=== Value Type Encode/Decode Tests ===\n";
 
-  auto boolVal = ir::makeValue();
+  auto boolVal = ir::makeNodeScalar();
   boolVal->text = "true";
   boolVal->tag.type = ir::ValueType::Bool;
   core::Encoder enc;
@@ -366,12 +367,12 @@ void testValueTypeEncodeDecode() {
   auto decoded = dec.decode(encoded);
   TEST("Bool round-trip", decoded != nullptr);
   if (decoded) {
-    auto v = std::static_pointer_cast<ir::Value>(decoded);
+    auto v = std::static_pointer_cast<ir::NodeScalar>(decoded);
     if (v)
       TEST("Bool value true", v->text == "true");
   }
 
-  auto intVal = ir::makeValue();
+  auto intVal = ir::makeNodeScalar();
   intVal->text = "42";
   intVal->tag.type = ir::ValueType::I;
   core::Encoder enc2;
@@ -380,12 +381,12 @@ void testValueTypeEncodeDecode() {
   auto decoded2 = dec2.decode(encoded2);
   TEST("Int round-trip", decoded2 != nullptr);
   if (decoded2) {
-    auto v = std::static_pointer_cast<ir::Value>(decoded2);
+    auto v = std::static_pointer_cast<ir::NodeScalar>(decoded2);
     if (v)
       TEST("Int value 42", v->text == "42");
   }
 
-  auto strVal = ir::makeValue();
+  auto strVal = ir::makeNodeScalar();
   strVal->text = "hello world";
   strVal->tag.type = ir::ValueType::Str;
   core::Encoder enc3;
@@ -394,7 +395,7 @@ void testValueTypeEncodeDecode() {
   auto decoded3 = dec3.decode(encoded3);
   TEST("String round-trip", decoded3 != nullptr);
   if (decoded3) {
-    auto v = std::static_pointer_cast<ir::Value>(decoded3);
+    auto v = std::static_pointer_cast<ir::NodeScalar>(decoded3);
     if (v)
       TEST("String value hello world", v->text == "hello world");
   }
@@ -403,18 +404,18 @@ void testValueTypeEncodeDecode() {
 void testNestedObject() {
   std::cout << "\n=== Nested Object Tests ===\n";
 
-  auto outer = ir::makeObject();
-  auto inner = ir::makeObject();
+  auto outer = ir::makeNodeObject();
+  auto inner = ir::makeNodeObject();
   inner->tag.type = ir::ValueType::Obj;
 
-  auto val = ir::makeValue();
+  auto val = ir::makeNodeScalar();
   val->text = "inner_value";
   val->tag.type = ir::ValueType::Str;
   inner->fields.emplace_back("inner_field", val);
 
   outer->fields.emplace_back("nested", inner);
 
-  auto val2 = ir::makeValue();
+  auto val2 = ir::makeNodeScalar();
   val2->text = "outer_value";
   val2->tag.type = ir::ValueType::Str;
   outer->fields.emplace_back("outer_field", val2);
@@ -426,15 +427,15 @@ void testNestedObject() {
   core::Decoder dec;
   auto decoded = dec.decode(encoded);
   TEST("Nested decode produces node", decoded != nullptr);
-  auto obj = std::static_pointer_cast<ir::Object>(decoded);
+  auto obj = std::static_pointer_cast<ir::NodeObject>(decoded);
   TEST("Nested has 2 fields", obj->fields.size() == 2);
 
   if (obj->fields.size() >= 2) {
     auto nestedField = obj->fields[0].value;
     TEST("First field is nested object",
-         nestedField->getType() == ir::NodeType::Object);
-    if (nestedField->getType() == ir::NodeType::Object) {
-      auto nestedObj = std::static_pointer_cast<ir::Object>(nestedField);
+         nestedField->getType() == ir::NodeType::NodeObject);
+    if (nestedField->getType() == ir::NodeType::NodeObject) {
+      auto nestedObj = std::static_pointer_cast<ir::NodeObject>(nestedField);
       TEST("Nested object has 1 field", nestedObj->fields.size() == 1);
     }
   }
@@ -458,15 +459,15 @@ void testArrayRoundTrip() {
   auto &valuesField = node->fields[1];
   TEST("Values field key is values", valuesField.key == "values");
   TEST("Values field is Array",
-       valuesField.value->getType() == ir::NodeType::Array);
+       valuesField.value->getType() == ir::NodeType::NodeArray);
 
-  auto arr = std::dynamic_pointer_cast<ir::Array>(valuesField.value);
+  auto arr = std::dynamic_pointer_cast<ir::NodeArray>(valuesField.value);
   if (arr) {
     TEST("Array has 3 items", arr->items.size() == 3);
     if (arr->items.size() >= 3) {
-      auto v0 = std::dynamic_pointer_cast<ir::Value>(arr->items[0]);
-      auto v1 = std::dynamic_pointer_cast<ir::Value>(arr->items[1]);
-      auto v2 = std::dynamic_pointer_cast<ir::Value>(arr->items[2]);
+      auto v0 = std::dynamic_pointer_cast<ir::NodeScalar>(arr->items[0]);
+      auto v1 = std::dynamic_pointer_cast<ir::NodeScalar>(arr->items[1]);
+      auto v2 = std::dynamic_pointer_cast<ir::NodeScalar>(arr->items[2]);
       if (v0)
         TEST("Array[0] text", v0->text == "dev");
       if (v1)
@@ -477,7 +478,7 @@ void testArrayRoundTrip() {
   }
 
   // Round-trip: TagMap -> node -> TagMap
-  auto decodedNode = std::static_pointer_cast<ir::Object>(node);
+  auto decodedNode = std::static_pointer_cast<ir::NodeObject>(node);
   TagMap m2 = _mm_from_node_TagMap(decodedNode);
   TEST("Round-trip key", m2.key == "category");
   TEST("Round-trip values size", m2.values.size() == 3);
@@ -492,12 +493,13 @@ void testArrayRoundTrip() {
   m3.key = "empty_key";
   auto node3 = _mm_to_node_TagMap(m3);
   TEST("Empty values to_node", node3 != nullptr);
-  auto arr3 = std::dynamic_pointer_cast<ir::Array>(node3->fields[1].value);
+  auto arr3 = std::dynamic_pointer_cast<ir::NodeArray>(node3->fields[1].value);
   if (arr3) {
     TEST("Empty values array has 0 items", arr3->items.size() == 0);
   }
 
-  TagMap m4 = _mm_from_node_TagMap(std::static_pointer_cast<ir::Object>(node3));
+  TagMap m4 =
+      _mm_from_node_TagMap(std::static_pointer_cast<ir::NodeObject>(node3));
   TEST("Round-trip empty values", m4.values.empty());
   TEST("Round-trip empty key", m4.key == "empty_key");
 }

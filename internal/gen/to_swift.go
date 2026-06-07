@@ -49,7 +49,7 @@ func ToSwift(n ir.Node) string {
 	}
 
 	topName := "Obj"
-	if obj, ok := n.(*ir.Object); ok && obj.Tag != nil && obj.Tag.Name != "" {
+	if obj, ok := n.(*ir.NodeObject); ok && obj.Tag != nil && obj.Tag.Name != "" {
 		topName = exportSwiftStructName(obj.Tag.Name)
 	}
 
@@ -106,18 +106,18 @@ func collectSwiftImportsRec(n ir.Node, imports map[string]struct{}) {
 	}
 
 	switch v := n.(type) {
-	case *ir.Value:
+	case *ir.NodeScalar:
 		if v.Tag != nil {
 			addSwiftImportForType(v.Tag.Type, imports)
 		}
-	case *ir.Array:
+	case *ir.NodeArray:
 		if v.Tag != nil && v.Tag.ChildType != ir.ValueTypeUnknown {
 			addSwiftImportForType(v.Tag.ChildType, imports)
 		}
 		for _, item := range v.Items {
 			collectSwiftImportsRec(item, imports)
 		}
-	case *ir.Object:
+	case *ir.NodeObject:
 		for _, f := range v.Fields {
 			if f != nil {
 				collectSwiftImportsRec(f.Value, imports)
@@ -135,18 +135,18 @@ func addSwiftImportForType(typ ir.ValueType, imports map[string]struct{}) {
 
 func getSwiftTypeForField(f *ir.Field) string {
 	switch v := f.Value.(type) {
-	case *ir.Value:
+	case *ir.NodeScalar:
 		return getSwiftType(v)
-	case *ir.Object:
+	case *ir.NodeObject:
 		return getSwiftObjectType(f.Key, v)
-	case *ir.Array:
+	case *ir.NodeArray:
 		return getSwiftArrayType(f.Key, v)
 	default:
 		return "Any"
 	}
 }
 
-func getSwiftType(v *ir.Value) string {
+func getSwiftType(v *ir.NodeScalar) string {
 	if v != nil && v.Tag != nil {
 		if t, ok := swiftTypeMap[v.Tag.Type]; ok {
 			return t
@@ -155,14 +155,14 @@ func getSwiftType(v *ir.Value) string {
 	return "Any"
 }
 
-func getSwiftObjectType(fieldKey string, obj *ir.Object) string {
+func getSwiftObjectType(fieldKey string, obj *ir.NodeObject) string {
 	if obj != nil && obj.Tag != nil && obj.Tag.Name != "" {
 		return exportSwiftStructName(obj.Tag.Name)
 	}
 	return exportSwiftStructName(fieldKey)
 }
 
-func getSwiftArrayType(fieldKey string, a *ir.Array) string {
+func getSwiftArrayType(fieldKey string, a *ir.NodeArray) string {
 	if a == nil {
 		return "[Any]"
 	}
@@ -175,9 +175,9 @@ func getSwiftArrayType(fieldKey string, a *ir.Array) string {
 
 	if len(a.Items) > 0 {
 		switch item := a.Items[0].(type) {
-		case *ir.Object:
+		case *ir.NodeObject:
 			return "[" + getSwiftObjectType(fieldKey, item) + "]"
-		case *ir.Value:
+		case *ir.NodeScalar:
 			if item.Tag != nil {
 				if t, ok := swiftTypeMap[item.Tag.Type]; ok {
 					return "[" + t + "]"
@@ -190,7 +190,7 @@ func getSwiftArrayType(fieldKey string, a *ir.Array) string {
 }
 
 func genSwiftFields(b *strings.Builder, n ir.Node, indent int) {
-	obj, ok := n.(*ir.Object)
+	obj, ok := n.(*ir.NodeObject)
 	if !ok {
 		return
 	}
@@ -209,7 +209,7 @@ func genSwiftFields(b *strings.Builder, n ir.Node, indent int) {
 }
 
 func genSwiftNestedStructs(b *strings.Builder, n ir.Node, generated map[string]struct{}) {
-	obj, ok := n.(*ir.Object)
+	obj, ok := n.(*ir.NodeObject)
 	if !ok {
 		return
 	}
@@ -220,7 +220,7 @@ func genSwiftNestedStructs(b *strings.Builder, n ir.Node, generated map[string]s
 		}
 
 		switch v := f.Value.(type) {
-		case *ir.Object:
+		case *ir.NodeObject:
 			structName := getSwiftObjectType(f.Key, v)
 			if _, ok := generated[structName]; ok {
 				continue
@@ -232,7 +232,7 @@ func genSwiftNestedStructs(b *strings.Builder, n ir.Node, generated map[string]s
 			genSwiftFields(b, v, 1)
 			b.WriteString("}\n")
 			genSwiftNestedStructs(b, v, generated)
-		case *ir.Array:
+		case *ir.NodeArray:
 			if nestedObj := findFirstObjectInArray(v); nestedObj != nil {
 				structName := getSwiftObjectType(f.Key, nestedObj)
 				if _, ok := generated[structName]; ok {
@@ -300,18 +300,18 @@ func exportSwiftInstanceName(name string) string {
 
 func genSwiftValue(b *strings.Builder, n ir.Node, indent int) {
 	switch v := n.(type) {
-	case *ir.Value:
+	case *ir.NodeScalar:
 		b.WriteString(formatSwiftValueLiteral(v))
-	case *ir.Object:
+	case *ir.NodeObject:
 		genSwiftObjectInitializer(b, v, indent)
-	case *ir.Array:
+	case *ir.NodeArray:
 		genSwiftArrayLiteral(b, v, indent)
 	default:
 		b.WriteString("nil")
 	}
 }
 
-func genSwiftObjectInitializer(b *strings.Builder, obj *ir.Object, indent int) {
+func genSwiftObjectInitializer(b *strings.Builder, obj *ir.NodeObject, indent int) {
 	if obj == nil {
 		b.WriteString("nil")
 		return
@@ -338,7 +338,7 @@ func genSwiftObjectInitializer(b *strings.Builder, obj *ir.Object, indent int) {
 	b.WriteString(")")
 }
 
-func genSwiftArrayLiteral(b *strings.Builder, a *ir.Array, indent int) {
+func genSwiftArrayLiteral(b *strings.Builder, a *ir.NodeArray, indent int) {
 	if a == nil {
 		b.WriteString("[]")
 		return
@@ -357,7 +357,7 @@ func genSwiftArrayLiteral(b *strings.Builder, a *ir.Array, indent int) {
 	b.WriteString("]")
 }
 
-func formatSwiftValueLiteral(v *ir.Value) string {
+func formatSwiftValueLiteral(v *ir.NodeScalar) string {
 	if v == nil {
 		return "nil"
 	}

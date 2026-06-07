@@ -250,7 +250,7 @@ pub fn derive_to_node(input: TokenStream) -> TokenStream {
                     #(#field_conversions),*
                 ];
 
-                crate::ir::Node::Object(crate::ir::Object {
+                crate::ir::Node::Object(crate::ir::NodeObject {
                     fields,
                     tag: Some(tag),
                     path,

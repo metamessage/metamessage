@@ -1,4 +1,4 @@
-import { MMValue, MMObject, MMArray } from '../ir/ast';
+import { NodeScalar, NodeObject, NodeArray } from '../ir/ast';
 import { Tag } from '../ir/tag';
 import { Node } from '../ir/ast';
 import { ValueType } from '../ir/value-type';
@@ -17,11 +17,11 @@ export class Binder {
   }
 
   bindNode(node: Node, target: any): { value: any; error: string | null } {
-    if (node instanceof MMValue) {
+    if (node instanceof NodeScalar) {
       return { value: node.getValue(), error: null };
     }
 
-    if (node instanceof MMObject) {
+    if (node instanceof NodeObject) {
       const tag = node.getTag();
       if (tag?.type === ValueType.Obj) {
         return this.convertObj(node, target);
@@ -30,7 +30,7 @@ export class Binder {
       }
     }
 
-    if (node instanceof MMArray) {
+    if (node instanceof NodeArray) {
       const tag = node.getTag();
       if (tag?.type === ValueType.Arr) {
         return this.convertArr(node, target);
@@ -43,7 +43,7 @@ export class Binder {
   }
 
   private convertObj(
-    obj: MMObject,
+    obj: NodeObject,
     target: any,
   ): { value: any; error: string | null } {
     const tag = obj.getTag();
@@ -82,7 +82,7 @@ export class Binder {
   }
 
   private convertMap(
-    obj: MMObject,
+    obj: NodeObject,
     target: any,
   ): { value: any; error: string | null } {
     if (
@@ -105,7 +105,7 @@ export class Binder {
   }
 
   private convertArr(
-    arr: MMArray,
+    arr: NodeArray,
     target: any,
   ): { value: any; error: string | null } {
     if (!Array.isArray(target)) {
@@ -137,7 +137,7 @@ export class Binder {
   }
 
   private convertVec(
-    arr: MMArray,
+    arr: NodeArray,
     target: any[],
   ): { value: any; error: string | null } {
     if (!Array.isArray(target)) {

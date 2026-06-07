@@ -1,4 +1,4 @@
-import { Node, MMValue, MMObject, MMArray } from '../ir/ast';
+import { Node, NodeScalar, NodeObject, NodeArray } from '../ir/ast';
 import { Tag } from '../ir/tag';
 import { typeToString, ValueType } from '../ir/value-type';
 import { META_KEY } from './mm';
@@ -13,11 +13,11 @@ function isUnionTypeWithNull(type: string | undefined): boolean {
   return type.split('|').some((t) => t.trim().toLowerCase() === 'null');
 }
 
-export function NilToNode(valueType: ValueType): MMValue {
+export function NilToNode(valueType: ValueType): NodeScalar {
   const tag = new Tag();
   tag.type = valueType;
   tag.isNull = true;
-  return new MMValue(null, tag);
+  return new NodeScalar(null, tag);
 }
 
 export function ValueToNode(v: any, tag?: Tag): Node {
@@ -473,8 +473,8 @@ function createValueNode(
   text: string,
   tag: Tag,
   path: string,
-): MMValue {
-  const node = new MMValue(data, tag);
+): NodeScalar {
+  const node = new NodeScalar(data, tag);
   node.setPath(path);
   return node;
 }
@@ -485,7 +485,7 @@ function anyToObject(
   depth: number,
   path: string,
   meta: Record<string, Tag>,
-): MMObject {
+): NodeObject {
   depth++;
   if (depth > maxDepth) {
     throw new Error(`max depth: ${maxDepth}`);
@@ -495,7 +495,7 @@ function anyToObject(
     tag.type = ValueType.Obj;
   }
 
-  const objNode = new MMObject();
+  const objNode = new NodeObject();
   objNode.setTag(tag);
   objNode.setPath(path);
 
@@ -535,7 +535,7 @@ function anyToArray(
   tag: Tag,
   depth: number,
   path: string,
-): MMArray {
+): NodeArray {
   depth++;
   if (depth > maxDepth) {
     throw new Error(`max depth: ${maxDepth}`);
@@ -545,7 +545,7 @@ function anyToArray(
     tag.type = ValueType.Vec;
   }
 
-  const arrNode = new MMArray();
+  const arrNode = new NodeArray();
   arrNode.setTag(tag);
   arrNode.setPath(path);
 

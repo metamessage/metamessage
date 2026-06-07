@@ -59,7 +59,7 @@ pub fn jsonc_to_value(jsonc: &str) -> Result<Node, String> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use ir::{Field, Node, Object, Tag, Value, ValueData, ValueType};
+    use ir::{Field, Node, NodeObject, NodeScalar, Tag, ValueData, ValueType};
 
     #[test]
     fn test_tag_parse_direct() {
@@ -72,10 +72,10 @@ mod tests {
 
     #[test]
     fn test_simple_encode_decode() {
-        let obj = Node::Object(Object {
+        let obj = Node::Object(NodeObject {
             fields: vec![Field {
                 key: "name".to_string(),
-                value: Node::Value(Value {
+                value: Node::Value(NodeScalar {
                     data: ValueData::String("test".to_string()),
                     text: "test".to_string(),
                     path: String::new(),

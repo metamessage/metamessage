@@ -86,7 +86,7 @@ func TestEncodeBool(t *testing.T) {
 				}
 
 				// fmt.Println("decoded:", Dump(gotVal), jsonc.ToJSONC(gotVal))
-				if !reflect.DeepEqual(gotVal.(*ir.Value).Data, tc.wantDecode) {
+				if !reflect.DeepEqual(gotVal.(*ir.NodeScalar).Data, tc.wantDecode) {
 					t.Errorf("value mismatch: expected %v (%T), got %v (%T)",
 						tc.wantDecode, tc.wantDecode, gotVal, gotVal)
 				}
@@ -149,7 +149,7 @@ func TestEncodeBoolInStruct(t *testing.T) {
 				t.Fatalf("decode failed: %v", err)
 			}
 
-			obj := decoded.(*ir.Object)
+			obj := decoded.(*ir.NodeObject)
 			fields := obj.Fields
 			if len(fields) < 2 {
 				t.Fatalf("expected at least 2 fields, got %d", len(fields))
@@ -200,13 +200,13 @@ func TestEncodeBoolArray(t *testing.T) {
 				t.Fatalf("decode failed: %v", err)
 			}
 
-			arr := decoded.(*ir.Array)
+			arr := decoded.(*ir.NodeArray)
 			if len(arr.Items) != len(tc.input) {
 				t.Errorf("array length mismatch: expected %d, got %d", len(tc.input), len(arr.Items))
 			}
 
 			for i, item := range arr.Items {
-				val := item.(*ir.Value).Data.(bool)
+				val := item.(*ir.NodeScalar).Data.(bool)
 				if val != tc.input[i] {
 					t.Errorf("array[%d] mismatch: expected %v, got %v", i, tc.input[i], val)
 				}
@@ -296,7 +296,7 @@ func TestEncodeBoolByteRepresentation(t *testing.T) {
 				t.Fatalf("decode failed: %v", err)
 			}
 
-			decodedBool := decoded.(*ir.Value).Data.(bool)
+			decodedBool := decoded.(*ir.NodeScalar).Data.(bool)
 			if decodedBool != tc.input {
 				t.Errorf("value mismatch: expected %v, got %v", tc.input, decodedBool)
 			}

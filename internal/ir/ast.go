@@ -65,19 +65,19 @@ type Field struct {
 	Value Node
 }
 
-type Object struct {
+type NodeObject struct {
 	Fields []*Field
 	Tag    *Tag
 	Path   string
 }
 
-func (o *Object) GetPath() string { return o.Path }
+func (o *NodeObject) GetPath() string { return o.Path }
 
-func (o *Object) SetPath(path string) { o.Path = path }
+func (o *NodeObject) SetPath(path string) { o.Path = path }
 
-func (o *Object) GetType() NodeType { return NodeTypeObject }
+func (o *NodeObject) GetType() NodeType { return NodeTypeObject }
 
-func (o *Object) GetTag() *Tag {
+func (o *NodeObject) GetTag() *Tag {
 	if o == nil {
 		return nil
 	}
@@ -87,19 +87,19 @@ func (o *Object) GetTag() *Tag {
 	return nil
 }
 
-type Array struct {
+type NodeArray struct {
 	Items []Node
 	Tag   *Tag
 	Path  string
 }
 
-func (a *Array) GetPath() string { return a.Path }
+func (a *NodeArray) GetPath() string { return a.Path }
 
-func (a *Array) SetPath(path string) { a.Path = path }
+func (a *NodeArray) SetPath(path string) { a.Path = path }
 
-func (a *Array) GetType() NodeType { return NodeTypeArray }
+func (a *NodeArray) GetType() NodeType { return NodeTypeArray }
 
-func (a *Array) GetTag() *Tag {
+func (a *NodeArray) GetTag() *Tag {
 	if a == nil {
 		return nil
 	}
@@ -109,20 +109,20 @@ func (a *Array) GetTag() *Tag {
 	return nil
 }
 
-type Value struct {
+type NodeScalar struct {
 	Data any
 	Text string
 	Tag  *Tag
 	Path string
 }
 
-func (v *Value) GetPath() string { return v.Path }
+func (v *NodeScalar) GetPath() string { return v.Path }
 
-func (v *Value) SetPath(path string) { v.Path = path }
+func (v *NodeScalar) SetPath(path string) { v.Path = path }
 
-func (v *Value) GetType() NodeType { return NodeTypeValue }
+func (v *NodeScalar) GetType() NodeType { return NodeTypeValue }
 
-func (v *Value) GetTag() *Tag {
+func (v *NodeScalar) GetTag() *Tag {
 	if v == nil {
 		return nil
 	}

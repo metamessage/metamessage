@@ -3,6 +3,6 @@
 
 #include "../ir/mc_ast.h"
 
-mm_node_t* mm_jsonc_parse(const char* input);
+node_t* mm_jsonc_parse(const char* input);
 
 #endif

@@ -159,7 +159,7 @@ public class JSONCParser {
                         if text != "" {
                             throw JSONCParserError.invalidData("invalid string: \(text), valid: \"\"")
                         }
-                        return Value(data: "", text: "", tag: tag, path: path)
+                        return NodeScalar(data: "", text: "", tag: tag, path: path)
                     }
                 }
 
@@ -213,7 +213,7 @@ public class JSONCParser {
                     }
                 }
 
-                let value = Value(data: parsedData, text: text, tag: tag, path: path)
+                let value = NodeScalar(data: parsedData, text: text, tag: tag, path: path)
                 return value
 
         case .number:
@@ -234,15 +234,15 @@ public class JSONCParser {
                         if tok.literal != "0.0" {
                             throw JSONCParserError.invalidData("invalid float: \(tok.literal), valid: 0.0")
                         }
-                        return Value(data: tag.type == .f32 ? Float(0.0) : Double(0.0), text: tok.literal, tag: tag, path: path)
+                        return NodeScalar(data: tag.type == .f32 ? Float(0.0) : Double(0.0), text: tok.literal, tag: tag, path: path)
                     } else {
                         if tok.literal != "0" {
                             throw JSONCParserError.invalidData("invalid int: \(tok.literal), valid: 0")
                         }
                         if tag.type == .bigint {
-                            return Value(data: "0", text: tok.literal, tag: tag, path: path)
+                            return NodeScalar(data: "0", text: tok.literal, tag: tag, path: path)
                         }
-                        return Value(data: Int(0), text: tok.literal, tag: tag, path: path)
+                        return NodeScalar(data: Int(0), text: tok.literal, tag: tag, path: path)
                     }
                 }
             }
@@ -286,7 +286,7 @@ public class JSONCParser {
                 }
             }
 
-            let value = Value(data: data, text: tok.literal, tag: tag, path: path)
+            let value = NodeScalar(data: data, text: tok.literal, tag: tag, path: path)
             return value
 
         case .trueValue:
@@ -303,7 +303,7 @@ public class JSONCParser {
                     throw JSONCParserError.invalidData(trueResult.errors.joined(separator: ", "))
                 }
             }
-            let value = Value(data: true, text: "true", tag: tag, path: path)
+            let value = NodeScalar(data: true, text: "true", tag: tag, path: path)
             return value
 
         case .falseValue:
@@ -313,14 +313,14 @@ public class JSONCParser {
                     tag.type = .bool
                 }
                 if tag.isNull {
-                    return Value(data: false, text: "false", tag: tag, path: path)
+                    return NodeScalar(data: false, text: "false", tag: tag, path: path)
                 }
                 let falseResult = validator.validate(false, tag: tag)
                 if !falseResult.isValid {
                     throw JSONCParserError.invalidData(falseResult.errors.joined(separator: ", "))
                 }
             }
-            let value = Value(data: false, text: "false", tag: tag, path: path)
+            let value = NodeScalar(data: false, text: "false", tag: tag, path: path)
             return value
 
         case .nullValue:
@@ -331,7 +331,7 @@ public class JSONCParser {
         }
     }
 
-    private func parseObject(_ openLine: Int, _ path: String, _ preTag: Tag? = nil) throws -> MMObject {
+    private func parseObject(_ openLine: Int, _ path: String, _ preTag: Tag? = nil) throws -> NodeObject {
         depth += 1
         if depth > maxDepth {
             throw JSONCParserError.maxDepthExceeded
@@ -352,7 +352,7 @@ public class JSONCParser {
             }
         }
 
-        let obj = MMObject(tag: tag, path: path)
+        let obj = NodeObject(tag: tag, path: path)
 
         if let tag = tag, !tag.example {
             let structResult = validator.validate(obj, tag: tag)
@@ -419,7 +419,7 @@ public class JSONCParser {
         return obj
     }
 
-    private func parseArray(_ openLine: Int, _ path: String, _ preTag: Tag? = nil) throws -> MMArray {
+    private func parseArray(_ openLine: Int, _ path: String, _ preTag: Tag? = nil) throws -> NodeArray {
         depth += 1
         if depth > maxDepth {
             throw JSONCParserError.maxDepthExceeded
@@ -440,7 +440,7 @@ public class JSONCParser {
             }
         }
 
-        let arr = MMArray(tag: tag, path: path)
+        let arr = NodeArray(tag: tag, path: path)
 
         if let tag = tag, !tag.example {
             let arrayResult = validator.validate(arr, tag: tag)
@@ -479,7 +479,7 @@ public class JSONCParser {
                 childTag.inherit(from: parentTag)
 
                 if let item = try parseNode(itemPath, childTag) {
-                    if let value = item as? Value, childTag.type == .bigint, value.data == nil {
+                    if let value = item as? NodeScalar, childTag.type == .bigint, value.data == nil {
                         value.data = value.text
                         let bigIntResult = validator.validate(value.data!, tag: childTag)
                         if !bigIntResult.isValid {
@@ -507,12 +507,12 @@ public class JSONCParser {
     private func mergeNodeTag(_ node: Node, _ tag: Tag) {
         guard let existing = node.getTag() else { return }
 
-        if node is Value {
-            (node as? Value)?.tag = mergeTag(existing, tag)
-        } else if node is MMObject {
-            (node as? MMObject)?.tag = mergeTag(existing, tag)
-        } else if node is MMArray {
-            (node as? MMArray)?.tag = mergeTag(existing, tag)
+        if node is NodeScalar {
+            (node as? NodeScalar)?.tag = mergeTag(existing, tag)
+        } else if node is NodeObject {
+            (node as? NodeObject)?.tag = mergeTag(existing, tag)
+        } else if node is NodeArray {
+            (node as? NodeArray)?.tag = mergeTag(existing, tag)
         }
     }
 }

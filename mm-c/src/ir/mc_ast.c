@@ -2,9 +2,9 @@
 #include <stdlib.h>
 #include <string.h>
 
-mm_node_t* mm_node_new_object(void)
+node_t* node_new_object(void)
 {
-    mm_node_t* node = (mm_node_t*)malloc(sizeof(mm_node_t));
+    node_t* node = (node_t*)malloc(sizeof(node_t));
     if (!node) return NULL;
 
     node->type = MM_NODE_OBJECT;
@@ -17,9 +17,9 @@ mm_node_t* mm_node_new_object(void)
     return node;
 }
 
-mm_node_t* mm_node_new_array(void)
+node_t* node_new_array(void)
 {
-    mm_node_t* node = (mm_node_t*)malloc(sizeof(mm_node_t));
+    node_t* node = (node_t*)malloc(sizeof(node_t));
     if (!node) return NULL;
 
     node->type = MM_NODE_ARRAY;
@@ -32,9 +32,9 @@ mm_node_t* mm_node_new_array(void)
     return node;
 }
 
-mm_node_t* mm_node_new_value(void)
+node_t* node_new_scalar(void)
 {
-    mm_node_t* node = (mm_node_t*)malloc(sizeof(mm_node_t));
+    node_t* node = (node_t*)malloc(sizeof(node_t));
     if (!node) return NULL;
 
     node->type = MM_NODE_VALUE;
@@ -45,9 +45,9 @@ mm_node_t* mm_node_new_value(void)
     return node;
 }
 
-mm_node_t* mm_node_new_doc(void)
+node_t* node_new_doc(void)
 {
-    mm_node_t* node = (mm_node_t*)malloc(sizeof(mm_node_t));
+    node_t* node = (node_t*)malloc(sizeof(node_t));
     if (!node) return NULL;
 
     node->type = MM_NODE_DOC;
@@ -60,7 +60,7 @@ mm_node_t* mm_node_new_doc(void)
     return node;
 }
 
-void mm_node_free(mm_node_t* node)
+void node_free(node_t* node)
 {
     if (!node) return;
 
@@ -68,13 +68,13 @@ void mm_node_free(mm_node_t* node)
     case MM_NODE_OBJECT:
         for (size_t i = 0; i < node->data.object.field_count; i++) {
             free(node->data.object.fields[i].key);
-            mm_node_free(node->data.object.fields[i].value);
+            node_free(node->data.object.fields[i].value);
         }
         free(node->data.object.fields);
         break;
     case MM_NODE_ARRAY:
         for (size_t i = 0; i < node->data.array.item_count; i++) {
-            mm_node_free(node->data.array.items[i]);
+            node_free(node->data.array.items[i]);
         }
         free(node->data.array.items);
         break;
@@ -84,7 +84,7 @@ void mm_node_free(mm_node_t* node)
     case MM_NODE_DOC:
         for (size_t i = 0; i < node->data.doc.field_count; i++) {
             free(node->data.doc.fields[i].key);
-            mm_node_free(node->data.doc.fields[i].value);
+            node_free(node->data.doc.fields[i].value);
         }
         free(node->data.doc.fields);
         break;
@@ -97,7 +97,7 @@ void mm_node_free(mm_node_t* node)
     free(node);
 }
 
-void mm_object_add_field(mm_node_t* obj, const char* key, mm_node_t* value)
+void node_object_add_field(node_t* obj, const char* key, node_t* value)
 {
     mm_field_t* new_fields = (mm_field_t*)realloc(
         obj->data.object.fields,
@@ -111,11 +111,11 @@ void mm_object_add_field(mm_node_t* obj, const char* key, mm_node_t* value)
     obj->data.object.field_count++;
 }
 
-void mm_array_add_item(mm_node_t* arr, mm_node_t* item)
+void node_array_add_item(node_t* arr, node_t* item)
 {
-    mm_node_t** new_items = (mm_node_t**)realloc(
+    node_t** new_items = (node_t**)realloc(
         arr->data.array.items,
-        (arr->data.array.item_count + 1) * sizeof(mm_node_t*));
+        (arr->data.array.item_count + 1) * sizeof(node_t*));
 
     if (!new_items) return;
 
@@ -124,7 +124,7 @@ void mm_array_add_item(mm_node_t* arr, mm_node_t* item)
     arr->data.array.item_count++;
 }
 
-void mm_doc_add_field(mm_node_t* doc, const char* key, mm_node_t* value)
+void node_doc_add_field(node_t* doc, const char* key, node_t* value)
 {
     mm_field_t* new_fields = (mm_field_t*)realloc(
         doc->data.doc.fields,

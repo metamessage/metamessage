@@ -130,9 +130,9 @@ func TestEncodeFloat(t *testing.T) {
 					t.Fatalf("decode failed: %v", decodeErr)
 				}
 				// fmt.Println("decoded:", Dump(gotVal), jsonc.ToJSONC(gotVal))
-				if !reflect.DeepEqual(gotVal.(*ir.Value).Data, tc.wantDecode) {
+				if !reflect.DeepEqual(gotVal.(*ir.NodeScalar).Data, tc.wantDecode) {
 					t.Errorf("value mismatch: expected %v (%T), got %v (%T)",
-						tc.wantDecode, tc.wantDecode, gotVal.(*ir.Value).Data, gotVal.(*ir.Value).Data)
+						tc.wantDecode, tc.wantDecode, gotVal.(*ir.NodeScalar).Data, gotVal.(*ir.NodeScalar).Data)
 				}
 			}
 		})
@@ -211,7 +211,7 @@ func TestEncodeFloatInStruct(t *testing.T) {
 				t.Fatalf("decode failed: %v", err)
 			}
 
-			obj := decoded.(*ir.Object)
+			obj := decoded.(*ir.NodeObject)
 			if len(obj.Fields) < 2 {
 				t.Fatalf("expected at least 2 fields, got %d", len(obj.Fields))
 			}
@@ -261,13 +261,13 @@ func TestEncodeFloatArray(t *testing.T) {
 				t.Fatalf("decode failed: %v", err)
 			}
 
-			arr := decoded.(*ir.Array)
+			arr := decoded.(*ir.NodeArray)
 			if len(arr.Items) != len(tc.input) {
 				t.Errorf("array length mismatch: expected %d, got %d", len(tc.input), len(arr.Items))
 			}
 
 			for i, item := range arr.Items {
-				val := item.(*ir.Value).Data.(float64)
+				val := item.(*ir.NodeScalar).Data.(float64)
 				if !almostEqual(val, tc.input[i], 1e-10) {
 					t.Errorf("array[%d] mismatch: expected %v, got %v", i, tc.input[i], val)
 				}
@@ -373,7 +373,7 @@ func TestEncodeFloatBoundary(t *testing.T) {
 				t.Fatalf("decode failed: %v", err)
 			}
 
-			decodedVal := decoded.(*ir.Value).Data.(float64)
+			decodedVal := decoded.(*ir.NodeScalar).Data.(float64)
 			if !almostEqual(decodedVal, tc.input, 1e-10) {
 				t.Errorf("value mismatch: expected %v, got %v", tc.input, decodedVal)
 			}
@@ -427,7 +427,7 @@ func TestEncodeFloat32Precision(t *testing.T) {
 				t.Fatalf("decode failed: %v", err)
 			}
 
-			decodedVal := decoded.(*ir.Value).Data.(float32)
+			decodedVal := decoded.(*ir.NodeScalar).Data.(float32)
 			if !almostEqualF32(decodedVal, tc.input, 1e-5) {
 				t.Errorf("value mismatch: expected %v, got %v", tc.input, decodedVal)
 			}
@@ -567,7 +567,7 @@ func TestEncodeFloatNegativeRoundtrip(t *testing.T) {
 				t.Fatalf("decode failed: %v", err)
 			}
 
-			decodedVal := decoded.(*ir.Value).Data.(float64)
+			decodedVal := decoded.(*ir.NodeScalar).Data.(float64)
 
 			if !almostEqual(decodedVal, tc.input, 1e-10) {
 				t.Errorf("value mismatch: expected %v, got %v", tc.input, decodedVal)
@@ -616,7 +616,7 @@ func TestEncodeFloatRepresentation(t *testing.T) {
 				t.Fatalf("decode failed: %v", err)
 			}
 
-			decodedVal := decoded.(*ir.Value).Data.(float64)
+			decodedVal := decoded.(*ir.NodeScalar).Data.(float64)
 			if !almostEqual(decodedVal, tc.input, 1e-10) {
 				t.Errorf("value mismatch: expected %v, got %v", tc.input, decodedVal)
 			}

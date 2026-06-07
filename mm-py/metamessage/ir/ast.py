@@ -9,7 +9,7 @@ if TYPE_CHECKING:
 class NodeType(IntEnum):
     Unknown = 0
     Object = 1
-    Array = 2
+    NodeArray = 2
     Value = 3
     Doc = 4
 
@@ -17,7 +17,7 @@ class NodeType(IntEnum):
         mapping = {
             NodeType.Unknown: "unknown",
             NodeType.Object: "object",
-            NodeType.Array: "array",
+            NodeType.NodeArray: "array",
             NodeType.Value: "value",
             NodeType.Doc: "doc",
         }
@@ -29,7 +29,7 @@ def parse_node_type(s: str) -> NodeType:
     mapping = {
         "unknown": NodeType.Unknown,
         "object": NodeType.Object,
-        "array": NodeType.Array,
+        "array": NodeType.NodeArray,
         "value": NodeType.Value,
         "doc": NodeType.Doc,
     }
@@ -57,7 +57,7 @@ class Field:
 
 
 @dataclass
-class Obj(Node):
+class NodeObject(Node):
     fields: List[Field] = field(default_factory=list)
     tag: Optional['Tag'] = None
     path: str = ""
@@ -85,7 +85,7 @@ class Arr(Node):
         return self.tag
 
     def get_type(self):
-        return NodeType.Array
+        return NodeType.NodeArray
 
     def get_path(self):
         return self.path
@@ -95,7 +95,7 @@ class Arr(Node):
 
 
 @dataclass
-class Val(Node):
+class NodeScalar(Node):
     data: Any = None
     text: str = ""
     tag: Optional['Tag'] = None

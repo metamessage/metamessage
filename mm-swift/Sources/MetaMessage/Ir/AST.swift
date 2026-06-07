@@ -26,7 +26,7 @@ public struct Field {
     }
 }
 
-public class MMObject: Node {
+public class NodeObject: Node {
     public var fields: [Field]
     public var tag: Tag?
     public var path: String
@@ -58,7 +58,7 @@ public class MMObject: Node {
     }
 }
 
-public class MMArray: Node {
+public class NodeArray: Node {
     public var items: [Node]
     public var tag: Tag?
     public var path: String
@@ -90,7 +90,7 @@ public class MMArray: Node {
     }
 }
 
-public class Value: Node {
+public class NodeScalar: Node {
     public var data: Any?
     public var text: String
     public var tag: Tag?

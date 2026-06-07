@@ -39,7 +39,7 @@ import {
   FloatLen8Byte,
 } from './constants';
 import { ValueType } from '../ir/value-type';
-import { Node, MMValue, MMObject, MMArray } from '../ir/ast';
+import { Node, NodeScalar, NodeObject, NodeArray } from '../ir/ast';
 import { Tag } from '../ir/tag';
 import { ValueToNode } from './value-to-node';
 import { toJSONC } from '../jsonc/printer';
@@ -61,9 +61,9 @@ export class MMEncoder {
 
   encodeValue(value: any, tag?: Tag): Uint8Array {
     const node = ValueToNode(value, tag);
-    // console.log('node1', (node as MMObject).getProperties().id?.getTag());
-    // console.log('node2', (node as MMObject).getProperties().name?.getTag());
-    // console.log('node3', (node as MMObject).getProperties().age?.getTag());
+    // console.log('node1', (node as NodeObject).getProperties().id?.getTag());
+    // console.log('node2', (node as NodeObject).getProperties().name?.getTag());
+    // console.log('node3', (node as NodeObject).getProperties().age?.getTag());
     const jsonc = toJSONC(node);
     // console.log('jsonc', jsonc);
     return this.encodeNode(node);
@@ -73,13 +73,13 @@ export class MMEncoder {
     let n = 0;
     switch (node.getType()) {
       case 'object':
-        n = this.encodeNodeObject(node as MMObject);
+        n = this.encodeNodeObject(node as NodeObject);
         break;
       case 'array':
-        n = this.encodeNodeArray(node as MMArray);
+        n = this.encodeNodeArray(node as NodeArray);
         break;
       case 'value':
-        n = this.encodeNodeValue(node as MMValue);
+        n = this.encodeNodeValue(node as NodeScalar);
         break;
       default:
         throw new Error(`unsupported node type: ${node.getType()}`);
@@ -88,7 +88,7 @@ export class MMEncoder {
     return this.buffer.getBytes(this.buffer.offset - n);
   }
 
-  private encodeNodeObject(obj: MMObject): number {
+  private encodeNodeObject(obj: NodeObject): number {
     const tag = obj.getTag();
     const properties = obj.getProperties();
 
@@ -118,7 +118,7 @@ export class MMEncoder {
     return n1;
   }
 
-  private encodeNodeArray(arr: MMArray): number {
+  private encodeNodeArray(arr: NodeArray): number {
     const tag = arr.getTag();
     const elements = arr.getElements();
 
@@ -142,7 +142,7 @@ export class MMEncoder {
     return n1;
   }
 
-  private encodeNodeValue(val: MMValue): number {
+  private encodeNodeValue(val: NodeScalar): number {
     const tag = val.getTag();
 
     let n = 0;

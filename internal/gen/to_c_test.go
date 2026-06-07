@@ -8,19 +8,19 @@ import (
 )
 
 func TestToCGeneratesCode(t *testing.T) {
-	obj := &ir.Object{
+	obj := &ir.NodeObject{
 		Tag: &ir.Tag{Name: "user"},
 		Fields: []*ir.Field{
-			{Key: "id", Value: &ir.Value{Tag: &ir.Tag{Type: ir.ValueTypeI}, Text: "1"}},
-			{Key: "name", Value: &ir.Value{Tag: &ir.Tag{Type: ir.ValueTypeStr}, Text: "Alice"}},
-			{Key: "active", Value: &ir.Value{Tag: &ir.Tag{Type: ir.ValueTypeBool}, Text: "true"}},
-			{Key: "score", Value: &ir.Value{Tag: &ir.Tag{Type: ir.ValueTypeF64}, Text: "95.5"}},
-			{Key: "tags", Value: &ir.Array{Items: []ir.Node{
-				&ir.Value{Tag: &ir.Tag{Type: ir.ValueTypeStr}, Text: "go"},
-				&ir.Value{Tag: &ir.Tag{Type: ir.ValueTypeStr}, Text: "java"},
+			{Key: "id", Value: &ir.NodeScalar{Tag: &ir.Tag{Type: ir.ValueTypeI}, Text: "1"}},
+			{Key: "name", Value: &ir.NodeScalar{Tag: &ir.Tag{Type: ir.ValueTypeStr}, Text: "Alice"}},
+			{Key: "active", Value: &ir.NodeScalar{Tag: &ir.Tag{Type: ir.ValueTypeBool}, Text: "true"}},
+			{Key: "score", Value: &ir.NodeScalar{Tag: &ir.Tag{Type: ir.ValueTypeF64}, Text: "95.5"}},
+			{Key: "tags", Value: &ir.NodeArray{Items: []ir.Node{
+				&ir.NodeScalar{Tag: &ir.Tag{Type: ir.ValueTypeStr}, Text: "go"},
+				&ir.NodeScalar{Tag: &ir.Tag{Type: ir.ValueTypeStr}, Text: "java"},
 			}}},
-			{Key: "profile", Value: &ir.Object{Fields: []*ir.Field{
-				{Key: "age", Value: &ir.Value{Tag: &ir.Tag{Type: ir.ValueTypeU8}, Text: "30"}},
+			{Key: "profile", Value: &ir.NodeObject{Fields: []*ir.Field{
+				{Key: "age", Value: &ir.NodeScalar{Tag: &ir.Tag{Type: ir.ValueTypeU8}, Text: "30"}},
 			}}},
 		},
 	}
@@ -55,9 +55,9 @@ func TestToCGeneratesCode(t *testing.T) {
 }
 
 func TestToCWithNoName(t *testing.T) {
-	obj := &ir.Object{
+	obj := &ir.NodeObject{
 		Fields: []*ir.Field{
-			{Key: "x", Value: &ir.Value{Tag: &ir.Tag{Type: ir.ValueTypeF32}, Text: "1.5"}},
+			{Key: "x", Value: &ir.NodeScalar{Tag: &ir.Tag{Type: ir.ValueTypeF32}, Text: "1.5"}},
 		},
 	}
 
@@ -73,10 +73,10 @@ func TestToCWithNoName(t *testing.T) {
 }
 
 func TestToCWithBytes(t *testing.T) {
-	obj := &ir.Object{
+	obj := &ir.NodeObject{
 		Tag: &ir.Tag{Name: "blob"},
 		Fields: []*ir.Field{
-			{Key: "data", Value: &ir.Value{Tag: &ir.Tag{Type: ir.ValueTypeBytes}, Text: "hello"}},
+			{Key: "data", Value: &ir.NodeScalar{Tag: &ir.Tag{Type: ir.ValueTypeBytes}, Text: "hello"}},
 		},
 	}
 
@@ -92,14 +92,14 @@ func TestToCWithBytes(t *testing.T) {
 }
 
 func TestToCWithNestedStruct(t *testing.T) {
-	obj := &ir.Object{
+	obj := &ir.NodeObject{
 		Tag: &ir.Tag{Name: "order"},
 		Fields: []*ir.Field{
-			{Key: "item", Value: &ir.Object{
+			{Key: "item", Value: &ir.NodeObject{
 				Tag: &ir.Tag{Name: "item"},
 				Fields: []*ir.Field{
-					{Key: "name", Value: &ir.Value{Tag: &ir.Tag{Type: ir.ValueTypeStr}, Text: "widget"}},
-					{Key: "price", Value: &ir.Value{Tag: &ir.Tag{Type: ir.ValueTypeF64}, Text: "9.99"}},
+					{Key: "name", Value: &ir.NodeScalar{Tag: &ir.Tag{Type: ir.ValueTypeStr}, Text: "widget"}},
+					{Key: "price", Value: &ir.NodeScalar{Tag: &ir.Tag{Type: ir.ValueTypeF64}, Text: "9.99"}},
 				},
 			}},
 		},
@@ -114,11 +114,11 @@ func TestToCWithNestedStruct(t *testing.T) {
 }
 
 func TestToCWithUnicodeFieldName(t *testing.T) {
-	obj := &ir.Object{
+	obj := &ir.NodeObject{
 		Tag: &ir.Tag{Name: "user_info"},
 		Fields: []*ir.Field{
-			{Key: "user name", Value: &ir.Value{Tag: &ir.Tag{Type: ir.ValueTypeStr}, Text: "Alice"}},
-			{Key: "123field", Value: &ir.Value{Tag: &ir.Tag{Type: ir.ValueTypeI}, Text: "42"}},
+			{Key: "user name", Value: &ir.NodeScalar{Tag: &ir.Tag{Type: ir.ValueTypeStr}, Text: "Alice"}},
+			{Key: "123field", Value: &ir.NodeScalar{Tag: &ir.Tag{Type: ir.ValueTypeI}, Text: "42"}},
 		},
 	}
 
@@ -134,13 +134,13 @@ func TestToCWithUnicodeFieldName(t *testing.T) {
 }
 
 func TestToCArrayNestedObject(t *testing.T) {
-	obj := &ir.Object{
+	obj := &ir.NodeObject{
 		Tag: &ir.Tag{Name: "classroom"},
 		Fields: []*ir.Field{
-			{Key: "students", Value: &ir.Array{Items: []ir.Node{
-				&ir.Object{
+			{Key: "students", Value: &ir.NodeArray{Items: []ir.Node{
+				&ir.NodeObject{
 					Fields: []*ir.Field{
-						{Key: "name", Value: &ir.Value{Tag: &ir.Tag{Type: ir.ValueTypeStr}, Text: "Bob"}},
+						{Key: "name", Value: &ir.NodeScalar{Tag: &ir.Tag{Type: ir.ValueTypeStr}, Text: "Bob"}},
 					},
 				},
 			}}},
@@ -156,7 +156,7 @@ func TestToCArrayNestedObject(t *testing.T) {
 }
 
 func TestPrintCStruct(t *testing.T) {
-	val := &ir.Value{
+	val := &ir.NodeScalar{
 		Tag:  &ir.Tag{Name: "name", Type: ir.ValueTypeStr},
 		Text: "hello",
 	}

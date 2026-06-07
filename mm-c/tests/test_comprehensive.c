@@ -50,10 +50,10 @@ static void test_single_value_roundtrip(void) {
 
   printf("  int roundtrip: ");
   {
-    mm_node_t *v = mm_i(42, .desc = "answer");
+    node_t *v = mm_i(42, .desc = "answer");
     mm_buffer_t *enc = mm_encode(v);
     TEST("encode not null", enc != NULL);
-    mm_node_t *dec = mm_decode(enc);
+    node_t *dec = mm_decode(enc);
     TEST("decode not null", dec != NULL);
     TEST("type is value", dec->type == MM_NODE_VALUE);
     TEST("text is 42",
@@ -61,17 +61,17 @@ static void test_single_value_roundtrip(void) {
     TEST("tag type I", dec->data.value.tag.type == MM_VALUE_I);
     TEST("desc answer", dec->data.value.tag.desc &&
                             strcmp(dec->data.value.tag.desc, "answer") == 0);
-    mm_node_free(v);
-    mm_node_free(dec);
+    node_free(v);
+    node_free(dec);
     mm_buffer_free(enc);
   }
 
   printf("  str roundtrip: ");
   {
-    mm_node_t *v = mm_str("hello", .desc = "greeting");
+    node_t *v = mm_str("hello", .desc = "greeting");
     mm_buffer_t *enc = mm_encode(v);
     TEST("encode not null", enc != NULL);
-    mm_node_t *dec = mm_decode(enc);
+    node_t *dec = mm_decode(enc);
     TEST("decode not null", dec != NULL);
     TEST("type is value", dec->type == MM_NODE_VALUE);
     TEST("text is hello",
@@ -80,53 +80,53 @@ static void test_single_value_roundtrip(void) {
     TEST("desc greeting",
          dec->data.value.tag.desc &&
              strcmp(dec->data.value.tag.desc, "greeting") == 0);
-    mm_node_free(v);
-    mm_node_free(dec);
+    node_free(v);
+    node_free(dec);
     mm_buffer_free(enc);
   }
 
   printf("  bool true roundtrip: ");
   {
-    mm_node_t *v = mm_bool(true, .desc = "flag");
+    node_t *v = mm_bool(true, .desc = "flag");
     mm_buffer_t *enc = mm_encode(v);
     TEST("encode not null", enc != NULL);
-    mm_node_t *dec = mm_decode(enc);
+    node_t *dec = mm_decode(enc);
     TEST("decode not null", dec != NULL);
     TEST("type is value", dec->type == MM_NODE_VALUE);
     TEST("text is true",
          dec->data.value.text && strcmp(dec->data.value.text, "true") == 0);
     TEST("tag type BOOL", dec->data.value.tag.type == MM_VALUE_BOOL);
-    mm_node_free(v);
-    mm_node_free(dec);
+    node_free(v);
+    node_free(dec);
     mm_buffer_free(enc);
   }
 
   printf("  bool false roundtrip: ");
   {
-    mm_node_t *v = mm_bool(false, .desc = "inactive");
+    node_t *v = mm_bool(false, .desc = "inactive");
     mm_buffer_t *enc = mm_encode(v);
     TEST("encode not null", enc != NULL);
-    mm_node_t *dec = mm_decode(enc);
+    node_t *dec = mm_decode(enc);
     TEST("decode not null", dec != NULL);
     TEST("text is false",
          dec->data.value.text && strcmp(dec->data.value.text, "false") == 0);
-    mm_node_free(v);
-    mm_node_free(dec);
+    node_free(v);
+    node_free(dec);
     mm_buffer_free(enc);
   }
 
   printf("  float roundtrip: ");
   {
-    mm_node_t *v = mm_f64(3.14, .desc = "pi");
+    node_t *v = mm_f64(3.14, .desc = "pi");
     mm_buffer_t *enc = mm_encode(v);
     TEST("encode not null", enc != NULL);
-    mm_node_t *dec = mm_decode(enc);
+    node_t *dec = mm_decode(enc);
     TEST("decode not null", dec != NULL);
     TEST("type is F64", dec->data.value.tag.type == MM_VALUE_F64);
     TEST("desc pi", dec->data.value.tag.desc &&
                         strcmp(dec->data.value.tag.desc, "pi") == 0);
-    mm_node_free(v);
-    mm_node_free(dec);
+    node_free(v);
+    node_free(dec);
     mm_buffer_free(enc);
   }
 }
@@ -136,8 +136,8 @@ static void test_object_roundtrip(void) {
 
   printf("  person with tag attrs: ");
   {
-    mm_node_t *age = mm_i(30, .min = 0, .max = 150, .desc = "年龄");
-    mm_node_t *name = mm_str("Alice", .min = 1, .max = 64, .desc = "姓名");
+    node_t *age = mm_i(30, .min = 0, .max = 150, .desc = "年龄");
+    node_t *name = mm_str("Alice", .min = 1, .max = 64, .desc = "姓名");
     mm_obj_t *person = mm_obj_new();
     mm_obj_set(person, "name", name);
     mm_obj_set(person, "age", age);
@@ -147,7 +147,7 @@ static void test_object_roundtrip(void) {
     TEST("encode not null", enc != NULL);
     TEST("encode size > 0", enc->size > 0);
 
-    mm_node_t *dec = mm_decode(enc);
+    node_t *dec = mm_decode(enc);
     TEST("decode not null", dec != NULL);
     if (dec) {
       TEST("decoded is object", dec->type == MM_NODE_OBJECT);
@@ -159,8 +159,8 @@ static void test_object_roundtrip(void) {
           TEST("field 1 key is age",
                strcmp(dec->data.object.fields[1].key, "age") == 0);
 
-          mm_node_t *name_val = dec->data.object.fields[0].value;
-          mm_node_t *age_val = dec->data.object.fields[1].value;
+          node_t *name_val = dec->data.object.fields[0].value;
+          node_t *age_val = dec->data.object.fields[1].value;
 
           TEST("name text Alice",
                name_val->data.value.text &&
@@ -190,9 +190,9 @@ static void test_object_roundtrip(void) {
         }
       }
     }
-    mm_node_free(person);
+    node_free(person);
     if (dec)
-      mm_node_free(dec);
+      node_free(dec);
     mm_buffer_free(enc);
   }
 
@@ -201,34 +201,34 @@ static void test_object_roundtrip(void) {
     mm_obj_t *obj = mm_obj_new();
     mm_buffer_t *enc = mm_encode(obj);
     TEST("encode not null", enc != NULL);
-    mm_node_t *dec = mm_decode(enc);
+    node_t *dec = mm_decode(enc);
     TEST("decode not null", dec != NULL);
     TEST("decoded is object", dec->type == MM_NODE_OBJECT);
     TEST("decoded has 0 fields", dec->data.object.field_count == 0);
-    mm_node_free(obj);
-    mm_node_free(dec);
+    node_free(obj);
+    node_free(dec);
     mm_buffer_free(enc);
   }
 
   printf("  nested object: ");
   {
-    mm_node_t *street = mm_str("123 Main St", .desc = "street");
+    node_t *street = mm_str("123 Main St", .desc = "street");
     mm_obj_t *addr = mm_obj_new();
     mm_obj_set(addr, "street", street);
 
-    mm_node_t *name = mm_str("Bob");
+    node_t *name = mm_str("Bob");
     mm_obj_t *person = mm_obj_new();
     mm_obj_set(person, "name", name);
     mm_obj_set(person, "address", addr);
 
     mm_buffer_t *enc = mm_encode(person);
     TEST("encode not null", enc != NULL);
-    mm_node_t *dec = mm_decode(enc);
+    node_t *dec = mm_decode(enc);
     TEST("decode not null", dec != NULL);
     if (dec && dec->type == MM_NODE_OBJECT) {
       TEST("decoded has 2 fields", dec->data.object.field_count == 2);
       if (dec->data.object.field_count == 2) {
-        mm_node_t *addr_val = NULL;
+        node_t *addr_val = NULL;
         for (size_t i = 0; i < dec->data.object.field_count; i++) {
           if (strcmp(dec->data.object.fields[i].key, "address") == 0) {
             addr_val = dec->data.object.fields[i].value;
@@ -248,9 +248,9 @@ static void test_object_roundtrip(void) {
         }
       }
     }
-    mm_node_free(person);
+    node_free(person);
     if (dec)
-      mm_node_free(dec);
+      node_free(dec);
     mm_buffer_free(enc);
   }
 }
@@ -260,10 +260,10 @@ static void test_array_roundtrip(void) {
 
   printf("  simple int array: ");
   {
-    mm_node_t *arr = mm_arr_new();
-    mm_node_t *v1 = mm_i(1);
-    mm_node_t *v2 = mm_i(2);
-    mm_node_t *v3 = mm_i(3);
+    node_t *arr = mm_arr_new();
+    node_t *v1 = mm_i(1);
+    node_t *v2 = mm_i(2);
+    node_t *v3 = mm_i(3);
     mm_arr_add(arr, v1);
     mm_arr_add(arr, v2);
     mm_arr_add(arr, v3);
@@ -271,7 +271,7 @@ static void test_array_roundtrip(void) {
 
     mm_buffer_t *enc = mm_encode(arr);
     TEST("encode not null", enc != NULL);
-    mm_node_t *dec = mm_decode(enc);
+    node_t *dec = mm_decode(enc);
     TEST("decode not null", dec != NULL);
     TEST("decoded is array", dec->type == MM_NODE_ARRAY);
     if (dec && dec->type == MM_NODE_ARRAY) {
@@ -285,15 +285,15 @@ static void test_array_roundtrip(void) {
              strcmp(dec->data.array.items[2]->data.value.text, "3") == 0);
       }
     }
-    mm_node_free(arr);
+    node_free(arr);
     if (dec)
-      mm_node_free(dec);
+      node_free(dec);
     mm_buffer_free(enc);
   }
 
   printf("  mixed array: ");
   {
-    mm_node_t *arr = mm_arr_new();
+    node_t *arr = mm_arr_new();
     mm_arr_add(arr, mm_str("hello"));
     mm_arr_add(arr, mm_i(42));
     mm_arr_add(arr, mm_bool(true));
@@ -301,7 +301,7 @@ static void test_array_roundtrip(void) {
 
     mm_buffer_t *enc = mm_encode(arr);
     TEST("encode not null", enc != NULL);
-    mm_node_t *dec = mm_decode(enc);
+    node_t *dec = mm_decode(enc);
     TEST("decode not null", dec != NULL);
     if (dec && dec->type == MM_NODE_ARRAY) {
       TEST("decoded has 3 items", dec->data.array.item_count == 3);
@@ -314,15 +314,15 @@ static void test_array_roundtrip(void) {
              dec->data.array.items[2]->data.value.tag.type == MM_VALUE_BOOL);
       }
     }
-    mm_node_free(arr);
+    node_free(arr);
     if (dec)
-      mm_node_free(dec);
+      node_free(dec);
     mm_buffer_free(enc);
   }
 
   printf("  array in object: ");
   {
-    mm_node_t *arr = mm_arr_new();
+    node_t *arr = mm_arr_new();
     mm_arr_add(arr, mm_i(10));
     mm_arr_add(arr, mm_i(20));
     mm_arr_add(arr, mm_i(30));
@@ -333,12 +333,12 @@ static void test_array_roundtrip(void) {
 
     mm_buffer_t *enc = mm_encode(obj);
     TEST("encode not null", enc != NULL);
-    mm_node_t *dec = mm_decode(enc);
+    node_t *dec = mm_decode(enc);
     TEST("decode not null", dec != NULL);
     if (dec && dec->type == MM_NODE_OBJECT) {
       TEST("decoded has 2 fields", dec->data.object.field_count == 2);
       if (dec->data.object.field_count == 2) {
-        mm_node_t *scores = NULL;
+        node_t *scores = NULL;
         for (size_t i = 0; i < dec->data.object.field_count; i++) {
           if (strcmp(dec->data.object.fields[i].key, "scores") == 0) {
             scores = dec->data.object.fields[i].value;
@@ -353,9 +353,9 @@ static void test_array_roundtrip(void) {
         }
       }
     }
-    mm_node_free(obj);
+    node_free(obj);
     if (dec)
-      mm_node_free(dec);
+      node_free(dec);
     mm_buffer_free(enc);
   }
 }
@@ -365,10 +365,10 @@ static void test_tag_attributes_roundtrip(void) {
 
   printf("  nullable with desc: ");
   {
-    mm_node_t *v = mm_str("", .nullable = true, .desc = "optional name");
+    node_t *v = mm_str("", .nullable = true, .desc = "optional name");
     mm_buffer_t *enc = mm_encode(v);
     TEST("encode not null", enc != NULL);
-    mm_node_t *dec = mm_decode(enc);
+    node_t *dec = mm_decode(enc);
     TEST("decode not null", dec != NULL);
     if (dec) {
       TEST("desc preserved",
@@ -376,119 +376,119 @@ static void test_tag_attributes_roundtrip(void) {
                strcmp(dec->data.value.tag.desc, "optional name") == 0);
       TEST("nullable preserved", dec->data.value.tag.nullable == true);
     }
-    mm_node_free(v);
+    node_free(v);
     if (dec)
-      mm_node_free(dec);
+      node_free(dec);
     mm_buffer_free(enc);
   }
 
   printf("  allow_empty: ");
   {
-    mm_node_t *v = mm_str("", .allow_empty = true);
+    node_t *v = mm_str("", .allow_empty = true);
     mm_buffer_t *enc = mm_encode(v);
-    mm_node_t *dec = mm_decode(enc);
+    node_t *dec = mm_decode(enc);
     if (dec) {
       TEST("allow_empty preserved", dec->data.value.tag.allow_empty == true);
     }
-    mm_node_free(v);
+    node_free(v);
     if (dec)
-      mm_node_free(dec);
+      node_free(dec);
     mm_buffer_free(enc);
   }
 
   printf("  unique: ");
   {
-    mm_node_t *v = mm_str("unique", .unique = true);
+    node_t *v = mm_str("unique", .unique = true);
     mm_buffer_t *enc = mm_encode(v);
-    mm_node_t *dec = mm_decode(enc);
+    node_t *dec = mm_decode(enc);
     if (dec) {
       TEST("unique preserved", dec->data.value.tag.unique == true);
     }
-    mm_node_free(v);
+    node_free(v);
     if (dec)
-      mm_node_free(dec);
+      node_free(dec);
     mm_buffer_free(enc);
   }
 
   printf("  deprecated: ");
   {
-    mm_node_t *v = mm_str("rawdata", .deprecated = true);
+    node_t *v = mm_str("rawdata", .deprecated = true);
     mm_buffer_t *enc = mm_encode(v);
-    mm_node_t *dec = mm_decode(enc);
+    node_t *dec = mm_decode(enc);
     if (dec) {
       TEST("deprecated preserved", dec->data.value.tag.deprecated == true);
     }
-    mm_node_free(v);
+    node_free(v);
     if (dec)
-      mm_node_free(dec);
+      node_free(dec);
     mm_buffer_free(enc);
   }
 
   printf("  version: ");
   {
-    mm_node_t *v = mm_str("1.0.0", .version = 1);
+    node_t *v = mm_str("1.0.0", .version = 1);
     mm_buffer_t *enc = mm_encode(v);
-    mm_node_t *dec = mm_decode(enc);
+    node_t *dec = mm_decode(enc);
     if (dec) {
       TEST("version preserved", dec->data.value.tag.version == 1);
     }
-    mm_node_free(v);
+    node_free(v);
     if (dec)
-      mm_node_free(dec);
+      node_free(dec);
     mm_buffer_free(enc);
   }
 
   printf("  enums: ");
   {
-    mm_node_t *v = mm_i(0, .enums = "a|b|c");
+    node_t *v = mm_i(0, .enums = "a|b|c");
     mm_buffer_t *enc = mm_encode(v);
-    mm_node_t *dec = mm_decode(enc);
+    node_t *dec = mm_decode(enc);
     if (dec) {
       TEST("enum preserved",
            dec->data.value.tag.enums &&
                strcmp(dec->data.value.tag.enums, "a|b|c") == 0);
     }
-    mm_node_free(v);
+    node_free(v);
     if (dec)
-      mm_node_free(dec);
+      node_free(dec);
     mm_buffer_free(enc);
   }
 
   printf("  pattern: ");
   {
-    mm_node_t *v = mm_str("abc", .pattern = "^[a-z]+$");
+    node_t *v = mm_str("abc", .pattern = "^[a-z]+$");
     mm_buffer_t *enc = mm_encode(v);
-    mm_node_t *dec = mm_decode(enc);
+    node_t *dec = mm_decode(enc);
     if (dec) {
       TEST("pattern preserved",
            dec->data.value.tag.pattern &&
                strcmp(dec->data.value.tag.pattern, "^[a-z]+$") == 0);
     }
-    mm_node_free(v);
+    node_free(v);
     if (dec)
-      mm_node_free(dec);
+      node_free(dec);
     mm_buffer_free(enc);
   }
 
   printf("  default value: ");
   {
-    mm_node_t *v = mm_i(0, .default_val = "100");
+    node_t *v = mm_i(0, .default_val = "100");
     mm_buffer_t *enc = mm_encode(v);
-    mm_node_t *dec = mm_decode(enc);
+    node_t *dec = mm_decode(enc);
     if (dec) {
       TEST("default preserved",
            dec->data.value.tag.default_val &&
                strcmp(dec->data.value.tag.default_val, "100") == 0);
     }
-    mm_node_free(v);
+    node_free(v);
     if (dec)
-      mm_node_free(dec);
+      node_free(dec);
     mm_buffer_free(enc);
   }
 
   printf("  child attributes: ");
   {
-    mm_node_t *arr = mm_arr_new();
+    node_t *arr = mm_arr_new();
     arr->data.array.tag.child_desc = strdup("child items");
     arr->data.array.tag.child_min = strdup("1");
     arr->data.array.tag.child_max = strdup("10");
@@ -497,7 +497,7 @@ static void test_tag_attributes_roundtrip(void) {
 
     mm_buffer_t *enc = mm_encode(arr);
     TEST("encode not null", enc != NULL);
-    mm_node_t *dec = mm_decode(enc);
+    node_t *dec = mm_decode(enc);
     TEST("decode not null", dec != NULL);
     if (dec && dec->type == MM_NODE_ARRAY) {
       TEST("child_desc preserved",
@@ -514,9 +514,9 @@ static void test_tag_attributes_roundtrip(void) {
              dec->data.array.items[0]->data.value.tag.type == MM_VALUE_I);
       }
     }
-    mm_node_free(arr);
+    node_free(arr);
     if (dec)
-      mm_node_free(dec);
+      node_free(dec);
     mm_buffer_free(enc);
   }
 }
@@ -526,55 +526,55 @@ static void test_negative_int_roundtrip(void) {
 
   printf("  negative int: ");
   {
-    mm_node_t *v = mm_i(-42);
+    node_t *v = mm_i(-42);
     mm_buffer_t *enc = mm_encode(v);
     TEST("encode not null", enc != NULL);
-    mm_node_t *dec = mm_decode(enc);
+    node_t *dec = mm_decode(enc);
     TEST("decode not null", dec != NULL);
     TEST("text is -42", dec && dec->data.value.text &&
                             strcmp(dec->data.value.text, "-42") == 0);
-    mm_node_free(v);
+    node_free(v);
     if (dec)
-      mm_node_free(dec);
+      node_free(dec);
     mm_buffer_free(enc);
   }
 
   printf("  zero: ");
   {
-    mm_node_t *v = mm_i(0);
+    node_t *v = mm_i(0);
     mm_buffer_t *enc = mm_encode(v);
-    mm_node_t *dec = mm_decode(enc);
+    node_t *dec = mm_decode(enc);
     TEST("text is 0",
          dec && dec->data.value.text && strcmp(dec->data.value.text, "0") == 0);
-    mm_node_free(v);
+    node_free(v);
     if (dec)
-      mm_node_free(dec);
+      node_free(dec);
     mm_buffer_free(enc);
   }
 
   printf("  large positive: ");
   {
-    mm_node_t *v = mm_i(100000);
+    node_t *v = mm_i(100000);
     mm_buffer_t *enc = mm_encode(v);
-    mm_node_t *dec = mm_decode(enc);
+    node_t *dec = mm_decode(enc);
     TEST("text is 100000", dec && dec->data.value.text &&
                                strcmp(dec->data.value.text, "100000") == 0);
-    mm_node_free(v);
+    node_free(v);
     if (dec)
-      mm_node_free(dec);
+      node_free(dec);
     mm_buffer_free(enc);
   }
 
   printf("  large negative: ");
   {
-    mm_node_t *v = mm_i(-100000);
+    node_t *v = mm_i(-100000);
     mm_buffer_t *enc = mm_encode(v);
-    mm_node_t *dec = mm_decode(enc);
+    node_t *dec = mm_decode(enc);
     TEST("text is -100000", dec && dec->data.value.text &&
                                 strcmp(dec->data.value.text, "-100000") == 0);
-    mm_node_free(v);
+    node_free(v);
     if (dec)
-      mm_node_free(dec);
+      node_free(dec);
     mm_buffer_free(enc);
   }
 }
@@ -663,38 +663,38 @@ static void test_tag(void) {
 
 static void test_ast(void) {
   printf("\n=== AST Tests ===\n");
-  mm_node_t *obj = mm_node_new_object();
+  node_t *obj = node_new_object();
   TEST("Object created", obj != NULL);
   TEST("Object type", obj->type == MM_NODE_OBJECT);
   TEST("Object no fields", obj->data.object.field_count == 0);
-  mm_node_free(obj);
+  node_free(obj);
 
-  mm_node_t *arr = mm_node_new_array();
+  node_t *arr = node_new_array();
   TEST("Array created", arr != NULL);
   TEST("Array type", arr->type == MM_NODE_ARRAY);
-  mm_node_free(arr);
+  node_free(arr);
 
-  mm_node_t *val = mm_node_new_value();
+  node_t *val = node_new_scalar();
   TEST("Value created", val != NULL);
   TEST("Value type", val->type == MM_NODE_VALUE);
   TEST("Value text NULL", val->data.value.text == NULL);
-  mm_node_free(val);
+  node_free(val);
 
-  mm_node_t *obj2 = mm_node_new_object();
-  mm_node_t *v1 = mm_node_new_value();
+  node_t *obj2 = node_new_object();
+  node_t *v1 = node_new_scalar();
   v1->data.value.text = strdup("hello");
-  mm_object_add_field(obj2, "msg", v1);
+  node_object_add_field(obj2, "msg", v1);
   TEST("Object has 1 field", obj2->data.object.field_count == 1);
   TEST("Field key correct",
        strcmp(obj2->data.object.fields[0].key, "msg") == 0);
-  mm_node_free(obj2);
+  node_free(obj2);
 
-  mm_node_t *arr2 = mm_node_new_array();
-  mm_node_t *v2 = mm_node_new_value();
+  node_t *arr2 = node_new_array();
+  node_t *v2 = node_new_scalar();
   v2->data.value.text = strdup("item1");
-  mm_array_add_item(arr2, v2);
+  node_array_add_item(arr2, v2);
   TEST("Array has 1 item", arr2->data.array.item_count == 1);
-  mm_node_free(arr2);
+  node_free(arr2);
 }
 
 static void test_byte_compatibility(void) {

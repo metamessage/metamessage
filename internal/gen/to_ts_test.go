@@ -8,14 +8,14 @@ import (
 )
 
 func TestToTSGeneratesCode(t *testing.T) {
-	obj := &ir.Object{
+	obj := &ir.NodeObject{
 		Tag: &ir.Tag{Name: "user"},
 		Fields: []*ir.Field{
-			{Key: "id", Value: &ir.Value{Tag: &ir.Tag{Type: ir.ValueTypeI}, Text: "1"}},
-			{Key: "name", Value: &ir.Value{Tag: &ir.Tag{Type: ir.ValueTypeStr}, Text: "Alice"}},
-			{Key: "tags", Value: &ir.Array{Items: []ir.Node{
-				&ir.Value{Tag: &ir.Tag{Type: ir.ValueTypeStr}, Text: "go"},
-				&ir.Value{Tag: &ir.Tag{Type: ir.ValueTypeStr}, Text: "java"},
+			{Key: "id", Value: &ir.NodeScalar{Tag: &ir.Tag{Type: ir.ValueTypeI}, Text: "1"}},
+			{Key: "name", Value: &ir.NodeScalar{Tag: &ir.Tag{Type: ir.ValueTypeStr}, Text: "Alice"}},
+			{Key: "tags", Value: &ir.NodeArray{Items: []ir.Node{
+				&ir.NodeScalar{Tag: &ir.Tag{Type: ir.ValueTypeStr}, Text: "go"},
+				&ir.NodeScalar{Tag: &ir.Tag{Type: ir.ValueTypeStr}, Text: "java"},
 			}}},
 		},
 	}
@@ -50,16 +50,16 @@ func TestToTSGeneratesCode(t *testing.T) {
 
 // TestToTSNullableFields verifies that nullable and non-nullable fields are generated correctly
 func TestToTSNullableFields(t *testing.T) {
-	obj := &ir.Object{
+	obj := &ir.NodeObject{
 		Tag: &ir.Tag{Name: "profile"},
 		Fields: []*ir.Field{
 			// Non-nullable (default)
-			{Key: "id", Value: &ir.Value{Tag: &ir.Tag{Type: ir.ValueTypeI, Nullable: false}, Text: "1"}},
+			{Key: "id", Value: &ir.NodeScalar{Tag: &ir.Tag{Type: ir.ValueTypeI, Nullable: false}, Text: "1"}},
 			// Nullable
-			{Key: "nickname", Value: &ir.Value{Tag: &ir.Tag{Type: ir.ValueTypeStr, Nullable: true}, Text: ""}},
+			{Key: "nickname", Value: &ir.NodeScalar{Tag: &ir.Tag{Type: ir.ValueTypeStr, Nullable: true}, Text: ""}},
 			// Non-nullable array
-			{Key: "tags", Value: &ir.Array{Tag: &ir.Tag{Nullable: false}, Items: []ir.Node{
-				&ir.Value{Tag: &ir.Tag{Type: ir.ValueTypeStr}, Text: "dev"},
+			{Key: "tags", Value: &ir.NodeArray{Tag: &ir.Tag{Nullable: false}, Items: []ir.Node{
+				&ir.NodeScalar{Tag: &ir.Tag{Type: ir.ValueTypeStr}, Text: "dev"},
 			}}},
 		},
 	}

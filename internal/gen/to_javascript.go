@@ -47,7 +47,7 @@ func ToJS(n ir.Node) string {
 	}
 
 	topName := "Obj"
-	if obj, ok := n.(*ir.Object); ok && obj.Tag != nil && obj.Tag.Name != "" {
+	if obj, ok := n.(*ir.NodeObject); ok && obj.Tag != nil && obj.Tag.Name != "" {
 		topName = exportJSClassName(obj.Tag.Name)
 	}
 
@@ -73,18 +73,18 @@ func ToJS(n ir.Node) string {
 
 func getJSTypeForField(f *ir.Field) string {
 	switch v := f.Value.(type) {
-	case *ir.Value:
+	case *ir.NodeScalar:
 		return getJSType(v)
-	case *ir.Object:
+	case *ir.NodeObject:
 		return getJSObjectType(f.Key, v)
-	case *ir.Array:
+	case *ir.NodeArray:
 		return getJSArrayType(f.Key, v)
 	default:
 		return "any"
 	}
 }
 
-func getJSType(v *ir.Value) string {
+func getJSType(v *ir.NodeScalar) string {
 	if v != nil && v.Tag != nil {
 		if t, ok := jsTypeMap[v.Tag.Type]; ok {
 			return t
@@ -93,14 +93,14 @@ func getJSType(v *ir.Value) string {
 	return "any"
 }
 
-func getJSObjectType(fieldKey string, obj *ir.Object) string {
+func getJSObjectType(fieldKey string, obj *ir.NodeObject) string {
 	if obj != nil && obj.Tag != nil && obj.Tag.Name != "" {
 		return exportJSClassName(obj.Tag.Name)
 	}
 	return exportJSClassName(fieldKey)
 }
 
-func getJSArrayType(fieldKey string, a *ir.Array) string {
+func getJSArrayType(fieldKey string, a *ir.NodeArray) string {
 	if a == nil {
 		return "Array<any>"
 	}
@@ -113,9 +113,9 @@ func getJSArrayType(fieldKey string, a *ir.Array) string {
 
 	if len(a.Items) > 0 {
 		switch item := a.Items[0].(type) {
-		case *ir.Object:
+		case *ir.NodeObject:
 			return "Array<" + getJSObjectType(fieldKey, item) + ">"
-		case *ir.Value:
+		case *ir.NodeScalar:
 			return "Array<" + getJSType(item) + ">"
 		}
 	}
@@ -125,7 +125,7 @@ func getJSArrayType(fieldKey string, a *ir.Array) string {
 
 func getJSInitialValueForField(f *ir.Field) string {
 	switch f.Value.(type) {
-	case *ir.Array:
+	case *ir.NodeArray:
 		return "[]"
 	default:
 		return "null"
@@ -133,7 +133,7 @@ func getJSInitialValueForField(f *ir.Field) string {
 }
 
 func genJSFields(b *strings.Builder, n ir.Node, indent int) {
-	obj, ok := n.(*ir.Object)
+	obj, ok := n.(*ir.NodeObject)
 	if !ok {
 		return
 	}
@@ -156,7 +156,7 @@ func genJSFields(b *strings.Builder, n ir.Node, indent int) {
 }
 
 func genJSNestedClasses(b *strings.Builder, n ir.Node) {
-	obj, ok := n.(*ir.Object)
+	obj, ok := n.(*ir.NodeObject)
 	if !ok {
 		return
 	}
@@ -167,7 +167,7 @@ func genJSNestedClasses(b *strings.Builder, n ir.Node) {
 		}
 
 		switch v := f.Value.(type) {
-		case *ir.Object:
+		case *ir.NodeObject:
 			className := getJSObjectType(f.Key, v)
 			b.WriteString("\nexport class ")
 			b.WriteString(className)
@@ -175,7 +175,7 @@ func genJSNestedClasses(b *strings.Builder, n ir.Node) {
 			genJSFields(b, v, 2)
 			b.WriteString("\t}\n}\n")
 			genJSNestedClasses(b, v)
-		case *ir.Array:
+		case *ir.NodeArray:
 			if nestedObj := findFirstObjectInArray(v); nestedObj != nil {
 				className := getJSObjectType(f.Key, nestedObj)
 				b.WriteString("\nexport class ")
@@ -208,7 +208,7 @@ func exportJSDataName(name string) string {
 }
 
 func genJSDataAssignments(b *strings.Builder, varName string, n ir.Node, indent int) {
-	obj, ok := n.(*ir.Object)
+	obj, ok := n.(*ir.NodeObject)
 	if !ok {
 		return
 	}
@@ -219,13 +219,13 @@ func genJSDataAssignments(b *strings.Builder, varName string, n ir.Node, indent 
 		}
 		prop := varName + "." + exportJSFieldName(f.Key)
 		switch v := f.Value.(type) {
-		case *ir.Value:
+		case *ir.NodeScalar:
 			WriteIndent(b, indent)
 			b.WriteString(prop)
 			b.WriteString(" = ")
 			b.WriteString(formatJSValueLiteral(v))
 			b.WriteString(";\n")
-		case *ir.Object:
+		case *ir.NodeObject:
 			className := getJSObjectType(f.Key, v)
 			WriteIndent(b, indent)
 			b.WriteString(prop)
@@ -233,7 +233,7 @@ func genJSDataAssignments(b *strings.Builder, varName string, n ir.Node, indent 
 			b.WriteString(className)
 			b.WriteString("();\n")
 			genJSDataAssignments(b, prop, v, indent)
-		case *ir.Array:
+		case *ir.NodeArray:
 			WriteIndent(b, indent)
 			b.WriteString(prop)
 			b.WriteString(" = ")
@@ -247,7 +247,7 @@ func genJSDataAssignments(b *strings.Builder, varName string, n ir.Node, indent 
 	}
 }
 
-func genJSArrayLiteral(a *ir.Array, fieldKey string) string {
+func genJSArrayLiteral(a *ir.NodeArray, fieldKey string) string {
 	if a == nil || len(a.Items) == 0 {
 		return "[]"
 	}
@@ -259,9 +259,9 @@ func genJSArrayLiteral(a *ir.Array, fieldKey string) string {
 			sb.WriteString(", ")
 		}
 		switch v := item.(type) {
-		case *ir.Value:
+		case *ir.NodeScalar:
 			sb.WriteString(formatJSValueLiteral(v))
-		case *ir.Object:
+		case *ir.NodeObject:
 			sb.WriteString(genJSObjectLiteral(v, fieldKey, 1))
 		default:
 			sb.WriteString("null")
@@ -271,7 +271,7 @@ func genJSArrayLiteral(a *ir.Array, fieldKey string) string {
 	return sb.String()
 }
 
-func genJSObjectLiteral(obj *ir.Object, fieldKey string, indent int) string {
+func genJSObjectLiteral(obj *ir.NodeObject, fieldKey string, indent int) string {
 	var sb strings.Builder
 	className := getJSObjectType(fieldKey, obj)
 	sb.WriteString("Object.assign(new ")
@@ -288,11 +288,11 @@ func genJSObjectLiteral(obj *ir.Object, fieldKey string, indent int) string {
 		sb.WriteString(exportJSFieldName(f.Key))
 		sb.WriteString(": ")
 		switch v := f.Value.(type) {
-		case *ir.Value:
+		case *ir.NodeScalar:
 			sb.WriteString(formatJSValueLiteral(v))
-		case *ir.Object:
+		case *ir.NodeObject:
 			sb.WriteString(genJSObjectLiteral(v, f.Key, indent+1))
-		case *ir.Array:
+		case *ir.NodeArray:
 			sb.WriteString(genJSArrayLiteral(v, f.Key))
 		default:
 			sb.WriteString("null")
@@ -302,7 +302,7 @@ func genJSObjectLiteral(obj *ir.Object, fieldKey string, indent int) string {
 	return sb.String()
 }
 
-func formatJSValueLiteral(v *ir.Value) string {
+func formatJSValueLiteral(v *ir.NodeScalar) string {
 	if v == nil {
 		return "null"
 	}

@@ -1,4 +1,4 @@
-import { MMValue, MMObject, MMArray, MMDoc } from '../ir/ast';
+import { NodeScalar, NodeObject, NodeArray, MMDoc } from '../ir/ast';
 import { ValueType } from '../ir/value-type';
 import { Node } from '../ir/ast';
 
@@ -29,11 +29,11 @@ export class JSONCPrinter {
   }
 
   private printNode(node: Node): string {
-    if (node instanceof MMValue) {
+    if (node instanceof NodeScalar) {
       return this.printValue(node);
-    } else if (node instanceof MMObject) {
+    } else if (node instanceof NodeObject) {
       return this.printObject(node);
-    } else if (node instanceof MMArray) {
+    } else if (node instanceof NodeArray) {
       return this.printArray(node);
     } else if (node instanceof MMDoc) {
       return this.printNode(node.getRoot());
@@ -42,11 +42,11 @@ export class JSONCPrinter {
   }
 
   private printNodeCompact(node: Node): string {
-    if (node instanceof MMValue) {
+    if (node instanceof NodeScalar) {
       return this.printValueCompact(node);
-    } else if (node instanceof MMObject) {
+    } else if (node instanceof NodeObject) {
       return this.printObjectCompact(node);
-    } else if (node instanceof MMArray) {
+    } else if (node instanceof NodeArray) {
       return this.printArrayCompact(node);
     } else if (node instanceof MMDoc) {
       return this.printNodeCompact(node.getRoot());
@@ -54,15 +54,15 @@ export class JSONCPrinter {
     return '';
   }
 
-  private printValue(value: MMValue): string {
+  private printValue(value: NodeScalar): string {
     return `${this.valueToStringOnly(value)}`;
   }
 
-  private printValueCompact(value: MMValue): string {
+  private printValueCompact(value: NodeScalar): string {
     return this.valueToStringOnly(value);
   }
 
-  private valueToStringOnly(value: MMValue): string {
+  private valueToStringOnly(value: NodeScalar): string {
     const tag = value.getTag();
     if (tag.isNull) {
       switch (tag.type) {
@@ -108,7 +108,7 @@ export class JSONCPrinter {
     }
   }
 
-  private printObject(obj: MMObject): string {
+  private printObject(obj: NodeObject): string {
     const properties = obj.getProperties();
     if (Object.keys(properties).length === 0) {
       const indent = this.getIndent();
@@ -137,7 +137,7 @@ export class JSONCPrinter {
     return `{\n${entries.join('\n')}\n${closingIndent}}`;
   }
 
-  private printObjectCompact(obj: MMObject): string {
+  private printObjectCompact(obj: NodeObject): string {
     const properties = obj.getProperties();
     if (Object.keys(properties).length === 0) {
       return '{}';
@@ -151,7 +151,7 @@ export class JSONCPrinter {
     return `{${entries.join(',')}}`;
   }
 
-  private printArray(array: MMArray): string {
+  private printArray(array: NodeArray): string {
     const elements = array.getElements();
     if (elements.length === 0) {
       const indent = this.getIndent();
@@ -179,7 +179,7 @@ export class JSONCPrinter {
     return `[\n${entries.join('\n')}\n${closingIndent}]`;
   }
 
-  private printArrayCompact(array: MMArray): string {
+  private printArrayCompact(array: NodeArray): string {
     const elements = array.getElements();
     if (elements.length === 0) {
       return '[]';

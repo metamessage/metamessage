@@ -47,7 +47,7 @@ func ToPHP(n ir.Node) string {
 	}
 
 	topName := "Obj"
-	if obj, ok := n.(*ir.Object); ok && obj.Tag != nil && obj.Tag.Name != "" {
+	if obj, ok := n.(*ir.NodeObject); ok && obj.Tag != nil && obj.Tag.Name != "" {
 		topName = exportPhpClassName(obj.Tag.Name)
 	}
 
@@ -80,7 +80,7 @@ func genPHPClass(b *strings.Builder, className string, n ir.Node, generated map[
 }
 
 func genPHPFields(b *strings.Builder, n ir.Node, indent int) {
-	obj, ok := n.(*ir.Object)
+	obj, ok := n.(*ir.NodeObject)
 	if !ok {
 		return
 	}
@@ -115,18 +115,18 @@ func genPHPFields(b *strings.Builder, n ir.Node, indent int) {
 
 func getPhpTypeForField(f *ir.Field) string {
 	switch v := f.Value.(type) {
-	case *ir.Value:
+	case *ir.NodeScalar:
 		return getPhpType(v)
-	case *ir.Object:
+	case *ir.NodeObject:
 		return getPhpObjectType(f.Key, v)
-	case *ir.Array:
+	case *ir.NodeArray:
 		return getPhpArrayType(f.Key, v)
 	default:
 		return "mixed"
 	}
 }
 
-func getPhpType(v *ir.Value) string {
+func getPhpType(v *ir.NodeScalar) string {
 	if v != nil && v.Tag != nil {
 		if t, ok := phpTypeMap[v.Tag.Type]; ok {
 			return t
@@ -135,14 +135,14 @@ func getPhpType(v *ir.Value) string {
 	return "mixed"
 }
 
-func getPhpObjectType(fieldKey string, obj *ir.Object) string {
+func getPhpObjectType(fieldKey string, obj *ir.NodeObject) string {
 	if obj != nil && obj.Tag != nil && obj.Tag.Name != "" {
 		return exportPhpClassName(obj.Tag.Name)
 	}
 	return exportPhpClassName(fieldKey)
 }
 
-func getPhpArrayType(fieldKey string, a *ir.Array) string {
+func getPhpArrayType(fieldKey string, a *ir.NodeArray) string {
 	if a == nil {
 		return "array"
 	}
@@ -153,9 +153,9 @@ func getPhpArrayType(fieldKey string, a *ir.Array) string {
 	}
 	if len(a.Items) > 0 {
 		switch item := a.Items[0].(type) {
-		case *ir.Object:
+		case *ir.NodeObject:
 			return "array"
-		case *ir.Value:
+		case *ir.NodeScalar:
 			if item.Tag != nil {
 				if _, ok := phpTypeMap[item.Tag.Type]; ok {
 					return "array"
@@ -167,7 +167,7 @@ func getPhpArrayType(fieldKey string, a *ir.Array) string {
 }
 
 func genPHPNestedClasses(b *strings.Builder, n ir.Node, generated map[string]struct{}) {
-	obj, ok := n.(*ir.Object)
+	obj, ok := n.(*ir.NodeObject)
 	if !ok {
 		return
 	}
@@ -178,11 +178,11 @@ func genPHPNestedClasses(b *strings.Builder, n ir.Node, generated map[string]str
 		}
 
 		switch v := f.Value.(type) {
-		case *ir.Object:
+		case *ir.NodeObject:
 			className := getPhpObjectType(f.Key, v)
 			genPHPClass(b, className, v, generated)
 			genPHPNestedClasses(b, v, generated)
-		case *ir.Array:
+		case *ir.NodeArray:
 			if nestedObj := findFirstObjectInArray(v); nestedObj != nil {
 				className := getPhpObjectType(f.Key, nestedObj)
 				genPHPClass(b, className, nestedObj, generated)
@@ -238,7 +238,7 @@ func exportPhpInstanceName(name string) string {
 }
 
 func genPHPObjectAssignments(b *strings.Builder, varName string, n ir.Node, indent int) {
-	obj, ok := n.(*ir.Object)
+	obj, ok := n.(*ir.NodeObject)
 	if !ok {
 		return
 	}
@@ -249,25 +249,25 @@ func genPHPObjectAssignments(b *strings.Builder, varName string, n ir.Node, inde
 		}
 		prop := varName + "->" + exportPhpFieldName(f.Key)
 		switch v := f.Value.(type) {
-		case *ir.Value:
+		case *ir.NodeScalar:
 			WriteIndent(b, indent)
 			b.WriteString(prop + " = " + formatPhpValueLiteral(v) + ";\n")
-		case *ir.Object:
+		case *ir.NodeObject:
 			className := getPhpObjectType(f.Key, v)
 			WriteIndent(b, indent)
 			b.WriteString(prop + " = new " + className + "();\n")
 			genPHPObjectAssignments(b, prop, v, indent)
-		case *ir.Array:
+		case *ir.NodeArray:
 			if nestedObj := findFirstObjectInArray(v); nestedObj != nil {
 				WriteIndent(b, indent)
 				b.WriteString(prop + " = [\n")
 				for i, item := range v.Items {
 					WriteIndent(b, indent+1)
 					switch iv := item.(type) {
-					case *ir.Object:
+					case *ir.NodeObject:
 						b.WriteString(genPHPObjectLiteral(iv, f.Key, indent+1))
 					default:
-						b.WriteString(formatPhpValueLiteral(iv.(*ir.Value)))
+						b.WriteString(formatPhpValueLiteral(iv.(*ir.NodeScalar)))
 					}
 					if i < len(v.Items)-1 {
 						b.WriteString(",\n")
@@ -287,7 +287,7 @@ func genPHPObjectAssignments(b *strings.Builder, varName string, n ir.Node, inde
 	}
 }
 
-func genPHPArrayLiteral(a *ir.Array) string {
+func genPHPArrayLiteral(a *ir.NodeArray) string {
 	if a == nil {
 		return "[]"
 	}
@@ -299,9 +299,9 @@ func genPHPArrayLiteral(a *ir.Array) string {
 			sb.WriteString(", ")
 		}
 		switch iv := item.(type) {
-		case *ir.Value:
+		case *ir.NodeScalar:
 			sb.WriteString(formatPhpValueLiteral(iv))
-		case *ir.Object:
+		case *ir.NodeObject:
 			sb.WriteString(genPHPObjectLiteral(iv, "", 0))
 		default:
 			sb.WriteString("null")
@@ -311,7 +311,7 @@ func genPHPArrayLiteral(a *ir.Array) string {
 	return sb.String()
 }
 
-func genPHPObjectLiteral(obj *ir.Object, fieldKey string, indent int) string {
+func genPHPObjectLiteral(obj *ir.NodeObject, fieldKey string, indent int) string {
 	var sb strings.Builder
 	className := getPhpObjectType(fieldKey, obj)
 	sb.WriteString("(function() {\n")
@@ -324,11 +324,11 @@ func genPHPObjectLiteral(obj *ir.Object, fieldKey string, indent int) string {
 		WriteIndent(&sb, indent+1)
 		sb.WriteString("$obj->" + exportPhpFieldName(f.Key) + " = ")
 		switch iv := f.Value.(type) {
-		case *ir.Value:
+		case *ir.NodeScalar:
 			sb.WriteString(formatPhpValueLiteral(iv))
-		case *ir.Object:
+		case *ir.NodeObject:
 			sb.WriteString(genPHPObjectLiteral(iv, f.Key, indent+1))
-		case *ir.Array:
+		case *ir.NodeArray:
 			sb.WriteString(genPHPArrayLiteral(iv))
 		default:
 			sb.WriteString("null")
@@ -342,7 +342,7 @@ func genPHPObjectLiteral(obj *ir.Object, fieldKey string, indent int) string {
 	return sb.String()
 }
 
-func formatPhpValueLiteral(v *ir.Value) string {
+func formatPhpValueLiteral(v *ir.NodeScalar) string {
 	if v == nil {
 		return "null"
 	}

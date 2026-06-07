@@ -2,9 +2,9 @@
 
 namespace io\metamessage\jsonc;
 
-use io\metamessage\ir\Object_;
-use io\metamessage\ir\Array_;
-use io\metamessage\ir\Value;
+use io\metamessage\ir\NodeObject;
+use io\metamessage\ir\NodeArray;
+use io\metamessage\ir\NodeScalar;
 use io\metamessage\ir\Node;
 use io\metamessage\ir\Tag;
 use io\metamessage\ir\ValueType;
@@ -23,17 +23,17 @@ class JsoncPrinter
 
     private static function writeNodeJSONC(Node $n, int $indent): string
     {
-        if ($n instanceof Value) {
+        if ($n instanceof NodeScalar) {
             return self::writeValueJSONC($n);
-        } elseif ($n instanceof Object_) {
+        } elseif ($n instanceof NodeObject) {
             return self::writeObjectJSONC($n, $indent);
-        } elseif ($n instanceof Array_) {
+        } elseif ($n instanceof NodeArray) {
             return self::writeArrayJSONC($n, $indent);
         }
         return '';
     }
 
-    private static function writeValueJSONC(Value $v): string
+    private static function writeValueJSONC(NodeScalar $v): string
     {
         if ($v->getTag() === null) {
             return '';
@@ -75,7 +75,7 @@ class JsoncPrinter
         }
     }
 
-    private static function writeObjectJSONC(Object_ $o, int $indent): string
+    private static function writeObjectJSONC(NodeObject $o, int $indent): string
     {
         $sb = "{\n";
 
@@ -103,7 +103,7 @@ class JsoncPrinter
         return $sb;
     }
 
-    private static function writeArrayJSONC(Array_ $a, int $indent): string
+    private static function writeArrayJSONC(NodeArray $a, int $indent): string
     {
         $sb = "[\n";
 

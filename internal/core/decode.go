@@ -251,7 +251,7 @@ func (d *decoder) decodeTag(prefix byte, path string) (node ir.Node, length int,
 			} else {
 				text = utils.DefaultTime.In(tag.Location).Format(time.DateTime)
 			}
-			node = &ir.Value{
+			node = &ir.NodeScalar{
 				Data: utils.DefaultTime,
 				Text: text,
 				Tag:  tag,
@@ -264,7 +264,7 @@ func (d *decoder) decodeTag(prefix byte, path string) (node ir.Node, length int,
 			} else {
 				text = utils.DefaultTime.In(tag.Location).Format(time.DateOnly)
 			}
-			node = &ir.Value{
+			node = &ir.NodeScalar{
 				Data: utils.DefaultTime,
 				Text: text,
 				Tag:  tag,
@@ -277,7 +277,7 @@ func (d *decoder) decodeTag(prefix byte, path string) (node ir.Node, length int,
 			} else {
 				text = utils.DefaultTime.In(tag.Location).Format(time.TimeOnly)
 			}
-			node = &ir.Value{
+			node = &ir.NodeScalar{
 				Data: utils.DefaultTime,
 				Text: text,
 				Tag:  tag,
@@ -285,91 +285,91 @@ func (d *decoder) decodeTag(prefix byte, path string) (node ir.Node, length int,
 			}
 
 		case ir.ValueTypeI8:
-			node = &ir.Value{
+			node = &ir.NodeScalar{
 				Data: int8(0),
 				Text: "0",
 				Tag:  tag,
 				Path: path,
 			}
 		case ir.ValueTypeI16:
-			node = &ir.Value{
+			node = &ir.NodeScalar{
 				Data: int16(0),
 				Text: "0",
 				Tag:  tag,
 				Path: path,
 			}
 		case ir.ValueTypeI32:
-			node = &ir.Value{
+			node = &ir.NodeScalar{
 				Data: int32(0),
 				Text: "0",
 				Tag:  tag,
 				Path: path,
 			}
 		case ir.ValueTypeI64:
-			node = &ir.Value{
+			node = &ir.NodeScalar{
 				Data: int64(0),
 				Text: "0",
 				Tag:  tag,
 				Path: path,
 			}
 		case ir.ValueTypeU:
-			node = &ir.Value{
+			node = &ir.NodeScalar{
 				Data: uint(0),
 				Text: "0",
 				Tag:  tag,
 				Path: path,
 			}
 		case ir.ValueTypeU8:
-			node = &ir.Value{
+			node = &ir.NodeScalar{
 				Data: uint8(0),
 				Text: "0",
 				Tag:  tag,
 				Path: path,
 			}
 		case ir.ValueTypeU16:
-			node = &ir.Value{
+			node = &ir.NodeScalar{
 				Data: uint16(0),
 				Text: "0",
 				Tag:  tag,
 				Path: path,
 			}
 		case ir.ValueTypeU32:
-			node = &ir.Value{
+			node = &ir.NodeScalar{
 				Data: uint32(0),
 				Text: "0",
 				Tag:  tag,
 				Path: path,
 			}
 		case ir.ValueTypeU64:
-			node = &ir.Value{
+			node = &ir.NodeScalar{
 				Data: uint64(0),
 				Text: "0",
 				Tag:  tag,
 				Path: path,
 			}
 		case ir.ValueTypeF32:
-			node = &ir.Value{
+			node = &ir.NodeScalar{
 				Data: float32(0.0),
 				Text: "0.0",
 				Tag:  tag,
 				Path: path,
 			}
 		case ir.ValueTypeEmail, ir.ValueTypeUuid, ir.ValueTypeDecimal:
-			node = &ir.Value{
+			node = &ir.NodeScalar{
 				Data: "",
 				Text: "",
 				Tag:  tag,
 				Path: path,
 			}
 		case ir.ValueTypeBigint:
-			node = &ir.Value{
+			node = &ir.NodeScalar{
 				Data: big.Int{},
 				Text: "0",
 				Tag:  tag,
 				Path: path,
 			}
 		case ir.ValueTypeUrl:
-			node = &ir.Value{
+			node = &ir.NodeScalar{
 				Data: url.URL{},
 				Text: "",
 				Tag:  tag,
@@ -388,7 +388,7 @@ func (d *decoder) decodeTag(prefix byte, path string) (node ir.Node, length int,
 				err = fmt.Errorf("unsupported IP version: %v", tag.Version)
 				return
 			}
-			node = &ir.Value{
+			node = &ir.NodeScalar{
 				Data: net.IP{},
 				Text: text,
 				Tag:  tag,
@@ -476,7 +476,7 @@ func (d *decoder) decodeString(prefix byte, tag *ir.Tag, path string) (node ir.N
 		return
 	}
 
-	node = &ir.Value{
+	node = &ir.NodeScalar{
 		Data: data,
 		Text: text,
 		Tag:  tag,
@@ -564,7 +564,7 @@ func (d *decoder) decodeBytes(prefix byte, tag *ir.Tag, path string) (node ir.No
 		return
 	}
 
-	node = &ir.Value{
+	node = &ir.NodeScalar{
 		Data: data,
 		Text: text,
 		Tag:  tag,
@@ -746,7 +746,7 @@ func (d *decoder) decodePositiveInt(prefix byte, tag *ir.Tag, path string) (node
 		return
 	}
 
-	node = &ir.Value{
+	node = &ir.NodeScalar{
 		Data: data,
 		Text: text,
 		Tag:  tag,
@@ -886,7 +886,7 @@ func (d *decoder) decodeNegativeInt(prefix byte, tag *ir.Tag, path string) (node
 		}
 	}
 
-	node = &ir.Value{
+	node = &ir.NodeScalar{
 		Data: data,
 		Text: text,
 		Tag:  tag,
@@ -1058,7 +1058,7 @@ func (d *decoder) decodeFloat(prefix byte, tag *ir.Tag, path string) (node ir.No
 		return
 	}
 
-	node = &ir.Value{
+	node = &ir.NodeScalar{
 		Data: data,
 		Text: text,
 		Tag:  tag,
@@ -1076,7 +1076,7 @@ func (d *decoder) decodeSimple(prefix byte, tag *ir.Tag, path string) (node ir.N
 	switch SimpleValue(prefix) {
 	case SimpleFalse:
 		tag.Type = ir.ValueTypeBool
-		node = &ir.Value{
+		node = &ir.NodeScalar{
 			Data: false,
 			Text: ir.False,
 			Tag:  tag,
@@ -1085,7 +1085,7 @@ func (d *decoder) decodeSimple(prefix byte, tag *ir.Tag, path string) (node ir.N
 
 	case SimpleTrue:
 		tag.Type = ir.ValueTypeBool
-		node = &ir.Value{
+		node = &ir.NodeScalar{
 			Data: true,
 			Text: ir.True,
 			Tag:  tag,
@@ -1099,7 +1099,7 @@ func (d *decoder) decodeSimple(prefix byte, tag *ir.Tag, path string) (node ir.N
 			err = fmt.Errorf("unsupported value types: %v", tag.Type)
 			return
 		}
-		node = &ir.Value{
+		node = &ir.NodeScalar{
 			Data: false,
 			Text: ir.False,
 			Tag:  tag,
@@ -1115,14 +1115,14 @@ func (d *decoder) decodeSimple(prefix byte, tag *ir.Tag, path string) (node ir.N
 		}
 		switch tag.Type {
 		case ir.ValueTypeF32:
-			node = &ir.Value{
+			node = &ir.NodeScalar{
 				Data: float32(0.0),
 				Text: "0.0",
 				Tag:  tag,
 				Path: path,
 			}
 		case ir.ValueTypeF64:
-			node = &ir.Value{
+			node = &ir.NodeScalar{
 				Data: 0.0,
 				Text: "0.0",
 				Tag:  tag,
@@ -1142,7 +1142,7 @@ func (d *decoder) decodeSimple(prefix byte, tag *ir.Tag, path string) (node ir.N
 		}
 		switch tag.Type {
 		case ir.ValueTypeI:
-			node = &ir.Value{
+			node = &ir.NodeScalar{
 				Data: 0,
 				Text: "0",
 				Tag:  tag,
@@ -1163,7 +1163,7 @@ func (d *decoder) decodeSimple(prefix byte, tag *ir.Tag, path string) (node ir.N
 		}
 		switch tag.Type {
 		case ir.ValueTypeStr:
-			node = &ir.Value{
+			node = &ir.NodeScalar{
 				Data: "",
 				Text: "",
 				Tag:  tag,
@@ -1184,7 +1184,7 @@ func (d *decoder) decodeSimple(prefix byte, tag *ir.Tag, path string) (node ir.N
 		}
 		switch tag.Type {
 		case ir.ValueTypeBytes:
-			node = &ir.Value{
+			node = &ir.NodeScalar{
 				Data: []byte{},
 				Text: "",
 				Tag:  tag,
@@ -1198,7 +1198,7 @@ func (d *decoder) decodeSimple(prefix byte, tag *ir.Tag, path string) (node ir.N
 
 	case SimpleCode:
 		tag.Type = ir.ValueTypeStr
-		node = &ir.Value{
+		node = &ir.NodeScalar{
 			Data: nil,
 			Text: ir.SimpleCodeStr,
 			Tag:  tag,
@@ -1206,7 +1206,7 @@ func (d *decoder) decodeSimple(prefix byte, tag *ir.Tag, path string) (node ir.N
 		}
 	case SimpleMessage:
 		tag.Type = ir.ValueTypeStr
-		node = &ir.Value{
+		node = &ir.NodeScalar{
 			Data: nil,
 			Text: ir.SimpleMessageStr,
 			Tag:  tag,
@@ -1214,7 +1214,7 @@ func (d *decoder) decodeSimple(prefix byte, tag *ir.Tag, path string) (node ir.N
 		}
 	case SimpleData:
 		tag.Type = ir.ValueTypeStr
-		node = &ir.Value{
+		node = &ir.NodeScalar{
 			Data: nil,
 			Text: ir.SimpleDataStr,
 			Tag:  tag,
@@ -1222,7 +1222,7 @@ func (d *decoder) decodeSimple(prefix byte, tag *ir.Tag, path string) (node ir.N
 		}
 	case SimpleSuccess:
 		tag.Type = ir.ValueTypeStr
-		node = &ir.Value{
+		node = &ir.NodeScalar{
 			Data: nil,
 			Text: ir.SimpleSuccessStr,
 			Tag:  tag,
@@ -1230,7 +1230,7 @@ func (d *decoder) decodeSimple(prefix byte, tag *ir.Tag, path string) (node ir.N
 		}
 	case SimpleError:
 		tag.Type = ir.ValueTypeStr
-		node = &ir.Value{
+		node = &ir.NodeScalar{
 			Data: nil,
 			Text: ir.SimpleErrorStr,
 			Tag:  tag,
@@ -1238,7 +1238,7 @@ func (d *decoder) decodeSimple(prefix byte, tag *ir.Tag, path string) (node ir.N
 		}
 	case SimpleUnknown:
 		tag.Type = ir.ValueTypeStr
-		node = &ir.Value{
+		node = &ir.NodeScalar{
 			Data: nil,
 			Text: ir.SimpleUnknownStr,
 			Tag:  tag,
@@ -1246,7 +1246,7 @@ func (d *decoder) decodeSimple(prefix byte, tag *ir.Tag, path string) (node ir.N
 		}
 	case SimplePage:
 		tag.Type = ir.ValueTypeStr
-		node = &ir.Value{
+		node = &ir.NodeScalar{
 			Data: nil,
 			Text: ir.SimplePageStr,
 			Tag:  tag,
@@ -1254,7 +1254,7 @@ func (d *decoder) decodeSimple(prefix byte, tag *ir.Tag, path string) (node ir.N
 		}
 	case SimpleLimit:
 		tag.Type = ir.ValueTypeStr
-		node = &ir.Value{
+		node = &ir.NodeScalar{
 			Data: nil,
 			Text: ir.SimpleLimitStr,
 			Tag:  tag,
@@ -1262,7 +1262,7 @@ func (d *decoder) decodeSimple(prefix byte, tag *ir.Tag, path string) (node ir.N
 		}
 	case SimpleOffset:
 		tag.Type = ir.ValueTypeStr
-		node = &ir.Value{
+		node = &ir.NodeScalar{
 			Data: nil,
 			Text: ir.SimpleOffsetStr,
 			Tag:  tag,
@@ -1270,7 +1270,7 @@ func (d *decoder) decodeSimple(prefix byte, tag *ir.Tag, path string) (node ir.N
 		}
 	case SimpleTotal:
 		tag.Type = ir.ValueTypeStr
-		node = &ir.Value{
+		node = &ir.NodeScalar{
 			Data: nil,
 			Text: ir.SimpleTotalStr,
 			Tag:  tag,
@@ -1278,7 +1278,7 @@ func (d *decoder) decodeSimple(prefix byte, tag *ir.Tag, path string) (node ir.N
 		}
 	case SimpleId:
 		tag.Type = ir.ValueTypeStr
-		node = &ir.Value{
+		node = &ir.NodeScalar{
 			Data: nil,
 			Text: ir.SimpleIdStr,
 			Tag:  tag,
@@ -1286,7 +1286,7 @@ func (d *decoder) decodeSimple(prefix byte, tag *ir.Tag, path string) (node ir.N
 		}
 	case SimpleName:
 		tag.Type = ir.ValueTypeStr
-		node = &ir.Value{
+		node = &ir.NodeScalar{
 			Data: nil,
 			Text: ir.SimpleNameStr,
 			Tag:  tag,
@@ -1294,7 +1294,7 @@ func (d *decoder) decodeSimple(prefix byte, tag *ir.Tag, path string) (node ir.N
 		}
 	case SimpleDescription:
 		tag.Type = ir.ValueTypeStr
-		node = &ir.Value{
+		node = &ir.NodeScalar{
 			Data: nil,
 			Text: ir.SimpleDescriptionStr,
 			Tag:  tag,
@@ -1302,7 +1302,7 @@ func (d *decoder) decodeSimple(prefix byte, tag *ir.Tag, path string) (node ir.N
 		}
 	case SimpleType:
 		tag.Type = ir.ValueTypeStr
-		node = &ir.Value{
+		node = &ir.NodeScalar{
 			Data: nil,
 			Text: ir.SimpleTypeStr,
 			Tag:  tag,
@@ -1310,7 +1310,7 @@ func (d *decoder) decodeSimple(prefix byte, tag *ir.Tag, path string) (node ir.N
 		}
 	case SimpleVersion:
 		tag.Type = ir.ValueTypeStr
-		node = &ir.Value{
+		node = &ir.NodeScalar{
 			Data: nil,
 			Text: ir.SimpleVersionStr,
 			Tag:  tag,
@@ -1318,7 +1318,7 @@ func (d *decoder) decodeSimple(prefix byte, tag *ir.Tag, path string) (node ir.N
 		}
 	case SimpleStatus:
 		tag.Type = ir.ValueTypeStr
-		node = &ir.Value{
+		node = &ir.NodeScalar{
 			Data: nil,
 			Text: ir.SimpleStatusStr,
 			Tag:  tag,
@@ -1326,7 +1326,7 @@ func (d *decoder) decodeSimple(prefix byte, tag *ir.Tag, path string) (node ir.N
 		}
 	case SimpleUrl:
 		tag.Type = ir.ValueTypeStr
-		node = &ir.Value{
+		node = &ir.NodeScalar{
 			Data: nil,
 			Text: ir.SimpleUrlStr,
 			Tag:  tag,
@@ -1334,7 +1334,7 @@ func (d *decoder) decodeSimple(prefix byte, tag *ir.Tag, path string) (node ir.N
 		}
 	case SimpleCreateTime:
 		tag.Type = ir.ValueTypeStr
-		node = &ir.Value{
+		node = &ir.NodeScalar{
 			Data: nil,
 			Text: ir.SimpleCreateTimeStr,
 			Tag:  tag,
@@ -1342,7 +1342,7 @@ func (d *decoder) decodeSimple(prefix byte, tag *ir.Tag, path string) (node ir.N
 		}
 	case SimpleUpdateTime:
 		tag.Type = ir.ValueTypeStr
-		node = &ir.Value{
+		node = &ir.NodeScalar{
 			Data: nil,
 			Text: ir.SimpleUpdateTimeStr,
 			Tag:  tag,
@@ -1350,7 +1350,7 @@ func (d *decoder) decodeSimple(prefix byte, tag *ir.Tag, path string) (node ir.N
 		}
 	case SimpleDeleteTime:
 		tag.Type = ir.ValueTypeStr
-		node = &ir.Value{
+		node = &ir.NodeScalar{
 			Data: nil,
 			Text: ir.SimpleDeleteTimeStr,
 			Tag:  tag,
@@ -1358,7 +1358,7 @@ func (d *decoder) decodeSimple(prefix byte, tag *ir.Tag, path string) (node ir.N
 		}
 	case SimpleAccount:
 		tag.Type = ir.ValueTypeStr
-		node = &ir.Value{
+		node = &ir.NodeScalar{
 			Data: nil,
 			Text: ir.SimpleAccountStr,
 			Tag:  tag,
@@ -1366,7 +1366,7 @@ func (d *decoder) decodeSimple(prefix byte, tag *ir.Tag, path string) (node ir.N
 		}
 	case SimpleToken:
 		tag.Type = ir.ValueTypeStr
-		node = &ir.Value{
+		node = &ir.NodeScalar{
 			Data: nil,
 			Text: ir.SimpleTokenStr,
 			Tag:  tag,
@@ -1374,7 +1374,7 @@ func (d *decoder) decodeSimple(prefix byte, tag *ir.Tag, path string) (node ir.N
 		}
 	case SimpleExpireTime:
 		tag.Type = ir.ValueTypeStr
-		node = &ir.Value{
+		node = &ir.NodeScalar{
 			Data: nil,
 			Text: ir.SimpleExpireTimeStr,
 			Tag:  tag,
@@ -1382,7 +1382,7 @@ func (d *decoder) decodeSimple(prefix byte, tag *ir.Tag, path string) (node ir.N
 		}
 	case SimpleKey:
 		tag.Type = ir.ValueTypeStr
-		node = &ir.Value{
+		node = &ir.NodeScalar{
 			Data: nil,
 			Text: ir.SimpleKeyStr,
 			Tag:  tag,
@@ -1390,7 +1390,7 @@ func (d *decoder) decodeSimple(prefix byte, tag *ir.Tag, path string) (node ir.N
 		}
 	case SimpleVal:
 		tag.Type = ir.ValueTypeStr
-		node = &ir.Value{
+		node = &ir.NodeScalar{
 			Data: nil,
 			Text: ir.SimpleValStr,
 			Tag:  tag,
@@ -1413,7 +1413,7 @@ func (d *decoder) decodeContainer(prefix byte, tag *ir.Tag, path string) (node i
 	return d.decodeObj(prefix, tag, path)
 }
 
-func (d *decoder) decodeArr(prefix byte, tag *ir.Tag, path string) (node *ir.Array, length int, err error) {
+func (d *decoder) decodeArr(prefix byte, tag *ir.Tag, path string) (node *ir.NodeArray, length int, err error) {
 	if tag == nil {
 		tag = ir.NewTag()
 		tag.Type = ir.ValueTypeVec
@@ -1456,7 +1456,7 @@ func (d *decoder) decodeArr(prefix byte, tag *ir.Tag, path string) (node *ir.Arr
 		return
 	}
 
-	node = &ir.Array{
+	node = &ir.NodeArray{
 		Tag:  tag,
 		Path: path,
 	}
@@ -1481,7 +1481,7 @@ func (d *decoder) decodeArr(prefix byte, tag *ir.Tag, path string) (node *ir.Arr
 	return
 }
 
-func (d *decoder) decodeObj(prefix byte, tag *ir.Tag, path string) (node *ir.Object, length int, err error) {
+func (d *decoder) decodeObj(prefix byte, tag *ir.Tag, path string) (node *ir.NodeObject, length int, err error) {
 	if tag == nil {
 		tag = ir.NewTag()
 		tag.Type = ir.ValueTypeObj
@@ -1520,7 +1520,7 @@ func (d *decoder) decodeObj(prefix byte, tag *ir.Tag, path string) (node *ir.Obj
 		return
 	}
 
-	node = &ir.Object{
+	node = &ir.NodeObject{
 		Tag:  tag,
 		Path: path,
 	}
@@ -1543,7 +1543,7 @@ func (d *decoder) decodeObj(prefix byte, tag *ir.Tag, path string) (node *ir.Obj
 		tagValue := ir.NewTag()
 		tagValue.Inherit(tag)
 
-		key := nKeys.Items[i].(*ir.Value).Text
+		key := nKeys.Items[i].(*ir.NodeScalar).Text
 		p := fmt.Sprintf("%s.%s", path, key)
 		n, l, e := d.decode(tagValue, p)
 		if e != nil || l <= 0 {

@@ -392,7 +392,7 @@ private:
   }
 
   std::shared_ptr<ir::Node> decodeSimple(uint8_t b, const ir::Tag *parentTag) {
-    auto val = ir::makeValue();
+    auto val = ir::makeNodeScalar();
     auto *tag = val->getTag();
 
     if (parentTag) {
@@ -444,7 +444,7 @@ private:
 
   std::shared_ptr<ir::Node> decodeInt(uint8_t b, const ir::Tag *parentTag,
                                       bool positive) {
-    auto val = ir::makeValue();
+    auto val = ir::makeNodeScalar();
     auto *tag = val->getTag();
 
     if (parentTag) {
@@ -528,7 +528,7 @@ private:
   }
 
   std::shared_ptr<ir::Node> decodeFloat(uint8_t b, const ir::Tag *parentTag) {
-    auto val = ir::makeValue();
+    auto val = ir::makeNodeScalar();
     auto *tag = val->getTag();
 
     if (parentTag) {
@@ -562,7 +562,7 @@ private:
   }
 
   std::shared_ptr<ir::Node> decodeString(uint8_t b, const ir::Tag *parentTag) {
-    auto val = ir::makeValue();
+    auto val = ir::makeNodeScalar();
     auto *tag = val->getTag();
 
     if (parentTag) {
@@ -658,7 +658,7 @@ private:
   }
 
   std::shared_ptr<ir::Node> decodeBytes(uint8_t b, const ir::Tag *parentTag) {
-    auto val = ir::makeValue();
+    auto val = ir::makeNodeScalar();
     auto *tag = val->getTag();
 
     if (parentTag) {
@@ -727,7 +727,7 @@ private:
 
   std::shared_ptr<ir::Node> decodeContainerArray(size_t len,
                                                  const ir::Tag *parentTag) {
-    auto arr = ir::makeArray();
+    auto arr = ir::makeNodeArray();
     size_t startOffset = offset_;
 
     // Decode key array first (to know all item lengths)
@@ -747,20 +747,20 @@ private:
 
   std::shared_ptr<ir::Node> decodeContainerObject(size_t len,
                                                   const ir::Tag *parentTag) {
-    auto obj = ir::makeObject();
+    auto obj = ir::makeNodeObject();
     size_t startOffset = offset_;
     size_t endOffset = startOffset + len;
 
     // First decode the key array
     auto keyArrayNode = decodeNode(parentTag);
-    auto keyArray = std::dynamic_pointer_cast<ir::Array>(keyArrayNode);
+    auto keyArray = std::dynamic_pointer_cast<ir::NodeArray>(keyArrayNode);
 
     // Then decode values and pair them with keys
     if (keyArray) {
       for (auto &keyItem : keyArray->items) {
         if (offset_ >= endOffset)
           break;
-        auto keyVal = std::dynamic_pointer_cast<ir::Value>(keyItem);
+        auto keyVal = std::dynamic_pointer_cast<ir::NodeScalar>(keyItem);
         auto valNode = decodeNode(parentTag);
         if (keyVal && !keyVal->text.empty()) {
           ir::Field field(keyVal->text, valNode);
@@ -774,7 +774,7 @@ private:
         if (offset_ >= endOffset)
           break;
         auto valNode = decodeNode(parentTag);
-        auto key = std::dynamic_pointer_cast<ir::Value>(keyNode);
+        auto key = std::dynamic_pointer_cast<ir::NodeScalar>(keyNode);
         if (key && !key->text.empty()) {
           ir::Field field(key->text, valNode);
           obj->fields.push_back(std::move(field));

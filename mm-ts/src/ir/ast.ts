@@ -10,7 +10,7 @@ export interface Node {
   setTag(tag: Tag): void;
 }
 
-export class MMValue implements Node {
+export class NodeScalar implements Node {
   private value: any;
   private tag: Tag;
   private path: string;
@@ -60,7 +60,7 @@ export class MMValue implements Node {
   }
 }
 
-export class MMObject implements Node {
+export class NodeObject implements Node {
   private properties: Record<string, Node>;
   private tag: Tag;
   private path: string;
@@ -108,7 +108,7 @@ export class MMObject implements Node {
   }
 }
 
-export class MMArray implements Node {
+export class NodeArray implements Node {
   private elements: Node[];
   private tag: Tag;
   private path: string;

@@ -13,6 +13,6 @@ typedef struct {
 
 mm_decoder_t* mm_decoder_new(const uint8_t* data, size_t size);
 void mm_decoder_free(mm_decoder_t* d);
-mm_node_t* mm_decoder_decode(mm_decoder_t* d);
+node_t* mm_decoder_decode(mm_decoder_t* d);
 
 #endif

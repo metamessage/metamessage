@@ -48,7 +48,7 @@ func ToRust(n ir.Node) string {
 	}
 
 	topName := "Obj"
-	if obj, ok := n.(*ir.Object); ok && obj.Tag != nil && obj.Tag.Name != "" {
+	if obj, ok := n.(*ir.NodeObject); ok && obj.Tag != nil && obj.Tag.Name != "" {
 		topName = exportRustStructName(obj.Tag.Name)
 	}
 
@@ -81,7 +81,7 @@ func ToRust(n ir.Node) string {
 	sb.WriteString("    ")
 	sb.WriteString(topName)
 	sb.WriteString(" {\n")
-	if obj, ok := n.(*ir.Object); ok {
+	if obj, ok := n.(*ir.NodeObject); ok {
 		genRustObjectInitializer(&sb, obj, 2)
 	}
 	sb.WriteString("    }\n")
@@ -112,18 +112,18 @@ func collectRustImportsRec(n ir.Node, imports map[string]struct{}) {
 	}
 
 	switch v := n.(type) {
-	case *ir.Value:
+	case *ir.NodeScalar:
 		if v.Tag != nil {
 			addRustImportForType(v.Tag.Type, imports)
 		}
-	case *ir.Array:
+	case *ir.NodeArray:
 		if v.Tag != nil && v.Tag.ChildType != ir.ValueTypeUnknown {
 			addRustImportForType(v.Tag.ChildType, imports)
 		}
 		for _, item := range v.Items {
 			collectRustImportsRec(item, imports)
 		}
-	case *ir.Object:
+	case *ir.NodeObject:
 		for _, f := range v.Fields {
 			if f != nil {
 				collectRustImportsRec(f.Value, imports)
@@ -147,18 +147,18 @@ func addRustImportForType(typ ir.ValueType, imports map[string]struct{}) {
 
 func getRustTypeForField(f *ir.Field) string {
 	switch v := f.Value.(type) {
-	case *ir.Value:
+	case *ir.NodeScalar:
 		return getRustType(v)
-	case *ir.Object:
+	case *ir.NodeObject:
 		return getRustObjectType(f.Key, v)
-	case *ir.Array:
+	case *ir.NodeArray:
 		return getRustArrayType(f.Key, v)
 	default:
 		return "serde_json::Value"
 	}
 }
 
-func getRustType(v *ir.Value) string {
+func getRustType(v *ir.NodeScalar) string {
 	if v != nil && v.Tag != nil {
 		if t, ok := rustTypeMap[v.Tag.Type]; ok {
 			return t
@@ -167,14 +167,14 @@ func getRustType(v *ir.Value) string {
 	return "serde_json::Value"
 }
 
-func getRustObjectType(fieldKey string, obj *ir.Object) string {
+func getRustObjectType(fieldKey string, obj *ir.NodeObject) string {
 	if obj != nil && obj.Tag != nil && obj.Tag.Name != "" {
 		return exportRustStructName(obj.Tag.Name)
 	}
 	return exportRustStructName(fieldKey)
 }
 
-func getRustArrayType(fieldKey string, a *ir.Array) string {
+func getRustArrayType(fieldKey string, a *ir.NodeArray) string {
 	if a == nil {
 		return "Vec<serde_json::Value>"
 	}
@@ -187,9 +187,9 @@ func getRustArrayType(fieldKey string, a *ir.Array) string {
 
 	if len(a.Items) > 0 {
 		switch item := a.Items[0].(type) {
-		case *ir.Object:
+		case *ir.NodeObject:
 			return "Vec<" + getRustObjectType(fieldKey, item) + ">"
-		case *ir.Value:
+		case *ir.NodeScalar:
 			if item.Tag != nil {
 				if t, ok := rustTypeMap[item.Tag.Type]; ok {
 					return "Vec<" + t + ">"
@@ -202,7 +202,7 @@ func getRustArrayType(fieldKey string, a *ir.Array) string {
 }
 
 func genRustFields(b *strings.Builder, n ir.Node, indent int) {
-	obj, ok := n.(*ir.Object)
+	obj, ok := n.(*ir.NodeObject)
 	if !ok {
 		return
 	}
@@ -221,7 +221,7 @@ func genRustFields(b *strings.Builder, n ir.Node, indent int) {
 }
 
 func genRustNestedStructs(b *strings.Builder, n ir.Node, indent int) {
-	obj, ok := n.(*ir.Object)
+	obj, ok := n.(*ir.NodeObject)
 	if !ok {
 		return
 	}
@@ -232,7 +232,7 @@ func genRustNestedStructs(b *strings.Builder, n ir.Node, indent int) {
 		}
 
 		switch v := f.Value.(type) {
-		case *ir.Object:
+		case *ir.NodeObject:
 			structName := getRustObjectType(f.Key, v)
 			b.WriteString("\n#[derive(Debug, Clone)]\n")
 			b.WriteString("pub struct ")
@@ -241,7 +241,7 @@ func genRustNestedStructs(b *strings.Builder, n ir.Node, indent int) {
 			genRustFields(b, v, indent+1)
 			b.WriteString("}\n")
 			genRustNestedStructs(b, v, indent+1)
-		case *ir.Array:
+		case *ir.NodeArray:
 			if nestedObj := findFirstObjectInArray(v); nestedObj != nil {
 				structName := getRustObjectType(f.Key, nestedObj)
 				b.WriteString("\n#[derive(Debug, Clone)]\n")
@@ -294,7 +294,7 @@ func exportRustInstanceName(name string) string {
 	return strings.ToLower(name[:1]) + name[1:] + "_data"
 }
 
-func genRustObjectInitializer(b *strings.Builder, obj *ir.Object, indent int) {
+func genRustObjectInitializer(b *strings.Builder, obj *ir.NodeObject, indent int) {
 	if obj == nil {
 		return
 	}
@@ -313,18 +313,18 @@ func genRustObjectInitializer(b *strings.Builder, obj *ir.Object, indent int) {
 
 func genRustValue(b *strings.Builder, n ir.Node, fieldKey string, indent int) {
 	switch v := n.(type) {
-	case *ir.Value:
+	case *ir.NodeScalar:
 		b.WriteString(formatRustValueLiteral(v))
-	case *ir.Object:
+	case *ir.NodeObject:
 		genRustObjectValue(b, v, fieldKey, indent)
-	case *ir.Array:
+	case *ir.NodeArray:
 		genRustArrayValue(b, v, fieldKey, indent)
 	default:
 		b.WriteString("serde_json::Value::Null")
 	}
 }
 
-func genRustObjectValue(b *strings.Builder, obj *ir.Object, fieldKey string, indent int) {
+func genRustObjectValue(b *strings.Builder, obj *ir.NodeObject, fieldKey string, indent int) {
 	structName := exportRustStructName(obj.Tag.Name)
 	if obj.Tag == nil || obj.Tag.Name == "" {
 		structName = exportRustStructName(fieldKey)
@@ -346,16 +346,16 @@ func genRustObjectValue(b *strings.Builder, obj *ir.Object, fieldKey string, ind
 	b.WriteString(" }")
 }
 
-func genRustArrayValue(b *strings.Builder, a *ir.Array, fieldKey string, indent int) {
+func genRustArrayValue(b *strings.Builder, a *ir.NodeArray, fieldKey string, indent int) {
 	b.WriteString("vec![")
 	for i, item := range a.Items {
 		if i > 0 {
 			b.WriteString(", ")
 		}
 		switch iv := item.(type) {
-		case *ir.Object:
+		case *ir.NodeObject:
 			genRustObjectValue(b, iv, fieldKey, indent)
-		case *ir.Value:
+		case *ir.NodeScalar:
 			b.WriteString(formatRustValueLiteral(iv))
 		default:
 			b.WriteString("serde_json::Value::Null")
@@ -364,7 +364,7 @@ func genRustArrayValue(b *strings.Builder, a *ir.Array, fieldKey string, indent 
 	b.WriteString("]")
 }
 
-func formatRustValueLiteral(v *ir.Value) string {
+func formatRustValueLiteral(v *ir.NodeScalar) string {
 	if v == nil {
 		return "serde_json::Value::Null"
 	}

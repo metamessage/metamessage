@@ -12,7 +12,7 @@ pub enum ValueData {
 }
 
 #[derive(Debug, Clone)]
-pub struct Value {
+pub struct NodeScalar {
     pub data: ValueData,
     pub text: String,
     pub tag: Option<Tag>,
@@ -26,14 +26,14 @@ pub struct Field {
 }
 
 #[derive(Debug, Clone)]
-pub struct Object {
+pub struct NodeObject {
     pub fields: Vec<Field>,
     pub tag: Option<Tag>,
     pub path: String,
 }
 
 #[derive(Debug, Clone)]
-pub struct Array {
+pub struct NodeArray {
     pub items: Vec<Node>,
     pub tag: Option<Tag>,
     pub path: String,
@@ -41,9 +41,9 @@ pub struct Array {
 
 #[derive(Debug, Clone)]
 pub enum Node {
-    Value(Value),
-    Object(Object),
-    Array(Array),
+    Value(NodeScalar),
+    Object(NodeObject),
+    Array(NodeArray),
 }
 
 impl Node {

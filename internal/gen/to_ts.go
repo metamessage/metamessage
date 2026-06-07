@@ -47,7 +47,7 @@ func ToTS(n ir.Node) string {
 	}
 
 	topName := "Obj"
-	if obj, ok := n.(*ir.Object); ok && obj.Tag != nil && obj.Tag.Name != "" {
+	if obj, ok := n.(*ir.NodeObject); ok && obj.Tag != nil && obj.Tag.Name != "" {
 		topName = exportTSInterfaceName(obj.Tag.Name)
 	}
 
@@ -73,18 +73,18 @@ func ToTS(n ir.Node) string {
 
 func getTSTypeForField(f *ir.Field) string {
 	switch v := f.Value.(type) {
-	case *ir.Value:
+	case *ir.NodeScalar:
 		return getTSType(v)
-	case *ir.Object:
+	case *ir.NodeObject:
 		return getTSObjectType(f.Key, v)
-	case *ir.Array:
+	case *ir.NodeArray:
 		return getTSArrayType(f.Key, v)
 	default:
 		return "any"
 	}
 }
 
-func getTSType(v *ir.Value) string {
+func getTSType(v *ir.NodeScalar) string {
 	if v != nil && v.Tag != nil {
 		if t, ok := tsTypeMap[v.Tag.Type]; ok {
 			return t
@@ -93,14 +93,14 @@ func getTSType(v *ir.Value) string {
 	return "any"
 }
 
-func getTSObjectType(fieldKey string, obj *ir.Object) string {
+func getTSObjectType(fieldKey string, obj *ir.NodeObject) string {
 	if obj != nil && obj.Tag != nil && obj.Tag.Name != "" {
 		return exportTSInterfaceName(obj.Tag.Name)
 	}
 	return exportTSInterfaceName(fieldKey)
 }
 
-func getTSArrayType(fieldKey string, a *ir.Array) string {
+func getTSArrayType(fieldKey string, a *ir.NodeArray) string {
 	if a == nil {
 		return "Array<any>"
 	}
@@ -113,9 +113,9 @@ func getTSArrayType(fieldKey string, a *ir.Array) string {
 
 	if len(a.Items) > 0 {
 		switch item := a.Items[0].(type) {
-		case *ir.Object:
+		case *ir.NodeObject:
 			return "Array<" + getTSObjectType(fieldKey, item) + ">"
-		case *ir.Value:
+		case *ir.NodeScalar:
 			if item.Tag != nil {
 				if t, ok := tsTypeMap[item.Tag.Type]; ok {
 					return "Array<" + t + ">"
@@ -128,7 +128,7 @@ func getTSArrayType(fieldKey string, a *ir.Array) string {
 }
 
 func genTSFields(b *strings.Builder, n ir.Node, indent int) {
-	obj, ok := n.(*ir.Object)
+	obj, ok := n.(*ir.NodeObject)
 	if !ok {
 		return
 	}
@@ -157,7 +157,7 @@ func genTSFields(b *strings.Builder, n ir.Node, indent int) {
 }
 
 func genTSNestedInterfaces(b *strings.Builder, n ir.Node, indent int) {
-	obj, ok := n.(*ir.Object)
+	obj, ok := n.(*ir.NodeObject)
 	if !ok {
 		return
 	}
@@ -168,7 +168,7 @@ func genTSNestedInterfaces(b *strings.Builder, n ir.Node, indent int) {
 		}
 
 		switch v := f.Value.(type) {
-		case *ir.Object:
+		case *ir.NodeObject:
 			className := getTSObjectType(f.Key, v)
 			b.WriteString("\nexport interface ")
 			b.WriteString(className)
@@ -176,7 +176,7 @@ func genTSNestedInterfaces(b *strings.Builder, n ir.Node, indent int) {
 			genTSFields(b, v, 1)
 			b.WriteString("}\n")
 			genTSNestedInterfaces(b, v, indent+1)
-		case *ir.Array:
+		case *ir.NodeArray:
 			if nestedObj := findFirstObjectInArray(v); nestedObj != nil {
 				className := getTSObjectType(f.Key, nestedObj)
 				b.WriteString("\nexport interface ")
@@ -221,18 +221,18 @@ func exportTSConstName(name string) string {
 
 func genTSValue(b *strings.Builder, n ir.Node, indent int) {
 	switch v := n.(type) {
-	case *ir.Value:
+	case *ir.NodeScalar:
 		b.WriteString(formatTSValueLiteral(v))
-	case *ir.Object:
+	case *ir.NodeObject:
 		genTSObjectLiteral(b, v, indent)
-	case *ir.Array:
+	case *ir.NodeArray:
 		genTSArrayLiteral(b, v, indent)
 	default:
 		b.WriteString("null")
 	}
 }
 
-func genTSObjectLiteral(b *strings.Builder, obj *ir.Object, indent int) {
+func genTSObjectLiteral(b *strings.Builder, obj *ir.NodeObject, indent int) {
 	if obj == nil {
 		b.WriteString("null")
 		return
@@ -261,7 +261,7 @@ func genTSObjectLiteral(b *strings.Builder, obj *ir.Object, indent int) {
 	b.WriteString("}")
 }
 
-func genTSArrayLiteral(b *strings.Builder, a *ir.Array, indent int) {
+func genTSArrayLiteral(b *strings.Builder, a *ir.NodeArray, indent int) {
 	if a == nil {
 		b.WriteString("[]")
 		return
@@ -280,7 +280,7 @@ func genTSArrayLiteral(b *strings.Builder, a *ir.Array, indent int) {
 	b.WriteString("]")
 }
 
-func formatTSValueLiteral(v *ir.Value) string {
+func formatTSValueLiteral(v *ir.NodeScalar) string {
 	if v == nil {
 		return "null"
 	}

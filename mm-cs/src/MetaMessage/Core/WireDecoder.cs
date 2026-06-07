@@ -19,7 +19,7 @@ public class WireDecoder
         _offset = 0;
     }
 
-    public IMmTree Decode()
+    public INode Decode()
     {
         if (_data == null || _data.Length == 0)
         {
@@ -29,7 +29,7 @@ public class WireDecoder
         return DecodeNext(null);
     }
 
-    private IMmTree DecodeNext(Tag? inherited)
+    private INode DecodeNext(Tag? inherited)
     {
         if (_offset >= _data.Length)
         {
@@ -62,7 +62,7 @@ public class WireDecoder
         }
     }
 
-    private IMmTree DecodeSimple(int first, Tag? inherited)
+    private INode DecodeSimple(int first, Tag? inherited)
     {
         int val = first & Prefix.SUFFIX_MASK;
         Tag tag = inherited?.Copy() ?? Tag.Empty();
@@ -81,10 +81,10 @@ public class WireDecoder
                 return NullBytes(tag);
             case SimpleValue.FALSE:
                 tag.Type = ValueType.Bool;
-                return new MmScalar(false, "false", tag);
+                return new NodeScalar(false, "false", tag);
             case SimpleValue.TRUE:
                 tag.Type = ValueType.Bool;
-                return new MmScalar(true, "true", tag);
+                return new NodeScalar(true, "true", tag);
             case SimpleValue.CODE:
             case SimpleValue.MESSAGE:
             case SimpleValue.DATA:
@@ -113,14 +113,14 @@ public class WireDecoder
                 {
                     string name = SimpleValue.NameOf(val);
                     tag.Type = ValueType.Str;
-                    return new MmScalar(name, name, tag);
+                    return new NodeScalar(name, name, tag);
                 }
             default:
                 throw new MmDecodeException($"Unknown simple value: {val}");
         }
     }
 
-    static private MmScalar NullBool(Tag tag)
+    static private NodeScalar NullBool(Tag tag)
     {
         if (tag.Type == ValueType.Unknown)
         {
@@ -131,10 +131,10 @@ public class WireDecoder
             throw new MmDecodeException("null_bool type mismatch");
         }
         tag.IsNull = true;
-        return new MmScalar(false, "false", tag);
+        return new NodeScalar(false, "false", tag);
     }
 
-    static private MmScalar NullInt(Tag tag)
+    static private NodeScalar NullInt(Tag tag)
     {
         if (tag.Type == ValueType.Unknown)
         {
@@ -145,10 +145,10 @@ public class WireDecoder
             throw new MmDecodeException("null_int type mismatch");
         }
         tag.IsNull = true;
-        return new MmScalar(0L, "0", tag);
+        return new NodeScalar(0L, "0", tag);
     }
 
-    static private MmScalar NullFloat(Tag tag)
+    static private NodeScalar NullFloat(Tag tag)
     {
         if (tag.Type == ValueType.Unknown)
         {
@@ -159,20 +159,20 @@ public class WireDecoder
             throw new MmDecodeException("null_float type mismatch");
         }
         tag.IsNull = true;
-        return new MmScalar(0.0, "0.0", tag);
+        return new NodeScalar(0.0, "0.0", tag);
     }
 
-    static private MmScalar NullString(Tag tag)
+    static private NodeScalar NullString(Tag tag)
     {
         if (tag.Type == ValueType.Unknown)
         {
             tag.Type = ValueType.Str;
         }
         tag.IsNull = true;
-        return new MmScalar("", "", tag);
+        return new NodeScalar("", "", tag);
     }
 
-    static private MmScalar NullBytes(Tag tag)
+    static private NodeScalar NullBytes(Tag tag)
     {
         if (tag.Type == ValueType.Unknown)
         {
@@ -183,10 +183,10 @@ public class WireDecoder
             throw new MmDecodeException("null_bytes type mismatch");
         }
         tag.IsNull = true;
-        return new MmScalar(Array.Empty<byte>(), "", tag);
+        return new NodeScalar(Array.Empty<byte>(), "", tag);
     }
 
-    private IMmTree DecodePositiveInt(int first, Tag? inherited)
+    private INode DecodePositiveInt(int first, Tag? inherited)
     {
         ulong uv = ReadUintBody(first);
         Tag tag = inherited?.Copy() ?? Tag.Empty();
@@ -196,10 +196,10 @@ public class WireDecoder
         }
 
         (object data, string text) = ConvertPositiveIntValue(uv, tag);
-        return new MmScalar(data, text, tag);
+        return new NodeScalar(data, text, tag);
     }
 
-    private IMmTree DecodeNegativeInt(int first, Tag? inherited)
+    private INode DecodeNegativeInt(int first, Tag? inherited)
     {
         ulong uv = ReadUintBody(first);
         Tag tag = inherited?.Copy() ?? Tag.Empty();
@@ -209,7 +209,7 @@ public class WireDecoder
         }
 
         (object data, string text) = ConvertNegativeIntValue(uv, tag);
-        return new MmScalar(data, text, tag);
+        return new NodeScalar(data, text, tag);
     }
 
     private static (object data, string text) ConvertPositiveIntValue(ulong uv, Tag tag)
@@ -286,7 +286,7 @@ public class WireDecoder
         };
     }
 
-    private IMmTree DecodeFloat(int first, Tag? inherited)
+    private INode DecodeFloat(int first, Tag? inherited)
     {
         Tag tag = inherited?.Copy() ?? Tag.Empty();
         if (tag.Type == ValueType.Unknown)
@@ -337,10 +337,10 @@ public class WireDecoder
             }
         }
 
-        return new MmScalar(val, val.ToString(), tag);
+        return new NodeScalar(val, val.ToString(), tag);
     }
 
-    private IMmTree DecodeString(int first, Tag? inherited)
+    private INode DecodeString(int first, Tag? inherited)
     {
         var (l1, l2) = StringLen(first);
         if (l1 == 1)
@@ -379,12 +379,12 @@ public class WireDecoder
         return tag.Type switch
         {
             ValueType.Email or ValueType.Url or ValueType.Ip or ValueType.Enums =>
-                new MmScalar(s, s, tag),
-            _ => new MmScalar(s, s, tag)
+                new NodeScalar(s, s, tag),
+            _ => new NodeScalar(s, s, tag)
         };
     }
 
-    private IMmTree DecodeBytes(int first, Tag? inherited)
+    private INode DecodeBytes(int first, Tag? inherited)
     {
         var (l1, l2) = BytesLen(first);
         if (l1 == 1)
@@ -425,14 +425,14 @@ public class WireDecoder
         {
             ValueType.Uuid => BytesToUuidResult(bytes, tag),
             ValueType.Media =>
-                new MmScalar(bytes, Convert.ToBase64String(bytes), tag),
+                new NodeScalar(bytes, Convert.ToBase64String(bytes), tag),
             ValueType.Bigint =>
-                new MmScalar(bytes, BigIntWireCodec.DecodeSignedDecimal(bytes), tag),
-            _ => new MmScalar(bytes, Convert.ToBase64String(bytes), tag)
+                new NodeScalar(bytes, BigIntWireCodec.DecodeSignedDecimal(bytes), tag),
+            _ => new NodeScalar(bytes, Convert.ToBase64String(bytes), tag)
         };
     }
 
-    private static MmScalar BytesToUuidResult(byte[] bytes, Tag tag)
+    private static NodeScalar BytesToUuidResult(byte[] bytes, Tag tag)
     {
         if (bytes.Length != 16)
         {
@@ -445,10 +445,10 @@ public class WireDecoder
             if (i == 3 || i == 5 || i == 7 || i == 9)
                 sb.Append('-');
         }
-        return new MmScalar(bytes, sb.ToString(), tag);
+        return new NodeScalar(bytes, sb.ToString(), tag);
     }
 
-    private IMmTree DecodeContainer(int first, Tag? inherited)
+    private INode DecodeContainer(int first, Tag? inherited)
     {
         int containerType = first & WireConstants.CONTAINER_MASK;
         var (l1, l2) = ContainerLen(first);
@@ -482,23 +482,23 @@ public class WireDecoder
         if (containerType == WireConstants.CONTAINER_ARRAY)
         {
             tag.Type = ValueType.Vec;
-            var children = new List<IMmTree>();
+            var children = new List<INode>();
             while (_offset < end)
             {
                 Tag itemTag = Tag.Empty();
                 itemTag.InheritFromArrayParent(tag);
                 children.Add(DecodeNext(itemTag));
             }
-            return new MmArray(children, tag);
+            return new NodeArray(children, tag);
         }
         else // CONTAINER_MAP
         {
             tag.Type = ValueType.Map;
-            var entries = new List<KeyValuePair<MmScalar, IMmTree>>();
+            var entries = new List<KeyValuePair<NodeScalar, INode>>();
 
             var firstElem = DecodeNext(tag);
-            MmArray keyArray;
-            if (firstElem is MmArray ka)
+            NodeArray keyArray;
+            if (firstElem is NodeArray ka)
             {
                 keyArray = ka;
             }
@@ -510,20 +510,20 @@ public class WireDecoder
             int keyIdx = 0;
             while (_offset < end && keyIdx < keyArray.Children.Count)
             {
-                var key = (MmScalar)keyArray.Children[keyIdx];
+                var key = (NodeScalar)keyArray.Children[keyIdx];
                 Tag valueTag = Tag.Empty();
                 valueTag.Inherit(tag);
                 var value = DecodeNext(valueTag);
-                entries.Add(new KeyValuePair<MmScalar, IMmTree>(key, value));
+                entries.Add(new KeyValuePair<NodeScalar, INode>(key, value));
                 keyIdx++;
             }
 
             _offset = end;
-            return new MmMap(entries, tag);
+            return new NodeObject(entries, tag);
         }
     }
 
-    private IMmTree DecodeTagged(int first, Tag? inherited)
+    private INode DecodeTagged(int first, Tag? inherited)
     {
         var (l1, l2) = TagLen(first);
         if (l1 == 1)
@@ -599,40 +599,40 @@ public class WireDecoder
         return DecodeNext(tag);
     }
 
-    private static IMmTree CreateNullValue(Tag tag)
+    private static INode CreateNullValue(Tag tag)
     {
         tag.Nullable = true;
         switch (tag.Type)
         {
             case ValueType.Bool:
-                return new MmScalar(false, "false", tag);
+                return new NodeScalar(false, "false", tag);
             case ValueType.I:
             case ValueType.I8:
             case ValueType.I16:
             case ValueType.I32:
             case ValueType.I64:
-                return new MmScalar(0L, "0", tag);
+                return new NodeScalar(0L, "0", tag);
             case ValueType.U:
             case ValueType.U8:
             case ValueType.U16:
             case ValueType.U32:
             case ValueType.U64:
-                return new MmScalar(0UL, "0", tag);
+                return new NodeScalar(0UL, "0", tag);
             case ValueType.F32:
-                return new MmScalar(0.0f, "0.0", tag);
+                return new NodeScalar(0.0f, "0.0", tag);
             case ValueType.F64:
             case ValueType.Decimal:
-                return new MmScalar(0.0, "0.0", tag);
+                return new NodeScalar(0.0, "0.0", tag);
             case ValueType.Str:
             case ValueType.Email:
-                return new MmScalar("", "", tag);
+                return new NodeScalar("", "", tag);
             case ValueType.Bytes:
-                return new MmScalar(Array.Empty<byte>(), "", tag);
+                return new NodeScalar(Array.Empty<byte>(), "", tag);
             case ValueType.Datetime:
                 tag.Type = ValueType.Datetime;
-                return new MmScalar(DateTime.UnixEpoch, "0001-01-01 00:00:00", tag);
+                return new NodeScalar(DateTime.UnixEpoch, "0001-01-01 00:00:00", tag);
             default:
-                return new MmScalar("", "", tag);
+                return new NodeScalar("", "", tag);
         }
     }
 

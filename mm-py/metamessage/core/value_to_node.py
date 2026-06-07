@@ -28,7 +28,7 @@ from datetime import datetime, date, time as dt_time
 from enum import Enum
 
 from ..ir.tag import Tag, ValueType, NewTag, MergeTag, mm_tag
-from ..ir.ast import Obj, Arr, Val, Field, Node
+from ..ir.ast import NodeObject, Arr, NodeScalar, Field, Node
 from .encoder import Encoder
 from .decoder import Decoder
 
@@ -312,7 +312,7 @@ def value_to_node(value: Any, tag: Optional[Tag] = None, depth: int = 0, path: s
         if tag.type == ValueType(0):
             raise ValueError("invalid input: v is None (no concrete type/value)")
         tag.is_null = True
-        return Val(data=None, text="null", tag=tag, path=path)
+        return NodeScalar(data=None, text="null", tag=tag, path=path)
 
     # bool must be checked before int (bool is subclass of int in Python)
     if isinstance(value, bool):
@@ -321,7 +321,7 @@ def value_to_node(value: Any, tag: Optional[Tag] = None, depth: int = 0, path: s
             tag.type = ValueType.Bool
         if tag.type == ValueType.Bool:
             _, text = _validate_bool(value, tag)
-            return Val(data=value, text=text, tag=tag, path=path)
+            return NodeScalar(data=value, text=text, tag=tag, path=path)
         raise ValueError(f"{tag.type} unsupported type: bool")
 
     elif isinstance(value, int):
@@ -332,7 +332,7 @@ def value_to_node(value: Any, tag: Optional[Tag] = None, depth: int = 0, path: s
             val_int = _validate_i(value, tag)
             if val_int is not None:
                 data, text = val_int
-                return Val(data=data, text=text, tag=tag, path=path)
+                return NodeScalar(data=data, text=text, tag=tag, path=path)
         raise ValueError(f"{tag.type} unsupported type: int")
 
     elif isinstance(value, float):
@@ -342,7 +342,7 @@ def value_to_node(value: Any, tag: Optional[Tag] = None, depth: int = 0, path: s
             val_float = _validate_f(value, tag)
             if val_float is not None:
                 data, text = val_float
-                return Val(data=data, text=text, tag=tag, path=path)
+                return NodeScalar(data=data, text=text, tag=tag, path=path)
         raise ValueError(f"{tag.type} unsupported type: float")
 
     elif isinstance(value, str):
@@ -355,7 +355,7 @@ def value_to_node(value: Any, tag: Optional[Tag] = None, depth: int = 0, path: s
             val_str = _validate_str(value, tag)
             if val_str is not None:
                 data, text = val_str
-                return Val(data=data, text=text, tag=tag, path=path)
+                return NodeScalar(data=data, text=text, tag=tag, path=path)
         raise ValueError(f"{tag.type} unsupported type: str")
 
     elif isinstance(value, bytes):
@@ -364,7 +364,7 @@ def value_to_node(value: Any, tag: Optional[Tag] = None, depth: int = 0, path: s
         val_bytes = _validate_bytes(value, tag)
         if val_bytes is not None:
             data, text = val_bytes
-            return Val(data=data, text=text, tag=tag, path=path)
+            return NodeScalar(data=data, text=text, tag=tag, path=path)
         raise ValueError(f"{tag.type} unsupported type: bytes")
 
     elif isinstance(value, datetime):
@@ -373,7 +373,7 @@ def value_to_node(value: Any, tag: Optional[Tag] = None, depth: int = 0, path: s
         val_dt = _validate_datetime(value, tag)
         if val_dt is not None:
             data, text = val_dt
-            return Val(data=data, text=text, tag=tag, path=path)
+            return NodeScalar(data=data, text=text, tag=tag, path=path)
         raise ValueError(f"{tag.type} unsupported type: datetime")
 
     elif isinstance(value, date):
@@ -382,7 +382,7 @@ def value_to_node(value: Any, tag: Optional[Tag] = None, depth: int = 0, path: s
         val_d = _validate_date(value, tag)
         if val_d is not None:
             data, text = val_d
-            return Val(data=data, text=text, tag=tag, path=path)
+            return NodeScalar(data=data, text=text, tag=tag, path=path)
         raise ValueError(f"{tag.type} unsupported type: date")
 
     elif isinstance(value, dt_time):
@@ -391,7 +391,7 @@ def value_to_node(value: Any, tag: Optional[Tag] = None, depth: int = 0, path: s
         val_t = _validate_time(value, tag)
         if val_t is not None:
             data, text = val_t
-            return Val(data=data, text=text, tag=tag, path=path)
+            return NodeScalar(data=data, text=text, tag=tag, path=path)
         raise ValueError(f"{tag.type} unsupported type: time")
 
     # Handle dict (map)
@@ -559,7 +559,7 @@ def _validate_time(val: dt_time, tag: Tag):
 
 # ===== Any to Node (struct, map, slice) =====
 
-def _any_to_node_object(obj: Any, tag: Tag, depth: int, path: str) -> Obj:
+def _any_to_node_object(obj: Any, tag: Tag, depth: int, path: str) -> NodeObject:
     """Convert a Python object/class instance to an Object node."""
     depth += 1
     if depth > _MAX_DEPTH:
@@ -611,10 +611,10 @@ def _any_to_node_object(obj: Any, tag: Tag, depth: int, path: str) -> Obj:
         
         nodes.append(Field(key=field_key, value=child_node))
     
-    return Obj(fields=nodes, tag=tag, path=path)
+    return NodeObject(fields=nodes, tag=tag, path=path)
 
 
-def _any_to_node_dict(value: dict, tag: Tag, depth: int, path: str) -> Obj:
+def _any_to_node_dict(value: dict, tag: Tag, depth: int, path: str) -> NodeObject:
     """Convert a dict to an Object (map) node."""
     depth += 1
     if depth > _MAX_DEPTH:
@@ -696,11 +696,11 @@ def _any_to_node_dict(value: dict, tag: Tag, depth: int, path: str) -> Obj:
         
         nodes.append(Field(key="", value=child_node))
     
-    return Obj(fields=nodes, tag=tag, path=path)
+    return NodeObject(fields=nodes, tag=tag, path=path)
 
 
 def _any_to_node_list(value: list, tag: Tag, depth: int, path: str) -> Arr:
-    """Convert a list/tuple to an Array (slice) node."""
+    """Convert a list/tuple to a NodeArray (slice) node."""
     depth += 1
     if depth > _MAX_DEPTH:
         raise ValueError(f"max depth: {_MAX_DEPTH}")
@@ -805,17 +805,17 @@ def node_to_value(node: Node, target_type: Any) -> Any:
     
     Python equivalent of Go's Bind() function.
     """
-    if isinstance(node, Obj):
+    if isinstance(node, NodeObject):
         return _bind_object(node, target_type)
     elif isinstance(node, Arr):
         return _bind_array(node, target_type)
-    elif isinstance(node, Val):
+    elif isinstance(node, NodeScalar):
         return _bind_value(node, target_type)
     else:
         raise ValueError(f"unsupported node type: {type(node)}")
 
 
-def _bind_object(obj: Obj, target_type: Any) -> Any:
+def _bind_object(obj: NodeObject, target_type: Any) -> Any:
     """Bind an Object node to a Python value (dict or class instance)."""
     # If target type is dict or Any, return dict
     if target_type is dict or target_type is Any:
@@ -862,7 +862,7 @@ def _bind_object(obj: Obj, target_type: Any) -> Any:
 
 
 def _bind_array(arr: Arr, target_type: Any) -> Any:
-    """Bind an Array node to a Python list."""
+    """Bind a NodeArray node to a Python list."""
     if target_type is list or target_type is Any or target_type is tuple:
         result = []
         for item in arr.items:
@@ -884,7 +884,7 @@ def _bind_array(arr: Arr, target_type: Any) -> Any:
     return [_bind_value_or_node(item) for item in arr.items]
 
 
-def _bind_value(val: Val, target_type: Any) -> Any:
+def _bind_value(val: NodeScalar, target_type: Any) -> Any:
     """Bind a Value node to a Python value."""
     tag = val.tag
     
@@ -932,14 +932,14 @@ def _bind_value(val: Val, target_type: Any) -> Any:
 
 def _bind_value_or_node(node: Node) -> Any:
     """Bind a node to a plain Python value (no type info)."""
-    if isinstance(node, Obj):
+    if isinstance(node, NodeObject):
         result = {}
         for field in node.fields:
             result[field.key] = _bind_value_or_node(field.value)
         return result
     elif isinstance(node, Arr):
         return [_bind_value_or_node(item) for item in node.items]
-    elif isinstance(node, Val):
+    elif isinstance(node, NodeScalar):
         if node.tag.is_null:
             return None
         if node.data is not None:

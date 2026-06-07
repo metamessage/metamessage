@@ -11,7 +11,7 @@ typedef struct {
     size_t capacity;
 } mm_encoder_buffer_t;
 
-mm_encoder_buffer_t* mm_encoder_encode(mm_node_t* node);
+mm_encoder_buffer_t* mm_encoder_encode(node_t* node);
 void mm_encoder_buffer_free(mm_encoder_buffer_t* buf);
 
 #endif

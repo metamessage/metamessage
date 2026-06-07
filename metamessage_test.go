@@ -102,8 +102,8 @@ func TestEncodeDecode(t *testing.T) {
 			// case ir.NodeTypeArray:
 			// case ir.NodeTypeObject:
 			// case ir.NodeTypeValue:
-			// 	if !reflect.DeepEqual(rs.(*ir.Value).Data, tc.expectedOut) {
-			// 		t.Errorf("Expected output: %v %T, actual output: %v %T", tc.expectedOut, tc.expectedOut, bs2.(*ir.Value).Data, bs2.(*ir.Value).Data)
+			// 	if !reflect.DeepEqual(rs.(*ir.NodeScalar).Data, tc.expectedOut) {
+			// 		t.Errorf("Expected output: %v %T, actual output: %v %T", tc.expectedOut, tc.expectedOut, bs2.(*ir.NodeScalar).Data, bs2.(*ir.NodeScalar).Data)
 			// 	}
 			// }
 		})
@@ -167,7 +167,7 @@ func TestGenerateGoStruct1(t *testing.T) {
 						Type: ir.ValueTypeI8,
 					},
 					Items: []ir.Node{
-						&ir.Value{Tag: &ir.Tag{Type: ir.ValueTypeI8}, Text: "18"},
+						&ir.NodeScalar{Tag: &ir.Tag{Type: ir.ValueTypeI8}, Text: "18"},
 						&ir.Object{
 							Tag: &ir.Tag{
 								Name: "user_info1",
@@ -176,11 +176,11 @@ func TestGenerateGoStruct1(t *testing.T) {
 							Fields: []*ir.Field{
 								{
 									Key:   "user_name",
-									Value: &ir.Value{Tag: &ir.Tag{Type: ir.ValueTypeStr}, Text: "zhangsan"},
+									Value: &ir.NodeScalar{Tag: &ir.Tag{Type: ir.ValueTypeStr}, Text: "zhangsan"},
 								},
 								{
 									Key:   "age",
-									Value: &ir.Value{Tag: &ir.Tag{Type: ir.ValueTypeI8}, Text: "18"},
+									Value: &ir.NodeScalar{Tag: &ir.Tag{Type: ir.ValueTypeI8}, Text: "18"},
 								},
 							},
 						},
@@ -189,7 +189,7 @@ func TestGenerateGoStruct1(t *testing.T) {
 			},
 			{
 				Key:   "age",
-				Value: &ir.Value{Tag: &ir.Tag{Type: ir.ValueTypeI8}, Text: "18"},
+				Value: &ir.NodeScalar{Tag: &ir.Tag{Type: ir.ValueTypeI8}, Text: "18"},
 			},
 		},
 	}

@@ -31,7 +31,7 @@ sealed class Node {
 
 data class Field(val key: String, val value: Node)
 
-data class Object(
+data class NodeObject(
         var fields: MutableList<Field> = mutableListOf(),
         override var tag: Tag? = null,
         override var path: String = ""
@@ -39,7 +39,7 @@ data class Object(
     override fun getType(): NodeType = NodeType.NodeTypeObject
 }
 
-data class Array(
+data class NodeArray(
         var items: MutableList<Node> = mutableListOf(),
         override var tag: Tag? = null,
         override var path: String = ""
@@ -47,7 +47,7 @@ data class Array(
     override fun getType(): NodeType = NodeType.NodeTypeArray
 }
 
-data class Value(
+data class NodeScalar(
         var data: Any? = null,
         var text: String = "",
         override var tag: Tag? = null,

@@ -75,7 +75,7 @@ def test_value_to_node_dict():
 def test_value_to_node_list():
     """Test list to node conversion."""
     node = value_to_node([1, 2, 3])
-    assert node.get_type().name == 'Array'
+    assert node.get_type().name == 'NodeArray'
     assert len(node.items) == 3
     assert node.items[0].data == 1
     assert node.items[1].data == 2

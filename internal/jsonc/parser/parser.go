@@ -360,7 +360,7 @@ func (p *Parser) parse(path string, example bool, tag *ir.Tag) (val ir.Node, err
 				return nil, err
 			}
 
-			return &ir.Value{
+			return &ir.NodeScalar{
 				Data: data,
 				Text: text,
 				Tag:  tag,
@@ -718,7 +718,7 @@ func (p *Parser) parse(path string, example bool, tag *ir.Tag) (val ir.Node, err
 				return nil, err
 			}
 
-			return &ir.Value{
+			return &ir.NodeScalar{
 				Data: data,
 				Text: text,
 				Tag:  tag,
@@ -744,7 +744,7 @@ func (p *Parser) parse(path string, example bool, tag *ir.Tag) (val ir.Node, err
 				return nil, fmt.Errorf("unsupported type %v for boolean literal", tag.Type)
 			}
 
-			return &ir.Value{
+			return &ir.NodeScalar{
 				Data: true,
 				Text: ir.True,
 				Tag:  tag,
@@ -769,7 +769,7 @@ func (p *Parser) parse(path string, example bool, tag *ir.Tag) (val ir.Node, err
 				return nil, fmt.Errorf("unsupported type %v for boolean literal", tag.Type)
 			}
 
-			return &ir.Value{
+			return &ir.NodeScalar{
 				Data: false,
 				Text: ir.False,
 				Tag:  tag,
@@ -785,7 +785,7 @@ func (p *Parser) parse(path string, example bool, tag *ir.Tag) (val ir.Node, err
 	}
 }
 
-func (p *Parser) parseObject(openLine int, path string, tag *ir.Tag) (*ir.Object, error) {
+func (p *Parser) parseObject(openLine int, path string, tag *ir.Tag) (*ir.NodeObject, error) {
 	p.depth++
 	if p.depth > maxDepth {
 		return nil, fmt.Errorf("max depth: %d", maxDepth)
@@ -809,7 +809,7 @@ func (p *Parser) parseObject(openLine int, path string, tag *ir.Tag) (*ir.Object
 		}
 	}
 
-	obj := &ir.Object{
+	obj := &ir.NodeObject{
 		Tag:  tag,
 		Path: path,
 	}
@@ -902,7 +902,7 @@ func (p *Parser) parseObject(openLine int, path string, tag *ir.Tag) (*ir.Object
 	return obj, nil
 }
 
-func (p *Parser) parseArray(openLine int, path string, tag *ir.Tag) (*ir.Array, error) {
+func (p *Parser) parseArray(openLine int, path string, tag *ir.Tag) (*ir.NodeArray, error) {
 	p.depth++
 	if p.depth > maxDepth {
 		return nil, fmt.Errorf("max depth: %d", maxDepth)
@@ -921,7 +921,7 @@ func (p *Parser) parseArray(openLine int, path string, tag *ir.Tag) (*ir.Array, 
 	if tag.Name != "" {
 		path = fmt.Sprintf("%s.%s", path, tag.Name)
 	}
-	arr := &ir.Array{
+	arr := &ir.NodeArray{
 		Tag:  tag,
 		Path: path,
 	}

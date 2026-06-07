@@ -120,7 +120,7 @@ template <> inline double fromString<double>(const std::string &s) {
 
 #define MM_TO_FIELD(field, type, ...)                                          \
   do {                                                                         \
-    auto _v = ir::makeValue();                                                 \
+    auto _v = ir::makeNodeScalar();                                            \
     _v->tag = _mm_build_field_tag(_fields[_idx]);                              \
     _v->text = mmc::ir::detail::toString(obj.field);                           \
     _node->fields.emplace_back(#field, _v);                                    \
@@ -129,10 +129,10 @@ template <> inline double fromString<double>(const std::string &s) {
 
 #define MM_TO_ARRAY_FIELD(field, childType, ...)                               \
   do {                                                                         \
-    auto _a = ir::makeArray();                                                 \
+    auto _a = ir::makeNodeArray();                                             \
     _a->tag = _mm_build_field_tag(_fields[_idx]);                              \
     for (auto &_item : obj.field) {                                            \
-      auto _iv = ir::makeValue();                                              \
+      auto _iv = ir::makeNodeScalar();                                         \
       _iv->text = mmc::ir::detail::toString(_item);                            \
       _a->items.push_back(_iv);                                                \
     }                                                                          \
@@ -144,17 +144,17 @@ template <> inline double fromString<double>(const std::string &s) {
 
 #define MM_FROM_FIELD(field, type, ...)                                        \
   if (_f.key == #field) {                                                      \
-    auto _v = std::dynamic_pointer_cast<ir::Value>(_f.value);                  \
+    auto _v = std::dynamic_pointer_cast<ir::NodeScalar>(_f.value);             \
     if (_v)                                                                    \
       obj.field = mmc::ir::detail::fromString<MM_CPP_TYPE(type)>(_v->text);    \
   } else
 
 #define MM_FROM_ARRAY_FIELD(field, childType, ...)                             \
   if (_f.key == #field) {                                                      \
-    auto _a = std::dynamic_pointer_cast<ir::Array>(_f.value);                  \
+    auto _a = std::dynamic_pointer_cast<ir::NodeArray>(_f.value);              \
     if (_a) {                                                                  \
       for (auto &_item : _a->items) {                                          \
-        auto _iv = std::dynamic_pointer_cast<ir::Value>(_item);                \
+        auto _iv = std::dynamic_pointer_cast<ir::NodeScalar>(_item);           \
         if (_iv)                                                               \
           obj.field.push_back(                                                 \
               mmc::ir::detail::fromString<MM_CPP_TYPE(childType)>(_iv->text)); \
@@ -240,9 +240,9 @@ template <> inline double fromString<double>(const std::string &s) {
   }                                                                            \
                                                                                \
   /* ---- Pass 2: _mm_to_node_ ---- */                                         \
-  inline std::shared_ptr<ir::Object> MM_CONCAT(_mm_to_node_, structName)(      \
+  inline std::shared_ptr<ir::NodeObject> MM_CONCAT(_mm_to_node_, structName)(  \
       const structName &obj) {                                                 \
-    auto _node = ir::makeObject();                                             \
+    auto _node = ir::makeNodeObject();                                         \
     const auto &_fields = MM_CONCAT(_mm_fields_, structName);                  \
     size_t _idx = 0;                                                           \
     auto _mm_build_field_tag =                                                 \
@@ -253,8 +253,8 @@ template <> inline double fromString<double>(const std::string &s) {
   }                                                                            \
                                                                                \
   /* ---- Pass 3: _mm_from_node_ ---- */                                       \
-  inline structName MM_CONCAT(_mm_from_node_,                                  \
-                              structName)(std::shared_ptr<ir::Object> node) {  \
+  inline structName MM_CONCAT(_mm_from_node_, structName)(                     \
+      std::shared_ptr<ir::NodeObject> node) {                                  \
     structName obj{};                                                          \
     for (auto &_f : node->fields) {                                            \
       fieldsMacro(MM_FROM_FIELD) {}                                            \
@@ -381,9 +381,9 @@ template <> inline double fromString<double>(const std::string &s) {
   }                                                                            \
                                                                                \
   /* ---- Pass 2: _mm_to_node_ ---- */                                         \
-  inline std::shared_ptr<ir::Object> MM_CONCAT(_mm_to_node_, structName)(      \
+  inline std::shared_ptr<ir::NodeObject> MM_CONCAT(_mm_to_node_, structName)(  \
       const structName &obj) {                                                 \
-    auto _node = ir::makeObject();                                             \
+    auto _node = ir::makeNodeObject();                                         \
     const auto &_fields = MM_CONCAT(_mm_fields_, structName);                  \
     size_t _idx = 0;                                                           \
     auto _mm_build_field_tag =                                                 \
@@ -394,8 +394,8 @@ template <> inline double fromString<double>(const std::string &s) {
   }                                                                            \
                                                                                \
   /* ---- Pass 3: _mm_from_node_ ---- */                                       \
-  inline structName MM_CONCAT(_mm_from_node_,                                  \
-                              structName)(std::shared_ptr<ir::Object> node) {  \
+  inline structName MM_CONCAT(_mm_from_node_, structName)(                     \
+      std::shared_ptr<ir::NodeObject> node) {                                  \
     structName obj{};                                                          \
     for (auto &_f : node->fields) {                                            \
       fieldsMacro(MM_FROM_FIELD, MM_FROM_ARRAY_FIELD) {}                       \

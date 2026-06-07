@@ -402,15 +402,15 @@ public class NodeDecoder {
         let value = try innerDecoder.decodeNode(tag: tag, path: path)
 
         // Attach the tag to the decoded node
-        if let val = value as? Value {
+        if let val = value as? NodeScalar {
             val.tag = tag
             val.path = path
             return val
-        } else if let arr = value as? MMArray {
+        } else if let arr = value as? NodeArray {
             arr.tag = tag
             arr.path = path
             return arr
-        } else if let obj = value as? MMObject {
+        } else if let obj = value as? NodeObject {
             obj.tag = tag
             obj.path = path
             return obj
@@ -422,19 +422,19 @@ public class NodeDecoder {
     private func tagNullNode(_ tag: Tag, path: String) -> Node {
         switch tag.type {
         case .i, .i8, .i16, .i32, .i64:
-            return Value(data: 0, text: "0", tag: tag, path: path)
+            return NodeScalar(data: 0, text: "0", tag: tag, path: path)
         case .u, .u8, .u16, .u32, .u64:
-            return Value(data: UInt(0), text: "0", tag: tag, path: path)
+            return NodeScalar(data: UInt(0), text: "0", tag: tag, path: path)
         case .f32, .f64:
-            return Value(data: 0.0, text: "0.0", tag: tag, path: path)
+            return NodeScalar(data: 0.0, text: "0.0", tag: tag, path: path)
         case .bool:
-            return Value(data: false, text: "false", tag: tag, path: path)
+            return NodeScalar(data: false, text: "false", tag: tag, path: path)
         case .str, .email, .url, .datetime, .date, .time, .enums, .media:
-            return Value(data: "", text: "", tag: tag, path: path)
+            return NodeScalar(data: "", text: "", tag: tag, path: path)
         case .bytes, .uuid, .ip:
-            return Value(data: Data(), text: "", tag: tag, path: path)
+            return NodeScalar(data: Data(), text: "", tag: tag, path: path)
         default:
-            return Value(data: nil, text: "null", tag: tag, path: path)
+            return NodeScalar(data: nil, text: "null", tag: tag, path: path)
         }
     }
 
@@ -456,23 +456,23 @@ public class NodeDecoder {
 
         switch simpleValue {
         case .trueValue:
-            return Value(data: true, text: "true", tag: resolvedTag, path: path)
+            return NodeScalar(data: true, text: "true", tag: resolvedTag, path: path)
         case .falseValue:
-            return Value(data: false, text: "false", tag: resolvedTag, path: path)
+            return NodeScalar(data: false, text: "false", tag: resolvedTag, path: path)
         case .nullBool:
-            return Value(data: false, text: "false", tag: resolvedTag, path: path)
+            return NodeScalar(data: false, text: "false", tag: resolvedTag, path: path)
         case .nullInt:
-            return Value(data: 0, text: "0", tag: resolvedTag, path: path)
+            return NodeScalar(data: 0, text: "0", tag: resolvedTag, path: path)
         case .nullFloat:
-            return Value(data: 0.0, text: "0.0", tag: resolvedTag, path: path)
+            return NodeScalar(data: 0.0, text: "0.0", tag: resolvedTag, path: path)
         case .nullString:
-            return Value(data: "", text: "", tag: resolvedTag, path: path)
+            return NodeScalar(data: "", text: "", tag: resolvedTag, path: path)
         case .nullBytes:
-            return Value(data: Data(), text: "", tag: resolvedTag, path: path)
+            return NodeScalar(data: Data(), text: "", tag: resolvedTag, path: path)
         default:
             // Handle null-like values via the tag
             if let tag = tag, tag.isNull {
-                return Value(data: nil, text: "null", tag: resolvedTag, path: path)
+                return NodeScalar(data: nil, text: "null", tag: resolvedTag, path: path)
             }
             // Fall through to simple string codes
             // Simple string codes (code, message, data, success, error, etc.)
@@ -506,7 +506,7 @@ public class NodeDecoder {
             default: text = "null"
             }
             resolvedTag.type = .str
-            return Value(data: text, text: text, tag: resolvedTag, path: path)
+            return NodeScalar(data: text, text: text, tag: resolvedTag, path: path)
         }
     }
 
@@ -583,19 +583,19 @@ public class NodeDecoder {
             } else {
                 v = Int(value)
             }
-            return Value(data: v, text: "\(v)", tag: tag, path: path)
+            return NodeScalar(data: v, text: "\(v)", tag: tag, path: path)
 
         case .i8:
             let v: Int8 = negative ? -Int8(truncatingIfNeeded: value) : Int8(truncatingIfNeeded: value)
-            return Value(data: v, text: "\(v)", tag: tag, path: path)
+            return NodeScalar(data: v, text: "\(v)", tag: tag, path: path)
 
         case .i16:
             let v: Int16 = negative ? -Int16(truncatingIfNeeded: value) : Int16(truncatingIfNeeded: value)
-            return Value(data: v, text: "\(v)", tag: tag, path: path)
+            return NodeScalar(data: v, text: "\(v)", tag: tag, path: path)
 
         case .i32:
             let v: Int32 = negative ? -Int32(truncatingIfNeeded: value) : Int32(truncatingIfNeeded: value)
-            return Value(data: v, text: "\(v)", tag: tag, path: path)
+            return NodeScalar(data: v, text: "\(v)", tag: tag, path: path)
 
         case .i64:
             let v: Int64
@@ -608,30 +608,30 @@ public class NodeDecoder {
             } else {
                 v = Int64(value)
             }
-            return Value(data: v, text: "\(v)", tag: tag, path: path)
+            return NodeScalar(data: v, text: "\(v)", tag: tag, path: path)
 
         case .u:
             let v = UInt(value)
-            return Value(data: v, text: "\(v)", tag: tag, path: path)
+            return NodeScalar(data: v, text: "\(v)", tag: tag, path: path)
 
         case .u8:
             let v = UInt8(truncatingIfNeeded: value)
-            return Value(data: v, text: "\(v)", tag: tag, path: path)
+            return NodeScalar(data: v, text: "\(v)", tag: tag, path: path)
 
         case .u16:
             let v = UInt16(truncatingIfNeeded: value)
-            return Value(data: v, text: "\(v)", tag: tag, path: path)
+            return NodeScalar(data: v, text: "\(v)", tag: tag, path: path)
 
         case .u32:
             let v = UInt32(truncatingIfNeeded: value)
-            return Value(data: v, text: "\(v)", tag: tag, path: path)
+            return NodeScalar(data: v, text: "\(v)", tag: tag, path: path)
 
         case .u64:
-            return Value(data: value, text: "\(value)", tag: tag, path: path)
+            return NodeScalar(data: value, text: "\(value)", tag: tag, path: path)
 
         case .bool:
             let v = value != 0
-            return Value(data: v, text: v ? "true" : "false", tag: tag, path: path)
+            return NodeScalar(data: v, text: v ? "true" : "false", tag: tag, path: path)
 
         case .datetime:
             let ts: Int64
@@ -650,7 +650,7 @@ public class NodeDecoder {
             formatter.dateFormat = "yyyy-MM-dd HH:mm:ss"
             formatter.timeZone = TimeZone(abbreviation: "UTC")
             let text = formatter.string(from: date)
-            return Value(data: date, text: text, tag: tag, path: path)
+            return NodeScalar(data: date, text: text, tag: tag, path: path)
 
         case .date:
             var days = Int(value)
@@ -661,7 +661,7 @@ public class NodeDecoder {
             formatter.dateFormat = "yyyy-MM-dd"
             formatter.timeZone = TimeZone(abbreviation: "UTC")
             let text = formatter.string(from: date)
-            return Value(data: date, text: text, tag: tag, path: path)
+            return NodeScalar(data: date, text: text, tag: tag, path: path)
 
         case .time:
             var secs = Int(value)
@@ -671,7 +671,7 @@ public class NodeDecoder {
             let m = (secs % 3600) / 60
             let s = secs % 60
             let text = String(format: "%02d:%02d:%02d", h, m, s)
-            return Value(data: text, text: text, tag: tag, path: path)
+            return NodeScalar(data: text, text: text, tag: tag, path: path)
 
         case .enums:
             if !tag.enums.isEmpty {
@@ -679,16 +679,16 @@ public class NodeDecoder {
                 let idx = Int(value)
                 if idx >= 0 && idx < enumValues.count {
                     let text = String(enumValues[idx])
-                    return Value(data: text, text: text, tag: tag, path: path)
+                    return NodeScalar(data: text, text: text, tag: tag, path: path)
                 }
             }
-            return Value(data: String(value), text: String(value), tag: tag, path: path)
+            return NodeScalar(data: String(value), text: String(value), tag: tag, path: path)
 
         default:
             if negative {
-                return Value(data: -Int64(value), text: "-\(value)", tag: tag, path: path)
+                return NodeScalar(data: -Int64(value), text: "-\(value)", tag: tag, path: path)
             }
-            return Value(data: Int64(value), text: "\(value)", tag: tag, path: path)
+            return NodeScalar(data: Int64(value), text: "\(value)", tag: tag, path: path)
         }
     }
 
@@ -741,13 +741,13 @@ public class NodeDecoder {
         switch resolvedTag.type {
         case .f32:
             let f = Float(v)
-            return Value(data: f, text: formatFloat(f), tag: resolvedTag, path: path)
+            return NodeScalar(data: f, text: formatFloat(f), tag: resolvedTag, path: path)
         case .f64:
-            return Value(data: v, text: formatDouble(v), tag: resolvedTag, path: path)
+            return NodeScalar(data: v, text: formatDouble(v), tag: resolvedTag, path: path)
         case .decimal:
-            return Value(data: v, text: formatDouble(v), tag: resolvedTag, path: path)
+            return NodeScalar(data: v, text: formatDouble(v), tag: resolvedTag, path: path)
         default:
-            return Value(data: v, text: formatDouble(v), tag: resolvedTag, path: path)
+            return NodeScalar(data: v, text: formatDouble(v), tag: resolvedTag, path: path)
         }
     }
 
@@ -838,15 +838,15 @@ public class NodeDecoder {
 
         switch resolvedTag.type {
         case .str:
-            return Value(data: text, text: text, tag: resolvedTag, path: path)
+            return NodeScalar(data: text, text: text, tag: resolvedTag, path: path)
         case .email:
-            return Value(data: text, text: text, tag: resolvedTag, path: path)
+            return NodeScalar(data: text, text: text, tag: resolvedTag, path: path)
         case .url:
-            return Value(data: text, text: text, tag: resolvedTag, path: path)
+            return NodeScalar(data: text, text: text, tag: resolvedTag, path: path)
         case .ip:
-            return Value(data: text, text: text, tag: resolvedTag, path: path)
+            return NodeScalar(data: text, text: text, tag: resolvedTag, path: path)
         default:
-            return Value(data: text, text: text, tag: resolvedTag, path: path)
+            return NodeScalar(data: text, text: text, tag: resolvedTag, path: path)
         }
     }
 
@@ -888,16 +888,16 @@ public class NodeDecoder {
         switch resolvedTag.type {
         case .bytes:
             let text = dataVal.base64EncodedString()
-            return Value(data: dataVal, text: text, tag: resolvedTag, path: path)
+            return NodeScalar(data: dataVal, text: text, tag: resolvedTag, path: path)
 
         case .media:
             let text = dataVal.base64EncodedString()
-            return Value(data: dataVal, text: text, tag: resolvedTag, path: path)
+            return NodeScalar(data: dataVal, text: text, tag: resolvedTag, path: path)
 
         case .bigint:
             let bytes = [UInt8](dataVal)
             let text = NodeDecoder.decodeBigIntFromBytes(bytes)
-            return Value(data: text, text: text, tag: resolvedTag, path: path)
+            return NodeScalar(data: text, text: text, tag: resolvedTag, path: path)
 
         case .uuid:
             guard dataVal.count == 16 else {
@@ -909,15 +909,15 @@ public class NodeDecoder {
                 bytes[4], bytes[5], bytes[6], bytes[7],
                 bytes[8], bytes[9], bytes[10], bytes[11],
                 bytes[12], bytes[13], bytes[14], bytes[15])
-            return Value(data: text, text: text, tag: resolvedTag, path: path)
+            return NodeScalar(data: text, text: text, tag: resolvedTag, path: path)
 
         case .ip:
             let ipStr = dataVal.map { String($0) }.joined(separator: ".")
-            return Value(data: dataVal, text: ipStr, tag: resolvedTag, path: path)
+            return NodeScalar(data: dataVal, text: ipStr, tag: resolvedTag, path: path)
 
         default:
             let text = dataVal.base64EncodedString()
-            return Value(data: dataVal, text: text, tag: resolvedTag, path: path)
+            return NodeScalar(data: dataVal, text: text, tag: resolvedTag, path: path)
         }
     }
 
@@ -957,7 +957,7 @@ public class NodeDecoder {
             resolvedTag.type = .vec
         }
 
-        let arr = MMArray(items: [], tag: resolvedTag, path: path)
+        let arr = NodeArray(items: [], tag: resolvedTag, path: path)
         let startPos = buffer.position()
         let endPos = startPos + totalLen
 
@@ -979,14 +979,14 @@ public class NodeDecoder {
         }
 
         let keyArrayValue = try decodeNode(tag: resolvedTag, path: path)
-        guard let keyArray = keyArrayValue as? MMArray else {
+        guard let keyArray = keyArrayValue as? NodeArray else {
             throw MMError.invalidData
         }
 
-        let obj = MMObject(fields: [], tag: resolvedTag, path: path)
+        let obj = NodeObject(fields: [], tag: resolvedTag, path: path)
 
         for item in keyArray.items {
-            guard let keyVal = item as? Value, let key = keyVal.data as? String else {
+            guard let keyVal = item as? NodeScalar, let key = keyVal.data as? String else {
                 continue
             }
 

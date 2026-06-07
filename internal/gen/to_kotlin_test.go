@@ -8,14 +8,14 @@ import (
 )
 
 func TestToKotlinGeneratesCode(t *testing.T) {
-	obj := &ir.Object{
+	obj := &ir.NodeObject{
 		Tag: &ir.Tag{Name: "user"},
 		Fields: []*ir.Field{
-			{Key: "id", Value: &ir.Value{Tag: &ir.Tag{Type: ir.ValueTypeI}, Text: "1"}},
-			{Key: "name", Value: &ir.Value{Tag: &ir.Tag{Type: ir.ValueTypeStr}, Text: "Alice"}},
-			{Key: "tags", Value: &ir.Array{Items: []ir.Node{
-				&ir.Value{Tag: &ir.Tag{Type: ir.ValueTypeStr}, Text: "go"},
-				&ir.Value{Tag: &ir.Tag{Type: ir.ValueTypeStr}, Text: "java"},
+			{Key: "id", Value: &ir.NodeScalar{Tag: &ir.Tag{Type: ir.ValueTypeI}, Text: "1"}},
+			{Key: "name", Value: &ir.NodeScalar{Tag: &ir.Tag{Type: ir.ValueTypeStr}, Text: "Alice"}},
+			{Key: "tags", Value: &ir.NodeArray{Items: []ir.Node{
+				&ir.NodeScalar{Tag: &ir.Tag{Type: ir.ValueTypeStr}, Text: "go"},
+				&ir.NodeScalar{Tag: &ir.Tag{Type: ir.ValueTypeStr}, Text: "java"},
 			}}},
 		},
 	}

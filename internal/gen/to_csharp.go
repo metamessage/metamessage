@@ -47,7 +47,7 @@ func ToCSharp(n ir.Node) string {
 	}
 
 	topName := "Obj"
-	if obj, ok := n.(*ir.Object); ok && obj.Tag != nil && obj.Tag.Name != "" {
+	if obj, ok := n.(*ir.NodeObject); ok && obj.Tag != nil && obj.Tag.Name != "" {
 		topName = exportCSharpClassName(obj.Tag.Name)
 	}
 
@@ -118,11 +118,11 @@ func collectCSharpImportsRec(n ir.Node, imports map[string]struct{}) {
 	}
 
 	switch v := n.(type) {
-	case *ir.Value:
+	case *ir.NodeScalar:
 		if v.Tag != nil {
 			addCSharpImportForType(v.Tag.Type, imports)
 		}
-	case *ir.Array:
+	case *ir.NodeArray:
 		imports["System.Collections.Generic"] = struct{}{}
 		if v.Tag != nil && v.Tag.ChildType != ir.ValueTypeUnknown {
 			addCSharpImportForType(v.Tag.ChildType, imports)
@@ -130,7 +130,7 @@ func collectCSharpImportsRec(n ir.Node, imports map[string]struct{}) {
 		for _, item := range v.Items {
 			collectCSharpImportsRec(item, imports)
 		}
-	case *ir.Object:
+	case *ir.NodeObject:
 		for _, f := range v.Fields {
 			if f != nil {
 				collectCSharpImportsRec(f.Value, imports)
@@ -153,11 +153,11 @@ func addCSharpImportForType(typ ir.ValueType, imports map[string]struct{}) {
 func getCSharpTypeForField(f *ir.Field) string {
 	baseType := ""
 	switch v := f.Value.(type) {
-	case *ir.Value:
+	case *ir.NodeScalar:
 		baseType = getCSharpType(v)
-	case *ir.Object:
+	case *ir.NodeObject:
 		baseType = getCSharpObjectType(f.Key, v)
-	case *ir.Array:
+	case *ir.NodeArray:
 		baseType = getCSharpArrayType(f.Key, v)
 	default:
 		baseType = "object"
@@ -176,7 +176,7 @@ func getCSharpTypeForField(f *ir.Field) string {
 	return baseType
 }
 
-func getCSharpType(v *ir.Value) string {
+func getCSharpType(v *ir.NodeScalar) string {
 	if v != nil && v.Tag != nil {
 		if t, ok := csharpTypeMap[v.Tag.Type]; ok {
 			return t
@@ -185,14 +185,14 @@ func getCSharpType(v *ir.Value) string {
 	return "object"
 }
 
-func getCSharpObjectType(fieldKey string, obj *ir.Object) string {
+func getCSharpObjectType(fieldKey string, obj *ir.NodeObject) string {
 	if obj != nil && obj.Tag != nil && obj.Tag.Name != "" {
 		return exportCSharpClassName(obj.Tag.Name)
 	}
 	return exportCSharpClassName(fieldKey)
 }
 
-func getCSharpArrayType(fieldKey string, a *ir.Array) string {
+func getCSharpArrayType(fieldKey string, a *ir.NodeArray) string {
 	if a == nil {
 		return "List<object>"
 	}
@@ -205,9 +205,9 @@ func getCSharpArrayType(fieldKey string, a *ir.Array) string {
 
 	if len(a.Items) > 0 {
 		switch item := a.Items[0].(type) {
-		case *ir.Object:
+		case *ir.NodeObject:
 			return "List<" + getCSharpObjectType(fieldKey, item) + ">"
-		case *ir.Value:
+		case *ir.NodeScalar:
 			if item.Tag != nil {
 				if t, ok := csharpTypeMap[item.Tag.Type]; ok {
 					return "List<" + t + ">"
@@ -220,7 +220,7 @@ func getCSharpArrayType(fieldKey string, a *ir.Array) string {
 }
 
 func genCSharpFields(b *strings.Builder, n ir.Node, indent int) {
-	obj, ok := n.(*ir.Object)
+	obj, ok := n.(*ir.NodeObject)
 	if !ok {
 		return
 	}
@@ -239,7 +239,7 @@ func genCSharpFields(b *strings.Builder, n ir.Node, indent int) {
 }
 
 func genCSharpNestedClasses(b *strings.Builder, n ir.Node, indent int) {
-	obj, ok := n.(*ir.Object)
+	obj, ok := n.(*ir.NodeObject)
 	if !ok {
 		return
 	}
@@ -250,7 +250,7 @@ func genCSharpNestedClasses(b *strings.Builder, n ir.Node, indent int) {
 		}
 
 		switch v := f.Value.(type) {
-		case *ir.Object:
+		case *ir.NodeObject:
 			className := getCSharpObjectType(f.Key, v)
 			b.WriteString("\n")
 			WriteIndent(b, indent)
@@ -261,7 +261,7 @@ func genCSharpNestedClasses(b *strings.Builder, n ir.Node, indent int) {
 			genCSharpNestedClasses(b, v, indent+1)
 			WriteIndent(b, indent)
 			b.WriteString("}\n")
-		case *ir.Array:
+		case *ir.NodeArray:
 			if nestedObj := findFirstObjectInArray(v); nestedObj != nil {
 				className := getCSharpObjectType(f.Key, nestedObj)
 				b.WriteString("\n")
@@ -299,7 +299,7 @@ func exportCSharpDataClassName(name string) string {
 }
 
 func genCSharpObjectInitializer(n ir.Node, fieldKey string, indent int) string {
-	obj, ok := n.(*ir.Object)
+	obj, ok := n.(*ir.NodeObject)
 	if !ok {
 		return "null"
 	}
@@ -317,11 +317,11 @@ func genCSharpObjectInitializer(n ir.Node, fieldKey string, indent int) string {
 		sb.WriteString(exportCSharpFieldName(f.Key))
 		sb.WriteString(" = ")
 		switch v := f.Value.(type) {
-		case *ir.Value:
+		case *ir.NodeScalar:
 			sb.WriteString(formatCSharpValueLiteral(v))
-		case *ir.Object:
+		case *ir.NodeObject:
 			sb.WriteString(genCSharpObjectInitializer(v, f.Key, indent+1))
-		case *ir.Array:
+		case *ir.NodeArray:
 			sb.WriteString(genCSharpArrayInitializer(v, f.Key, indent+1))
 		default:
 			sb.WriteString("null")
@@ -338,15 +338,15 @@ func genCSharpObjectInitializer(n ir.Node, fieldKey string, indent int) string {
 	return sb.String()
 }
 
-func genCSharpArrayInitializer(a *ir.Array, fieldKey string, indent int) string {
+func genCSharpArrayInitializer(a *ir.NodeArray, fieldKey string, indent int) string {
 	itemType := "object"
 	if a != nil && a.Tag != nil && a.Tag.ChildType != ir.ValueTypeUnknown {
-		itemType = getCSharpType(&ir.Value{Tag: &ir.Tag{Type: a.Tag.ChildType}})
+		itemType = getCSharpType(&ir.NodeScalar{Tag: &ir.Tag{Type: a.Tag.ChildType}})
 	} else if len(a.Items) > 0 {
 		switch item := a.Items[0].(type) {
-		case *ir.Object:
+		case *ir.NodeObject:
 			itemType = getCSharpObjectType(fieldKey, item)
-		case *ir.Value:
+		case *ir.NodeScalar:
 			if item.Tag != nil {
 				itemType = getCSharpType(item)
 			}
@@ -365,9 +365,9 @@ func genCSharpArrayInitializer(a *ir.Array, fieldKey string, indent int) string 
 	for i, item := range a.Items {
 		WriteIndent(&sb, indent+1)
 		switch v := item.(type) {
-		case *ir.Value:
+		case *ir.NodeScalar:
 			sb.WriteString(formatCSharpValueLiteral(v))
-		case *ir.Object:
+		case *ir.NodeObject:
 			sb.WriteString(genCSharpObjectInitializer(v, fieldKey, indent+1))
 		default:
 			sb.WriteString("null")
@@ -384,7 +384,7 @@ func genCSharpArrayInitializer(a *ir.Array, fieldKey string, indent int) string 
 	return sb.String()
 }
 
-func formatCSharpValueLiteral(v *ir.Value) string {
+func formatCSharpValueLiteral(v *ir.NodeScalar) string {
 	if v == nil {
 		return "null"
 	}

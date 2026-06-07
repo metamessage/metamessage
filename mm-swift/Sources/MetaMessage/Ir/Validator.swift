@@ -676,14 +676,14 @@ public class Validator {
                     }
                 }
             }
-        } else if value is MMArray {
+        } else if value is NodeArray {
         } else {
             result.addError("value must be an array")
         }
     }
     
     private func validateObj(_ value: Any, tag: Tag, result: ValidationResult) {
-        if !(value is [String: Any]) && !(value is MMObject) {
+        if !(value is [String: Any]) && !(value is NodeObject) {
             result.addError("value must be an object")
         }
     }

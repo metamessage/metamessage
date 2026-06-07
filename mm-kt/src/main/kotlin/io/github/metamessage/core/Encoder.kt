@@ -1,11 +1,11 @@
 package io.github.metamessage.core
 
 import io.github.metamessage.MM
-import io.github.metamessage.ir.Array as AstArray
 import io.github.metamessage.ir.Node
-import io.github.metamessage.ir.Object as AstObject
+import io.github.metamessage.ir.NodeArray as AstArray
+import io.github.metamessage.ir.NodeObject as AstObject
+import io.github.metamessage.ir.NodeScalar as AstValue
 import io.github.metamessage.ir.Tag
-import io.github.metamessage.ir.Value as AstValue
 import io.github.metamessage.ir.ValueType
 import java.time.LocalDate
 import java.time.LocalTime

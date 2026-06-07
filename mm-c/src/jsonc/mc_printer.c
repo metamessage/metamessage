@@ -112,7 +112,7 @@ static void write_leading_tag_comment(strbuf_t *sb, const mm_tag_t *tag,
   free(tag_str);
 }
 
-static mm_tag_t *get_data_tag(mm_node_t *node) {
+static mm_tag_t *get_data_tag(node_t *node) {
   if (!node)
     return NULL;
   switch (node->type) {
@@ -129,7 +129,7 @@ static mm_tag_t *get_data_tag(mm_node_t *node) {
   }
 }
 
-static void print_value(strbuf_t *sb, const mm_value_t *value, int depth) {
+static void print_value(strbuf_t *sb, const node_scalar_t *value, int depth) {
   (void)depth;
   if (!value->text) {
     sb_puts(sb, "null");
@@ -159,9 +159,9 @@ static void print_value(strbuf_t *sb, const mm_value_t *value, int depth) {
   }
 }
 
-static void print_node(strbuf_t *sb, mm_node_t *node, int depth);
+static void print_node(strbuf_t *sb, node_t *node, int depth);
 
-static void print_object(strbuf_t *sb, const mm_object_t *obj, int depth) {
+static void print_object(strbuf_t *sb, const node_object_t *obj, int depth) {
   sb_printf(sb, "{\n");
 
   for (size_t i = 0; i < obj->field_count; i++) {
@@ -180,11 +180,11 @@ static void print_object(strbuf_t *sb, const mm_object_t *obj, int depth) {
   sb_putc(sb, '}');
 }
 
-static void print_array(strbuf_t *sb, const mm_array_t *arr, int depth) {
+static void print_array(strbuf_t *sb, const node_array_t *arr, int depth) {
   sb_printf(sb, "[\n");
 
   for (size_t i = 0; i < arr->item_count; i++) {
-    mm_node_t *item = arr->items[i];
+    node_t *item = arr->items[i];
     mm_tag_t *tag = get_data_tag(item);
     if (tag)
       write_leading_tag_comment(sb, tag, depth + 1);
@@ -197,7 +197,7 @@ static void print_array(strbuf_t *sb, const mm_array_t *arr, int depth) {
   sb_putc(sb, ']');
 }
 
-static void print_doc(strbuf_t *sb, const mm_doc_t *doc, int depth) {
+static void print_doc(strbuf_t *sb, const node_doc_t *doc, int depth) {
   sb_printf(sb, "{\n");
 
   for (size_t i = 0; i < doc->field_count; i++) {
@@ -216,7 +216,7 @@ static void print_doc(strbuf_t *sb, const mm_doc_t *doc, int depth) {
   sb_putc(sb, '}');
 }
 
-static void print_node(strbuf_t *sb, mm_node_t *node, int depth) {
+static void print_node(strbuf_t *sb, node_t *node, int depth) {
   if (!node) {
     sb_puts(sb, "null");
     return;
@@ -241,7 +241,7 @@ static void print_node(strbuf_t *sb, mm_node_t *node, int depth) {
   }
 }
 
-char *mm_printer_to_jsonc(mm_node_t *node) {
+char *mm_printer_to_jsonc(node_t *node) {
   if (!node)
     return strdup("");
 

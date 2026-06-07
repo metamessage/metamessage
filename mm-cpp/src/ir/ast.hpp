@@ -13,16 +13,16 @@ namespace ir {
 
 enum class NodeType : uint8_t {
     Unknown = 0,
-    Object,
-    Array,
+    NodeObject,
+    NodeArray,
     Value,
     Doc
 };
 
 inline std::string nodeTypeToString(NodeType nt) {
     switch (nt) {
-        case NodeType::Object: return "object";
-        case NodeType::Array:  return "array";
+        case NodeType::NodeObject: return "object";
+        case NodeType::NodeArray:  return "array";
         case NodeType::Value:  return "value";
         case NodeType::Doc:    return "doc";
         default:               return "unknown";
@@ -30,9 +30,9 @@ inline std::string nodeTypeToString(NodeType nt) {
 }
 
 class Node;
-class Object;
-class Array;
-class Value;
+class NodeObject;
+class NodeArray;
+class NodeScalar;
 class Doc;
 
 struct Field {
@@ -56,27 +56,27 @@ protected:
     std::string path_;
 };
 
-class Object : public Node {
+class NodeObject : public Node {
 public:
     std::vector<Field> fields;
     Tag tag;
 
-    NodeType getType() const override { return NodeType::Object; }
+    NodeType getType() const override { return NodeType::NodeObject; }
     Tag* getTag() override { return &tag; }
     const Tag* getTag() const override { return &tag; }
 };
 
-class Array : public Node {
+class NodeArray : public Node {
 public:
     std::vector<std::shared_ptr<Node>> items;
     Tag tag;
 
-    NodeType getType() const override { return NodeType::Array; }
+    NodeType getType() const override { return NodeType::NodeArray; }
     Tag* getTag() override { return &tag; }
     const Tag* getTag() const override { return &tag; }
 };
 
-class Value : public Node {
+class NodeScalar : public Node {
 public:
     std::string text;
     int64_t data = 0;
@@ -97,16 +97,16 @@ public:
     const Tag* getTag() const override { return &tag; }
 };
 
-inline std::shared_ptr<Object> makeObject() {
-    return std::make_shared<Object>();
+inline std::shared_ptr<NodeObject> makeNodeObject() {
+    return std::make_shared<NodeObject>();
 }
 
-inline std::shared_ptr<Array> makeArray() {
-    return std::make_shared<Array>();
+inline std::shared_ptr<NodeArray> makeNodeArray() {
+    return std::make_shared<NodeArray>();
 }
 
-inline std::shared_ptr<Value> makeValue() {
-    return std::make_shared<Value>();
+inline std::shared_ptr<NodeScalar> makeNodeScalar() {
+    return std::make_shared<NodeScalar>();
 }
 
 inline std::shared_ptr<Doc> makeDoc() {

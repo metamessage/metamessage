@@ -1,4 +1,4 @@
-use crate::ir::ast::{Array, Node, Object, Value, ValueData};
+use crate::ir::ast::{NodeArray, Node, NodeObject, NodeScalar, ValueData};
 use std::collections::HashMap;
 
 pub fn bind(node: &Node, target: &mut dyn std::any::Any) -> Result<(), String> {
@@ -9,7 +9,7 @@ pub fn bind(node: &Node, target: &mut dyn std::any::Any) -> Result<(), String> {
     }
 }
 
-fn bind_object(obj: &Object, target: &mut dyn std::any::Any) -> Result<(), String> {
+fn bind_object(obj: &NodeObject, target: &mut dyn std::any::Any) -> Result<(), String> {
     if let Some(map) = target.downcast_mut::<HashMap<String, serde_json::Value>>() {
         for field in &obj.fields {
             let value = node_to_jsonvalue(&field.value)?;
@@ -21,7 +21,7 @@ fn bind_object(obj: &Object, target: &mut dyn std::any::Any) -> Result<(), Strin
     Err("unsupported target type for object".to_string())
 }
 
-fn bind_array(arr: &Array, target: &mut dyn std::any::Any) -> Result<(), String> {
+fn bind_array(arr: &NodeArray, target: &mut dyn std::any::Any) -> Result<(), String> {
     if let Some(vec) = target.downcast_mut::<Vec<serde_json::Value>>() {
         for item in &arr.items {
             let value = node_to_jsonvalue(item)?;
@@ -33,7 +33,7 @@ fn bind_array(arr: &Array, target: &mut dyn std::any::Any) -> Result<(), String>
     Err("unsupported target type for array".to_string())
 }
 
-fn bind_value(val: &Value, target: &mut dyn std::any::Any) -> Result<(), String> {
+fn bind_value(val: &NodeScalar, target: &mut dyn std::any::Any) -> Result<(), String> {
     if let Some(s) = target.downcast_mut::<String>() {
         *s = val.text.clone();
         return Ok(());
@@ -83,7 +83,7 @@ fn node_to_jsonvalue(node: &Node) -> Result<serde_json::Value, String> {
     }
 }
 
-fn value_to_jsonvalue(val: &Value) -> Result<serde_json::Value, String> {
+fn value_to_jsonvalue(val: &NodeScalar) -> Result<serde_json::Value, String> {
     match &val.data {
         ValueData::Bool(b) => Ok(serde_json::Value::Bool(*b)),
         ValueData::String(s) => Ok(serde_json::Value::String(s.clone())),

@@ -10,7 +10,7 @@ from datetime import datetime, date, time as dt_time, timezone
 from typing import Any, Optional, Union
 
 from ..ir.tag import Tag, ValueType
-from ..ir.ast import Obj, Arr, Val, Field, Node, NodeType
+from ..ir.ast import NodeObject, Arr, NodeScalar, Field, Node, NodeType
 
 # ===== Constants (matching Go internal/core/constants.go) =====
 
@@ -587,7 +587,7 @@ class Encoder:
 
     # ===== Node encoding =====
 
-    def _encode_node_object(self, obj: Obj) -> int:
+    def _encode_node_object(self, obj: NodeObject) -> int:
         tag = obj.get_tag()
         buf_key = bytearray()
         buf = bytearray()
@@ -634,16 +634,16 @@ class Encoder:
         return n
 
     def _encode_any_node(self, node: Node) -> int:
-        if isinstance(node, Obj):
+        if isinstance(node, NodeObject):
             return self._encode_node_object(node)
         elif isinstance(node, Arr):
             return self._encode_node_array(node)
-        elif isinstance(node, Val):
+        elif isinstance(node, NodeScalar):
             return self._encode_node_value(node)
         else:
             raise ValueError(f"unsupported node type: {type(node)}")
 
-    def _encode_node_value(self, val: Val) -> int:
+    def _encode_node_value(self, val: NodeScalar) -> int:
         tag = val.get_tag()
         if tag is None:
             tag = Tag()
@@ -870,21 +870,21 @@ class Encoder:
             for k, v in data.items():
                 field_path = f"{path}.{k}" if path else k
                 fields.append(Field(key=k, value=self._struct_to_mm(v, field_path)))
-            return Obj(fields=fields, tag=Tag(), path=path)
+            return NodeObject(fields=fields, tag=Tag(), path=path)
         elif isinstance(data, list):
             items = [self._struct_to_mm(item, f"{path}.{i}") for i, item in enumerate(data)]
             return Arr(items=items, tag=Tag(type=ValueType.Arr), path=path)
         elif isinstance(data, bool):
-            return Val(data=data, text="true" if data else "false", tag=Tag(type=ValueType.Bool), path=path)
+            return NodeScalar(data=data, text="true" if data else "false", tag=Tag(type=ValueType.Bool), path=path)
         elif isinstance(data, int):
-            return Val(data=data, text=str(data), tag=Tag(type=ValueType.I), path=path)
+            return NodeScalar(data=data, text=str(data), tag=Tag(type=ValueType.I), path=path)
         elif isinstance(data, float):
-            return Val(data=data, text=str(data), tag=Tag(type=ValueType.F64), path=path)
+            return NodeScalar(data=data, text=str(data), tag=Tag(type=ValueType.F64), path=path)
         elif isinstance(data, str):
-            return Val(data=data, text=data, tag=Tag(type=ValueType.Str), path=path)
+            return NodeScalar(data=data, text=data, tag=Tag(type=ValueType.Str), path=path)
         elif isinstance(data, bytes):
-            return Val(data=data, text="", tag=Tag(type=ValueType.Bytes), path=path)
+            return NodeScalar(data=data, text="", tag=Tag(type=ValueType.Bytes), path=path)
         elif data is None:
-            return Val(data=None, text="null", tag=Tag(is_null=True), path=path)
+            return NodeScalar(data=None, text="null", tag=Tag(is_null=True), path=path)
         else:
-            return Val(data=data, text=str(data), tag=Tag(type=ValueType.Str), path=path)
+            return NodeScalar(data=data, text=str(data), tag=Tag(type=ValueType.Str), path=path)

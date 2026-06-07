@@ -69,7 +69,7 @@ catch (Exception ex)
     Environment.Exit(1);
 }
 
-IMmTree node = null!;
+INode node = null!;
 try
 {
     node = Jsonc.ParseFromString(fileContent);

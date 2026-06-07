@@ -1,10 +1,10 @@
 package io.github.metamessage.core
 
-import io.github.metamessage.ir.Array
 import io.github.metamessage.ir.Node
-import io.github.metamessage.ir.Object
+import io.github.metamessage.ir.NodeArray
+import io.github.metamessage.ir.NodeObject
+import io.github.metamessage.ir.NodeScalar
 import io.github.metamessage.ir.Tag
-import io.github.metamessage.ir.Value
 import io.github.metamessage.ir.ValueType
 import java.math.BigInteger
 import java.time.LocalDateTime
@@ -14,7 +14,7 @@ object Binder {
     @Suppress("UNCHECKED_CAST")
     fun <T> bind(node: Node, clazz: Class<T>): T {
         when (node) {
-            is Object -> {
+            is NodeObject -> {
                 val tag = node.tag
                 if (tag != null && tag.type == ValueType.OBJ) {
                     val inst = clazz.getDeclaredConstructor().newInstance()
@@ -26,7 +26,7 @@ object Binder {
                     return inst as T
                 }
             }
-            is Array -> {
+            is NodeArray -> {
                 val tag = node.tag
                 if (tag != null && tag.size > 0 && tag.type == ValueType.ARR) {
                     @Suppress("UNCHECKED_CAST") return convertArr(node, clazz) as T
@@ -34,7 +34,7 @@ object Binder {
                     return convertVec(node, clazz)
                 }
             }
-            is Value -> {
+            is NodeScalar -> {
                 return convertScalar(node, clazz)
             }
             else ->
@@ -44,7 +44,7 @@ object Binder {
         }
     }
 
-    private fun convertObj(obj: Object, out: Any) {
+    private fun convertObj(obj: NodeObject, out: Any) {
         val outClazz = out.javaClass
         val nameToField = mutableMapOf<String, java.lang.reflect.Field>()
         for (f in outClazz.declaredFields) {
@@ -70,18 +70,18 @@ object Binder {
         }
     }
 
-    private fun convertMap(obj: Object, out: MutableMap<String, Any?>) {
+    private fun convertMap(obj: NodeObject, out: MutableMap<String, Any?>) {
         for (field in obj.fields) {
             val key = field.key
             val value =
                     when (val v = field.value) {
-                        is Value -> convertScalarToAny(v)
-                        is Object -> {
+                        is NodeScalar -> convertScalarToAny(v)
+                        is NodeObject -> {
                             val map = mutableMapOf<String, Any?>()
                             convertMap(v, map)
                             map
                         }
-                        is Array -> {
+                        is NodeArray -> {
                             convertVec(v, List::class.java).toList()
                         }
                         else -> null
@@ -90,12 +90,12 @@ object Binder {
         }
     }
 
-    private fun convertArr(arr: Array, clazz: Class<*>): Any {
+    private fun convertArr(arr: NodeArray, clazz: Class<*>): Any {
         val list = mutableListOf<Any?>()
         for (item in arr.items) {
             when (item) {
-                is Value -> list.add(convertScalarToAny(item))
-                is Object -> {
+                is NodeScalar -> list.add(convertScalarToAny(item))
+                is NodeObject -> {
                     val inst = clazz.getDeclaredConstructor().newInstance()
                     convertObj(item, inst as Any)
                     list.add(inst)
@@ -107,12 +107,12 @@ object Binder {
     }
 
     @Suppress("UNCHECKED_CAST")
-    private fun <T> convertVec(arr: Array, clazz: Class<T>): T {
+    private fun <T> convertVec(arr: NodeArray, clazz: Class<T>): T {
         val list = mutableListOf<Any?>()
         for (item in arr.items) {
             when (item) {
-                is Value -> list.add(convertScalarToAny(item))
-                is Object -> {
+                is NodeScalar -> list.add(convertScalarToAny(item))
+                is NodeObject -> {
                     val inst = clazz.getDeclaredConstructor().newInstance()
                     convertObj(item, inst as Any)
                     list.add(inst)
@@ -124,7 +124,7 @@ object Binder {
     }
 
     @Suppress("UNCHECKED_CAST", "UNUSED_PARAMETER")
-    private fun <T> convertScalar(value: Value, clazz: Class<T>): T {
+    private fun <T> convertScalar(value: NodeScalar, clazz: Class<T>): T {
         val tag = value.tag ?: Tag.empty()
         val data = value.data
         val text = value.text
@@ -200,19 +200,19 @@ object Binder {
         }
     }
 
-    private fun convertScalarToAny(value: Value): Any? {
+    private fun convertScalarToAny(value: NodeScalar): Any? {
         return convertScalar(value, Any::class.java)
     }
 
     private fun materialize(f: java.lang.reflect.Field, node: Node): Any? {
         return when (node) {
-            is Value -> convertScalar(node, f.type)
-            is Object -> {
+            is NodeScalar -> convertScalar(node, f.type)
+            is NodeObject -> {
                 val inst = f.type.getDeclaredConstructor().newInstance()
                 convertObj(node, inst)
                 inst
             }
-            is Array -> {
+            is NodeArray -> {
                 val list = convertVec(node, f.type)
                 list
             }

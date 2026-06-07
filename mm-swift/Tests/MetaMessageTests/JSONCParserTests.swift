@@ -18,15 +18,15 @@ final class JSONCParserTests: XCTestCase {
         let result = try parseJSONC("{\"name\": \"test\"}")
         XCTAssertNotNil(result)
 
-        guard let obj = result as? MMObject else {
-            XCTFail("Expected MMObject")
+        guard let obj = result as? NodeObject else {
+            XCTFail("Expected NodeObject")
             return
         }
 
         XCTAssertEqual(obj.fields.count, 1)
         XCTAssertEqual(obj.fields[0].key, "name")
 
-        guard let valueNode = obj.fields[0].value as? Value else {
+        guard let valueNode = obj.fields[0].value as? NodeScalar else {
             XCTFail("Expected Value")
             return
         }
@@ -38,8 +38,8 @@ final class JSONCParserTests: XCTestCase {
         let result = try parseJSONC("[1, 2, 3]")
         XCTAssertNotNil(result)
 
-        guard let arr = result as? MMArray else {
-            XCTFail("Expected MMArray")
+        guard let arr = result as? NodeArray else {
+            XCTFail("Expected NodeArray")
             return
         }
 
@@ -50,8 +50,8 @@ final class JSONCParserTests: XCTestCase {
         let result = try parseJSONC("{\"int\": 123, \"float\": 3.14, \"neg\": -456}")
         XCTAssertNotNil(result)
 
-        guard let obj = result as? MMObject else {
-            XCTFail("Expected MMObject")
+        guard let obj = result as? NodeObject else {
+            XCTFail("Expected NodeObject")
             return
         }
 
@@ -69,8 +69,8 @@ final class JSONCParserTests: XCTestCase {
         let result = try parseJSONC("{\"true\": true, \"false\": false}")
         XCTAssertNotNil(result)
 
-        guard let obj = result as? MMObject else {
-            XCTFail("Expected MMObject")
+        guard let obj = result as? NodeObject else {
+            XCTFail("Expected NodeObject")
             return
         }
 
@@ -91,16 +91,16 @@ final class JSONCParserTests: XCTestCase {
         let result = try parseJSONC("{\"outer\": {\"inner\": \"value\"}}")
         XCTAssertNotNil(result)
 
-        guard let obj = result as? MMObject else {
-            XCTFail("Expected MMObject")
+        guard let obj = result as? NodeObject else {
+            XCTFail("Expected NodeObject")
             return
         }
 
         let outerField = obj.fields.first { $0.key == "outer" }
         XCTAssertNotNil(outerField)
 
-        guard let innerObj = outerField?.value as? MMObject else {
-            XCTFail("Expected inner MMObject")
+        guard let innerObj = outerField?.value as? NodeObject else {
+            XCTFail("Expected inner NodeObject")
             return
         }
 
@@ -112,8 +112,8 @@ final class JSONCParserTests: XCTestCase {
         let result = try parseJSONC("{\"matrix\": [[1, 2], [3, 4]]}")
         XCTAssertNotNil(result)
 
-        guard let obj = result as? MMObject else {
-            XCTFail("Expected MMObject")
+        guard let obj = result as? NodeObject else {
+            XCTFail("Expected NodeObject")
             return
         }
 
@@ -157,8 +157,8 @@ final class JSONCParserTests: XCTestCase {
         let result = try parseJSONC(json)
         XCTAssertNotNil(result)
 
-        guard let obj = result as? MMObject else {
-            XCTFail("Expected MMObject")
+        guard let obj = result as? NodeObject else {
+            XCTFail("Expected NodeObject")
             return
         }
 

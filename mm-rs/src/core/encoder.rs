@@ -5,7 +5,7 @@ use crate::core::prefix::{
     PREFIX_STRING, PREFIX_TAG,
 };
 use crate::core::simple_value::SimpleValue;
-use crate::ir::ast::{Array, Node, Object, Value, ValueData};
+use crate::ir::ast::{Node, NodeArray, NodeObject, NodeScalar, ValueData};
 use crate::ir::ValueType;
 use chrono::Timelike;
 
@@ -57,7 +57,7 @@ impl Encoder {
         self.buf[..self.offset].to_vec()
     }
 
-    fn encode_object(&mut self, obj: &Object) {
+    fn encode_object(&mut self, obj: &NodeObject) {
         let mut key_buf = Vec::new();
         let mut val_buf = Vec::new();
 
@@ -103,7 +103,7 @@ impl Encoder {
         self.write_bytes(&object_payload);
     }
 
-    fn encode_array(&mut self, arr: &Array) {
+    fn encode_array(&mut self, arr: &NodeArray) {
         let mut val_buf = Vec::new();
 
         for item in &arr.items {
@@ -136,7 +136,7 @@ impl Encoder {
         self.write_bytes(&array_payload);
     }
 
-    fn encode_value(&mut self, val: &Value) {
+    fn encode_value(&mut self, val: &NodeScalar) {
         let saved_offset = self.offset;
         self.offset = 0;
 

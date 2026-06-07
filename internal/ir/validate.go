@@ -53,7 +53,7 @@ func (t *Tag) ValidateVec(value []Node) (err error) {
 		seen := make(map[any]bool)
 
 		for i, node := range value {
-			data := node.(*Value).Data
+			data := node.(*NodeScalar).Data
 			if seen[data] {
 				return fmt.Errorf("vec duplicate value found: %v, index: %d", data, i)
 			}
@@ -98,7 +98,7 @@ func (t *Tag) ValidateArr(value []Node) (err error) {
 		seen := make(map[any]bool)
 
 		for i, node := range value {
-			data := node.(*Value).Data
+			data := node.(*NodeScalar).Data
 			if seen[data] {
 				return fmt.Errorf("array duplicate value found: %v, index: %d", data, i)
 			}

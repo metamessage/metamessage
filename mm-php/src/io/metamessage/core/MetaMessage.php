@@ -4,9 +4,9 @@ namespace io\metamessage\core;
 
 use io\metamessage\ir\Node;
 use io\metamessage\ir\Tag;
-use io\metamessage\ir\Object_;
-use io\metamessage\ir\Array_;
-use io\metamessage\ir\Value;
+use io\metamessage\ir\NodeObject;
+use io\metamessage\ir\NodeArray;
+use io\metamessage\ir\NodeScalar;
 use io\metamessage\ir\Field;
 use io\metamessage\ir\ValueType;
 use io\metamessage\ir\Constants;
@@ -169,7 +169,7 @@ class MetaMessage
                 $tag->nullable = true;
             }
             $tag->isNull = true;
-            return new Value(null, Constants::NULL, $tag, $path);
+            return new NodeScalar(null, Constants::NULL, $tag, $path);
         }
 
         if (is_object($v)) {
@@ -204,16 +204,16 @@ class MetaMessage
             switch ($tag->type) {
                 case ValueType::DATETIME:
                     $text = $v->format('Y-m-d H:i:s');
-                    return new Value($v, $text, $tag, $path);
+                    return new NodeScalar($v, $text, $tag, $path);
                 case ValueType::DATE:
                     $text = $v->format('Y-m-d');
-                    return new Value($v, $text, $tag, $path);
+                    return new NodeScalar($v, $text, $tag, $path);
                 case ValueType::TIME:
                     $text = $v->format('H:i:s');
-                    return new Value($v, $text, $tag, $path);
+                    return new NodeScalar($v, $text, $tag, $path);
                 default:
                     $text = $v->format('Y-m-d H:i:s');
-                    return new Value($v, $text, $tag, $path);
+                    return new NodeScalar($v, $text, $tag, $path);
             }
         }
 
@@ -240,7 +240,7 @@ class MetaMessage
 
         $tag->type = ValueType::OBJ;
 
-        $objNode = new Object_();
+        $objNode = new NodeObject();
         $objNode->Tag = $tag;
         $objNode->Path = $path;
 
@@ -300,7 +300,7 @@ class MetaMessage
         $depth++;
         if (array_is_list($v)) {
             $tag->type = ValueType::VEC;
-            $node = new Array_();
+            $node = new NodeArray();
             $node->Tag = $tag;
             $node->Path = $path;
 
@@ -316,7 +316,7 @@ class MetaMessage
         }
 
         $tag->type = ValueType::MAP;
-        $node = new Object_();
+        $node = new NodeObject();
         $node->Tag = $tag;
         $node->Path = $path;
 
@@ -340,27 +340,27 @@ class MetaMessage
         return $node;
     }
 
-    private static function scalarToNode(mixed $v, Tag $tag, string $path): Value
+    private static function scalarToNode(mixed $v, Tag $tag, string $path): NodeScalar
     {
         if (is_bool($v)) {
             if ($tag->type === ValueType::UNKNOWN) {
                 $tag->type = ValueType::BOOL;
             }
-            return new Value($v, $v ? Constants::TRUE : Constants::FALSE, $tag, $path);
+            return new NodeScalar($v, $v ? Constants::TRUE : Constants::FALSE, $tag, $path);
         }
 
         if (is_int($v)) {
             if ($tag->type === ValueType::UNKNOWN) {
                 $tag->type = ValueType::I;
             }
-            return new Value($v, (string)$v, $tag, $path);
+            return new NodeScalar($v, (string)$v, $tag, $path);
         }
 
         if (is_float($v)) {
             if ($tag->type === ValueType::UNKNOWN) {
                 $tag->type = ValueType::F64;
             }
-            return new Value($v, (string)$v, $tag, $path);
+            return new NodeScalar($v, (string)$v, $tag, $path);
         }
 
         if (is_string($v)) {
@@ -368,9 +368,9 @@ class MetaMessage
                 $tag->type = ValueType::STR;
             }
             if ($tag->type === ValueType::ENUMS) {
-                return new Value((int)$v, $v, $tag, $path);
+                return new NodeScalar((int)$v, $v, $tag, $path);
             }
-            return new Value($v, $v, $tag, $path);
+            return new NodeScalar($v, $v, $tag, $path);
         }
 
         throw new \RuntimeException('unsupported scalar type: ' . gettype($v));
@@ -378,22 +378,22 @@ class MetaMessage
 
     private static function bind(Node $node, mixed &$out): void
     {
-        if ($node instanceof Object_) {
+        if ($node instanceof NodeObject) {
             if ($node->Tag !== null && $node->Tag->type === ValueType::OBJ) {
                 self::bindStruct($node, $out);
             } else {
                 self::bindMap($node, $out);
             }
-        } elseif ($node instanceof Array_) {
+        } elseif ($node instanceof NodeArray) {
             self::bindArray($node, $out);
-        } elseif ($node instanceof Value) {
+        } elseif ($node instanceof NodeScalar) {
             self::bindValue($node, $out);
         } else {
             throw new \RuntimeException('unsupported node type: ' . get_class($node));
         }
     }
 
-    private static function bindStruct(Object_ $obj, object &$out): void
+    private static function bindStruct(NodeObject $obj, object &$out): void
     {
         $ref = new ReflectionClass($out);
 
@@ -412,7 +412,7 @@ class MetaMessage
 
             $propValue = $prop->getValue($out);
 
-            if ($field->Value instanceof Object_) {
+            if ($field->Value instanceof NodeObject) {
                 if ($propValue === null || !is_object($propValue)) {
                     $propType = $prop->getType();
                     if ($propType instanceof ReflectionNamedType && !$propType->isBuiltin()) {
@@ -421,9 +421,9 @@ class MetaMessage
                     }
                 }
                 self::bind($field->Value, $propValue);
-            } elseif ($field->Value instanceof Array_) {
+            } elseif ($field->Value instanceof NodeArray) {
                 self::bind($field->Value, $propValue);
-            } elseif ($field->Value instanceof Value) {
+            } elseif ($field->Value instanceof NodeScalar) {
                 $tag = $field->Value->getTag();
                 if ($tag !== null && $tag->type === ValueType::DATETIME && $field->Value->Data instanceof \DateTime) {
                     $propValue = $field->Value->Data;
@@ -441,9 +441,9 @@ class MetaMessage
         }
     }
 
-    private static function bindMap(Object_ $obj, object &$out): void {}
+    private static function bindMap(NodeObject $obj, object &$out): void {}
 
-    private static function bindArray(Array_ $arr, mixed &$out): void
+    private static function bindArray(NodeArray $arr, mixed &$out): void
     {
         if (!is_array($out)) {
             $out = [];
@@ -451,18 +451,18 @@ class MetaMessage
 
         $result = [];
         foreach ($arr->Items as $item) {
-            if ($item instanceof Value) {
+            if ($item instanceof NodeScalar) {
                 $tag = $item->getTag();
                 if ($tag !== null && $tag->isNull && $tag->nullable) {
                     $result[] = null;
                 } else {
                     $result[] = $item->Data;
                 }
-            } elseif ($item instanceof Object_) {
+            } elseif ($item instanceof NodeObject) {
                 $itemObj = new \stdClass();
                 self::bind($item, $itemObj);
                 $result[] = $itemObj;
-            } elseif ($item instanceof Array_) {
+            } elseif ($item instanceof NodeArray) {
                 $subArr = [];
                 self::bind($item, $subArr);
                 $result[] = $subArr;
@@ -472,7 +472,7 @@ class MetaMessage
         $out = $result;
     }
 
-    private static function bindValue(Value $val, mixed &$out): void
+    private static function bindValue(NodeScalar $val, mixed &$out): void
     {
         $tag = $val->getTag();
         if ($tag === null) {

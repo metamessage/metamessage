@@ -12,38 +12,38 @@ import (
 // gofmt -w . && go test ./internal/jsonc/ast -run TestGenerateGoStruct -v
 // go test ./internal/jsonc -v -run TestGenerateGoStruct
 func TestGenerateGoStruct(t *testing.T) {
-	obj := &ir.Object{
+	obj := &ir.NodeObject{
 		Path: "",
 		Fields: []*ir.Field{
-			{Key: "name", Value: &ir.Value{Path: "name", Tag: &ir.Tag{Name: "name", Type: ir.ValueTypeStr, Min: "20", Max: "30"}}},
-			{Key: "data", Value: &ir.Value{
+			{Key: "name", Value: &ir.NodeScalar{Path: "name", Tag: &ir.Tag{Name: "name", Type: ir.ValueTypeStr, Min: "20", Max: "30"}}},
+			{Key: "data", Value: &ir.NodeScalar{
 				Path: "data",
 				Data: "werwerwe",
 				Text: "werwerwe",
 				Tag:  &ir.Tag{Name: "data", Type: ir.ValueTypeBytes}}},
-			{Key: "sss", Value: &ir.Object{
+			{Key: "sss", Value: &ir.NodeObject{
 				Path: "sss",
 				Fields: []*ir.Field{
-					{Key: "name", Value: &ir.Value{Path: "sss.name", Tag: &ir.Tag{Name: "name", Type: ir.ValueTypeStr, Min: "20"}}},
-					{Key: "data", Value: &ir.Value{Path: "sss.data", Tag: &ir.Tag{Name: "data", Type: ir.ValueTypeBytes}}},
-					{Key: "sss", Value: &ir.Value{Path: "sss.sss", Tag: &ir.Tag{Name: "data", Type: ir.ValueTypeBytes}}},
+					{Key: "name", Value: &ir.NodeScalar{Path: "sss.name", Tag: &ir.Tag{Name: "name", Type: ir.ValueTypeStr, Min: "20"}}},
+					{Key: "data", Value: &ir.NodeScalar{Path: "sss.data", Tag: &ir.Tag{Name: "data", Type: ir.ValueTypeBytes}}},
+					{Key: "sss", Value: &ir.NodeScalar{Path: "sss.sss", Tag: &ir.Tag{Name: "data", Type: ir.ValueTypeBytes}}},
 				},
 				Tag: &ir.Tag{
 					Name: "obj",
 				},
 			}},
-			{Key: "arr", Value: &ir.Array{
+			{Key: "arr", Value: &ir.NodeArray{
 				Path: "arr",
 				Items: []ir.Node{
-					&ir.Value{
+					&ir.NodeScalar{
 						Path: "arr.0",
 						Data: "121212",
 						Tag:  &ir.Tag{Name: "name", Type: ir.ValueTypeStr, Min: "20"}},
-					&ir.Value{
+					&ir.NodeScalar{
 						Path: "arr.1",
 						Data: "121212",
 						Tag:  &ir.Tag{Name: "name", Type: ir.ValueTypeStr, Min: "20"}},
-					&ir.Value{
+					&ir.NodeScalar{
 						Path: "arr.2",
 						Data: "44334",
 						Tag:  &ir.Tag{Name: "name", Type: ir.ValueTypeStr, Min: "20"}},
@@ -51,7 +51,7 @@ func TestGenerateGoStruct(t *testing.T) {
 				Tag: &ir.Tag{Name: "data", Type: ir.ValueTypeBytes}},
 			},
 
-			{Key: "String", Value: &ir.Value{Path: "String", Tag: &ir.Tag{Type: ir.ValueTypeStr}}},
+			{Key: "String", Value: &ir.NodeScalar{Path: "String", Tag: &ir.Tag{Type: ir.ValueTypeStr}}},
 		},
 		Tag: &ir.Tag{
 			Name: "obj",
@@ -64,7 +64,7 @@ func TestGenerateGoStruct(t *testing.T) {
 
 func TestPrintGoStruct(t *testing.T) {
 
-	val := &ir.Value{
+	val := &ir.NodeScalar{
 		Path: "name",
 		Data: "abc",
 		Text: "abc",
@@ -73,9 +73,9 @@ func TestPrintGoStruct(t *testing.T) {
 
 	PrintGoStruct(val)
 
-	arr := &ir.Array{
+	arr := &ir.NodeArray{
 		Path: "arr",
-		Items: []ir.Node{&ir.Value{
+		Items: []ir.Node{&ir.NodeScalar{
 			Path: "arr.0",
 			Data: "abc",
 			Text: "abc",
@@ -94,15 +94,15 @@ func TestPrintGoStruct(t *testing.T) {
 }
 
 func TestToGoGeneratesValidGo(t *testing.T) {
-	obj := &ir.Object{
+	obj := &ir.NodeObject{
 		Path: "",
 		Tag:  &ir.Tag{Name: "sample"},
 		Fields: []*ir.Field{
-			{Key: "when", Value: &ir.Value{Path: "when", Text: "2024-01-01T00:00:00Z", Tag: &ir.Tag{Type: ir.ValueTypeDatetime}}},
-			{Key: "ip", Value: &ir.Value{Path: "ip", Text: "127.0.0.1", Tag: &ir.Tag{Type: ir.ValueTypeIp}}},
-			{Key: "site", Value: &ir.Value{Path: "site", Text: "https://example.com", Tag: &ir.Tag{Type: ir.ValueTypeUrl}}},
-			{Key: "id", Value: &ir.Value{Path: "id", Text: "123", Tag: &ir.Tag{Type: ir.ValueTypeBigint}}},
-			{Key: "data", Value: &ir.Value{Path: "data", Text: "abc", Tag: &ir.Tag{Type: ir.ValueTypeBytes}}},
+			{Key: "when", Value: &ir.NodeScalar{Path: "when", Text: "2024-01-01T00:00:00Z", Tag: &ir.Tag{Type: ir.ValueTypeDatetime}}},
+			{Key: "ip", Value: &ir.NodeScalar{Path: "ip", Text: "127.0.0.1", Tag: &ir.Tag{Type: ir.ValueTypeIp}}},
+			{Key: "site", Value: &ir.NodeScalar{Path: "site", Text: "https://example.com", Tag: &ir.Tag{Type: ir.ValueTypeUrl}}},
+			{Key: "id", Value: &ir.NodeScalar{Path: "id", Text: "123", Tag: &ir.Tag{Type: ir.ValueTypeBigint}}},
+			{Key: "data", Value: &ir.NodeScalar{Path: "data", Text: "abc", Tag: &ir.Tag{Type: ir.ValueTypeBytes}}},
 		},
 	}
 
@@ -126,7 +126,7 @@ func TestToGoGeneratesValidGo(t *testing.T) {
 
 func TestGenerateGoStruct2(t *testing.T) {
 	// 测试 Value 类型
-	valueNode := &ir.Value{
+	valueNode := &ir.NodeScalar{
 		Path: "username",
 		Tag: &ir.Tag{
 			Name: "username",
@@ -138,22 +138,22 @@ func TestGenerateGoStruct2(t *testing.T) {
 	fmt.Println(ToGo(valueNode))
 
 	// 测试 Array 类型
-	arrayNode := &ir.Array{
+	arrayNode := &ir.NodeArray{
 		Path: "ages",
 		Tag: &ir.Tag{
 			Name: "ages",
 			Type: ir.ValueTypeI8,
 		},
 		Items: []ir.Node{
-			&ir.Value{Path: "ages.0", Tag: &ir.Tag{Type: ir.ValueTypeI8}, Text: "18"},
-			&ir.Value{Path: "ages.1", Tag: &ir.Tag{Type: ir.ValueTypeI8}, Text: "20"},
+			&ir.NodeScalar{Path: "ages.0", Tag: &ir.Tag{Type: ir.ValueTypeI8}, Text: "18"},
+			&ir.NodeScalar{Path: "ages.1", Tag: &ir.Tag{Type: ir.ValueTypeI8}, Text: "20"},
 		},
 	}
 	fmt.Println("\n=== Array 生成结果 ===")
 	fmt.Println(ToGo(arrayNode))
 
 	// 测试 Object 类型
-	objectNode := &ir.Object{
+	objectNode := &ir.NodeObject{
 		Path: "",
 		Tag: &ir.Tag{
 			Name: "user_info",
@@ -162,18 +162,18 @@ func TestGenerateGoStruct2(t *testing.T) {
 		Fields: []*ir.Field{
 			{
 				Key:   "user_name",
-				Value: &ir.Value{Path: "user_name", Tag: &ir.Tag{Type: ir.ValueTypeStr}, Text: "zhangsan"},
+				Value: &ir.NodeScalar{Path: "user_name", Tag: &ir.Tag{Type: ir.ValueTypeStr}, Text: "zhangsan"},
 			},
 			{
 				Key:   "age",
-				Value: &ir.Value{Path: "age", Tag: &ir.Tag{Type: ir.ValueTypeI8}, Text: "18"},
+				Value: &ir.NodeScalar{Path: "age", Tag: &ir.Tag{Type: ir.ValueTypeI8}, Text: "18"},
 			},
 		},
 	}
 	fmt.Println("\n=== Object 生成结果 ===")
 	fmt.Println(ToGo(objectNode))
 
-	objectNode1 := &ir.Object{
+	objectNode1 := &ir.NodeObject{
 		Path: "",
 		Tag: &ir.Tag{
 			Name: "user_info",
@@ -182,15 +182,15 @@ func TestGenerateGoStruct2(t *testing.T) {
 		Fields: []*ir.Field{
 			{
 				Key: "user_name",
-				Value: &ir.Array{
+				Value: &ir.NodeArray{
 					Path: "user_name",
 					Tag: &ir.Tag{
 						Name: "ages",
 						Type: ir.ValueTypeI8,
 					},
 					Items: []ir.Node{
-						&ir.Value{Path: "user_name.0", Tag: &ir.Tag{Type: ir.ValueTypeI8}, Text: "18"},
-						&ir.Object{
+						&ir.NodeScalar{Path: "user_name.0", Tag: &ir.Tag{Type: ir.ValueTypeI8}, Text: "18"},
+						&ir.NodeObject{
 							Path: "user_name.1",
 							Tag: &ir.Tag{
 								Name: "user_info",
@@ -199,11 +199,11 @@ func TestGenerateGoStruct2(t *testing.T) {
 							Fields: []*ir.Field{
 								{
 									Key:   "user_name",
-									Value: &ir.Value{Path: "user_name.1.user_name", Tag: &ir.Tag{Type: ir.ValueTypeStr}, Text: "zhangsan"},
+									Value: &ir.NodeScalar{Path: "user_name.1.user_name", Tag: &ir.Tag{Type: ir.ValueTypeStr}, Text: "zhangsan"},
 								},
 								{
 									Key:   "age",
-									Value: &ir.Value{Path: "user_name.1.age", Tag: &ir.Tag{Type: ir.ValueTypeI8}, Text: "18"},
+									Value: &ir.NodeScalar{Path: "user_name.1.age", Tag: &ir.Tag{Type: ir.ValueTypeI8}, Text: "18"},
 								},
 							},
 						},
@@ -212,7 +212,7 @@ func TestGenerateGoStruct2(t *testing.T) {
 			},
 			{
 				Key:   "age",
-				Value: &ir.Value{Path: "age", Tag: &ir.Tag{Type: ir.ValueTypeI8}, Text: "18"},
+				Value: &ir.NodeScalar{Path: "age", Tag: &ir.Tag{Type: ir.ValueTypeI8}, Text: "18"},
 			},
 		},
 	}
@@ -223,27 +223,27 @@ func TestGenerateGoStruct2(t *testing.T) {
 // TestDuplicateStructNamesWithPath demonstrates how Path prevents duplicate struct names
 func TestDuplicateStructNamesWithPath(t *testing.T) {
 	// Two structs with the same name but different paths should generate different struct names
-	obj := &ir.Object{
+	obj := &ir.NodeObject{
 		Path: "",
 		Tag:  &ir.Tag{Name: "root"},
 		Fields: []*ir.Field{
 			{
 				Key: "user",
-				Value: &ir.Object{
+				Value: &ir.NodeObject{
 					Path: "user",
 					Tag:  &ir.Tag{Name: "profile"},
 					Fields: []*ir.Field{
-						{Key: "name", Value: &ir.Value{Path: "user.name", Tag: &ir.Tag{Type: ir.ValueTypeStr}, Text: "alice"}},
+						{Key: "name", Value: &ir.NodeScalar{Path: "user.name", Tag: &ir.Tag{Type: ir.ValueTypeStr}, Text: "alice"}},
 					},
 				},
 			},
 			{
 				Key: "admin",
-				Value: &ir.Object{
+				Value: &ir.NodeObject{
 					Path: "admin",
 					Tag:  &ir.Tag{Name: "profile"},
 					Fields: []*ir.Field{
-						{Key: "name", Value: &ir.Value{Path: "admin.name", Tag: &ir.Tag{Type: ir.ValueTypeStr}, Text: "bob"}},
+						{Key: "name", Value: &ir.NodeScalar{Path: "admin.name", Tag: &ir.Tag{Type: ir.ValueTypeStr}, Text: "bob"}},
 					},
 				},
 			},

@@ -5,7 +5,7 @@ import { mm } from './mm';
 import * as constants from './constants';
 import { Tag } from '../ir/tag';
 import { ValueType } from '../ir/value-type';
-import { Node, MMValue, MMObject, MMArray } from '../ir/ast';
+import { Node, NodeScalar, NodeObject, NodeArray } from '../ir/ast';
 import { ValueToNode } from './value-to-node';
 
 import { parseJSONC, toJSONC } from '../jsonc/index';
@@ -29,19 +29,19 @@ export function fromJSONC(jsonc: string): Uint8Array {
 }
 
 function nodeToDecodedValue(node: Node): DecodedValue {
-  if (node instanceof MMValue) {
+  if (node instanceof NodeScalar) {
     return {
       type: node.getTag().type,
       value: node.getValue(),
     };
-  } else if (node instanceof MMObject) {
+  } else if (node instanceof NodeObject) {
     const props = node.getProperties();
     const value: Record<string, any> = {};
     for (const [key, valNode] of Object.entries(props)) {
       value[key] = nodeToDecodedValue(valNode).value;
     }
     return { type: ValueType.Obj, value };
-  } else if (node instanceof MMArray) {
+  } else if (node instanceof NodeArray) {
     const elements = node.getElements();
     const value = elements.map((e) => nodeToDecodedValue(e).value);
     return { type: ValueType.Arr, value };

@@ -1,11 +1,11 @@
 package io.github.metamessage.jsonc
 
-import io.github.metamessage.ir.Array
 import io.github.metamessage.ir.Doc
 import io.github.metamessage.ir.Node
-import io.github.metamessage.ir.Object as AstObject
+import io.github.metamessage.ir.NodeArray
+import io.github.metamessage.ir.NodeObject as AstObject
+import io.github.metamessage.ir.NodeScalar
 import io.github.metamessage.ir.Tag
-import io.github.metamessage.ir.Value
 import io.github.metamessage.ir.ValueType
 
 class JsoncPrinter {
@@ -15,8 +15,8 @@ class JsoncPrinter {
         fun toString(node: Node, indentLevel: Int = 0): String {
             return when (node) {
                 is AstObject -> objectToString(node, indentLevel)
-                is Array -> arrayToString(node, indentLevel)
-                is Value -> valueToString(node)
+                is NodeArray -> arrayToString(node, indentLevel)
+                is NodeScalar -> valueToString(node)
                 is Doc -> docToString(node, indentLevel)
             }
         }
@@ -57,7 +57,7 @@ class JsoncPrinter {
             return sb.toString()
         }
 
-        private fun arrayToString(arr: Array, indentLevel: Int): String {
+        private fun arrayToString(arr: NodeArray, indentLevel: Int): String {
             val sb = StringBuilder()
             sb.append("[\n")
 
@@ -74,11 +74,11 @@ class JsoncPrinter {
             return sb.toString()
         }
 
-        private fun valueToString(value: Value): String {
+        private fun valueToString(value: NodeScalar): String {
             return valueToStringOnly(value)
         }
 
-        private fun valueToStringOnly(value: Value): String {
+        private fun valueToStringOnly(value: NodeScalar): String {
             val tag = value.tag
             val type = tag?.type ?: ValueType.UNKNOWN
 
@@ -123,8 +123,8 @@ class JsoncPrinter {
         fun toCompactString(node: Node): String {
             return when (node) {
                 is AstObject -> compactObject(node)
-                is Array -> compactArray(node)
-                is Value -> compactValue(node)
+                is NodeArray -> compactArray(node)
+                is NodeScalar -> compactValue(node)
                 is Doc -> compactDoc(node)
             }
         }
@@ -139,12 +139,12 @@ class JsoncPrinter {
             return "{${fields.joinToString(",")}}"
         }
 
-        private fun compactArray(arr: Array): String {
+        private fun compactArray(arr: NodeArray): String {
             val items = arr.items.map { toCompactString(it) }
             return "[${items.joinToString(",")}]"
         }
 
-        private fun compactValue(value: Value): String {
+        private fun compactValue(value: NodeScalar): String {
             return valueToStringOnly(value)
         }
     }

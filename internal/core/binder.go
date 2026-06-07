@@ -21,21 +21,21 @@ func Bind(node ir.Node, out any) error {
 	outVal = outVal.Elem()
 
 	switch n := node.(type) {
-	case *ir.Object:
+	case *ir.NodeObject:
 		if n.Tag.Type == ir.ValueTypeObj {
 			return convertObj(n, outVal)
 		} else {
 			return convertMap(n, outVal)
 		}
 
-	case *ir.Array:
+	case *ir.NodeArray:
 		if n.Tag.Type == ir.ValueTypeArr {
 			return convertArr(n, outVal)
 		} else {
 			return convertVec(n, outVal)
 		}
 
-	case *ir.Value:
+	case *ir.NodeScalar:
 		return convertScalar(n, outVal)
 
 	default:
@@ -57,7 +57,7 @@ func getFieldMap(t reflect.Type, val reflect.Value) map[string]reflect.Value {
 	return fieldMap
 }
 
-func convertObj(obj *ir.Object, outVal reflect.Value) error {
+func convertObj(obj *ir.NodeObject, outVal reflect.Value) error {
 	if obj.Tag.Nullable {
 		if outVal.Kind() != reflect.Pointer {
 			return fmt.Errorf("%s requires pointer type, got %s", obj.Path, outVal.Kind())
@@ -94,7 +94,7 @@ func convertObj(obj *ir.Object, outVal reflect.Value) error {
 	return nil
 }
 
-func convertMap(obj *ir.Object, outVal reflect.Value) error {
+func convertMap(obj *ir.NodeObject, outVal reflect.Value) error {
 	if obj.Tag.Nullable {
 		if outVal.Kind() != reflect.Pointer {
 			return fmt.Errorf("%s requires pointer type, got %s", obj.Path, outVal.Kind())
@@ -134,7 +134,7 @@ func convertMap(obj *ir.Object, outVal reflect.Value) error {
 	return nil
 }
 
-func convertArr(arr *ir.Array, outVal reflect.Value) error {
+func convertArr(arr *ir.NodeArray, outVal reflect.Value) error {
 	if arr.Tag.Nullable {
 		if outVal.Kind() != reflect.Pointer {
 			return fmt.Errorf("%s requires pointer type, got %s", arr.Path, outVal.Kind())
@@ -165,7 +165,7 @@ func convertArr(arr *ir.Array, outVal reflect.Value) error {
 	return nil
 }
 
-func convertVec(arr *ir.Array, outVal reflect.Value) error {
+func convertVec(arr *ir.NodeArray, outVal reflect.Value) error {
 	if arr.Tag.Nullable {
 		if outVal.Kind() != reflect.Pointer {
 			return fmt.Errorf("%s requires pointer type, got %s", arr.Path, outVal.Kind())
@@ -194,7 +194,7 @@ func convertVec(arr *ir.Array, outVal reflect.Value) error {
 	return nil
 }
 
-func convertScalar(val *ir.Value, outVal reflect.Value) error {
+func convertScalar(val *ir.NodeScalar, outVal reflect.Value) error {
 	if val.Tag.Nullable {
 		if outVal.Kind() != reflect.Pointer {
 			return fmt.Errorf("%s requires pointer type, got %s", val.Path, outVal.Kind())

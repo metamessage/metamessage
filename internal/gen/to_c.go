@@ -45,23 +45,23 @@ var cTypeMap = map[ir.ValueType]string{
 
 type cStructCollector struct {
 	structs map[string]*cStructDef
-	nodeMap map[*ir.Object]string
+	nodeMap map[*ir.NodeObject]string
 }
 
 type cStructDef struct {
 	name   string
 	fields []*ir.Field
-	node   *ir.Object
+	node   *ir.NodeObject
 }
 
 func newCStructCollector() *cStructCollector {
 	return &cStructCollector{
 		structs: make(map[string]*cStructDef),
-		nodeMap: make(map[*ir.Object]string),
+		nodeMap: make(map[*ir.NodeObject]string),
 	}
 }
 
-func (sc *cStructCollector) addStruct(name string, obj *ir.Object) string {
+func (sc *cStructCollector) addStruct(name string, obj *ir.NodeObject) string {
 	if existingName, exists := sc.nodeMap[obj]; exists {
 		return existingName
 	}
@@ -100,7 +100,7 @@ func ToC(n ir.Node) string {
 	}
 
 	topName := "Obj"
-	if obj, ok := n.(*ir.Object); ok && obj.Tag != nil && obj.Tag.Name != "" {
+	if obj, ok := n.(*ir.NodeObject); ok && obj.Tag != nil && obj.Tag.Name != "" {
 		topName = exportCStructName(obj.Tag.Name)
 	}
 
@@ -117,7 +117,7 @@ func ToC(n ir.Node) string {
 	sb.WriteString("#include <stdlib.h>\n\n")
 
 	// Collect all structs
-	if obj, ok := n.(*ir.Object); ok {
+	if obj, ok := n.(*ir.NodeObject); ok {
 		collector.addStruct(topName, obj)
 		collectCNestedStructs(obj, collector)
 	}
@@ -171,10 +171,10 @@ func collectCNestedStructs(n ir.Node, collector *cStructCollector) {
 		return
 	}
 	switch v := n.(type) {
-	case *ir.Object:
+	case *ir.NodeObject:
 		for _, f := range v.Fields {
 			if f != nil {
-				if obj, ok := f.Value.(*ir.Object); ok {
+				if obj, ok := f.Value.(*ir.NodeObject); ok {
 					name := ""
 					if obj.Tag != nil && obj.Tag.Name != "" {
 						name = obj.Tag.Name
@@ -186,9 +186,9 @@ func collectCNestedStructs(n ir.Node, collector *cStructCollector) {
 				}
 			}
 		}
-	case *ir.Array:
+	case *ir.NodeArray:
 		for _, item := range v.Items {
-			if obj, ok := item.(*ir.Object); ok {
+			if obj, ok := item.(*ir.NodeObject); ok {
 				name := ""
 				if obj.Tag != nil && obj.Tag.Name != "" {
 					name = obj.Tag.Name
@@ -227,11 +227,11 @@ func walkCNodeType(n ir.Node, fn func(ir.ValueType)) {
 		return
 	}
 	switch v := n.(type) {
-	case *ir.Value:
+	case *ir.NodeScalar:
 		if v.Tag != nil {
 			fn(v.Tag.Type)
 		}
-	case *ir.Array:
+	case *ir.NodeArray:
 		fn(ir.ValueTypeArr)
 		if v.Tag != nil && v.Tag.ChildType != ir.ValueTypeUnknown {
 			fn(v.Tag.ChildType)
@@ -239,7 +239,7 @@ func walkCNodeType(n ir.Node, fn func(ir.ValueType)) {
 		for _, item := range v.Items {
 			walkCNodeType(item, fn)
 		}
-	case *ir.Object:
+	case *ir.NodeObject:
 		for _, f := range v.Fields {
 			if f != nil {
 				walkCNodeType(f.Value, fn)
@@ -253,18 +253,18 @@ func getCTypeForField(f *ir.Field, collector *cStructCollector) string {
 		return "void*"
 	}
 	switch v := f.Value.(type) {
-	case *ir.Value:
+	case *ir.NodeScalar:
 		return getCValueType(v)
-	case *ir.Object:
+	case *ir.NodeObject:
 		return getCObjectType(f.Key, v, collector)
-	case *ir.Array:
+	case *ir.NodeArray:
 		return "mm_arr_t"
 	default:
 		return "void*"
 	}
 }
 
-func getCValueType(v *ir.Value) string {
+func getCValueType(v *ir.NodeScalar) string {
 	if v != nil && v.Tag != nil {
 		if t, ok := cTypeMap[v.Tag.Type]; ok {
 			return t
@@ -273,7 +273,7 @@ func getCValueType(v *ir.Value) string {
 	return "void*"
 }
 
-func getCObjectType(fieldKey string, obj *ir.Object, _ *cStructCollector) string {
+func getCObjectType(fieldKey string, obj *ir.NodeObject, _ *cStructCollector) string {
 	if obj != nil && obj.Tag != nil && obj.Tag.Name != "" {
 		return exportCStructName(obj.Tag.Name)
 	}
@@ -295,18 +295,18 @@ func genCStructFields(b *strings.Builder, fields []*ir.Field, indent int, collec
 
 func genCLiteral(b *strings.Builder, n ir.Node, fieldKey string, indent int) {
 	switch v := n.(type) {
-	case *ir.Value:
+	case *ir.NodeScalar:
 		b.WriteString(formatCValueLiteral(v))
-	case *ir.Object:
+	case *ir.NodeObject:
 		genCObjectLiteral(b, v, fieldKey, indent)
-	case *ir.Array:
+	case *ir.NodeArray:
 		genCArrayLiteral(b, v, indent)
 	default:
 		b.WriteString("{0}")
 	}
 }
 
-func genCObjectLiteral(b *strings.Builder, obj *ir.Object, fieldKey string, indent int) {
+func genCObjectLiteral(b *strings.Builder, obj *ir.NodeObject, fieldKey string, indent int) {
 	if obj == nil {
 		b.WriteString("{0}")
 		return
@@ -327,7 +327,7 @@ func genCObjectLiteral(b *strings.Builder, obj *ir.Object, fieldKey string, inde
 	b.WriteString("}")
 }
 
-func genCArrayLiteral(b *strings.Builder, a *ir.Array, indent int) {
+func genCArrayLiteral(b *strings.Builder, a *ir.NodeArray, indent int) {
 	if a == nil || len(a.Items) == 0 {
 		b.WriteString("{ .count = 0, .capacity = 0, .items = NULL }")
 		return
@@ -354,7 +354,7 @@ func genCArrayLiteral(b *strings.Builder, a *ir.Array, indent int) {
 	b.WriteString("}")
 }
 
-func formatCValueLiteral(v *ir.Value) string {
+func formatCValueLiteral(v *ir.NodeScalar) string {
 	if v == nil {
 		return "{0}"
 	}

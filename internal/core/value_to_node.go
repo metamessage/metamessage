@@ -16,10 +16,10 @@ import (
 
 const maxDepth = 32
 
-func NilToNode(valueType ir.ValueType) (*ir.Value, error) {
+func NilToNode(valueType ir.ValueType) (*ir.NodeScalar, error) {
 	tag := ir.NewTag()
 	tag.Type = valueType
-	return &ir.Value{
+	return &ir.NodeScalar{
 		Data: nil,
 		Text: ir.Null,
 		Tag:  tag,
@@ -1252,7 +1252,7 @@ func valueToNode(v any, tag *ir.Tag, depth int, path string, example bool) (node
 		return
 	}
 
-	return &ir.Value{
+	return &ir.NodeScalar{
 		Data: data,
 		Text: text,
 		Tag:  tag,
@@ -1437,7 +1437,7 @@ func anyToJSONC(obj any, tag *ir.Tag, depth int, path string, example bool) (ir.
 		default:
 			tag.Type = ir.ValueTypeObj
 
-			objNode := &ir.Object{
+			objNode := &ir.NodeObject{
 				Tag:  tag,
 				Path: path,
 			}
@@ -1508,7 +1508,7 @@ func anyToJSONC(obj any, tag *ir.Tag, depth int, path string, example bool) (ir.
 
 		tag.Type = ir.ValueTypeMap
 
-		node := &ir.Object{
+		node := &ir.NodeObject{
 			Tag:  tag,
 			Path: path,
 		}
@@ -1627,7 +1627,7 @@ func anyToJSONC(obj any, tag *ir.Tag, depth int, path string, example bool) (ir.
 	case reflect.Slice:
 		tag.Type = ir.ValueTypeVec
 
-		node := &ir.Array{
+		node := &ir.NodeArray{
 			Tag:  tag,
 			Path: path,
 		}
@@ -1723,7 +1723,7 @@ func anyToJSONC(obj any, tag *ir.Tag, depth int, path string, example bool) (ir.
 		tag.Type = ir.ValueTypeArr
 
 		tag.Size = val.Len()
-		node := &ir.Array{
+		node := &ir.NodeArray{
 			Tag:  tag,
 			Path: path,
 		}

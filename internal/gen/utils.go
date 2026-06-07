@@ -57,12 +57,12 @@ func toTitle(s string) string {
 	return string(runes)
 }
 
-func findFirstObjectInArray(a *ir.Array) *ir.Object {
+func findFirstObjectInArray(a *ir.NodeArray) *ir.NodeObject {
 	if a == nil {
 		return nil
 	}
 	for _, item := range a.Items {
-		if obj, ok := item.(*ir.Object); ok {
+		if obj, ok := item.(*ir.NodeObject); ok {
 			return obj
 		}
 	}

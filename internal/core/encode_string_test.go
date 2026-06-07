@@ -219,7 +219,7 @@ func TestEncodeString(t *testing.T) {
 			}
 			// fmt.Println("decoded:", Dump(bs2))
 			// fmt.Println("jsonc:", jsonc.ToJSONC(bs2))
-			v, ok := bs2.(*ir.Value)
+			v, ok := bs2.(*ir.NodeScalar)
 			if ok {
 				if dataTime, isTime := v.Data.(time.Time); isTime {
 					if expectedTime, ok := tc.expectedOut.(time.Time); ok {
@@ -230,7 +230,7 @@ func TestEncodeString(t *testing.T) {
 					}
 				}
 				if !reflect.DeepEqual(v.Data, tc.expectedOut) {
-					t.Errorf("Expected output: %v %T, actual output: %v %T", tc.expectedOut, tc.expectedOut, bs2.(*ir.Value).Data, bs2.(*ir.Value).Data)
+					t.Errorf("Expected output: %v %T, actual output: %v %T", tc.expectedOut, tc.expectedOut, bs2.(*ir.NodeScalar).Data, bs2.(*ir.NodeScalar).Data)
 				}
 			}
 		})

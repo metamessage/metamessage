@@ -9,7 +9,7 @@ from datetime import datetime, timezone, date, time as dt_time
 from typing import Any, Optional, Tuple
 
 from ..ir.tag import Tag, TagKey, ValueType
-from ..ir.ast import Obj, Arr, Val, Field, Node, NodeType
+from ..ir.ast import NodeObject, Arr, NodeScalar, Field, Node, NodeType
 
 Simple       = 0b000 << 5
 PositiveInt  = 0b001 << 5
@@ -328,41 +328,41 @@ class Decoder:
             text = DEFAULT_TIME.strftime('%Y-%m-%d %H:%M:%S')
             if tag.location is not None:
                 text = DEFAULT_TIME.strftime('%Y-%m-%d %H:%M:%S')
-            return Val(data=DEFAULT_TIME, text=text, tag=tag, path=path), 0
+            return NodeScalar(data=DEFAULT_TIME, text=text, tag=tag, path=path), 0
         elif tag.type == v.Date:
             text = DEFAULT_TIME.strftime('%Y-%m-%d')
-            return Val(data=DEFAULT_TIME, text=text, tag=tag, path=path), 0
+            return NodeScalar(data=DEFAULT_TIME, text=text, tag=tag, path=path), 0
         elif tag.type == v.Time:
             text = DEFAULT_TIME.strftime('%H:%M:%S')
-            return Val(data=DEFAULT_TIME, text=text, tag=tag, path=path), 0
+            return NodeScalar(data=DEFAULT_TIME, text=text, tag=tag, path=path), 0
         elif tag.type == v.I8:
-            return Val(data=0, text='0', tag=tag, path=path), 0
+            return NodeScalar(data=0, text='0', tag=tag, path=path), 0
         elif tag.type == v.I16:
-            return Val(data=0, text='0', tag=tag, path=path), 0
+            return NodeScalar(data=0, text='0', tag=tag, path=path), 0
         elif tag.type == v.I32:
-            return Val(data=0, text='0', tag=tag, path=path), 0
+            return NodeScalar(data=0, text='0', tag=tag, path=path), 0
         elif tag.type == v.I64:
-            return Val(data=0, text='0', tag=tag, path=path), 0
+            return NodeScalar(data=0, text='0', tag=tag, path=path), 0
         elif tag.type == v.U:
-            return Val(data=0, text='0', tag=tag, path=path), 0
+            return NodeScalar(data=0, text='0', tag=tag, path=path), 0
         elif tag.type == v.U8:
-            return Val(data=0, text='0', tag=tag, path=path), 0
+            return NodeScalar(data=0, text='0', tag=tag, path=path), 0
         elif tag.type == v.U16:
-            return Val(data=0, text='0', tag=tag, path=path), 0
+            return NodeScalar(data=0, text='0', tag=tag, path=path), 0
         elif tag.type == v.U32:
-            return Val(data=0, text='0', tag=tag, path=path), 0
+            return NodeScalar(data=0, text='0', tag=tag, path=path), 0
         elif tag.type == v.U64:
-            return Val(data=0, text='0', tag=tag, path=path), 0
+            return NodeScalar(data=0, text='0', tag=tag, path=path), 0
         elif tag.type == v.F32:
-            return Val(data=0.0, text='0.0', tag=tag, path=path), 0
+            return NodeScalar(data=0.0, text='0.0', tag=tag, path=path), 0
         elif tag.type in (v.Email, v.Uuid, v.Decimal):
-            return Val(data='', text='', tag=tag, path=path), 0
+            return NodeScalar(data='', text='', tag=tag, path=path), 0
         elif tag.type == v.Bigint:
-            return Val(data=0, text='0', tag=tag, path=path), 0
+            return NodeScalar(data=0, text='0', tag=tag, path=path), 0
         elif tag.type == v.Media:
-            return Val(data=b'', text='', tag=tag, path=path), 0
+            return NodeScalar(data=b'', text='', tag=tag, path=path), 0
         elif tag.type == v.Url:
-            return Val(data='', text='', tag=tag, path=path), 0
+            return NodeScalar(data='', text='', tag=tag, path=path), 0
         elif tag.type == v.Ip:
             if tag.version == 4:
                 text = '0.0.0.0'
@@ -370,7 +370,7 @@ class Decoder:
                 text = '::'
             else:
                 text = ''
-            return Val(data='', text=text, tag=tag, path=path), 0
+            return NodeScalar(data='', text=text, tag=tag, path=path), 0
 
         return None
 
@@ -538,100 +538,100 @@ class Decoder:
 
         if suffix == SimpleFalse:
             tag.type = ValueType.Bool
-            return Val(data=False, text='false', tag=tag, path=path), 1
+            return NodeScalar(data=False, text='false', tag=tag, path=path), 1
         elif suffix == SimpleTrue:
             tag.type = ValueType.Bool
-            return Val(data=True, text='true', tag=tag, path=path), 1
+            return NodeScalar(data=True, text='true', tag=tag, path=path), 1
         elif suffix == SimpleNullBool:
             tag.type = ValueType.Bool
-            return Val(data=False, text='false', tag=tag, path=path), 1
+            return NodeScalar(data=False, text='false', tag=tag, path=path), 1
         elif suffix == SimpleNullInt:
             tag.type = ValueType.I
-            return Val(data=0, text='0', tag=tag, path=path), 1
+            return NodeScalar(data=0, text='0', tag=tag, path=path), 1
         elif suffix == SimpleNullFloat:
             tag.type = ValueType.F64
-            return Val(data=0.0, text='0.0', tag=tag, path=path), 1
+            return NodeScalar(data=0.0, text='0.0', tag=tag, path=path), 1
         elif suffix == SimpleNullString:
             tag.type = ValueType.Str
-            return Val(data='', text='', tag=tag, path=path), 1
+            return NodeScalar(data='', text='', tag=tag, path=path), 1
         elif suffix == SimpleNullBytes:
             tag.type = ValueType.Bytes
-            return Val(data=b'', text='', tag=tag, path=path), 1
+            return NodeScalar(data=b'', text='', tag=tag, path=path), 1
         elif suffix == SimpleCode:
             tag.type = ValueType.Str
-            return Val(data=None, text='code', tag=tag, path=path), 1
+            return NodeScalar(data=None, text='code', tag=tag, path=path), 1
         elif suffix == SimpleMessage:
             tag.type = ValueType.Str
-            return Val(data=None, text='message', tag=tag, path=path), 1
+            return NodeScalar(data=None, text='message', tag=tag, path=path), 1
         elif suffix == SimpleData:
             tag.type = ValueType.Str
-            return Val(data=None, text='data', tag=tag, path=path), 1
+            return NodeScalar(data=None, text='data', tag=tag, path=path), 1
         elif suffix == SimpleSuccess:
             tag.type = ValueType.Str
-            return Val(data=None, text='success', tag=tag, path=path), 1
+            return NodeScalar(data=None, text='success', tag=tag, path=path), 1
         elif suffix == SimpleError:
             tag.type = ValueType.Str
-            return Val(data=None, text='error', tag=tag, path=path), 1
+            return NodeScalar(data=None, text='error', tag=tag, path=path), 1
         elif suffix == SimpleUnknown:
             tag.type = ValueType.Str
-            return Val(data=None, text='unknown', tag=tag, path=path), 1
+            return NodeScalar(data=None, text='unknown', tag=tag, path=path), 1
         elif suffix == SimplePage:
             tag.type = ValueType.Str
-            return Val(data=None, text='page', tag=tag, path=path), 1
+            return NodeScalar(data=None, text='page', tag=tag, path=path), 1
         elif suffix == SimpleLimit:
             tag.type = ValueType.Str
-            return Val(data=None, text='limit', tag=tag, path=path), 1
+            return NodeScalar(data=None, text='limit', tag=tag, path=path), 1
         elif suffix == SimpleOffset:
             tag.type = ValueType.Str
-            return Val(data=None, text='offset', tag=tag, path=path), 1
+            return NodeScalar(data=None, text='offset', tag=tag, path=path), 1
         elif suffix == SimpleTotal:
             tag.type = ValueType.Str
-            return Val(data=None, text='total', tag=tag, path=path), 1
+            return NodeScalar(data=None, text='total', tag=tag, path=path), 1
         elif suffix == SimpleId:
             tag.type = ValueType.Str
-            return Val(data=None, text='id', tag=tag, path=path), 1
+            return NodeScalar(data=None, text='id', tag=tag, path=path), 1
         elif suffix == SimpleName:
             tag.type = ValueType.Str
-            return Val(data=None, text='name', tag=tag, path=path), 1
+            return NodeScalar(data=None, text='name', tag=tag, path=path), 1
         elif suffix == SimpleDescription:
             tag.type = ValueType.Str
-            return Val(data=None, text='description', tag=tag, path=path), 1
+            return NodeScalar(data=None, text='description', tag=tag, path=path), 1
         elif suffix == SimpleType:
             tag.type = ValueType.Str
-            return Val(data=None, text='type', tag=tag, path=path), 1
+            return NodeScalar(data=None, text='type', tag=tag, path=path), 1
         elif suffix == SimpleVersion:
             tag.type = ValueType.Str
-            return Val(data=None, text='version', tag=tag, path=path), 1
+            return NodeScalar(data=None, text='version', tag=tag, path=path), 1
         elif suffix == SimpleStatus:
             tag.type = ValueType.Str
-            return Val(data=None, text='status', tag=tag, path=path), 1
+            return NodeScalar(data=None, text='status', tag=tag, path=path), 1
         elif suffix == SimpleUrl:
             tag.type = ValueType.Str
-            return Val(data=None, text='url', tag=tag, path=path), 1
+            return NodeScalar(data=None, text='url', tag=tag, path=path), 1
         elif suffix == SimpleCreateTime:
             tag.type = ValueType.Str
-            return Val(data=None, text='create_time', tag=tag, path=path), 1
+            return NodeScalar(data=None, text='create_time', tag=tag, path=path), 1
         elif suffix == SimpleUpdateTime:
             tag.type = ValueType.Str
-            return Val(data=None, text='update_time', tag=tag, path=path), 1
+            return NodeScalar(data=None, text='update_time', tag=tag, path=path), 1
         elif suffix == SimpleDeleteTime:
             tag.type = ValueType.Str
-            return Val(data=None, text='delete_time', tag=tag, path=path), 1
+            return NodeScalar(data=None, text='delete_time', tag=tag, path=path), 1
         elif suffix == SimpleAccount:
             tag.type = ValueType.Str
-            return Val(data=None, text='account', tag=tag, path=path), 1
+            return NodeScalar(data=None, text='account', tag=tag, path=path), 1
         elif suffix == SimpleToken:
             tag.type = ValueType.Str
-            return Val(data=None, text='token', tag=tag, path=path), 1
+            return NodeScalar(data=None, text='token', tag=tag, path=path), 1
         elif suffix == SimpleExpireTime:
             tag.type = ValueType.Str
-            return Val(data=None, text='expire_time', tag=tag, path=path), 1
+            return NodeScalar(data=None, text='expire_time', tag=tag, path=path), 1
         elif suffix == SimpleKey:
             tag.type = ValueType.Str
-            return Val(data=None, text='key', tag=tag, path=path), 1
+            return NodeScalar(data=None, text='key', tag=tag, path=path), 1
         elif suffix == SimpleVal:
             tag.type = ValueType.Str
-            return Val(data=None, text='val', tag=tag, path=path), 1
+            return NodeScalar(data=None, text='val', tag=tag, path=path), 1
         else:
             raise ValueError(f"unsupported simple value: {b}")
 
@@ -704,7 +704,7 @@ class Decoder:
         else:
             raise ValueError(f"unsupported value type: {tag.type}")
 
-        node = Val(data=data, text=text, tag=tag, path=path)
+        node = NodeScalar(data=data, text=text, tag=tag, path=path)
         length = l1 + 1
         return node, length
 
@@ -749,7 +749,7 @@ class Decoder:
         else:
             raise ValueError(f"unsupported negative value type: {tag.type}")
 
-        node = Val(data=data, text=text, tag=tag, path=path)
+        node = NodeScalar(data=data, text=text, tag=tag, path=path)
         length = l1 + 1
         return node, length
 
@@ -799,7 +799,7 @@ class Decoder:
             raise ValueError(f"unsupported float value type: {tag.type}")
 
         text = str(v)
-        node = Val(data=data, text=text, tag=tag, path=path)
+        node = NodeScalar(data=data, text=text, tag=tag, path=path)
         return node, length
 
     def _decode_string(self, b: int, tag: Optional[Tag], path: str) -> Tuple[Node, int]:
@@ -840,7 +840,7 @@ class Decoder:
         else:
             raise ValueError(f"unsupported string type: {tag.type}")
 
-        node = Val(data=data, text=text, tag=tag, path=path)
+        node = NodeScalar(data=data, text=text, tag=tag, path=path)
         length = l1 + 1 + l2
         return node, length
 
@@ -892,7 +892,7 @@ class Decoder:
         else:
             raise ValueError(f"unsupported bytes type: {tag.type}")
 
-        node = Val(data=data, text=text, tag=tag, path=path)
+        node = NodeScalar(data=data, text=text, tag=tag, path=path)
         length = l1 + 1 + l2
         return node, length
 
@@ -951,7 +951,7 @@ class Decoder:
             bs = self._read_bytes(2)
             l2 = (bs[0] << 8) | bs[1]
 
-        obj = Obj(tag=tag, path=path)
+        obj = NodeObject(tag=tag, path=path)
 
         l_array = self._read_byte()
         keys_arr, l_keys = self._decode_array(l_array, tag, path)
@@ -977,11 +977,11 @@ class Decoder:
 
 
 def _node_to_python(node: Node) -> Any:
-    if isinstance(node, Val):
+    if isinstance(node, NodeScalar):
         return node.data
     elif isinstance(node, Arr):
         return [_node_to_python(item) for item in node.items]
-    elif isinstance(node, Obj):
+    elif isinstance(node, NodeObject):
         return {field.key: _node_to_python(field.value) for field in node.fields}
     else:
         return None

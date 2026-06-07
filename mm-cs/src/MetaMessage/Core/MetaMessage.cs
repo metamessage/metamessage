@@ -26,23 +26,23 @@ public static class MetaMessage
         return obj;
     }
 
-    public static IMmTree Decode(byte[] data)
+    public static INode Decode(byte[] data)
     {
         var decoder = new WireDecoder(data);
         return decoder.Decode();
     }
 
-    public static IMmTree DecodeToTree(byte[] data)
+    public static INode DecodeToTree(byte[] data)
     {
         return Decode(data);
     }
 
-    public static IMmTree ParseFromJSONC(string input)
+    public static INode ParseFromJSONC(string input)
     {
         return JsoncParser.ParseFromString(input);
     }
 
-    public static byte[] EncodeTree(IMmTree tree)
+    public static byte[] EncodeTree(INode tree)
     {
         var encoder = new WireEncoder();
         EncodeTreeValue(encoder, tree, Tag.Empty());
@@ -92,29 +92,29 @@ public static class MetaMessage
         return Validator.Validate(value, tag);
     }
 
-    private static string TreeToJsoncString(IMmTree tree)
+    private static string TreeToJsoncString(INode tree)
     {
         var printer = new JsoncPrinter(prettyPrint: true);
         return printer.Print(tree);
     }
 
-    private static void EncodeTreeValue(WireEncoder encoder, IMmTree tree, Tag inherited)
+    private static void EncodeTreeValue(WireEncoder encoder, INode tree, Tag inherited)
     {
         switch (tree)
         {
-            case MmScalar scalar:
+            case NodeScalar scalar:
                 EncodeScalarTree(encoder, scalar, inherited);
                 break;
-            case MmArray array:
+            case NodeArray array:
                 EncodeArrayTree(encoder, array, inherited);
                 break;
-            case MmMap map:
+            case NodeObject map:
                 EncodeMapTree(encoder, map, inherited);
                 break;
         }
     }
 
-    private static void EncodeScalarTree(WireEncoder encoder, MmScalar scalar, Tag inherited)
+    private static void EncodeScalarTree(WireEncoder encoder, NodeScalar scalar, Tag inherited)
     {
         var tag = scalar.Tag?.Copy() ?? inherited.Copy();
         if (scalar.Data == null || tag.IsNull)
@@ -281,7 +281,7 @@ public static class MetaMessage
         }
     }
 
-    private static void EncodeArrayTree(WireEncoder encoder, MmArray array, Tag inherited)
+    private static void EncodeArrayTree(WireEncoder encoder, NodeArray array, Tag inherited)
     {
         var body = new GrowableByteBuf();
         var elementEncoder = new WireEncoder();
@@ -307,7 +307,7 @@ public static class MetaMessage
         encoder.EncodeArrayPayload(body.ToArray());
     }
 
-    private static void EncodeMapTree(WireEncoder encoder, MmMap map, Tag inherited)
+    private static void EncodeMapTree(WireEncoder encoder, NodeObject map, Tag inherited)
     {
         var keysPacked = new GrowableByteBuf();
         var valsPacked = new GrowableByteBuf();
@@ -333,20 +333,20 @@ public static class MetaMessage
         encoder.EncodeObjectPayload(mapBody.ToArray());
     }
 
-    private static byte[] EncodeFromJsoncTree(IMmTree tree)
+    private static byte[] EncodeFromJsoncTree(INode tree)
     {
         var encoder = new WireEncoder();
         EncodeJsoncTreeValue(encoder, tree);
         return encoder.ToByteArray();
     }
 
-    private static void EncodeJsoncTreeValue(WireEncoder encoder, IMmTree tree)
+    private static void EncodeJsoncTreeValue(WireEncoder encoder, INode tree)
     {
         var mmTag = tree?.Tag ?? Tag.Empty();
         var payload = new WireEncoder();
         switch (tree)
         {
-            case MmScalar scalar:
+            case NodeScalar scalar:
                 if (mmTag.IsNull)
                 {
                     EncodeNullScalarPayload(payload, mmTag);
@@ -356,10 +356,10 @@ public static class MetaMessage
                     EncodeJsoncScalarPayload(payload, scalar);
                 }
                 break;
-            case MmArray array:
+            case NodeArray array:
                 EncodeJsoncArrayPayload(payload, array);
                 break;
-            case MmMap map:
+            case NodeObject map:
                 EncodeJsoncMapPayload(payload, map);
                 break;
         }
@@ -367,7 +367,7 @@ public static class MetaMessage
         encoder.EncodeTaggedPayload(payload.ToByteArray(), mmTag.ToBytes());
     }
 
-    private static void EncodeJsoncScalarPayload(WireEncoder encoder, MmScalar scalar)
+    private static void EncodeJsoncScalarPayload(WireEncoder encoder, NodeScalar scalar)
     {
         var valTag = scalar.Tag;
         if (valTag != null && valTag.Type == ValueType.Bigint)
@@ -602,7 +602,7 @@ public static class MetaMessage
         }
     }
 
-    private static void EncodeJsoncArrayPayload(WireEncoder encoder, MmArray array)
+    private static void EncodeJsoncArrayPayload(WireEncoder encoder, NodeArray array)
     {
         var body = new GrowableByteBuf();
         var elementEncoder = new WireEncoder();
@@ -631,7 +631,7 @@ public static class MetaMessage
         encoder.EncodeArrayPayload(body.ToArray());
     }
 
-    private static void EncodeJsoncMapPayload(WireEncoder encoder, MmMap map)
+    private static void EncodeJsoncMapPayload(WireEncoder encoder, NodeObject map)
     {
         var keysPacked = new GrowableByteBuf();
         var valsPacked = new GrowableByteBuf();
@@ -657,13 +657,13 @@ public static class MetaMessage
         encoder.EncodeObjectPayload(mapBody.ToArray());
     }
 
-    private static object? ExtractValueFromTree(IMmTree tree)
+    private static object? ExtractValueFromTree(INode tree)
     {
         switch (tree)
         {
-            case MmScalar scalar:
+            case NodeScalar scalar:
                 return scalar.Data;
-            case MmArray array:
+            case NodeArray array:
                 {
                     var list = new List<object?>();
                     foreach (var element in array.Children)
@@ -672,7 +672,7 @@ public static class MetaMessage
                     }
                     return list;
                 }
-            case MmMap map:
+            case NodeObject map:
                 {
                     var dict = new Dictionary<string, object?>();
                     foreach (var kvp in map.Entries)
