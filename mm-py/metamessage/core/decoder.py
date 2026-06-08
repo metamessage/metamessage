@@ -10,6 +10,7 @@ from typing import Any, Optional, Tuple
 
 from ..ir.tag import Tag, TagKey, ValueType
 from ..ir.ast import NodeObject, Arr, NodeScalar, Field, Node, NodeType
+from ..ir.mime import MIME
 
 Simple       = 0b000 << 5
 PositiveInt  = 0b001 << 5
@@ -440,7 +441,8 @@ class Decoder:
             return 2 + l
         elif p == TagKey.Mime:
             tag.type = ValueType.Media
-            tag.mime = str(self._read_varint(l))
+            mime_id = self._read_varint(l)
+            tag.mime = str(MIME(mime_id))
             return 2 + l
         elif p == TagKey.ChildDesc:
             n, s = self._read_length_str(l, True, True)

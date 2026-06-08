@@ -15,32 +15,6 @@ YELLOW='\033[1;33m'
 CYAN='\033[0;36m'
 NC='\033[0m'
 
-ENC_PASS=0
-ENC_FAIL=0
-DEC_PASS=0
-DEC_FAIL=0
-
-# ---------------------------------------------------------------------------
-# Normalize JSONC for comparison: remove comments, whitespace, trailing commas,
-# then sort keys.
-# ---------------------------------------------------------------------------
-normalize() {
-    python3 -c "
-import sys, json, re
-s = sys.stdin.read()
-s = re.sub(r'^\s*//[^\n]*', '', s, flags=re.MULTILINE)
-s = re.sub(r'/\*[\s\S]*?\*/', '', s)
-s = re.sub(r',(\s*[}\]])', r'\1', s)
-try:
-    obj = json.loads(s)
-    print(json.dumps(obj, separators=(',', ':'), sort_keys=True))
-except Exception as e:
-    import sys as _sys
-    _sys.stderr.write(f'NORMALIZE_ERROR: {e}\n')
-    print(s.strip(), end='')
-" 2>/dev/null
-}
-
 # ---------------------------------------------------------------------------
 # Language harnesses: each function builds (if needed), then runs.
 # Exit 0 if harness is ready; non-zero to skip this language.
@@ -298,14 +272,13 @@ for fixture in "${FIXTURES[@]}"; do
         fi
     done
 
-    # Compare normalized JSONC outputs
+    # Compare raw JSONC outputs directly
     if [ "$fixture_ok" -eq 1 ] && [ ${#JSONC_OUTPUTS[@]} -gt 0 ]; then
-        ref_norm=$(echo "${JSONC_OUTPUTS[0]}" | normalize) || true
+        ref_out="${JSONC_OUTPUTS[0]}"
         all_match=1
 
         for ((i=1; i<${#JSONC_OUTPUTS[@]}; i++)); do
-            norm=$(echo "${JSONC_OUTPUTS[$i]}" | normalize) || true
-            if [ "$norm" != "$ref_norm" ]; then
+            if [ "${JSONC_OUTPUTS[$i]}" != "$ref_out" ]; then
                 all_match=0
                 break
             fi
@@ -325,13 +298,12 @@ for fixture in "${FIXTURES[@]}"; do
                 echo ""
                 for ((i=0; i<${#AVAILABLE[@]}; i++)); do
                     lang="${AVAILABLE[$i]}"
-                    norm_out=$(echo "${JSONC_OUTPUTS[$i]}" | normalize) || true
-                    echo "--- $lang (normalized) ---"
-                    echo "$norm_out"
+                    echo "--- $lang (raw) ---"
+                    echo "${JSONC_OUTPUTS[$i]}"
                     echo ""
-                    if [ "$i" -gt 0 ] && [ "$norm_out" != "$ref_norm" ]; then
+                    if [ "$i" -gt 0 ] && [ "${JSONC_OUTPUTS[$i]}" != "$ref_out" ]; then
                         echo "--- diff: ${AVAILABLE[0]} vs $lang ---"
-                        diff -u <(echo "$ref_norm") <(echo "$norm_out") 2>/dev/null || true
+                        diff -u <(echo "$ref_out") <(echo "${JSONC_OUTPUTS[$i]}") 2>/dev/null || true
                         echo ""
                     fi
                 done

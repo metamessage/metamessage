@@ -1362,6 +1362,8 @@ void mm_tag_merge(mm_tag_t *dst, const mm_tag_t *src) {
     free(dst->child_mime);
     dst->child_mime = strdup(src->child_mime);
   }
+
+  dst->is_inherit = false;
 }
 
 static int validate_desc_location(const mm_tag_t *tag, const char *type_name,

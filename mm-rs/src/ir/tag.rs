@@ -565,7 +565,6 @@ impl Tag {
                 | ValueType::Bool
                 | ValueType::Obj
                 | ValueType::Vec => {}
-                ValueType::Arr => {}
                 ValueType::Enum => if self.enums.is_some() {},
                 ValueType::Media => if self.mime.is_some() {},
                 _ => {
@@ -670,7 +669,6 @@ impl Tag {
                 | ValueType::Bool
                 | ValueType::Obj
                 | ValueType::Vec => {}
-                ValueType::Arr => {}
                 ValueType::Enum => if self.child_enums.is_some() {},
                 ValueType::Media => if self.child_mime.is_some() {},
                 _ => {
@@ -785,7 +783,6 @@ impl Tag {
                 | ValueType::Bool
                 | ValueType::Obj
                 | ValueType::Vec => {}
-                ValueType::Arr => {}
                 ValueType::Enum => if self.enums.is_some() {},
                 ValueType::Media => if self.mime.is_some() {},
                 _ => {
@@ -930,7 +927,6 @@ impl Tag {
                 | ValueType::Bool
                 | ValueType::Obj
                 | ValueType::Vec => {}
-                ValueType::Arr => {}
                 ValueType::Enum => if self.child_enums.is_some() {},
                 ValueType::Media => if self.child_mime.is_some() {},
                 _ => {

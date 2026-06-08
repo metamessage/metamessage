@@ -478,6 +478,7 @@ static node_t *dec_decode_bytes(mm_decoder_t *d, uint8_t b, mm_tag_t *tag) {
   mm_tag_init(&val->tag);
   if (tag) {
     val->tag.type = tag->type;
+    val->tag.is_inherit = tag->is_inherit;
   } else {
     val->tag.type = MM_VALUE_BYTES;
   }
@@ -512,15 +513,82 @@ static node_t *dec_decode_bytes(mm_decoder_t *d, uint8_t b, mm_tag_t *tag) {
 static node_t *dec_decode_node(mm_decoder_t *d, mm_tag_t *parent_tag);
 
 static node_t *dec_decode_array(mm_decoder_t *d, size_t total_len,
-                                   mm_tag_t *parent_tag) {
+                                mm_tag_t *parent_tag) {
   node_t *node = node_new_array();
   node_array_t *arr = &node->data.array;
+  mm_tag_init(&arr->tag);
+
   if (parent_tag) {
-    mm_tag_inherit(&arr->tag, parent_tag);
+    // Propagate child_* attributes to arr->tag's child_* for children to
+    // inherit
+    if (parent_tag->child_desc) {
+      arr->tag.child_desc = strdup(parent_tag->child_desc);
+    }
+    if (parent_tag->child_type != MM_VALUE_UNKNOWN) {
+      arr->tag.child_type = parent_tag->child_type;
+    }
+    if (parent_tag->child_nullable) {
+      arr->tag.child_nullable = true;
+    }
+    if (parent_tag->child_allow_empty) {
+      arr->tag.child_allow_empty = true;
+    }
+    if (parent_tag->child_unique) {
+      arr->tag.child_unique = true;
+    }
+    if (parent_tag->child_default_val) {
+      arr->tag.child_default_val = strdup(parent_tag->child_default_val);
+    }
+    if (parent_tag->child_min) {
+      arr->tag.child_min = strdup(parent_tag->child_min);
+    }
+    if (parent_tag->child_max) {
+      arr->tag.child_max = strdup(parent_tag->child_max);
+    }
+    if (parent_tag->child_size != 0) {
+      arr->tag.child_size = parent_tag->child_size;
+    }
+    if (parent_tag->child_enums) {
+      arr->tag.child_enums = strdup(parent_tag->child_enums);
+      arr->tag.child_type = MM_VALUE_ENUMS;
+    }
+    if (parent_tag->child_pattern) {
+      arr->tag.child_pattern = strdup(parent_tag->child_pattern);
+    }
+    if (parent_tag->child_location_offset != 0) {
+      arr->tag.child_location_offset = parent_tag->child_location_offset;
+    }
+    if (parent_tag->child_version != MM_TAG_DEFAULT_VERSION) {
+      arr->tag.child_version = parent_tag->child_version;
+    }
+    if (parent_tag->child_mime) {
+      arr->tag.child_mime = strdup(parent_tag->child_mime);
+      arr->tag.child_type = MM_VALUE_MEDIA;
+    }
+
+    // Copy parent's own type/size to the array tag
+    if (parent_tag->type != MM_VALUE_UNKNOWN) {
+      arr->tag.type = parent_tag->type;
+    }
+    if (parent_tag->size != 0) {
+      arr->tag.size = parent_tag->size;
+    }
+    if (!arr->tag.enums && parent_tag->enums) {
+      arr->tag.enums = strdup(parent_tag->enums);
+    }
+    if (!arr->tag.mime && parent_tag->mime) {
+      arr->tag.mime = strdup(parent_tag->mime);
+    }
   }
+  // Infer type from size if still unknown
   if (arr->tag.type == MM_VALUE_UNKNOWN) {
-    arr->tag.type = MM_VALUE_VEC;
+    if (arr->tag.size > 0) {
+      arr->tag.type = MM_VALUE_ARR;
+    } else {
+      arr->tag.type = MM_VALUE_VEC;
+    }
   }
+  arr->tag.is_inherit = false;
 
   size_t end_offset = d->offset + total_len;
   while (d->offset < end_offset) {
@@ -562,15 +630,77 @@ static node_t *dec_decode_array(mm_decoder_t *d, size_t total_len,
 }
 
 static node_t *dec_decode_object(mm_decoder_t *d, size_t total_len,
-                                    mm_tag_t *parent_tag) {
+                                 mm_tag_t *parent_tag) {
   node_t *node = node_new_object();
   node_object_t *obj = &node->data.object;
+  mm_tag_init(&obj->tag);
+
   if (parent_tag) {
-    mm_tag_inherit(&obj->tag, parent_tag);
+    // Propagate child_* attributes to obj->tag's child_* for children to
+    // inherit
+    if (parent_tag->child_desc) {
+      obj->tag.child_desc = strdup(parent_tag->child_desc);
+    }
+    if (parent_tag->child_type != MM_VALUE_UNKNOWN) {
+      obj->tag.child_type = parent_tag->child_type;
+    }
+    if (parent_tag->child_nullable) {
+      obj->tag.child_nullable = true;
+    }
+    if (parent_tag->child_allow_empty) {
+      obj->tag.child_allow_empty = true;
+    }
+    if (parent_tag->child_unique) {
+      obj->tag.child_unique = true;
+    }
+    if (parent_tag->child_default_val) {
+      obj->tag.child_default_val = strdup(parent_tag->child_default_val);
+    }
+    if (parent_tag->child_min) {
+      obj->tag.child_min = strdup(parent_tag->child_min);
+    }
+    if (parent_tag->child_max) {
+      obj->tag.child_max = strdup(parent_tag->child_max);
+    }
+    if (parent_tag->child_size != 0) {
+      obj->tag.child_size = parent_tag->child_size;
+    }
+    if (parent_tag->child_enums) {
+      obj->tag.child_enums = strdup(parent_tag->child_enums);
+      obj->tag.child_type = MM_VALUE_ENUMS;
+    }
+    if (parent_tag->child_pattern) {
+      obj->tag.child_pattern = strdup(parent_tag->child_pattern);
+    }
+    if (parent_tag->child_location_offset != 0) {
+      obj->tag.child_location_offset = parent_tag->child_location_offset;
+    }
+    if (parent_tag->child_version != MM_TAG_DEFAULT_VERSION) {
+      obj->tag.child_version = parent_tag->child_version;
+    }
+    if (parent_tag->child_mime) {
+      obj->tag.child_mime = strdup(parent_tag->child_mime);
+      obj->tag.child_type = MM_VALUE_MEDIA;
+    }
+
+    // Copy parent's own type/size to the object tag
+    if (parent_tag->type != MM_VALUE_UNKNOWN) {
+      obj->tag.type = parent_tag->type;
+    }
+    if (parent_tag->size != 0) {
+      obj->tag.size = parent_tag->size;
+    }
+    if (!obj->tag.enums && parent_tag->enums) {
+      obj->tag.enums = strdup(parent_tag->enums);
+    }
+    if (!obj->tag.mime && parent_tag->mime) {
+      obj->tag.mime = strdup(parent_tag->mime);
+    }
   }
   if (obj->tag.type == MM_VALUE_UNKNOWN) {
     obj->tag.type = MM_VALUE_OBJ;
   }
+  obj->tag.is_inherit = false;
 
   size_t start_offset = d->offset;
   size_t end_offset = start_offset + total_len;
@@ -628,7 +758,7 @@ static node_t *dec_decode_object(mm_decoder_t *d, size_t total_len,
 }
 
 static node_t *dec_decode_container(mm_decoder_t *d, uint8_t b,
-                                       mm_tag_t *parent_tag) {
+                                    mm_tag_t *parent_tag) {
   int is_array = mm_is_array_container(b);
   int extra_len = mm_container_extra_len(b);
   int inline_len = mm_container_inline_len(b);
@@ -1059,7 +1189,7 @@ static mm_tag_t dec_read_tag_bytes(mm_decoder_t *d) {
 }
 
 static node_t *dec_decode_tag(mm_decoder_t *d, uint8_t b,
-                                 mm_tag_t *parent_tag) {
+                              mm_tag_t *parent_tag) {
   int extra_len = mm_tag_extra_len(b);
   int inline_len = mm_tag_inline_len(b);
   size_t total_len;
@@ -1077,9 +1207,6 @@ static node_t *dec_decode_tag(mm_decoder_t *d, uint8_t b,
   size_t tag_data_start = d->offset;
 
   mm_tag_t tag = dec_read_tag_bytes(d);
-  if (parent_tag) {
-    mm_tag_inherit(&tag, parent_tag);
-  }
 
   size_t tag_bytes_consumed = d->offset - tag_data_start;
 
@@ -1255,7 +1382,11 @@ static node_t *dec_decode_tag(mm_decoder_t *d, uint8_t b,
         mm_tag_merge(&inner->data.array.tag, &tag);
         mm_tag_cleanup(&tag);
         if (inner->data.array.tag.type == MM_VALUE_UNKNOWN) {
-          inner->data.array.tag.type = MM_VALUE_VEC;
+          if (inner->data.array.tag.size > 0) {
+            inner->data.array.tag.type = MM_VALUE_ARR;
+          } else {
+            inner->data.array.tag.type = MM_VALUE_VEC;
+          }
         }
       } else if (inner->type == MM_NODE_OBJECT) {
         mm_tag_merge(&inner->data.object.tag, &tag);
@@ -1415,6 +1546,11 @@ static node_t *dec_decode_node(mm_decoder_t *d, mm_tag_t *parent_tag) {
   if (node && node->type == MM_NODE_VALUE && parent_tag) {
     node_scalar_t *val = &node->data.value;
     mm_tag_merge(&val->tag, parent_tag);
+    // Preserve inherited semantics: if parent's attributes were inherited,
+    // the merged attributes should remain inherited (not shown in output)
+    if (parent_tag->is_inherit) {
+      val->tag.is_inherit = true;
+    }
     dec_apply_tag_conversion(val);
   }
 
@@ -1433,6 +1569,4 @@ mm_decoder_t *mm_decoder_new(const uint8_t *data, size_t size) {
 
 void mm_decoder_free(mm_decoder_t *d) { free(d); }
 
-node_t *mm_decoder_decode(mm_decoder_t *d) {
-  return dec_decode_node(d, NULL);
-}
+node_t *mm_decoder_decode(mm_decoder_t *d) { return dec_decode_node(d, NULL); }

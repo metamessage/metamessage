@@ -119,7 +119,7 @@ public class NodeDecoder {
                 tag.unique = (fieldLen & 0x01) == 1
 
             case TagKey.example:
-                break
+                tag.example = (fieldLen & 0x01) == 1
 
             case TagKey.location:
                 if fieldLen <= 5 {
@@ -954,7 +954,11 @@ public class NodeDecoder {
     private func decodeArrayElements(totalLen: Int, tag: Tag?, path: String) throws -> Node {
         let resolvedTag = tag ?? Tag()
         if resolvedTag.type == .unknown {
-            resolvedTag.type = .vec
+            if resolvedTag.size != 0 {
+                resolvedTag.type = .arr
+            } else {
+                resolvedTag.type = .vec
+            }
         }
 
         let arr = NodeArray(items: [], tag: resolvedTag, path: path)
@@ -1425,7 +1429,7 @@ public class Decoder {
                 decodedTag.unique = (fieldLen & 0x01) == 1
 
             case TagKey.example:
-                break
+                decodedTag.example = (fieldLen & 0x01) == 1
 
             case TagKey.location:
                 if fieldLen <= 5 {

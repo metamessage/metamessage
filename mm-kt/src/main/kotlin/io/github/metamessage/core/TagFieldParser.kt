@@ -102,11 +102,13 @@ object TagFieldParser {
     }
 
     private fun readMime(c: Cursor, tag: Tag, low: Int, self: Boolean) {
-        if (low < 7) {
-            if (self) tag.mime = Mime.toString(low) else tag.childMime = Mime.toString(low)
+        val v = readUintN(c, low)
+        if (self) {
+            tag.type = ValueType.MEDIA
+            tag.mime = Mime.toString(v)
         } else {
-            val l2 = c.read()
-            if (self) tag.mime = Mime.toString(l2) else tag.childMime = Mime.toString(l2)
+            tag.childType = ValueType.MEDIA
+            tag.childMime = Mime.toString(v)
         }
     }
 

@@ -311,9 +311,10 @@ private:
     }
 
     case ir::KMime: {
-      tag.mime = decodeTagString(payload);
+      uint64_t v = readUInt(payload + 1);
+      tag.mime = ir::Tag::mimeToString(static_cast<int>(v));
       tag.type = ir::ValueType::Media;
-      return decodeTagStrConsumed(payload, tag.mime.size());
+      return 2 + payload;
     }
 
     case ir::KChildDesc: {
@@ -353,9 +354,10 @@ private:
     }
 
     case ir::KChildMime: {
-      tag.childMime = decodeTagString(payload);
+      uint64_t v = readUInt(payload + 1);
+      tag.childMime = ir::Tag::mimeToString(static_cast<int>(v));
       tag.childType = ir::ValueType::Media;
-      return decodeTagStrConsumed(payload, tag.childMime.size());
+      return 2 + payload;
     }
 
     default:
@@ -730,16 +732,46 @@ private:
     auto arr = ir::makeNodeArray();
     size_t startOffset = offset_;
 
-    // Decode key array first (to know all item lengths)
-    // Then decode key-value pairs
-    // Simple approach: just recurse
+    // Create a clean item tag that only inherits child_* properties
+    ir::Tag itemTag;
+    if (parentTag) {
+      itemTag.inherit(*parentTag);
+      // If no child_type specified, propagate parent's type to items
+      if (parentTag->childType == ir::ValueType::Unknown) {
+        if (itemTag.type == ir::ValueType::Unknown) {
+          itemTag.type = parentTag->type;
+        }
+        if (itemTag.enums.empty() && !parentTag->enums.empty()) {
+          itemTag.enums = parentTag->enums;
+        }
+        if (itemTag.mime.empty() && !parentTag->mime.empty()) {
+          itemTag.mime = parentTag->mime;
+        }
+        if (itemTag.version == ir::DefaultVersion &&
+            parentTag->version != ir::DefaultVersion) {
+          itemTag.version = parentTag->version;
+        }
+        if (itemTag.locationOffset == ir::DefaultLocationOffset &&
+            parentTag->locationOffset != ir::DefaultLocationOffset) {
+          itemTag.locationOffset = parentTag->locationOffset;
+        }
+      }
+    }
+
     while (offset_ - startOffset < len) {
-      auto item = decodeNode(parentTag);
+      auto item = decodeNode(parentTag ? &itemTag : nullptr);
       arr->items.push_back(item);
     }
 
     if (parentTag) {
       *arr->getTag() = *parentTag;
+    }
+    if (arr->getTag()->type == ir::ValueType::Unknown) {
+      if (arr->getTag()->size > 0) {
+        arr->getTag()->type = ir::ValueType::Arr;
+      } else {
+        arr->getTag()->type = ir::ValueType::Vec;
+      }
     }
 
     return arr;
@@ -751,8 +783,34 @@ private:
     size_t startOffset = offset_;
     size_t endOffset = startOffset + len;
 
+    // Create a clean item tag that only inherits child_* properties
+    ir::Tag itemTag;
+    if (parentTag) {
+      itemTag.inherit(*parentTag);
+      if (parentTag->childType == ir::ValueType::Unknown) {
+        if (itemTag.type == ir::ValueType::Unknown) {
+          itemTag.type = parentTag->type;
+        }
+        if (itemTag.enums.empty() && !parentTag->enums.empty()) {
+          itemTag.enums = parentTag->enums;
+        }
+        if (itemTag.mime.empty() && !parentTag->mime.empty()) {
+          itemTag.mime = parentTag->mime;
+        }
+        if (itemTag.version == ir::DefaultVersion &&
+            parentTag->version != ir::DefaultVersion) {
+          itemTag.version = parentTag->version;
+        }
+        if (itemTag.locationOffset == ir::DefaultLocationOffset &&
+            parentTag->locationOffset != ir::DefaultLocationOffset) {
+          itemTag.locationOffset = parentTag->locationOffset;
+        }
+      }
+    }
+    const ir::Tag *childTag = parentTag ? &itemTag : nullptr;
+
     // First decode the key array
-    auto keyArrayNode = decodeNode(parentTag);
+    auto keyArrayNode = decodeNode(childTag);
     auto keyArray = std::dynamic_pointer_cast<ir::NodeArray>(keyArrayNode);
 
     // Then decode values and pair them with keys
@@ -761,7 +819,7 @@ private:
         if (offset_ >= endOffset)
           break;
         auto keyVal = std::dynamic_pointer_cast<ir::NodeScalar>(keyItem);
-        auto valNode = decodeNode(parentTag);
+        auto valNode = decodeNode(childTag);
         if (keyVal && !keyVal->text.empty()) {
           ir::Field field(keyVal->text, valNode);
           obj->fields.push_back(std::move(field));
@@ -770,10 +828,10 @@ private:
     } else {
       // Fallback: decode remaining as key-value pairs
       while (offset_ < endOffset) {
-        auto keyNode = decodeNode(parentTag);
+        auto keyNode = decodeNode(childTag);
         if (offset_ >= endOffset)
           break;
-        auto valNode = decodeNode(parentTag);
+        auto valNode = decodeNode(childTag);
         auto key = std::dynamic_pointer_cast<ir::NodeScalar>(keyNode);
         if (key && !key->text.empty()) {
           ir::Field field(key->text, valNode);
@@ -786,6 +844,9 @@ private:
 
     if (parentTag) {
       *obj->getTag() = *parentTag;
+    }
+    if (obj->getTag()->type == ir::ValueType::Unknown) {
+      obj->getTag()->type = ir::ValueType::Obj;
     }
 
     return obj;

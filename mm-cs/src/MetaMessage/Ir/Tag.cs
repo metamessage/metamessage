@@ -901,7 +901,8 @@ public class Tag
                 Type == ValueType.Bool ||
                 Type == ValueType.Obj ||
                 Type == ValueType.Map ||
-                Type == ValueType.Vec)
+                Type == ValueType.Vec ||
+                (Type == ValueType.Arr && Size > 0) || Type == ValueType.Arr)
             {
             }
             else

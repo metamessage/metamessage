@@ -1,32 +1,30 @@
 # MetaMessage
 
-**⚠️ 重要提示**
+MetaMessage (mm) is a structured data exchange protocol. It is self-describing, self-constraining, and self-exemplifying, enabling lossless data exchange. It is designed as a next-generation universal protocol that natively supports AI, humans, and machines.
 
-这是一个**只读镜像**，本仓库仅作为 Composer 包的发布源，如有問題，请在主仓库的 Issues 中提交
+- Human and AI friendly
+- Export/import to JSONC (currently; YAML/TOML support planned)
+- Suitable for configuration files and data exchange
+- Works for traditional APIs and AI interaction scenarios
+- Supports conversion between language structs/classes and MetaMessage
+- Supports code generation for multiple languages
+- Data carries type, constraint, description, and example without separate documentation
+- All metadata can be updated with the data itself, without extra coordination
+- Structures and values stay consistent across languages
+- No structural loss; parsers adapt automatically and do not crash
+- Can serialize to compact binary for faster decoding and smaller size
 
-**请勿直接向此仓库提交任何代码！**
+**Problems solved**
 
-## 🔄 同步规则
+- Unknown types, such as not knowing whether a field is uint8
+- Incomplete structure, such as null without inner type information
+- No validation rules, so data legality cannot be checked
+- No examples or descriptions, forcing reliance on separate docs
+- Format changes require protocol adjustment and documentation resync
 
-- 本仓库的所有代码，均通过自动化脚本从主仓库 `metamessage/metamessage` 的 `/mm-php` 目录**单向同步**而来。
-- 任何直接提交到本仓库的 Pull Request 或推送，都会被**强制拒绝**。
+MetaMessage is naturally suited for AI understanding and interaction, solving ambiguity and imprecision in data. It replaces traditional API docs, verbal format agreements, and manual version sync by making data self-explanatory and independently evolvable.
 
-## 🧑‍💻 正确的贡献方式
-
-如果你需要修改 PHP SDK 的代码，请遵循以下流程：
-
-1. 克隆主仓库：
-
-   ```bash
-   git clone https://github.com/metamessage/metamessage.git
-   cd metamessage/mm-php
-   ```
-
-2. 在 `mm-php` 目录下完成开发和测试。
-
-3. 将你的改动提交到主仓库
-
-4. 本镜像仓库会通过 GitHub Actions 等方式自动同步主仓库的变更。
+[github.com](https://github.com/metamessage/metamessage)
 
 ## 1. 安装
 

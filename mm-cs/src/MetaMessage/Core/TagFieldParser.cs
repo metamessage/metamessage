@@ -161,7 +161,8 @@ public static class TagFieldParser
                         int byteCount = lenInfo + 1;
                         if (offset + byteCount > data.Length)
                             throw new MmDecodeException("Unexpected end of tag data");
-                        tag.Mime = DecodeU64(data, ref offset, byteCount).ToString();
+                        int mimeIndex = (int)DecodeU64(data, ref offset, byteCount);
+                        tag.Mime = MimeWire.MimeToString(mimeIndex);
                         tag.Type = ValueType.Media;
                         break;
                     }

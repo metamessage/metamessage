@@ -344,6 +344,7 @@ public class JsoncParser
         Tag tag = ConsumeCommentsFor(openLine) ?? Tag.NewTag();
         if (tag.Type == ValueType.Unknown)
         {
+            // Always Vec (not Arr). Go behavior: size is independent of type.
             tag.Type = ValueType.Vec;
         }
 

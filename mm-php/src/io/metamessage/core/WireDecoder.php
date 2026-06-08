@@ -397,14 +397,15 @@ class WireDecoder
                 return $n;
 
             case Tag::K_MIME:
-                if ($remain < 7) {
-                    $tag->mime = $remain;
-                    return 1;
-                } else {
-                    $l2 = $this->readByte();
-                    $tag->mime = $l2;
-                    return 2;
+                $tag->type = ValueType::MEDIA;
+                $n = 1;
+                $mime = 0;
+                for ($i = 0; $i <= $remain; $i++) {
+                    $mime = ($mime << 8) | $this->readByte();
+                    $n++;
                 }
+                $tag->mime = \io\metamessage\ir\Mime::toString($mime);
+                return $n;
 
             case Tag::K_CHILD_DESC:
                 $n = 1;
@@ -603,14 +604,15 @@ class WireDecoder
                 return $n;
 
             case Tag::K_CHILD_MIME:
-                if ($remain < 7) {
-                    $tag->childMime = $remain;
-                    return 1;
-                } else {
-                    $l2 = $this->readByte();
-                    $tag->childMime = $l2;
-                    return 2;
+                $tag->childType = ValueType::MEDIA;
+                $n = 1;
+                $mime = 0;
+                for ($i = 0; $i <= $remain; $i++) {
+                    $mime = ($mime << 8) | $this->readByte();
+                    $n++;
                 }
+                $tag->childMime = \io\metamessage\ir\Mime::toString($mime);
+                return $n;
 
             default:
                 throw new MmDecodeException('unsupported tag key: ' . $prefix);
@@ -697,6 +699,11 @@ class WireDecoder
                 $neg = !empty($bits) && $bits[0] === 1;
                 $text = $neg ? '-' . $digits : $digits;
                 $data = $text;
+                break;
+
+            case ValueType::MEDIA:
+                $data = $bs;
+                $text = base64_encode(pack('C*', ...$bs));
                 break;
 
             case ValueType::BYTES:

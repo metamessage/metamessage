@@ -406,12 +406,10 @@ def parse_jsonc(source: str) -> Node:
 _INFERRED_TYPES = {
     ValueType.Obj,
     ValueType.Vec,
-    ValueType.Arr,
     ValueType.Str,
     ValueType.I,
     ValueType.F64,
     ValueType.Bool,
-    ValueType.Media,
 }
 
 
@@ -426,8 +424,7 @@ def _get_tag_str(tag) -> str:
     parts = []
 
     if tag.type != ValueType.Unknown and tag.type not in _INFERRED_TYPES and not inh:
-        if not (tag.type == ValueType.Arr and tag.size > 0 or
-                tag.type == ValueType.Enums and tag.enums):
+        if not (tag.type == ValueType.Enums and tag.enums) and not (tag.type == ValueType.Media and tag.mime):
             parts.append(f"type={str(tag.type)}")
 
     if tag.example:
@@ -498,8 +495,7 @@ def _get_tag_str(tag) -> str:
     if tag.child_desc and not inh:
         parts.append(f'child_desc="{tag.child_desc}"')
     if tag.child_type != ValueType.Unknown and tag.child_type not in _INFERRED_TYPES and not inh:
-        if not (tag.child_type == ValueType.Arr and tag.child_size > 0 or
-                tag.child_type == ValueType.Enums and tag.child_enums):
+        if not (tag.child_type == ValueType.Enums and tag.child_enums):
             parts.append(f"child_type={str(tag.child_type)}")
     if tag.child_nullable and not inh:
         parts.append("child_nullable")

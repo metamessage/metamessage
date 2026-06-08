@@ -66,7 +66,7 @@ public class Tag {
         var parts: [String] = []
 
         if type != .unknown && !isInherit {
-            if type == .str || type == .i || type == .f64 || type == .bool || type == .obj || type == .vec || type == .arr {
+            if type == .str || type == .i || type == .f64 || type == .bool || type == .obj || type == .vec {
             } else {
                 if type == .enums && enums != "" || type == .media && mime != "" {
                 } else {
@@ -144,7 +144,7 @@ public class Tag {
         }
 
         if childType != .unknown {
-            if childType == .str || childType == .i || childType == .f64 || childType == .bool || childType == .obj || childType == .vec || childType == .arr {
+            if childType == .str || childType == .i || childType == .f64 || childType == .bool || childType == .obj || childType == .vec {
             } else {
                 if childType == .enums && childEnums != "" || childType == .media && childMime != "" {
                 } else {

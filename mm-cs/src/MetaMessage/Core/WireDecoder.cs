@@ -481,7 +481,10 @@ public class WireDecoder
 
         if (containerType == WireConstants.CONTAINER_ARRAY)
         {
-            tag.Type = ValueType.Vec;
+            if (tag.Type == ValueType.Unknown)
+            {
+                tag.Type = tag.Size > 0 ? ValueType.Arr : ValueType.Vec;
+            }
             var children = new List<INode>();
             while (_offset < end)
             {

@@ -1000,7 +1000,7 @@ extension Encoder {
         case .str, .bytes, .i, .f64, .bool, .obj, .vec:
             return false
         case .arr:
-            return true
+            return size == 0
         case .enums:
             return enums.isEmpty
         case .media:
@@ -1015,7 +1015,7 @@ extension Encoder {
         case .str, .i, .f64, .bool, .obj, .vec:
             return false
         case .arr:
-            return true
+            return childSize == 0
         case .enums:
             return childEnums.isEmpty
         case .media:

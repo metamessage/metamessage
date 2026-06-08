@@ -5,7 +5,7 @@
 #
 # Tests:
 #   Test 1 (encode): Encode fixture with both Go and <lang>, compare hex bytes
-#   Test 2 (decode): Encode with Go, decode with <lang>, compare normalized JSONC
+#   Test 2 (decode): Encode with Go, decode with <lang>, compare raw JSONC
 
 set -o pipefail
 
@@ -41,26 +41,6 @@ if [ "$found" -eq 0 ]; then
     echo "Valid keys: $VALID_LANGS"
     exit 1
 fi
-
-# ---------------------------------------------------------------------------
-# Normalize JSONC
-# ---------------------------------------------------------------------------
-normalize() {
-    python3 -c "
-import sys, json, re
-s = sys.stdin.read()
-s = re.sub(r'//[^\n]*', '', s)
-s = re.sub(r'/\*[\s\S]*?\*/', '', s)
-s = re.sub(r',(\s*[}\]])', r'\1', s)
-try:
-    obj = json.loads(s)
-    print(json.dumps(obj, separators=(',', ':'), sort_keys=True))
-except Exception as e:
-    import sys as _sys
-    _sys.stderr.write(f'NORMALIZE_ERROR: {e}\n')
-    print(s.strip(), end='')
-" 2>/dev/null
-}
 
 # ---------------------------------------------------------------------------
 # Language harnesses
@@ -319,10 +299,7 @@ for fixture in "${FIXTURES[@]}"; do
     # Also decode with Go for reference JSONC
     go_output=$(go_decode "$ref_hex" 2>/dev/null) || true
 
-    ref_norm=$(echo "$go_output" | normalize) || true
-    target_norm=$(echo "$target_output" | normalize) || true
-
-    if [ "$ref_norm" = "$target_norm" ]; then
+    if [ "$go_output" = "$target_output" ]; then
         echo -e " ${GREEN}MATCH${NC}"
         DEC_PASS=$((DEC_PASS + 1))
     else
@@ -333,20 +310,14 @@ for fixture in "${FIXTURES[@]}"; do
         {
             echo "=== $rel Decode round-trip mismatch (Go encode → decode) ==="
             echo ""
-            echo "--- Go decode (normalized) ---"
-            echo "$ref_norm"
-            echo ""
-            echo "--- $TARGET_LANG decode (normalized) ---"
-            echo "$target_norm"
-            echo ""
-            echo "--- unified diff ---"
-            diff -u <(echo "$ref_norm") <(echo "$target_norm") 2>/dev/null || true
-            echo ""
             echo "--- Go decode (raw) ---"
             echo "$go_output"
             echo ""
             echo "--- $TARGET_LANG decode (raw) ---"
             echo "$target_output"
+            echo ""
+            echo "--- unified diff ---"
+            diff -u <(echo "$go_output") <(echo "$target_output") 2>/dev/null || true
         } > "$diff_file"
         echo -e "  ${YELLOW}Details: $diff_file${NC}"
     fi
