@@ -135,13 +135,13 @@ public static class MetaMessage
             tag.IsNull = true;
             var nullPayload = new WireEncoder();
             EncodeNullScalarPayload(nullPayload, tag);
-            encoder.EncodeTaggedPayload(nullPayload.ToByteArray(), tag.ToBytes());
+            encoder.EncodeTaggedPayload(nullPayload.ToByteArray(), EncodeTagBytesWithPrefix(tag.ToBytes()));
             return;
         }
 
         var payload = new WireEncoder();
         EncodeScalarPayload(payload, scalar.Data, tag);
-        encoder.EncodeTaggedPayload(payload.ToByteArray(), tag.ToBytes());
+        encoder.EncodeTaggedPayload(payload.ToByteArray(), EncodeTagBytesWithPrefix(tag.ToBytes()));
     }
 
     private static void EncodeNullScalarPayload(WireEncoder encoder, Tag tag)
@@ -353,6 +353,16 @@ public static class MetaMessage
         return encoder.ToByteArray();
     }
 
+    private static byte[] EncodeTagBytesWithPrefix(byte[] rawTagBytes)
+    {
+        if (rawTagBytes.Length == 0)
+            return Array.Empty<byte>();
+
+        var enc = new WireEncoder();
+        enc.EncodeTagInner(rawTagBytes);
+        return enc.ToByteArray();
+    }
+
     private static void EncodeJsoncTreeValue(WireEncoder encoder, INode tree)
     {
         var mmTag = tree?.Tag ?? Tag.Empty();
@@ -377,7 +387,7 @@ public static class MetaMessage
                 break;
         }
 
-        encoder.EncodeTaggedPayload(payload.ToByteArray(), mmTag.ToBytes());
+        encoder.EncodeTaggedPayload(payload.ToByteArray(), EncodeTagBytesWithPrefix(mmTag.ToBytes()));
     }
 
     private static void EncodeJsoncScalarPayload(WireEncoder encoder, NodeScalar scalar)

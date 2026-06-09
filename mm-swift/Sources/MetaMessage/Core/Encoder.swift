@@ -708,6 +708,17 @@ extension Encoder {
                 } else {
                     encodeRawValue(node)
                 }
+            case .decimal:
+                if let strVal = node.data as? String {
+                    if let doubleVal = Double(strVal) {
+                        encodeFloat64(doubleVal)
+                    } else {
+                        encodeRawValue(node)
+                    }
+                } else {
+                    encodeRawValue(node)
+                }
+
             default:
                 encodeRawValue(node)
             }

@@ -363,6 +363,20 @@ public class WireEncoder
         return EncodeBytes(bits);
     }
 
+    /// <summary>
+    /// Encodes raw tag bytes with a length prefix (matching Go's encodeT).
+    /// Returns the prefixed tag bytes, or empty array if rawTagBytes is empty.
+    /// </summary>
+    public static byte[] EncodeTagBytesWithPrefix(byte[] rawTagBytes)
+    {
+        if (rawTagBytes.Length == 0)
+            return Array.Empty<byte>();
+
+        var enc = new WireEncoder();
+        enc.EncodeTagInner(rawTagBytes);
+        return enc.ToByteArray();
+    }
+
     public static bool TryEncodeSimpleByName(WireEncoder enc, string name)
     {
         int? val = SimpleValue.NameToValue(name.ToLower());

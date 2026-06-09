@@ -35,12 +35,12 @@ func main() {
 
 func dumpNode(node ir.Node, indent string) {
 	switch n := node.(type) {
-	case *ir.Object:
+	case *ir.NodeObject:
 		for _, f := range n.Fields {
 			fmt.Printf("%sField %q:\n", indent, f.Key)
 			dumpNode(f.Value, indent+"  ")
 		}
-	case *ir.Array:
+	case *ir.NodeArray:
 		fmt.Printf("%sArray (items: %d):\n", indent, len(n.Items))
 		if n.Tag != nil {
 			dumpTag(indent+"  ArrayTag: ", n.Tag)
@@ -62,7 +62,7 @@ func dumpNode(node ir.Node, indent string) {
 				dumpNode(item, indent+"    ")
 			}
 		}
-	case *ir.Value:
+	case *ir.NodeScalar:
 		fmt.Printf("%sValue: data=%v text=%q\n", indent, n.Data, n.Text)
 	}
 }

@@ -42,14 +42,14 @@ func main() {
 		os.Exit(1)
 	}
 
-	obj, ok := node.(*ir.Object)
+	obj, ok := node.(*ir.NodeObject)
 	if !ok {
 		fmt.Fprintf(os.Stderr, "expected object\n")
 		os.Exit(1)
 	}
 
 	for _, field := range obj.Fields {
-		arr, ok := field.Value.(*ir.Array)
+		arr, ok := field.Value.(*ir.NodeArray)
 		if !ok {
 			continue
 		}

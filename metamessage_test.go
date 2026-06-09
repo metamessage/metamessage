@@ -153,7 +153,7 @@ func TestGenerateGoBasic(t *testing.T) {
 }
 
 func TestGenerateGoStruct1(t *testing.T) {
-	objectNode1 := &ir.Object{
+	objectNode1 := &ir.NodeObject{
 		Tag: &ir.Tag{
 			Name: "user_info",
 			Type: ir.ValueTypeUnknown,
@@ -161,14 +161,14 @@ func TestGenerateGoStruct1(t *testing.T) {
 		Fields: []*ir.Field{
 			{
 				Key: "user_name",
-				Value: &ir.Array{
+				Value: &ir.NodeArray{
 					Tag: &ir.Tag{
 						Name: "ages",
 						Type: ir.ValueTypeI8,
 					},
 					Items: []ir.Node{
 						&ir.NodeScalar{Tag: &ir.Tag{Type: ir.ValueTypeI8}, Text: "18"},
-						&ir.Object{
+						&ir.NodeObject{
 							Tag: &ir.Tag{
 								Name: "user_info1",
 								Type: ir.ValueTypeUnknown,
