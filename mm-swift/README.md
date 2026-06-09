@@ -67,28 +67,57 @@ let package = Package(
 import MetaMessage
 ```
 
-### 2.2 编码示例
+### 2.2 高层 API 函数
 
 ```swift
-struct Person {
-    var name: String = "Ed"
-    var age: Int = 30
-}
+// 对象转 Wire 格式
+let wire = try encodeFromValue(person, tag: Tag(name: "person"))
 
-let person = Person()
-let wire = MetaMessage.encodeFromValue(person)
+// JSONC 转 Wire 格式
+let wireFromJsonc = try encodeFromJsonc(jsoncString)
+
+// Wire 格式转 JSONC
+let jsonc = try decodeToJsonc(wire)
+
+// 对象转 JSONC
+let jsoncFromValue = try valueToJsonc(person, tag: Tag(name: "person"))
+
+// JSONC 转 DecodedValue
+let decoded = try jsoncToValue(jsoncString)
+```
+
+### 2.3 编码示例
+
+```swift
+let person: [String: Any] = [
+    "name": "Alice",
+    "age": 30
+]
+
+// 对象编码为 Wire 格式
+let wire = try encodeFromValue(person)
 print("Encoded: \(wire)")
+
+// 带 Tag 的编码
+let tag = Tag()
+tag.name = "person"
+tag.desc = "A person object"
+let wireWithTag = try encodeFromValue(person, tag: tag)
 ```
 
-### 2.3 解码示例
+### 2.4 解码示例
 
 ```swift
-if let decoded = try? MetaMessage.decodeToValue(wire) {
-    print("Decoded: \(decoded)")
-}
+// Wire 格式转 JSONC
+let jsonc = try decodeToJsonc(wire)
+print("JSONC: \(jsonc)")
+
+// 直接解码
+let decoded = try decode(wire)
+print("Decoded: \(decoded)")
 ```
 
-### 2.4 JSONC 解析示例
+### 2.5 JSONC 解析示例
 
 ```swift
 import MetaMessage.JSONC

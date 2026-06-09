@@ -181,6 +181,33 @@ mm_node_free(parsed);
 | `child_mime`        | `char*`   | Child element MIME type                 |
 | `child_type`        | `char*`   | Child element type (e.g. "str", "i")    |
 
+### Convenience API
+
+```c
+// node_t → binary (with optional tag string)
+mm_buffer_t* buf = mm_encode_from_value(node, "desc=root");
+
+// JSONC string → binary
+mm_buffer_t* buf = mm_encode_from_jsonc(jsonc_str);
+
+// binary → node_t
+node_t* node = mm_decode_to_value(buf);
+
+// binary → JSONC string
+char* jsonc = mm_decode_to_jsonc(buf);
+
+// node_t → JSONC string (with optional tag string)
+char* jsonc = mm_value_to_jsonc(node, "desc=root");
+
+// JSONC string → node_t
+node_t* node = mm_jsonc_to_value(jsonc_str);
+
+// Free allocated memory
+mm_buffer_free(buf);
+mm_string_free(jsonc);
+mm_node_free(node);
+```
+
 ## Testing
 
 ### Run all tests

@@ -11,7 +11,7 @@
 #include <string.h>
 
 node_t *mm_value_create_str(const char *text, mm_value_type_t type,
-                               mm_field_attr_t attr) {
+                            mm_field_attr_t attr) {
   node_t *node = node_new_scalar();
   if (!node)
     return NULL;
@@ -314,9 +314,7 @@ void mm_obj_free(mm_obj_t *obj) { node_free(obj); }
 
 node_t *mm_arr_new(void) { return node_new_array(); }
 
-void mm_arr_add(node_t *arr, node_t *item) {
-  node_array_add_item(arr, item);
-}
+void mm_arr_add(node_t *arr, node_t *item) { node_array_add_item(arr, item); }
 
 mm_buffer_t *mm_encode(node_t *node) {
   mm_encoder_buffer_t *enc = mm_encoder_encode(node);
@@ -389,4 +387,28 @@ char *mm_decode_to_jsonc(const mm_buffer_t *buf) {
   char *jsonc = mm_to_jsonc(node);
   node_free(node);
   return jsonc;
+}
+
+mm_buffer_t *mm_encode_from_value(node_t *value, const char *tag) {
+  if (tag) {
+    mm_tag_t parsed_tag = mm_tag_parse(tag);
+    mm_tag_merge(&value->tag, &parsed_tag);
+    mm_tag_cleanup(&parsed_tag);
+  }
+  return mm_encode(value);
+}
+
+node_t *mm_decode_to_value(const mm_buffer_t *buf) { return mm_decode(buf); }
+
+char *mm_value_to_jsonc(node_t *value, const char *tag) {
+  if (tag) {
+    mm_tag_t parsed_tag = mm_tag_parse(tag);
+    mm_tag_merge(&value->tag, &parsed_tag);
+    mm_tag_cleanup(&parsed_tag);
+  }
+  return mm_to_jsonc(value);
+}
+
+node_t *mm_jsonc_to_value(const char *jsonc_str) {
+  return mm_from_jsonc(jsonc_str);
 }

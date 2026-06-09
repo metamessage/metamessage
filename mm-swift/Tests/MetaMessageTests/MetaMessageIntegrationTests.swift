@@ -138,13 +138,13 @@ final class MetaMessageIntegrationTests: XCTestCase {
     }
 
     func testMetaMessageStaticEncode() {
-        let data = MetaMessage.encode(Int(42))
+        let data = encode(Int(42))
         XCTAssertTrue(data.count > 0)
 
-        let data2 = MetaMessage.encode("test")
+        let data2 = encode("test")
         XCTAssertTrue(data2.count > 0)
 
-        let data3 = MetaMessage.encode(true)
+        let data3 = encode(true)
         XCTAssertTrue(data3.count > 0)
     }
 
@@ -153,7 +153,7 @@ final class MetaMessageIntegrationTests: XCTestCase {
         encoder.encode(Int(42))
         let data = encoder.buffer.data
 
-        let value = try MetaMessage.decode(data)
+        let value = try decode(data)
         guard case .int(let i) = value else {
             XCTFail("Expected int")
             return

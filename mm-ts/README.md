@@ -45,8 +45,8 @@ npm install metamessage@latest
 
 版本要求：
 
-- Node.js 18+
-- TypeScript 5+
+- Node.js
+- TypeScript
 
 ## 2. 快速开始
 
@@ -67,6 +67,17 @@ const {
 } = require('metamessage');
 ```
 
+主要函数：
+
+- `encodeFromValue(value, tag)`：将对象转换为 MetaMessage Wire 格式
+- `encodeFromJsonc(jsonc: string): Uint8Array`：将 JSONC 格式转换为 MetaMessage Wire 格式
+- `decodeToValue(wire, type)`：将 MetaMessage Wire 格式转换为对象
+- `decodeToJsonc(wire: Uint8Array): string`：将 MetaMessage Wire 格式转换为 JSONC 格式
+- `valueToJsonc(value: any, tag?: Tag): string`：将对象转换为 JSONC 格式
+- `jsoncToValue<T>(jsonc: string, type: Constructor<T> | T): T`：将 JSONC 格式转换为对象
+- `mm`：用于定义字段的装饰器
+- `ValueType`：定义字段类型的枚举值。
+
 ### 2.2 对象编码
 
 ```ts
@@ -79,14 +90,6 @@ const person = {
 
 const wire = encodeFromValue(person);
 console.log('wire', wire);
-```
-
-```javascript
-const { encode, decode } = require('metamessage');
-
-const person = { name: 'Ed', age: 30 };
-const wire = encode(person);
-const decoded = decode(wire);
 ```
 
 ### 2.3 类实例编码
@@ -167,20 +170,8 @@ npm run format
 
 ## 4. 常见问题
 
-### 4.1 依赖安装失败
-
-- 检查网络连接
-- 使用国内 npm 镜像
-
-### 4.2 TypeScript 编译错误
-
 - 确认 `tsconfig.json` 配置正确
 - 确保 `experimentalDecorators` 开启（如果使用装饰器）
-
-### 4.3 运行时失败
-
-- 检查输入数据类型是否正确
-- 确认导入的 API 名称和参数匹配
 
 ## 5. 示例目录
 

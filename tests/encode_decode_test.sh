@@ -115,9 +115,9 @@ kt_decode() { printf '%s' "$1" | kt_run --decode; }
 
 # --- Swift ---
 sw_build() {
-    cd "$SCRIPT_DIR/harness/swift" && swift build --quiet 2>/dev/null
+    cd "$SCRIPT_DIR/harness/swift" && swift build --quiet 2>/dev/null; [ -f .build/arm64-apple-macosx/debug/mm-harness-swift ]
 }
-sw_run() { swift run --package-path "$SCRIPT_DIR/harness/swift" --skip-build mm-harness-swift "$@" 2>/dev/null; }
+sw_run() { "$SCRIPT_DIR/harness/swift/.build/arm64-apple-macosx/debug/mm-harness-swift" "$@" 2>/dev/null; }
 sw_encode() { sw_run --encode "$1"; }
 sw_decode() { printf '%s' "$1" | sw_run --decode; }
 

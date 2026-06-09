@@ -61,7 +61,11 @@ composer install
 ### 2.1 导入命名空间
 
 ```php
-use io\metamessage\mm\MetaMessage;
+use io\metamessage\core\MetaMessage;
+use function io\metamessage\encodeFromValue;
+use function io\metamessage\decodeToValue;
+use function io\metamessage\valueToJsonc;
+use function io\metamessage\jsoncToValue;
 ```
 
 ### 2.2 类定义
@@ -73,38 +77,36 @@ class Person {
 }
 ```
 
-### 2.3 编码示例
+### 2.3 快捷 API（推荐）
+
+提供 namespace 级别的函数，类似 Python 版本的顶层 API，适合快速编码/解码：
 
 ```php
-$person = new Person();
-$wire = MetaMessage::encode($person);
-echo "Encoded: " . bin2hex(implode(array_map('chr', $wire))) . "\n";
+// PHP 值 → 二进制
+$wire = encodeFromValue(["name" => "hello", "count" => 42]);
+
+// 二进制 → PHP 值
+$result = decodeToValue($wire);
+// $result = ["name" => "hello", "count" => 42]
+
+// PHP 值 → JSONC
+$jsonc = valueToJsonc(["foo" => "bar", "num" => 123]);
+
+// JSONC → PHP 值
+$back = jsoncToValue($jsonc);
+
+// JSONC → 二进制
+$wire = encodeFromJsonc('{"a": 1, "b": 2}');
+
+// 二进制 → JSONC
+$jsonc = decodeToJsonc($wire);
 ```
 
-### 2.4 解码示例
+所有函数均支持可选 `$tag` 参数（mm tag 字符串）：
 
 ```php
-$decoded = MetaMessage::decode($wire, Person::class);
-echo "Decoded: Name={$decoded->name}, Age={$decoded->age}\n";
-```
-
-### 2.5 JSONC 解析示例
-
-```php
-use io\metamessage\jsonc\Jsonc;
-
-$jsonc = '{
-    // mm: type=str; desc=姓名
-    "name": "Alice",
-    // mm: type=i; desc=年龄
-    "age": 25
-}';
-
-// 解析 JSONC
-$node = Jsonc::parseFromString($jsonc);
-
-// 绑定到对象
-$person = Jsonc::bindFromString($jsonc, Person::class);
+$wire = encodeFromValue(42, 'name=count; type=i; desc=数量');
+$jsonc = valueToJsonc("hello", 'type=str; desc=名称');
 ```
 
 ## 3. 测试方法

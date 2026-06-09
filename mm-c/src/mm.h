@@ -550,4 +550,9 @@ void mm_string_free(char *str);
 mm_buffer_t *mm_encode_from_jsonc(const char *jsonc_str);
 char *mm_decode_to_jsonc(const mm_buffer_t *buf);
 
+mm_buffer_t *mm_encode_from_value(node_t *value, const char *tag);
+node_t *mm_decode_to_value(const mm_buffer_t *buf);
+char *mm_value_to_jsonc(node_t *value, const char *tag);
+node_t *mm_jsonc_to_value(const char *jsonc_str);
+
 #endif

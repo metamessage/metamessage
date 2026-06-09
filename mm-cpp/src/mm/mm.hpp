@@ -64,6 +64,45 @@ inline std::shared_ptr<ir::Node> parseTaggedJSONC(const std::string &s) {
   return node;
 }
 
+inline std::vector<uint8_t> encodeFromValue(std::shared_ptr<ir::Node> value,
+                                            const std::string &tag = "") {
+  if (!tag.empty()) {
+    auto parsed_tag = ir::Tag::parse(tag);
+    if (auto t = value->getTag()) {
+      *t = ir::mergeTag(t, &parsed_tag);
+    }
+  }
+  core::Encoder encoder;
+  return encoder.encode(value);
+}
+
+inline std::vector<uint8_t> encodeFromJsonc(const std::string &jsonc) {
+  return fromJSONC(jsonc);
+}
+
+inline std::shared_ptr<ir::Node> decodeToValue(const std::vector<uint8_t> &data) {
+  return toNode(data);
+}
+
+inline std::string decodeToJsonc(const std::vector<uint8_t> &data) {
+  return toJSONC(data);
+}
+
+inline std::string valueToJsonc(std::shared_ptr<ir::Node> value,
+                                const std::string &tag = "") {
+  if (!tag.empty()) {
+    auto parsed_tag = ir::Tag::parse(tag);
+    if (auto t = value->getTag()) {
+      *t = ir::mergeTag(t, &parsed_tag);
+    }
+  }
+  return toJSONCFromNode(value);
+}
+
+inline std::shared_ptr<ir::Node> jsoncToValue(const std::string &jsonc) {
+  return parseJSONC(jsonc);
+}
+
 } // namespace mm
 } // namespace mmc
 

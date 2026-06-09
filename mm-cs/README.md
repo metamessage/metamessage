@@ -153,6 +153,35 @@ result = MetaMessage.Validate(-1, tag);
 Console.WriteLine(result.IsValid); // False（超出最小值）
 ```
 
+### 2.7 快捷 API（推荐）
+
+`Mm` 类提供简洁的静态方法，适合快速编码/解码值，无需导入 `Core` 命名空间：
+
+```csharp
+using MetaMessage;
+
+// 从值编码为二进制（可选 Tag 字符串）
+byte[] wire = Mm.EncodeFromValue(new { name = "hello", count = 42 });
+byte[] tagged = Mm.EncodeFromValue(42, "type=i; desc=数量");
+
+// 从 JSONC 编码为二进制
+byte[] data = Mm.EncodeFromJsonc(@"{""a"": 1, ""b"": 2}");
+
+// 从二进制解码为纯值（Dictionary / List / 标量）
+object? result = Mm.DecodeToValue(wire);
+// result 为 Dictionary<string, object?> 或 List<object?> 或原始值
+
+// 二进制解码为 JSONC 字符串
+string jsonc = Mm.DecodeToJsonc(wire);
+
+// 值转 JSONC（可选 Tag 字符串）
+string j = Mm.ValueToJsonc(new { foo = "bar", num = 123 });
+string j2 = Mm.ValueToJsonc("hello", "type=str; desc=名称");
+
+// JSONC 字符串转纯值
+object? val = Mm.JsoncToValue(j);
+```
+
 ## 3. JSONC API
 
 JSONC 是一种支持注释的 JSON 格式，使用 `// mm:` 语法附加 Tag 元数据。

@@ -20,7 +20,7 @@ if arg1 == "--encode" {
         exit(1)
     }
     do {
-        let data = try MetaMessage.fromJSONC(input)
+        let data = try fromJSONC(input)
         let hex = data.map { String(format: "%02x", $0) }.joined()
         print(hex, terminator: "")
     } catch {
@@ -47,7 +47,7 @@ if arg1 == "--decode" {
         index = nextIndex
     }
     do {
-        let output = try MetaMessage.toJSONC(data)
+        let output = try toJSONC(data)
         print(output, terminator: "")
     } catch {
         fputs("decode error: \(error)\n", stderr)

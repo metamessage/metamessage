@@ -87,6 +87,19 @@ public static class MetaMessage
         return printer.Print(tree);
     }
 
+    public static object? DecodeToValue(byte[] data)
+    {
+        var tree = Decode(data);
+        return ExtractValueFromTree(tree);
+    }
+
+    public static string ValueToJsonc(object value, string tagString)
+    {
+        var node = ReflectMmEncoder.ValueToNode(value, tagString);
+        var printer = new JsoncPrinter(prettyPrint: true);
+        return printer.Print(node);
+    }
+
     public static ValidationResult Validate(object value, Tag tag)
     {
         return Validator.Validate(value, tag);

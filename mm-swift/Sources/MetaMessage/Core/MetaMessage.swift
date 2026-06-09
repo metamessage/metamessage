@@ -1,144 +1,148 @@
 import Foundation
 
-public class MetaMessageEncoder {
+// MARK: - Internal Encoder
+
+class MetaMessageEncoder {
     private var encoder: Encoder
 
-    public init() {
+    init() {
         self.encoder = Encoder()
     }
 
-    public init(capacity: Int) {
+    init(capacity: Int) {
         self.encoder = Encoder(capacity: capacity)
     }
 
-    public func encode(_ value: Bool) -> Data {
+    func encode(_ value: Bool) -> Data {
         encoder.encode(value)
         return encoder.result
     }
 
-    public func encode(_ value: Int8) -> Data {
+    func encode(_ value: Int8) -> Data {
         encoder.encode(value)
         return encoder.result
     }
 
-    public func encode(_ value: Int16) -> Data {
+    func encode(_ value: Int16) -> Data {
         encoder.encode(value)
         return encoder.result
     }
 
-    public func encode(_ value: Int32) -> Data {
+    func encode(_ value: Int32) -> Data {
         encoder.encode(value)
         return encoder.result
     }
 
-    public func encode(_ value: Int64) -> Data {
+    func encode(_ value: Int64) -> Data {
         encoder.encode(value)
         return encoder.result
     }
 
-    public func encode(_ value: Int) -> Data {
+    func encode(_ value: Int) -> Data {
         encoder.encode(value)
         return encoder.result
     }
 
-    public func encode(_ value: UInt8) -> Data {
+    func encode(_ value: UInt8) -> Data {
         encoder.encode(value)
         return encoder.result
     }
 
-    public func encode(_ value: UInt16) -> Data {
+    func encode(_ value: UInt16) -> Data {
         encoder.encode(value)
         return encoder.result
     }
 
-    public func encode(_ value: UInt32) -> Data {
+    func encode(_ value: UInt32) -> Data {
         encoder.encode(value)
         return encoder.result
     }
 
-    public func encode(_ value: UInt64) -> Data {
+    func encode(_ value: UInt64) -> Data {
         encoder.encode(value)
         return encoder.result
     }
 
-    public func encode(_ value: UInt) -> Data {
+    func encode(_ value: UInt) -> Data {
         encoder.encode(value)
         return encoder.result
     }
 
-    public func encode(_ value: Float) -> Data {
+    func encode(_ value: Float) -> Data {
         encoder.encode(value)
         return encoder.result
     }
 
-    public func encode(_ value: Double) -> Data {
+    func encode(_ value: Double) -> Data {
         encoder.encode(value)
         return encoder.result
     }
 
-    public func encode(_ value: String) -> Data {
+    func encode(_ value: String) -> Data {
         encoder.encode(value)
         return encoder.result
     }
 
-    public func encode(_ value: Data) -> Data {
+    func encode(_ value: Data) -> Data {
         encoder.encode(value)
         return encoder.result
     }
 
-    public func encodeNil() -> Data {
+    func encodeNil() -> Data {
         encoder.encodeNil()
         return encoder.result
     }
 
-    public func encodeArray(_ array: [Bool]) -> Data {
+    func encodeArray(_ array: [Bool]) -> Data {
         encoder.encodeArray(array)
         return encoder.result
     }
 
-    public func encodeArrayStrings(_ array: [String]) -> Data {
+    func encodeArrayStrings(_ array: [String]) -> Data {
         encoder.encodeArrayStrings(array)
         return encoder.result
     }
 
-    public func encodeArrayInt(_ array: [Int]) -> Data {
+    func encodeArrayInt(_ array: [Int]) -> Data {
         encoder.encodeArrayInt(array)
         return encoder.result
     }
 
-    public func encodeArrayUInt(_ array: [UInt]) -> Data {
+    func encodeArrayUInt(_ array: [UInt]) -> Data {
         encoder.encodeArrayUInt(array)
         return encoder.result
     }
 
-    public func encodeArrayFloat(_ array: [Float]) -> Data {
+    func encodeArrayFloat(_ array: [Float]) -> Data {
         encoder.encodeArrayFloat(array)
         return encoder.result
     }
 
-    public func encodeArrayDouble(_ array: [Double]) -> Data {
+    func encodeArrayDouble(_ array: [Double]) -> Data {
         encoder.encodeArrayDouble(array)
         return encoder.result
     }
 
-    public func encodeArrayData(_ array: [Data]) -> Data {
+    func encodeArrayData(_ array: [Data]) -> Data {
         encoder.encodeArrayData(array)
         return encoder.result
     }
 }
 
-public class MetaMessageDecoder {
+// MARK: - Internal Decoder
+
+class MetaMessageDecoder {
     private var decoder: Decoder
 
-    public init(data: Data) {
+    init(data: Data) {
         self.decoder = Decoder(data: data)
     }
 
-    public func decode() throws -> Decoder.DecodedValue {
+    func decode() throws -> Decoder.DecodedValue {
         return try decoder.decode()
     }
 
-    public func decodeToBool() throws -> Bool {
+    func decodeToBool() throws -> Bool {
         let value = try decode()
         guard case .bool(let b) = value else {
             throw MMError.typeMismatch
@@ -146,7 +150,7 @@ public class MetaMessageDecoder {
         return b
     }
 
-    public func decodeToInt() throws -> Int {
+    func decodeToInt() throws -> Int {
         let value = try decode()
         guard case .int(let i) = value else {
             throw MMError.typeMismatch
@@ -154,7 +158,7 @@ public class MetaMessageDecoder {
         return Int(i)
     }
 
-    public func decodeToInt64() throws -> Int64 {
+    func decodeToInt64() throws -> Int64 {
         let value = try decode()
         guard case .int(let i) = value else {
             throw MMError.typeMismatch
@@ -162,7 +166,7 @@ public class MetaMessageDecoder {
         return i
     }
 
-    public func decodeToUInt() throws -> UInt {
+    func decodeToUInt() throws -> UInt {
         let value = try decode()
         guard case .uint(let u) = value else {
             throw MMError.typeMismatch
@@ -170,7 +174,7 @@ public class MetaMessageDecoder {
         return UInt(u)
     }
 
-    public func decodeToUInt64() throws -> UInt64 {
+    func decodeToUInt64() throws -> UInt64 {
         let value = try decode()
         guard case .uint(let u) = value else {
             throw MMError.typeMismatch
@@ -178,7 +182,7 @@ public class MetaMessageDecoder {
         return u
     }
 
-    public func decodeToFloat() throws -> Float {
+    func decodeToFloat() throws -> Float {
         let value = try decode()
         guard case .float(let f) = value else {
             throw MMError.typeMismatch
@@ -186,7 +190,7 @@ public class MetaMessageDecoder {
         return Float(f)
     }
 
-    public func decodeToDouble() throws -> Double {
+    func decodeToDouble() throws -> Double {
         let value = try decode()
         guard case .float(let f) = value else {
             throw MMError.typeMismatch
@@ -194,7 +198,7 @@ public class MetaMessageDecoder {
         return f
     }
 
-    public func decodeToString() throws -> String {
+    func decodeToString() throws -> String {
         let value = try decode()
         guard case .string(let s) = value else {
             throw MMError.typeMismatch
@@ -202,7 +206,7 @@ public class MetaMessageDecoder {
         return s
     }
 
-    public func decodeToData() throws -> Data {
+    func decodeToData() throws -> Data {
         let value = try decode()
         guard case .data(let d) = value else {
             throw MMError.typeMismatch
@@ -210,7 +214,7 @@ public class MetaMessageDecoder {
         return d
     }
 
-    public func decodeToArray() throws -> [Decoder.DecodedValue] {
+    func decodeToArray() throws -> [Decoder.DecodedValue] {
         let value = try decode()
         guard case .array(let arr) = value else {
             throw MMError.typeMismatch
@@ -218,7 +222,7 @@ public class MetaMessageDecoder {
         return arr
     }
 
-    public func decodeToObject() throws -> [String: Decoder.DecodedValue] {
+    func decodeToObject() throws -> [String: Decoder.DecodedValue] {
         let value = try decode()
         guard case .object(let obj) = value else {
             throw MMError.typeMismatch
@@ -227,175 +231,62 @@ public class MetaMessageDecoder {
     }
 }
 
-public enum MetaMessage {
-    public static func encode(_ value: Bool) -> Data {
-        return MetaMessageEncoder().encode(value)
-    }
+// MARK: - Private Helpers
 
-    public static func encode(_ value: Int) -> Data {
-        return MetaMessageEncoder().encode(value)
+func encodeNode(_ node: Node, with encoder: Encoder) throws -> Data {
+    switch node {
+    case let obj as NodeObject:
+        encoder.encodeNodeObject(obj)
+    case let arr as NodeArray:
+        encoder.encodeNodeArray(arr)
+    case let val as NodeScalar:
+        encoder.encodeNodeValue(val)
+    default:
+        throw MMError.unsupportedType
     }
-
-    public static func encode(_ value: Int8) -> Data {
-        return MetaMessageEncoder().encode(value)
-    }
-
-    public static func encode(_ value: Int16) -> Data {
-        return MetaMessageEncoder().encode(value)
-    }
-
-    public static func encode(_ value: Int32) -> Data {
-        return MetaMessageEncoder().encode(value)
-    }
-
-    public static func encode(_ value: Int64) -> Data {
-        return MetaMessageEncoder().encode(value)
-    }
-
-    public static func encode(_ value: UInt) -> Data {
-        return MetaMessageEncoder().encode(value)
-    }
-
-    public static func encode(_ value: UInt8) -> Data {
-        return MetaMessageEncoder().encode(value)
-    }
-
-    public static func encode(_ value: UInt16) -> Data {
-        return MetaMessageEncoder().encode(value)
-    }
-
-    public static func encode(_ value: UInt32) -> Data {
-        return MetaMessageEncoder().encode(value)
-    }
-
-    public static func encode(_ value: UInt64) -> Data {
-        return MetaMessageEncoder().encode(value)
-    }
-
-    public static func encode(_ value: Float) -> Data {
-        return MetaMessageEncoder().encode(value)
-    }
-
-    public static func encode(_ value: Double) -> Data {
-        return MetaMessageEncoder().encode(value)
-    }
-
-    public static func encode(_ value: String) -> Data {
-        return MetaMessageEncoder().encode(value)
-    }
-
-    public static func encode(_ value: Data) -> Data {
-        return MetaMessageEncoder().encode(value)
-    }
-
-    public static func decode(_ data: Data) throws -> Decoder.DecodedValue {
-        return try MetaMessageDecoder(data: data).decode()
-    }
-
-    public static func toJSONC(_ data: Data) throws -> String {
-        let decoder = NodeDecoder(data: data)
-        let node = try decoder.decode()
-        let printer = JSONCPrinter()
-        return printer.print(node)
-    }
-
-    public static func validate(_ value: Any?, tag: Tag) -> ValidationResult {
-        return validator.validate(value, tag: tag)
-    }
-
-    // MARK: - High-Level API (Go-compatible)
-
-    public static func fromValue(_ value: Any?, tag: String) throws -> Data {
-        let node = try valueToNode(value, tag: tag)
-        let encoder = Encoder()
-        return try encodeNode(node, with: encoder)
-    }
-
-    public static func fromJSONC(_ s: String) throws -> Data {
-        guard let node = try parseJSONC(s) else {
-            throw MMError.invalidData
-        }
-        let encoder = Encoder()
-        return try encodeNode(node, with: encoder)
-    }
-
-    public static func valueToJSONC(_ value: Any?, name: String) throws -> String {
-        let node = try valueToNode(value, tag: name)
-        return JSONCPrinter().print(node)
-    }
-
-    public static func jsoncToValue(_ jsonc: String) throws -> Decoder.DecodedValue {
-        guard let node = try parseJSONC(jsonc) else {
-            throw MMError.invalidData
-        }
-        let encoder = Encoder()
-        let data = try encodeNode(node, with: encoder)
-        return try MetaMessageDecoder(data: data).decode()
-    }
-
-    public static func bindFromJSONC(_ inString: String, to out: AnyObject) throws {
-        guard let node = try parseJSONC(inString) else {
-            throw MMError.invalidData
-        }
-        try bindNode(node, to: out)
-    }
-
-    private static func encodeNode(_ node: Node, with encoder: Encoder) throws -> Data {
-        switch node {
-        case let obj as NodeObject:
-            encoder.encodeNodeObject(obj)
-        case let arr as NodeArray:
-            encoder.encodeNodeArray(arr)
-        case let val as NodeScalar:
-            encoder.encodeNodeValue(val)
-        default:
-            throw MMError.unsupportedType
-        }
-        return encoder.result
-    }
-
-    private static func nodeToString(_ node: Decoder.DecodedValue) -> String {
-        switch node {
-        case .bool(let b):
-            return b ? "true" : "false"
-        case .int(let i):
-            return String(i)
-        case .uint(let u):
-            return String(u)
-        case .float(let f):
-            if f == f.rounded() && f != 0 {
-                return String(format: "%.1f", f)
-            }
-            return String(f)
-        case .string(let s):
-            let escaped = s
-                .replacingOccurrences(of: "\\", with: "\\\\")
-                .replacingOccurrences(of: "\"", with: "\\\"")
-                .replacingOccurrences(of: "\n", with: "\\n")
-                .replacingOccurrences(of: "\r", with: "\\r")
-                .replacingOccurrences(of: "\t", with: "\\t")
-            return "\"\(escaped)\""
-        case .bigint(let s):
-            return s
-        case .data(let d):
-            let str = String(data: d, encoding: .utf8) ?? d.map { String(format: "\\x%02x", $0) }.joined()
-            let escaped = str
-                .replacingOccurrences(of: "\\", with: "\\\\")
-                .replacingOccurrences(of: "\"", with: "\\\"")
-                .replacingOccurrences(of: "\n", with: "\\n")
-                .replacingOccurrences(of: "\r", with: "\\r")
-                .replacingOccurrences(of: "\t", with: "\\t")
-            return "\"\(escaped)\""
-        case .array(let arr):
-            let items = arr.map { nodeToString($0) }
-            return "[" + items.joined(separator: ",") + "]"
-        case .object(let obj):
-            let sortedKeys = obj.keys.sorted()
-            let items = sortedKeys.map { "\"\($0)\":\(nodeToString(obj[$0]!))" }
-            return "{" + items.joined(separator: ",") + "}"
-        case .null:
-            return "null"
-        }
-    }
+    return encoder.result
 }
 
+func nodeToString(_ node: Decoder.DecodedValue) -> String {
+    switch node {
+    case .bool(let b):
+        return b ? "true" : "false"
+    case .int(let i):
+        return String(i)
+    case .uint(let u):
+        return String(u)
+    case .float(let f):
+        if f == f.rounded() && f != 0 {
+            return String(format: "%.1f", f)
+        }
+        return String(f)
+    case .string(let s):
+        let escaped = s
+            .replacingOccurrences(of: "\\", with: "\\\\")
+            .replacingOccurrences(of: "\"", with: "\\\"")
+            .replacingOccurrences(of: "\n", with: "\\n")
+            .replacingOccurrences(of: "\r", with: "\\r")
+            .replacingOccurrences(of: "\t", with: "\\t")
+        return "\"\(escaped)\""
+    case .bigint(let s):
+        return s
+    case .data(let d):
+        let str = String(data: d, encoding: .utf8) ?? d.map { String(format: "\\x%02x", $0) }.joined()
+        let escaped = str
+            .replacingOccurrences(of: "\\", with: "\\\\")
+            .replacingOccurrences(of: "\"", with: "\\\"")
+            .replacingOccurrences(of: "\n", with: "\\n")
+            .replacingOccurrences(of: "\r", with: "\\r")
+            .replacingOccurrences(of: "\t", with: "\\t")
+        return "\"\(escaped)\""
+    case .array(let arr):
+        let items = arr.map { nodeToString($0) }
+        return "[" + items.joined(separator: ",") + "]"
+    case .object(let obj):
+        let sortedKeys = obj.keys.sorted()
+        let items = sortedKeys.map { "\"\($0)\":\(nodeToString(obj[$0]!))" }
+        return "{" + items.joined(separator: ",") + "}"
+    case .null:
+        return "null"
+    }
+}

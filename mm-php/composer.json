@@ -4,7 +4,7 @@
     "type": "library",
     "autoload": {
         "classmap": ["src/"],
-        "files": ["src/io/metamessage/jsonc/Jsonc.php"]
+        "files": ["src/io/metamessage/functions.php"]
     },
     "autoload-dev": {
         "classmap": ["tests/"]

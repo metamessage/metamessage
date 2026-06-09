@@ -225,6 +225,26 @@ auto decoded = mm::toNode(encoded);
 
 // AST node → JSONC
 auto jsoncStr = mm::toJSONCFromNode(node);
+
+// Unified API (language-agnostic naming):
+
+// node → binary (with optional tag string)
+auto data = mm::encodeFromValue(node, "desc=root");
+
+// JSONC string → binary
+auto data = mm::encodeFromJsonc(jsoncStr);
+
+// binary → node
+auto node = mm::decodeToValue(data);
+
+// binary → JSONC string
+auto jsonc = mm::decodeToJsonc(data);
+
+// node → JSONC string (with optional tag string)
+auto jsonc = mm::valueToJsonc(node, "desc=root");
+
+// JSONC string → node
+auto node = mm::jsoncToValue(jsoncStr);
 ```
 
 ### Declarative MM_OBJECT macro

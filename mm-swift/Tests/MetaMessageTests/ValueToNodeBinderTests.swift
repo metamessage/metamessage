@@ -183,9 +183,9 @@ final class ValueToNodeBinderTests: XCTestCase {
 
     func testRoundTripSimpleStruct() throws {
         let user = SimpleUser()
-        let data = try MetaMessage.fromValue(user, tag: "simple_user")
+        let data = try fromValue(user, tag: "simple_user")
 
-        let decoded = try MetaMessage.decode(data)
+        let decoded = try decode(data)
         switch decoded {
         case .object(let obj):
             XCTAssertNotNil(obj["id"])
@@ -197,8 +197,8 @@ final class ValueToNodeBinderTests: XCTestCase {
     }
 
     func testRoundTripInt() throws {
-        let data = try MetaMessage.fromValue(42, tag: "int")
-        let decoded = try MetaMessage.decode(data)
+        let data = try fromValue(42, tag: "int")
+        let decoded = try decode(data)
         guard case .int(let i) = decoded else {
             XCTFail("Expected int"); return
         }
@@ -206,8 +206,8 @@ final class ValueToNodeBinderTests: XCTestCase {
     }
 
     func testRoundTripString() throws {
-        let data = try MetaMessage.fromValue("hello", tag: "str")
-        let decoded = try MetaMessage.decode(data)
+        let data = try fromValue("hello", tag: "str")
+        let decoded = try decode(data)
         guard case .string(let s) = decoded else {
             XCTFail("Expected string"); return
         }
@@ -224,8 +224,8 @@ final class ValueToNodeBinderTests: XCTestCase {
     }
 
     func testRoundTripDouble() throws {
-        let data = try MetaMessage.fromValue(3.14159, tag: "f64")
-        let decoded = try MetaMessage.decode(data)
+        let data = try fromValue(3.14159, tag: "f64")
+        let decoded = try decode(data)
         guard case .float(let f) = decoded else {
             XCTFail("Expected float"); return
         }
@@ -235,7 +235,7 @@ final class ValueToNodeBinderTests: XCTestCase {
     // MARK: - ValueToJSONC Tests
 
     func testValueToJSONCSimple() throws {
-        let jsonc = try MetaMessage.valueToJSONC(SimpleUser(), name: "user")
+        let jsonc = try valueToJSONC(SimpleUser(), name: "user")
         XCTAssertTrue(jsonc.contains("id"))
         XCTAssertTrue(jsonc.contains("name"))
         XCTAssertTrue(jsonc.contains("is_active"))
@@ -243,7 +243,7 @@ final class ValueToNodeBinderTests: XCTestCase {
 
     func testValueToJSONCNested() throws {
         let user = UserWithAddress()
-        let jsonc = try MetaMessage.valueToJSONC(user, name: "user")
+        let jsonc = try valueToJSONC(user, name: "user")
         XCTAssertTrue(jsonc.contains("addr"))
         XCTAssertTrue(jsonc.contains("province"))
         XCTAssertTrue(jsonc.contains("city"))
@@ -421,9 +421,9 @@ final class ValueToNodeBinderTests: XCTestCase {
 
     func testRoundTripIntArray() throws {
         let container = IntArrayContainer()
-        let data = try MetaMessage.fromValue(container, tag: "container")
+        let data = try fromValue(container, tag: "container")
 
-        let decoded = try MetaMessage.decode(data)
+        let decoded = try decode(data)
         switch decoded {
         case .object(let obj):
             XCTAssertNotNil(obj["numbers"])
