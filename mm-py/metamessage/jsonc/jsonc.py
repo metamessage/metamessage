@@ -19,6 +19,7 @@ class Token:
     type: str
     literal: Any = None
     line: int = 0
+    column: int = 0
 
 
 TOKEN_STRING = "STRING"
@@ -69,48 +70,49 @@ class Lexer:
             return None
         return self.source[self.pos + 1]
 
-    def add_token(self, type_: str, literal: Any = None):
-        self.tokens.append(Token(type_, literal, self.line))
+    def add_token(self, type_: str, literal: Any = None, line: int = None, column: int = None):
+        self.tokens.append(Token(type_, literal, line or self.line, column or self.col))
 
     def scan_tokens(self):
         while not self.is_at_end():
-            c = self.advance()
             start_line = self.line
+            start_col = self.col
+            c = self.advance()
 
             if c == '{':
-                self.add_token(TOKEN_LBRACE, "{")
+                self.add_token(TOKEN_LBRACE, "{", start_line, start_col)
             elif c == '}':
-                self.add_token(TOKEN_RBRACE, "}")
+                self.add_token(TOKEN_RBRACE, "}", start_line, start_col)
             elif c == '[':
-                self.add_token(TOKEN_LBRACKET, "[")
+                self.add_token(TOKEN_LBRACKET, "[", start_line, start_col)
             elif c == ']':
-                self.add_token(TOKEN_RBRACKET, "]")
+                self.add_token(TOKEN_RBRACKET, "]", start_line, start_col)
             elif c == ',':
-                self.add_token(TOKEN_COMMA, ",")
+                self.add_token(TOKEN_COMMA, ",", start_line, start_col)
             elif c == ':':
-                self.add_token(TOKEN_COLON, ":")
+                self.add_token(TOKEN_COLON, ":", start_line, start_col)
             elif c in ' \t\n\r':
                 pass
             elif c == '"':
-                self._string()
+                self._string(start_line, start_col)
             elif c == '/':
                 if self.peek() == '/':
-                    self._line_comment()
+                    self._line_comment(start_line, start_col)
             elif c in '0123456789' or c == '-':
                 start_pos = self.pos - 1
-                self._number(start_pos)
+                self._number(start_pos, start_line, start_col)
             elif c.isalpha():
                 start_pos = self.pos - 1
-                self._identifier(start_pos)
+                self._identifier(start_pos, start_line, start_col)
             else:
                 pass
 
         self.add_token(TOKEN_EOF)
         return self.tokens
 
-    def _string(self):
+    def _string(self, start_line: int, start_col: int):
         s = self._read_string()
-        self.add_token(TOKEN_STRING, s)
+        self.add_token(TOKEN_STRING, s, start_line, start_col)
 
     def _read_string(self) -> str:
         result = ""
@@ -149,40 +151,60 @@ class Lexer:
                 result += c
         return result
 
-    def _number(self, start_pos: int):
+    def _number(self, start_pos: int, start_line: int, start_col: int):
         while self.peek() and self.peek() in '0123456789.eE+-':
             self.advance()
 
         value = self.source[start_pos:self.pos]
-        if '.' in value or 'e' in value or 'E' in value:
-            self.add_token(TOKEN_NUMBER, float(value))
-        else:
-            self.add_token(TOKEN_NUMBER, int(value))
+        self.add_token(TOKEN_NUMBER, value, start_line, start_col)
 
-    def _identifier(self, start_pos: int):
+    def _identifier(self, start_pos: int, start_line: int, start_col: int):
         while self.peek() and (self.peek().isalnum() or self.peek() == '_'):
             self.advance()
 
-        value = self.source[start_pos:self.pos].lower()
+        value = self.source[start_pos:self.pos]
         if value == "true":
-            self.add_token(TOKEN_TRUE, True)
+            self.add_token(TOKEN_TRUE, True, start_line, start_col)
         elif value == "false":
-            self.add_token(TOKEN_FALSE, False)
+            self.add_token(TOKEN_FALSE, False, start_line, start_col)
         elif value == "null":
-            self.add_token(TOKEN_NULL, None)
+            self.add_token(TOKEN_NULL, None, start_line, start_col)
         else:
-            self.add_token(TOKEN_STRING, value)
+            self.add_token(TOKEN_STRING, value, start_line, start_col)
 
-    def _line_comment(self):
+    def _line_comment(self, start_line: int, start_col: int):
         self.advance()  # skip second /
         start = self.pos
         while self.peek() and self.peek() != '\n':
             self.advance()
         value = self.source[start:self.pos].strip()
-        self.add_token(TOKEN_COMMENT, value)
+        self.add_token(TOKEN_COMMENT, value, start_line, start_col)
 
 
 # ===== Parser =====
+
+MAX_DEPTH = 32
+
+
+def camel_to_snake(name: str) -> str:
+    """Convert CamelCase to snake_case.
+    
+    UserID → user_id
+    HTTPRequest → http_request
+    """
+    if not name:
+        return name
+    result = []
+    for i, c in enumerate(name):
+        if c.isupper():
+            if i > 0 and (i + 1 < len(name) and name[i + 1].islower() or
+                          not name[i - 1].isupper()):
+                result.append('_')
+            result.append(c.lower())
+        else:
+            result.append(c)
+    return ''.join(result)
+
 
 class Parser:
     def __init__(self, tokens: List[Token]):
@@ -262,8 +284,15 @@ class Parser:
     def _parse_object(self, anchor_line: int, path: str) -> NodeObject:
         self.next()  # consume {
         self.depth += 1
+        if self.depth > MAX_DEPTH:
+            raise Exception(f"max depth: {MAX_DEPTH}")
 
         tag = self._consume_comments_for(anchor_line)
+        if tag is None:
+            tag = NewTag()
+
+        if tag.name:
+            path = f"{path}.{tag.name}" if path else tag.name
 
         fields = []
         while self.peek().type != TOKEN_RBRACE and self.peek().type != TOKEN_EOF:
@@ -281,10 +310,11 @@ class Parser:
             if self.peek().type == TOKEN_COLON:
                 self.next()
 
-            value_path = f"{path}.{key_token.literal}" if path else key_token.literal
+            key = camel_to_snake(key_token.literal)
+            value_path = f"{path}.{key}" if path else key
             value = self._parse_value_or_container(value_path)
 
-            fields.append(Field(key=key_token.literal, value=value))
+            fields.append(Field(key=key, value=value))
 
             if self.peek().type == TOKEN_COMMA:
                 self.next()
@@ -312,6 +342,8 @@ class Parser:
     def _parse_array(self, anchor_line: int, path: str) -> Arr:
         self.next()  # consume [
         self.depth += 1
+        if self.depth > MAX_DEPTH:
+            raise Exception(f"max depth: {MAX_DEPTH}")
 
         tag = self._consume_comments_for(anchor_line)
 
@@ -345,11 +377,11 @@ class Parser:
             if self.peek().type == TOKEN_COMMA:
                 self.next()
 
-        # tag2 = self._consume_comments_for(anchor_line)
-        # if tag is None:
-        #     tag = tag2
-        # elif tag2 is not None:
-        #     tag = MergeTag(tag, tag2)
+        tag2 = self._consume_comments_for(anchor_line)
+        if tag is None:
+            tag = tag2
+        elif tag2 is not None:
+            tag = MergeTag(tag, tag2)
 
         if self.peek().type == TOKEN_RBRACKET:
             self.next()
@@ -364,6 +396,9 @@ class Parser:
             return Arr(items=items, tag=tag or NewTag(), path=path)
 
     def _parse_value(self, path: str, anchor_line: int) -> NodeScalar:
+        if self.depth > MAX_DEPTH:
+            raise Exception(f"max depth: {MAX_DEPTH}")
+
         tag = self._consume_comments_for(anchor_line)
         tok = self.next()
 
@@ -371,25 +406,185 @@ class Parser:
             tag = NewTag()
 
         if tok.type == TOKEN_STRING:
+            text = str(tok.literal)
             if tag.type == ValueType.Unknown:
                 tag.type = ValueType.Str
-            return NodeScalar(data=tok.literal, text=str(tok.literal), tag=tag, path=path)
+
+            if tag.is_null and not text:
+                data = ""
+            elif not text:
+                data = text
+            else:
+                data, text = self._validate_string_value(text, tag, path)
+            return NodeScalar(data=data, text=text, tag=tag, path=path)
         elif tok.type == TOKEN_NUMBER:
-            if tag.type == ValueType.Unknown:
-                tag.type = ValueType.F64 if isinstance(tok.literal, float) else ValueType.I
-            return NodeScalar(data=tok.literal, text=str(tok.literal), tag=tag, path=path)
+            text = tok.literal
+            if '.' in text:
+                if tag.type == ValueType.Unknown:
+                    tag.type = ValueType.F64
+                f64_val = float(text)
+                if tag.is_null and f64_val == 0.0:
+                    data = 0.0
+                else:
+                    r = MmValidator.validate_f64(f64_val, tag)
+                    if not r.valid:
+                        raise Exception(f"Validation error at {path}: {r.error}")
+                    data = r.data if r.data is not None else f64_val
+                    text = r.text or text
+            else:
+                if tag.type == ValueType.Unknown:
+                    tag.type = ValueType.I
+                i_val = int(text)
+                if tag.is_null and i_val == 0:
+                    data = 0
+                else:
+                    r = MmValidator.validate_i(i_val, tag)
+                    if not r.valid:
+                        raise Exception(f"Validation error at {path}: {r.error}")
+                    data = r.data if r.data is not None else i_val
+                    text = r.text or text
+            return NodeScalar(data=data, text=text, tag=tag, path=path)
         elif tok.type == TOKEN_TRUE:
             if tag.type == ValueType.Unknown:
                 tag.type = ValueType.Bool
+            if tag.is_null:
+                raise Exception(f"bool must false when bool is null")
+            r = MmValidator.validate_bool(True, tag)
+            if not r.valid:
+                raise Exception(f"Validation error at {path}: {r.error}")
             return NodeScalar(data=True, text="true", tag=tag, path=path)
         elif tok.type == TOKEN_FALSE:
             if tag.type == ValueType.Unknown:
                 tag.type = ValueType.Bool
+            if not tag.is_null:
+                r = MmValidator.validate_bool(False, tag)
+                if not r.valid:
+                    raise Exception(f"Validation error at {path}: {r.error}")
             return NodeScalar(data=False, text="false", tag=tag, path=path)
         elif tok.type == TOKEN_NULL:
             raise Exception("null is not supported")
         else:
             return NodeScalar(data=None, text="", tag=tag, path=path)
+
+    def _validate_string_value(self, text: str, tag: Tag, path: str):
+        """Dispatch string token validation based on tag.type, matching Go parser behavior."""
+        from datetime import datetime, timezone, timedelta
+
+        if tag.type == ValueType.Str:
+            r = MmValidator.validate_str(text, tag)
+            if not r.valid:
+                raise Exception(f"Validation error at {path}: {r.error}")
+            return r.data if r.data is not None else text, r.text or text
+
+        elif tag.type == ValueType.Datetime:
+            tz = timezone.utc
+            if tag.location is not None:
+                try:
+                    tz = timezone(timedelta(hours=int(tag.location)))
+                except (ValueError, TypeError):
+                    pass
+            try:
+                d = datetime.strptime(text, "%Y-%m-%d %H:%M:%S")
+            except ValueError:
+                raise Exception(f"Validation error at {path}: invalid datetime {repr(text)}")
+            d = d.replace(tzinfo=tz)
+            r = MmValidator.validate_datetime(d, tag)
+            if not r.valid:
+                raise Exception(f"Validation error at {path}: {r.error}")
+            return r.data if r.data is not None else d, r.text or text
+
+        elif tag.type == ValueType.Date:
+            tz = timezone.utc
+            if tag.location is not None:
+                try:
+                    tz = timezone(timedelta(hours=int(tag.location)))
+                except (ValueError, TypeError):
+                    pass
+            try:
+                d = datetime.strptime(text, "%Y-%m-%d").date()
+            except ValueError:
+                raise Exception(f"Validation error at {path}: invalid date {repr(text)}")
+            r = MmValidator.validate_date(d, tag)
+            if not r.valid:
+                raise Exception(f"Validation error at {path}: {r.error}")
+            return r.data if r.data is not None else d, r.text or text
+
+        elif tag.type == ValueType.Time:
+            tz = timezone.utc
+            if tag.location is not None:
+                try:
+                    tz = timezone(timedelta(hours=int(tag.location)))
+                except (ValueError, TypeError):
+                    pass
+            try:
+                t = datetime.strptime(text, "%H:%M:%S").time()
+            except ValueError:
+                raise Exception(f"Validation error at {path}: invalid time {repr(text)}")
+            # Wrap time in datetime for validation
+            d = datetime.combine(datetime.now().date(), t, tzinfo=tz)
+            r = MmValidator.validate_time(d, tag)
+            if not r.valid:
+                raise Exception(f"Validation error at {path}: {r.error}")
+            return r.data if r.data is not None else t, r.text or text
+
+        elif tag.type == ValueType.Uuid:
+            r = MmValidator.validate_uuid(text, tag)
+            if not r.valid:
+                raise Exception(f"Validation error at {path}: {r.error}")
+            return r.data if r.data is not None else text, r.text or text
+
+        elif tag.type == ValueType.Ip:
+            r = MmValidator.validate_ip(text, tag)
+            if not r.valid:
+                raise Exception(f"Validation error at {path}: {r.error}")
+            return r.data if r.data is not None else text, r.text or text
+
+        elif tag.type == ValueType.Url:
+            r = MmValidator.validate_url(text, tag)
+            if not r.valid:
+                raise Exception(f"Validation error at {path}: {r.error}")
+            return r.data if r.data is not None else text, r.text or text
+
+        elif tag.type == ValueType.Email:
+            r = MmValidator.validate_email(text, tag)
+            if not r.valid:
+                raise Exception(f"Validation error at {path}: {r.error}")
+            return r.data if r.data is not None else text, r.text or text
+
+        elif tag.type == ValueType.Enums:
+            r = MmValidator.validate_enum(text, tag)
+            if not r.valid:
+                raise Exception(f"Validation error at {path}: {r.error}")
+            return r.data if r.data is not None else text, r.text or text
+
+        elif tag.type == ValueType.Bytes:
+            import base64
+            try:
+                val = base64.b64decode(text)
+            except Exception:
+                raise Exception(f"Validation error at {path}: invalid base64 bytes {repr(text)}")
+            r = MmValidator.validate_bytes(val, tag)
+            if not r.valid:
+                raise Exception(f"Validation error at {path}: {r.error}")
+            return r.data if r.data is not None else val, r.text or text
+
+        elif tag.type == ValueType.Media:
+            import base64
+            try:
+                val = base64.b64decode(text)
+            except Exception:
+                raise Exception(f"Validation error at {path}: invalid base64 media {repr(text)}")
+            r = MmValidator.validate_image(val, tag)
+            if not r.valid:
+                raise Exception(f"Validation error at {path}: {r.error}")
+            return r.data if r.data is not None else val, r.text or text
+
+        else:
+            # Default to str validation for unknown types
+            r = MmValidator.validate_str(text, tag)
+            if not r.valid:
+                raise Exception(f"Validation error at {path}: {r.error}")
+            return r.data if r.data is not None else text, r.text or text
 
 
 # ===== Public API =====

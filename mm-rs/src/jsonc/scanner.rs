@@ -221,7 +221,7 @@ impl Scanner {
             self.advance(1);
         }
 
-        let identifier = sb.to_lowercase();
+        let identifier = sb.clone();
         let (token_type, literal) = match identifier.as_str() {
             "true" => (TokenType::True, "true".to_string()),
             "false" => (TokenType::False, "false".to_string()),

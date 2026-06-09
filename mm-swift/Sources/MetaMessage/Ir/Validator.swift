@@ -49,8 +49,10 @@ public class Validator {
                 validateBigint(value, tag: tag, result: result)
             case .f32:
                 validateF32(value, tag: tag, result: result)
-            case .f64, .decimal:
+            case .f64:
                 validateF64(value, tag: tag, result: result)
+            case .decimal:
+                validateDecimal(value, tag: tag, result: result)
             case .str:
                 validateStr(value, tag: tag, result: result)
             case .email:
@@ -548,7 +550,25 @@ public class Validator {
             }
         }
     }
-    
+
+    private func validateDecimal(_ value: Any, tag: Tag, result: ValidationResult) {
+        guard let strValue = value as? String else {
+            result.addError("value must be a decimal string")
+            return
+        }
+        if strValue.isEmpty && !tag.allowEmpty {
+            result.addError("value is empty")
+            return
+        }
+        if !strValue.isEmpty {
+            let decimalRegex = "^-?\\d+\\.\\d+$"
+            let decimalPredicate = NSPredicate(format: "SELF MATCHES %@", decimalRegex)
+            if !decimalPredicate.evaluate(with: strValue) {
+                result.addError("invalid decimal \"\(strValue)\", must be like \"0.0\"")
+            }
+        }
+    }
+
     private func validateStr(_ value: Any, tag: Tag, result: ValidationResult) {
         if let strValue = value as? String {
             if strValue.isEmpty && !tag.allowEmpty {

@@ -4,6 +4,7 @@ public class Tag {
     public var name: String = ""
 
     public var isNull: Bool = false
+    public var isEmpty: Bool = false
     public var example: Bool = false
 
     public var desc: String = ""

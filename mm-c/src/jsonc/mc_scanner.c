@@ -116,10 +116,10 @@ static MMC_Token* scan_comment(MMC_Scanner* scanner) {
     size_t len = scanner->position - content_start;
     const char* raw = scanner->input + content_start;
 
-    while (len > 0 && (raw[0] == ' ' || raw[0] == '\t')) {
-        raw++;
-        len--;
-    }
+    while (len > 0 && (raw[0] == ' ' || raw[0] == '\t' || raw[0] == '\r')) {
+          raw++;
+          len--;
+      }
     while (len > 0 && (raw[len - 1] == ' ' || raw[len - 1] == '\t' || raw[len - 1] == '\r')) {
         len--;
     }

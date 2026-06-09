@@ -76,12 +76,7 @@ export class JSONCParser {
     return merged;
   }
 
-  private parseValue(path: string): Node | null {
-    this.depth++;
-    if (this.depth > maxDepth) {
-      throw new Error(`max depth: ${maxDepth}`);
-    }
-
+  private parseValue(path: string, existingTag?: Tag): Node | null {
     while (true) {
       const tok = this.next();
       let data: any;
@@ -89,21 +84,16 @@ export class JSONCParser {
 
       switch (tok.type) {
         case TokenType.EOF:
-          this.depth--;
           return null;
 
         case TokenType.LCURLY:
-          const objResult = this.parseObject(tok.line, path);
-          this.depth--;
-          return objResult;
+          return this.parseObject(tok.line, path, existingTag);
 
         case TokenType.LBRACKET:
-          const arrResult = this.parseArray(tok.line, path);
-          this.depth--;
-          return arrResult;
+          return this.parseArray(tok.line, path, existingTag);
 
         case TokenType.STRING:
-          let strTag = this.consumeCommentsFor(tok.line);
+          let strTag = existingTag || this.consumeCommentsFor(tok.line);
           text = tok.value;
 
           if (!strTag) {
@@ -161,7 +151,12 @@ export class JSONCParser {
                 data = new Date(0);
               } else {
                 try {
-                  const dateValue = new Date(text.replace(' ', 'T') + 'Z');
+                  let dateValue: Date;
+                  if (strTag.type === ValueType.Time) {
+                    dateValue = new Date(`1970-01-01T${text}Z`);
+                  } else {
+                    dateValue = new Date(text.replace(' ', 'T') + 'Z');
+                  }
                   let result: ValidationResult;
                   if (strTag.type === ValueType.Date) {
                     result = strTag.validateDate(dateValue);
@@ -310,11 +305,10 @@ export class JSONCParser {
           const strValue = new NodeScalar(data, strTag);
           strValue.setPath(path);
           strValue.setText(text);
-          this.depth--;
           return strValue;
 
         case TokenType.NUMBER:
-          let numTag = this.consumeCommentsFor(tok.line);
+          let numTag = existingTag || this.consumeCommentsFor(tok.line);
           text = tok.value;
 
           if (!numTag) {
@@ -489,11 +483,10 @@ export class JSONCParser {
           const numValue = new NodeScalar(data, numTag);
           numValue.setPath(path);
           numValue.setText(text);
-          this.depth--;
           return numValue;
 
         case TokenType.TRUE:
-          let trueTag = this.consumeCommentsFor(tok.line);
+          let trueTag = existingTag || this.consumeCommentsFor(tok.line);
           if (!trueTag) {
             trueTag = new Tag();
           }
@@ -519,11 +512,10 @@ export class JSONCParser {
           const trueValue = new NodeScalar(true, trueTag);
           trueValue.setPath(path);
           trueValue.setText('true');
-          this.depth--;
           return trueValue;
 
         case TokenType.FALSE:
-          let falseTag = this.consumeCommentsFor(tok.line);
+          let falseTag = existingTag || this.consumeCommentsFor(tok.line);
           if (!falseTag) {
             falseTag = new Tag();
           }
@@ -547,15 +539,12 @@ export class JSONCParser {
           const falseValue = new NodeScalar(false, falseTag);
           falseValue.setPath(path);
           falseValue.setText('false');
-          this.depth--;
           return falseValue;
 
         case TokenType.NULL:
-          this.depth--;
           throw new Error(`null is not supported`);
 
         default:
-          this.depth--;
           throw new Error(`unexpected token ${tok.type}`);
       }
     }
@@ -609,8 +598,17 @@ export class JSONCParser {
     return result.data;
   }
 
-  private parseObject(openLine: number, path: string): NodeObject {
-    let tag = new Tag();
+  private parseObject(
+    openLine: number,
+    path: string,
+    parentTag?: Tag,
+  ): NodeObject {
+    this.depth++;
+    if (this.depth > maxDepth) {
+      throw new Error(`max depth: ${maxDepth}`);
+    }
+
+    let tag = parentTag || new Tag();
     if (tag.type === ValueType.Unknown) {
       tag.type = ValueType.Obj;
     }
@@ -650,24 +648,24 @@ export class JSONCParser {
       if (key.type !== TokenType.STRING) {
         throw new Error('expect string key');
       }
-      const keyStr = key.value;
+      const keyStr = camelToSnake(key.value);
 
       this.next();
       const pa =
         tag.type === ValueType.Map ? `${path}[${keyStr}]` : `${path}.${keyStr}`;
-      val = this.parseValue(pa);
+
+      let childTag: Tag | null = this.consumeCommentsFor(key.line);
+      if (!childTag) {
+        childTag = new Tag();
+      }
+      if (tag.type === ValueType.Map) {
+        childTag.inherit(tag);
+      }
+
+      val = this.parseValue(pa, childTag);
       if (!val) {
         this.next();
         continue;
-      }
-
-      const childTag = val.getTag();
-      if (childTag && tag && this.hasChildFields(tag)) {
-        const origType = childTag.type;
-        childTag.inherit(tag);
-        if (val instanceof NodeScalar && origType !== childTag.type) {
-          this.revalidateValue(val, childTag, origType);
-        }
       }
 
       obj.setProperty(keyStr, val);
@@ -677,18 +675,38 @@ export class JSONCParser {
       }
     }
 
-    if (tag.type === ValueType.Map || tag.type === ValueType.Obj) {
-      const result = tag.validateObj();
-      if (!result.valid) {
-        throw new Error(`validate failed: ${result.error}`);
+    switch (tag.type) {
+      case ValueType.Map: {
+        const result = tag.validateMap();
+        if (!result.valid) {
+          throw new Error(`validate failed: ${result.error}`);
+        }
+        break;
+      }
+      case ValueType.Obj: {
+        const result = tag.validateObj();
+        if (!result.valid) {
+          throw new Error(`validate failed: ${result.error}`);
+        }
+        break;
       }
     }
 
+    this.depth--;
     return obj;
   }
 
-  private parseArray(openLine: number, path: string): NodeArray {
-    let tag = this.consumeCommentsFor(openLine);
+  private parseArray(
+    openLine: number,
+    path: string,
+    parentTag?: Tag,
+  ): NodeArray {
+    this.depth++;
+    if (this.depth > maxDepth) {
+      throw new Error(`max depth: ${maxDepth}`);
+    }
+
+    let tag = parentTag || this.consumeCommentsFor(openLine);
     if (!tag) {
       tag = new Tag();
     }
@@ -729,18 +747,19 @@ export class JSONCParser {
       }
 
       const pa = `${path}[${i}]`;
-      item = this.parseValue(pa);
+
+      let childTag: Tag | null = null;
+      if (openLine !== tok.line) {
+        childTag = this.consumeCommentsFor(tok.line);
+      }
+      if (!childTag) {
+        childTag = new Tag();
+      }
+      childTag.inherit(tag);
+
+      item = this.parseValue(pa, childTag);
       if (!item) {
         continue;
-      }
-
-      const childTag = item.getTag();
-      if (childTag && tag && this.hasChildFields(tag)) {
-        const origType = childTag.type;
-        childTag.inherit(tag);
-        if (item instanceof NodeScalar && origType !== childTag.type) {
-          this.revalidateValue(item, childTag, origType);
-        }
       }
 
       if (item instanceof NodeScalar) {
@@ -773,13 +792,24 @@ export class JSONCParser {
       }
     }
 
-    if (tag.type === ValueType.Arr) {
-      const result = tag.validateArr(arr.getElements());
-      if (!result.valid) {
-        throw new Error(`validate failed: ${result.error}`);
+    switch (tag.type) {
+      case ValueType.Arr: {
+        const result = tag.validateArr(arr.getElements());
+        if (!result.valid && !tag.example) {
+          throw new Error(`validate failed: ${result.error}`);
+        }
+        break;
+      }
+      case ValueType.Vec: {
+        const result = tag.validateVec(arr.getElements());
+        if (!result.valid && !tag.example) {
+          throw new Error(`validate failed: ${result.error}`);
+        }
+        break;
       }
     }
 
+    this.depth--;
     return arr;
   }
 
@@ -835,156 +865,28 @@ export class JSONCParser {
     if (!tagStr) return null;
     return parseMMTag(tagStr);
   }
+}
 
-  private hasChildFields(tag: Tag): boolean {
-    return (
-      tag.childDesc !== '' ||
-      tag.childType !== ValueType.Unknown ||
-      tag.childNullable ||
-      tag.childAllowEmpty ||
-      tag.childUnique ||
-      tag.childDefaultVal !== '' ||
-      tag.childMin !== '' ||
-      tag.childMax !== '' ||
-      tag.childSize !== 0n ||
-      tag.childEnums !== '' ||
-      tag.childPattern !== '' ||
-      tag.childLocation !== 0 ||
-      tag.childVersion !== 0 ||
-      tag.childMime !== ''
-    );
-  }
-
-  private revalidateValue(
-    item: NodeScalar,
-    tag: Tag,
-    origType: ValueType,
-  ): void {
-    const text = item.getText() || String(item.getValue());
-
-    switch (tag.type) {
-      case ValueType.Bytes: {
-        try {
-          const decoded = base64ToUint8(text);
-          const result = tag.validateBytes(decoded);
-          if (!result.valid) {
-            throw new Error(result.error || 'Bytes validation failed');
-          }
-          item.setValue(result.data);
-          if (result.text) item.setText(result.text);
-        } catch (e) {
-          throw new Error(
-            `invalid base64 bytes "${text}": ${(e as Error).message}`,
-          );
-        }
-        break;
+function camelToSnake(s: string): string {
+  if (s === '') return '';
+  let result = '';
+  for (let i = 0; i < s.length; i++) {
+    const ch = s[i] as string;
+    if (ch >= 'A' && ch <= 'Z') {
+      if (
+        i > 0 &&
+        (!((s[i - 1] as string) >= 'A' && (s[i - 1] as string) <= 'Z') ||
+          (i + 1 < s.length &&
+            !((s[i + 1] as string) >= 'A' && (s[i + 1] as string) <= 'Z')))
+      ) {
+        result += '_';
       }
-
-      case ValueType.Datetime:
-      case ValueType.Date:
-      case ValueType.Time: {
-        let dateValue: Date;
-        if (tag.type === ValueType.Time) {
-          dateValue = new Date(`1970-01-01T${text}Z`);
-        } else {
-          dateValue = new Date(text.replace(' ', 'T') + 'Z');
-        }
-        let result: ValidationResult;
-        if (tag.type === ValueType.Date) {
-          result = tag.validateDate(dateValue);
-        } else if (tag.type === ValueType.Time) {
-          result = tag.validateTime(dateValue);
-        } else {
-          result = tag.validateDatetime(dateValue);
-        }
-        if (!result.valid) {
-          throw new Error(result.error || 'Datetime validation failed');
-        }
-        item.setValue(result.data);
-        break;
-      }
-
-      case ValueType.Uuid: {
-        const result = tag.validateUUID(text);
-        if (!result.valid) {
-          throw new Error(result.error || 'UUID validation failed');
-        }
-        item.setValue(result.data);
-        if (result.text) item.setText(result.text);
-        break;
-      }
-
-      case ValueType.Email: {
-        const result = tag.validateEmail(text);
-        if (!result.valid) {
-          throw new Error(result.error || 'Email validation failed');
-        }
-        item.setValue(result.data);
-        if (result.text) item.setText(result.text);
-        break;
-      }
-
-      case ValueType.Url: {
-        const result = tag.validateURL(text);
-        if (!result.valid) {
-          throw new Error(result.error || 'URL validation failed');
-        }
-        item.setValue(result.data);
-        if (result.text) item.setText(result.text);
-        break;
-      }
-
-      case ValueType.Ip: {
-        const result = tag.validateIP(text);
-        if (!result.valid) {
-          throw new Error(result.error || 'IP validation failed');
-        }
-        item.setValue(result.data);
-        if (result.text) item.setText(result.text);
-        break;
-      }
-
-      case ValueType.Decimal: {
-        const result = tag.validateDecimal(text);
-        if (!result.valid) {
-          throw new Error(result.error || 'Decimal validation failed');
-        }
-        item.setValue(result.data);
-        if (result.text) item.setText(result.text);
-        break;
-      }
-
-      case ValueType.Bigint: {
-        try {
-          const bi = BigInt(text);
-          const result = tag.validateBigint(bi);
-          if (!result.valid) {
-            throw new Error(result.error || 'BigInt validation failed');
-          }
-          item.setValue(result.data);
-          if (result.text) item.setText(result.text);
-        } catch (e) {
-          throw new Error(`invalid bigint "${text}": ${(e as Error).message}`);
-        }
-        break;
-      }
-
-      case ValueType.Enums: {
-        if (tag.enums) {
-          const result = tag.validateEnum(text);
-          if (!result.valid) {
-            throw new Error(result.error || 'Enum validation failed');
-          }
-          item.setValue(result.data);
-          if (result.text) item.setText(result.text);
-        }
-        break;
-      }
-
-      default:
-        break;
+      result += ch.toLowerCase();
+    } else {
+      result += ch;
     }
   }
+  return result;
 }
 
 export function parseJSONC(input: string): MMDoc {

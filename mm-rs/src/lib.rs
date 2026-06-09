@@ -440,7 +440,8 @@ mod tests {
         match node {
             Node::Object(o) => {
                 let tag = o.fields[0].value.get_tag().unwrap();
-                assert_eq!(tag.desc, Some("用户名".to_string()));
+                // inline comment is not supported, desc should be None
+                assert_eq!(tag.desc, None);
                 assert_eq!(tag.value_type, ValueType::Str);
             }
             _ => panic!("expected object"),

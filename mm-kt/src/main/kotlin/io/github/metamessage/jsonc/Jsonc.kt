@@ -31,6 +31,7 @@ private fun writeLeadingComments(
 ) {
     val tagStr = tag?.toString() ?: ""
     if (tagStr.isNotEmpty()) {
+        sb.append("\n")
         sb.append("// mm: $tagStr\n")
     }
 }

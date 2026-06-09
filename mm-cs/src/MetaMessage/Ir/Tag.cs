@@ -93,6 +93,7 @@ public class Tag
     public bool Nullable { get; set; }
     public bool AllowEmpty { get; set; }
     public bool Unique { get; set; }
+    public bool IsEmpty { get; set; }
     public string DefaultVal { get; set; } = string.Empty;
     public string Min { get; set; } = string.Empty;
     public string Max { get; set; } = string.Empty;
@@ -234,6 +235,7 @@ public class Tag
             Nullable = Nullable,
             AllowEmpty = AllowEmpty,
             Unique = Unique,
+            IsEmpty = IsEmpty,
             DefaultVal = DefaultVal,
             Min = Min,
             Max = Max,

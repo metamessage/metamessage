@@ -57,9 +57,36 @@ public:
   }
 
 private:
+  static constexpr size_t kMaxDepth = 32;
   const std::vector<Token> &tokens_;
   size_t pos_;
+  size_t depth_ = 0;
   std::optional<ir::Tag> pendingTag_;
+
+  static std::string camelToSnake(const std::string &s) {
+    if (s.empty())
+      return {};
+    std::string result;
+    result.reserve(s.size() + 4);
+    for (size_t i = 0; i < s.size(); ++i) {
+      char c = s[i];
+      if (std::isupper(static_cast<unsigned char>(c))) {
+        if (i > 0) {
+          bool prevUpper = std::isupper(static_cast<unsigned char>(s[i - 1]));
+          bool nextUpper = i + 1 < s.size() &&
+                           std::isupper(static_cast<unsigned char>(s[i + 1]));
+          if (!prevUpper || !nextUpper) {
+            result.push_back('_');
+          }
+        }
+        result.push_back(
+            static_cast<char>(std::tolower(static_cast<unsigned char>(c))));
+      } else {
+        result.push_back(c);
+      }
+    }
+    return result;
+  }
 
   void skipComments() {
     size_t lastLine = 0;
@@ -72,9 +99,19 @@ private:
         lastLine = tok.line;
 
         std::string comment = tok.literal;
-        auto it = comment.find("mm:");
-        if (it != std::string::npos) {
-          std::string tagStr = comment.substr(it + 3);
+        // Trim whitespace
+        size_t start = 0;
+        while (start < comment.size() &&
+               (comment[start] == ' ' || comment[start] == '\t'))
+          ++start;
+        if (start < comment.size() && comment.compare(start, 3, "mm:") == 0) {
+          std::string tagStr = comment.substr(start + 3);
+          // Trim leading whitespace from tagStr
+          size_t ts = 0;
+          while (ts < tagStr.size() &&
+                 (tagStr[ts] == ' ' || tagStr[ts] == '\t'))
+            ++ts;
+          tagStr = tagStr.substr(ts);
           auto tag = ir::Tag::parse(tagStr);
           if (!pendingTag_.has_value()) {
             pendingTag_ = tag;
@@ -158,20 +195,24 @@ private:
 
     switch (tok.type) {
     case TokenType::String:
-      tag->type = ir::ValueType::Str;
+      if (tag->type == ir::ValueType::Unknown)
+        tag->type = ir::ValueType::Str;
       break;
     case TokenType::Number:
-      if (tok.literal.find('.') != std::string::npos ||
-          tok.literal.find('e') != std::string::npos ||
-          tok.literal.find('E') != std::string::npos) {
-        tag->type = ir::ValueType::F64;
-      } else {
-        tag->type = ir::ValueType::I;
+      if (tag->type == ir::ValueType::Unknown) {
+        if (tok.literal.find('.') != std::string::npos ||
+            tok.literal.find('e') != std::string::npos ||
+            tok.literal.find('E') != std::string::npos) {
+          tag->type = ir::ValueType::F64;
+        } else {
+          tag->type = ir::ValueType::I;
+        }
       }
       break;
     case TokenType::True:
     case TokenType::False:
-      tag->type = ir::ValueType::Bool;
+      if (tag->type == ir::ValueType::Unknown)
+        tag->type = ir::ValueType::Bool;
       break;
     case TokenType::Null:
       throw std::runtime_error("null is not supported");
@@ -186,6 +227,11 @@ private:
   std::shared_ptr<ir::Node> parseObject() {
     ++pos_;
     auto obj = ir::makeNodeObject();
+
+    depth_++;
+    if (depth_ > kMaxDepth) {
+      throw std::runtime_error("max depth: 32");
+    }
 
     // Save tag that was set before { (object-level tag from outer scope)
     auto objTag = pendingTag_;
@@ -206,7 +252,7 @@ private:
         continue;
       }
 
-      std::string key = tokens_[pos_].literal;
+      std::string key = camelToSnake(tokens_[pos_].literal);
       ++pos_;
       skipComments();
 
@@ -216,7 +262,6 @@ private:
       }
 
       auto savedTag = pendingTag_;
-      pendingTag_.reset();
       auto value = parseValue();
       if (value) {
         if (savedTag.has_value()) {
@@ -239,14 +284,25 @@ private:
     }
 
     pendingTag_ = objTag;
+    // Set default type if not set via tag
+    if (obj->tag.type == ir::ValueType::Unknown) {
+      obj->tag.type = ir::ValueType::Obj;
+    }
     applyTagToNode(obj);
 
+    depth_--;
     return obj;
   }
 
   std::shared_ptr<ir::Node> parseArray() {
     ++pos_;
     auto arr = ir::makeNodeArray();
+
+    depth_++;
+    if (depth_ > kMaxDepth) {
+      throw std::runtime_error("max depth: 32");
+    }
+
     skipComments();
 
     auto outerTag = pendingTag_;
@@ -272,7 +328,28 @@ private:
     }
 
     pendingTag_ = outerTag;
+    // Set default type if not set via tag
+    if (arr->tag.type == ir::ValueType::Unknown) {
+      arr->tag.type = ir::ValueType::Vec;
+    }
     applyTagToNode(arr);
+
+    // Run validation
+    if (!arr->tag.example) {
+      if (arr->tag.type == ir::ValueType::Vec) {
+        auto vr = arr->tag.validateVec(arr->items.size());
+        if (!vr.isValid) {
+          throw std::runtime_error(vr.error);
+        }
+      } else if (arr->tag.type == ir::ValueType::Arr) {
+        auto vr = arr->tag.validateArr(arr->items.size());
+        if (!vr.isValid) {
+          throw std::runtime_error(vr.error);
+        }
+      }
+    }
+
+    depth_--;
     return arr;
   }
 

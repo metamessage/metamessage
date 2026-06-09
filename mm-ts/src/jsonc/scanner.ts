@@ -96,19 +96,18 @@ export class JSONCScanner {
   }
 
   private consumeString(): Token {
-    const start = this.position;
     const startLine = this.line;
     const startColumn = this.column;
     this.position++;
     this.column++;
 
+    let value = '';
     while (this.position < this.length) {
       const char = this.input[this.position];
 
       if (char === '"') {
         this.position++;
         this.column++;
-        const value = this.input.substring(start + 1, this.position - 1);
         return {
           type: TokenType.STRING,
           value,
@@ -116,9 +115,11 @@ export class JSONCScanner {
           column: startColumn,
         };
       } else if (char === '\\') {
+        value += char;
         this.position++;
         this.column++;
         if (this.position < this.length) {
+          value += this.input[this.position];
           this.position++;
           this.column++;
         }
@@ -127,6 +128,7 @@ export class JSONCScanner {
         this.column = 1;
         this.position++;
       } else {
+        value += char;
         this.position++;
         this.column++;
       }

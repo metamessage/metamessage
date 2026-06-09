@@ -8,6 +8,10 @@ typedef struct MMC_Parser {
     MMC_Scanner* scanner;
     MMC_Token* current_token;
     char* error_message;
+    int depth;
+    MMC_Token** pending_comments;
+    size_t pending_count;
+    size_t pending_capacity;
 } MMC_Parser;
 
 MMC_Parser* mmc_parser_new(const char* input);

@@ -564,7 +564,9 @@ function anyToArray(
 
   const result = tag.validateVec(arr);
   if (!result.valid) {
-    throw new Error(`validate failed: ${result.error}`);
+    if (!tag.example) {
+      throw new Error(`validate failed: ${result.error}`);
+    }
   }
 
   return arrNode;

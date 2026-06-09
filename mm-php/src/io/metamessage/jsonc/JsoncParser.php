@@ -358,7 +358,7 @@ class JsoncParser
                                     if ($decoded === false) {
                                         throw new \Exception(sprintf('invalid base64 image %s', json_encode($text)));
                                     }
-                                    $result = $this->validateImage($tag, $decoded);
+                                    $result = $this->validateMedia($tag, $decoded);
                                     $data = $result[0];
                                     $text = $result[1];
                                 }
@@ -375,7 +375,7 @@ class JsoncParser
                                     if ($decoded === false) {
                                         throw new \Exception(sprintf('invalid base64 media %s', json_encode($text)));
                                     }
-                                    $result = $this->validateImage($tag, $decoded);
+                                    $result = $this->validateMedia($tag, $decoded);
                                     $data = $result[0];
                                     $text = $result[1];
                                 }
@@ -862,16 +862,13 @@ class JsoncParser
 
             $this->next();
 
-            $childTag = null;
-            if ($openLine !== $tok->line) {
-                $childTag = $this->consumeCommentsFor($tok->line);
-            }
+            $childTag = $this->consumeCommentsFor($tok->line);
 
             if ($childTag === null) {
                 $childTag = Tag::newTag();
             }
 
-            if ($childTag->type === ValueType::MAP) {
+            if ($tag->type === ValueType::MAP) {
                 $childTag->inherit($tag);
             }
 
@@ -1823,6 +1820,50 @@ class JsoncParser
         if ($l === 0) {
             if (!$tag->allowEmpty) {
                 throw new \Exception('type image not allow empty value []byte{}');
+            }
+            return [$val, base64_encode($val)];
+        }
+
+        if ($tag->min !== '') {
+            $mini = (int) $tag->min;
+            if ((string) $mini !== $tag->min) {
+                throw new \Exception('failed to parse t.Min as int');
+            }
+            if ($l < $mini) {
+                throw new \Exception(sprintf('[]byte length %d < min %d', $l, $mini));
+            }
+        }
+
+        if ($tag->max !== '') {
+            $maxi = (int) $tag->max;
+            if ((string) $maxi !== $tag->max) {
+                throw new \Exception('failed to parse t.Max as int');
+            }
+            if ($l > $maxi) {
+                throw new \Exception(sprintf('[]byte length %d > max %d', $l, $maxi));
+            }
+        }
+
+        if ($tag->size !== 0) {
+            if ($l !== $tag->size) {
+                throw new \Exception(sprintf('[]byte length %d != size %d', $l, $tag->size));
+            }
+        }
+
+        return [$val, base64_encode($val)];
+    }
+
+    private function validateMedia(Tag $tag, string $val): array
+    {
+        if ($tag->isNull) {
+            return [null, $val];
+        }
+
+        $l = strlen($val);
+
+        if ($l === 0) {
+            if (!$tag->allowEmpty) {
+                throw new \Exception('type media not allow empty value []byte{}');
             }
             return [$val, base64_encode($val)];
         }

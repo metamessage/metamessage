@@ -187,9 +187,7 @@ class JsoncParser(private val tokens: List<JsoncToken>) {
                     return NodeScalar(data = false, text = "false", tag = tag, path = path)
                 }
                 JsoncTokenType.Null -> {
-                    val tag = consumeCommentsFor(tok.line) ?: Tag()
-                    tag.inheritFromArrayParent(pendingParentTag)
-                    return NodeScalar(data = null, text = "null", tag = tag, path = path)
+                    throw JsoncException("null is not supported")
                 }
                 else -> throw JsoncException("unexpected token ${tok.type}")
             }
@@ -713,11 +711,14 @@ class JsoncParser(private val tokens: List<JsoncToken>) {
             val keyStr = CamelToSnake.convert(key.literal)
 
             next()
-            val fieldPath = "$currentPath.$keyStr"
+
+            val fieldPath =
+                    if (tag.type == ValueType.MAP) "$currentPath[$keyStr]"
+                    else "$currentPath.$keyStr"
             val valNode = parse(fieldPath) ?: continue
 
             val childTag = valNode.tag
-            if (childTag != null && childTag.type == ValueType.MAP) {
+            if (tag.type == ValueType.MAP && childTag != null) {
                 childTag.inheritFromArrayParent(tag)
             }
 
@@ -1033,6 +1034,20 @@ class JsoncParser(private val tokens: List<JsoncToken>) {
         if (a.location != 0) b.location = a.location
         if (a.version != 0) b.version = a.version
         if (a.mime.isNotEmpty()) b.mime = a.mime
+        if (a.childDesc.isNotEmpty()) b.childDesc = a.childDesc
+        if (a.childType != ValueType.UNKNOWN) b.childType = a.childType
+        if (a.childNullable) b.childNullable = true
+        if (a.childAllowEmpty) b.childAllowEmpty = true
+        if (a.childUnique) b.childUnique = true
+        if (a.childDefaultVal.isNotEmpty()) b.childDefaultVal = a.childDefaultVal
+        if (a.childMin.isNotEmpty()) b.childMin = a.childMin
+        if (a.childMax.isNotEmpty()) b.childMax = a.childMax
+        if (a.childSize != 0) b.childSize = a.childSize
+        if (a.childEnums.isNotEmpty()) b.childEnums = a.childEnums
+        if (a.childPattern.isNotEmpty()) b.childPattern = a.childPattern
+        if (a.childLocation != 0) b.childLocation = a.childLocation
+        if (a.childVersion != 0) b.childVersion = a.childVersion
+        if (a.childMime.isNotEmpty()) b.childMime = a.childMime
         return b
     }
 

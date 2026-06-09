@@ -203,11 +203,11 @@ public class JsoncScanner
         }
 
         string identifier = sb.ToString();
-        return identifier.ToLower() switch
+        return identifier switch
         {
-            "true" => new JsoncToken { Type = JsoncTokenType.True, Literal = "true", Line = startLine, Column = startColumn },
-            "false" => new JsoncToken { Type = JsoncTokenType.False, Literal = "false", Line = startLine, Column = startColumn },
-            "null" => new JsoncToken { Type = JsoncTokenType.Null, Literal = "null", Line = startLine, Column = startColumn },
+            "true" => new JsoncToken { Type = JsoncTokenType.True, Literal = identifier, Line = startLine, Column = startColumn },
+            "false" => new JsoncToken { Type = JsoncTokenType.False, Literal = identifier, Line = startLine, Column = startColumn },
+            "null" => new JsoncToken { Type = JsoncTokenType.Null, Literal = identifier, Line = startLine, Column = startColumn },
             _ => new JsoncToken { Type = JsoncTokenType.String, Literal = identifier, Line = startLine, Column = startColumn }
         };
     }

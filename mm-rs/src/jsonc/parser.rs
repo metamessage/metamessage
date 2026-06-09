@@ -1,3 +1,4 @@
+use crate::core::utils::camel_to_snake;
 use crate::ir::ast::{Field, Node, NodeArray, NodeObject, NodeScalar, ValueData};
 use crate::ir::tag::Tag;
 use crate::ir::value_type::ValueType;
@@ -108,17 +109,34 @@ impl Parser {
             TokenType::LBracket => self.parse_array(tok.line, path).map(Some),
             TokenType::String => {
                 let mut tag = self.consume_comments_for(tok.line).unwrap_or_default();
-                if self.peek().token_type == TokenType::Comment && self.peek().line == tok.line {
-                    let comment = self.next();
-                    if let Some(parsed) = Tag::parse(&comment.literal) {
-                        tag = Tag::merge(Some(tag), parsed);
-                    }
-                }
                 if tag.value_type == ValueType::Unknown {
                     tag.value_type = ValueType::Str;
                 }
                 let text = tok.literal;
+
+                if tag.is_null && !text.is_empty() {
+                    return Err(format!("invalid string: {:?}, valid: {:?}", text, ""));
+                }
+
                 let data = match tag.value_type {
+                    ValueType::Str => {
+                        if tag.is_null {
+                            if !text.is_empty() {
+                                return Err(format!("invalid string: {:?}, valid: {:?}", text, ""));
+                            }
+                            ValueData::String(text.clone())
+                        } else {
+                            ValueData::String(text.clone())
+                        }
+                    }
+                    ValueType::Bytes => {
+                        let bytes = base64::Engine::decode(
+                            &base64::engine::general_purpose::STANDARD,
+                            &text,
+                        )
+                        .map_err(|e| format!("invalid base64 bytes {:?}: {}", text, e))?;
+                        ValueData::Bytes(bytes)
+                    }
                     ValueType::Datetime => {
                         let naive = NaiveDateTime::parse_from_str(&text, "%Y-%m-%d %H:%M:%S")
                             .map_err(|e| format!("invalid datetime '{}': {}", text, e))?;
@@ -129,6 +147,16 @@ impl Parser {
                             utc_ts
                         };
                         ValueData::Int(timestamp)
+                    }
+                    ValueType::Date => {
+                        let _ = chrono::NaiveDate::parse_from_str(&text, "%Y-%m-%d")
+                            .map_err(|e| format!("invalid date '{}': {}", text, e))?;
+                        ValueData::String(text.clone())
+                    }
+                    ValueType::Time => {
+                        let _ = chrono::NaiveTime::parse_from_str(&text, "%H:%M:%S")
+                            .map_err(|e| format!("invalid time '{}': {}", text, e))?;
+                        ValueData::String(text.clone())
                     }
                     ValueType::Uuid => {
                         let hex = text.replace('-', "");
@@ -142,7 +170,55 @@ impl Parser {
                             .map_err(|e| format!("invalid uuid '{}': {}", text, e))?;
                         ValueData::Bytes(bytes)
                     }
-                    _ => ValueData::String(text.clone()),
+                    ValueType::Decimal => {
+                        if text.is_empty() {
+                            return Err("invalid decimal".to_string());
+                        }
+                        ValueData::String(text.clone())
+                    }
+                    ValueType::Ip => {
+                        let _ = text
+                            .parse::<std::net::IpAddr>()
+                            .map_err(|e| format!("invalid ip {:?}: {}", text, e))?;
+                        ValueData::String(text.clone())
+                    }
+                    ValueType::Url => {
+                        if !text.starts_with("http://") && !text.starts_with("https://") {
+                            return Err(format!("invalid url {:?}", text));
+                        }
+                        ValueData::String(text.clone())
+                    }
+                    ValueType::Email => {
+                        if !text.contains('@') || !text.contains('.') {
+                            return Err(format!("invalid email {:?}", text));
+                        }
+                        ValueData::String(text.clone())
+                    }
+                    ValueType::Enum => {
+                        if let Some(ref enums) = tag.enums {
+                            if !enums.split('|').any(|e| e == text) {
+                                return Err(format!(
+                                    "invalid enum value {:?}, valid: {:?}",
+                                    text, enums
+                                ));
+                            }
+                        }
+                        ValueData::String(text.clone())
+                    }
+                    ValueType::Media => {
+                        let _bytes = base64::Engine::decode(
+                            &base64::engine::general_purpose::STANDARD,
+                            &text,
+                        )
+                        .map_err(|e| format!("invalid base64 media {:?}: {}", text, e))?;
+                        ValueData::String(text.clone())
+                    }
+                    _ => {
+                        return Err(format!(
+                            "unsupported type {:?} for string literal",
+                            tag.value_type
+                        ));
+                    }
                 };
                 let value = Node::Value(NodeScalar {
                     data,
@@ -154,12 +230,6 @@ impl Parser {
             }
             TokenType::Number => {
                 let mut tag = self.consume_comments_for(tok.line).unwrap_or_default();
-                if self.peek().token_type == TokenType::Comment && self.peek().line == tok.line {
-                    let comment = self.next();
-                    if let Some(parsed) = Tag::parse(&comment.literal) {
-                        tag = Tag::merge(Some(tag), parsed);
-                    }
-                }
                 let text = tok.literal;
 
                 if tag.value_type == ValueType::Unknown {
@@ -170,10 +240,58 @@ impl Parser {
                     }
                 }
 
+                let is_float = text.contains('.');
+                let is_negative = text.starts_with('-');
+
+                // Validate type compatibility
+                if is_float {
+                    match tag.value_type {
+                        ValueType::F32 | ValueType::F64 | ValueType::Decimal => {}
+                        _ => {
+                            return Err(format!(
+                                "unsupported numeric type {:?} for float literal",
+                                tag.value_type
+                            ));
+                        }
+                    }
+                } else if is_negative {
+                    match tag.value_type {
+                        ValueType::I
+                        | ValueType::I8
+                        | ValueType::I16
+                        | ValueType::I32
+                        | ValueType::I64
+                        | ValueType::Bigint => {}
+                        _ => {
+                            return Err(format!(
+                                "unsupported numeric type {:?} for negative literal",
+                                tag.value_type
+                            ));
+                        }
+                    }
+                } else {
+                    match tag.value_type {
+                        ValueType::I
+                        | ValueType::I8
+                        | ValueType::I16
+                        | ValueType::I32
+                        | ValueType::I64
+                        | ValueType::U
+                        | ValueType::U8
+                        | ValueType::U16
+                        | ValueType::U32
+                        | ValueType::U64
+                        | ValueType::Bigint => {}
+                        _ => {
+                            return Err(format!("unsupported numeric type {:?}", tag.value_type));
+                        }
+                    }
+                }
+
                 let data: ValueData;
-                if text.contains('.') {
+                if is_float {
                     data = ValueData::Float(text.parse::<f64>().unwrap_or(0.0));
-                } else if text.starts_with('-') {
+                } else if is_negative {
                     if let Ok(ival) = text.parse::<i64>() {
                         data = ValueData::Int(ival);
                     } else {
@@ -199,14 +317,21 @@ impl Parser {
             }
             TokenType::True => {
                 let mut tag = self.consume_comments_for(tok.line).unwrap_or_default();
-                if self.peek().token_type == TokenType::Comment && self.peek().line == tok.line {
-                    let comment = self.next();
-                    if let Some(parsed) = Tag::parse(&comment.literal) {
-                        tag = Tag::merge(Some(tag), parsed);
-                    }
-                }
                 if tag.value_type == ValueType::Unknown {
                     tag.value_type = ValueType::Bool;
+                }
+                match tag.value_type {
+                    ValueType::Bool => {
+                        if tag.is_null {
+                            return Err("bool must false when bool is null".to_string());
+                        }
+                    }
+                    _ => {
+                        return Err(format!(
+                            "unsupported type {:?} for boolean literal",
+                            tag.value_type
+                        ));
+                    }
                 }
                 let value = Node::Value(NodeScalar {
                     data: ValueData::Bool(true),
@@ -218,14 +343,17 @@ impl Parser {
             }
             TokenType::False => {
                 let mut tag = self.consume_comments_for(tok.line).unwrap_or_default();
-                if self.peek().token_type == TokenType::Comment && self.peek().line == tok.line {
-                    let comment = self.next();
-                    if let Some(parsed) = Tag::parse(&comment.literal) {
-                        tag = Tag::merge(Some(tag), parsed);
-                    }
-                }
                 if tag.value_type == ValueType::Unknown {
                     tag.value_type = ValueType::Bool;
+                }
+                match tag.value_type {
+                    ValueType::Bool => {}
+                    _ => {
+                        return Err(format!(
+                            "unsupported type {:?} for boolean literal",
+                            tag.value_type
+                        ));
+                    }
                 }
                 let value = Node::Value(NodeScalar {
                     data: ValueData::Bool(false),
@@ -251,7 +379,15 @@ impl Parser {
             tag.value_type = ValueType::Obj;
         }
 
-        let obj_path = path.to_string();
+        let obj_path = if let Some(ref name) = tag.name {
+            if path.is_empty() {
+                name.clone()
+            } else {
+                format!("{}.{}", path, name)
+            }
+        } else {
+            path.to_string()
+        };
         let mut fields: Vec<Field> = Vec::new();
 
         loop {
@@ -280,7 +416,7 @@ impl Parser {
             if key_tok.token_type != TokenType::String {
                 return Err("expected string key".to_string());
             }
-            let key = key_tok.literal;
+            let key = camel_to_snake(&key_tok.literal);
 
             let colon = self.next();
             if colon.token_type != TokenType::Colon {
@@ -324,7 +460,15 @@ impl Parser {
             tag.value_type = ValueType::Vec;
         }
 
-        let arr_path = path.to_string();
+        let arr_path = if let Some(ref name) = tag.name {
+            if path.is_empty() {
+                name.clone()
+            } else {
+                format!("{}.{}", path, name)
+            }
+        } else {
+            path.to_string()
+        };
         let mut items: Vec<Node> = Vec::new();
         let mut index: usize = 0;
 
