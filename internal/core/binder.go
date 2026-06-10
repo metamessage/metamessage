@@ -14,8 +14,16 @@ import (
 
 func Bind(node ir.Node, out any) error {
 	outVal := reflect.ValueOf(out)
-	if outVal.Kind() != reflect.Pointer || outVal.IsNil() {
-		return fmt.Errorf("out must be a non-nil pointer")
+	if outVal.Kind() != reflect.Pointer {
+		return fmt.Errorf("out must be a pointer")
+	}
+
+	if outVal.IsNil() {
+		if node.GetType() == ir.NodeTypeNull {
+			return nil
+		} else {
+			return fmt.Errorf("out pointer must not be nil for non-null node")
+		}
 	}
 
 	outVal = outVal.Elem()

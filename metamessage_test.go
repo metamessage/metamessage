@@ -13,11 +13,13 @@ import (
 	"github.com/metamessage/metamessage/internal/ir"
 )
 
-//go test -v -run TestEncodeDecode
+// go test -v -run TestEncodeDecode
 //
-//go test -v -run TestEncodeDecode/nil
+// go test -v -run TestEncodeDecode/nil
 //
-//go test -bench=BenchmarkEncodeDecode -benchmem
+// go test -v -run TestJsonc
+//
+// go test -bench=BenchmarkEncodeDecode -benchmem
 
 type encodeDecodeTestCase struct {
 	name        string
@@ -138,6 +140,13 @@ func BenchmarkEncodeDecode(b *testing.B) {
 		n, _ := EncodeFromValue(data, "")
 		_, _ = DecodeToJsonc(n)
 	}
+}
+
+func TestJsonc(t *testing.T) {
+	jsonc := `null`
+	var v *any
+	e := JsoncToValue(jsonc, v)
+	fmt.Println("1111", e, v)
 }
 
 func TestGenerateGoBasic(t *testing.T) {
