@@ -414,11 +414,9 @@ func (e *encoder) Encode(node ir.Node) (out []byte, err error) {
 			return
 		}
 
-		if n1 == 0 {
-			return
+		if n1 > 0 {
+			n = n1
 		}
-
-		n = n1
 
 	default:
 		err = fmt.Errorf("unsupported type %T", val)

@@ -38,6 +38,9 @@ func Bind(node ir.Node, out any) error {
 	case *ir.NodeScalar:
 		return convertScalar(n, outVal)
 
+	case *ir.NodeNull:
+		return nil
+
 	default:
 		return fmt.Errorf("unsupported node type: %T", node)
 	}

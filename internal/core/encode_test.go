@@ -19,7 +19,7 @@ func TestEncode(t *testing.T) {
 		{
 			name:        "nil",
 			input:       nil,
-			tag:         "desc=it is null",
+			tag:         "",
 			expectedOut: nil,
 			expectedErr: "",
 		},
@@ -32,7 +32,7 @@ func TestEncode(t *testing.T) {
 			if err != nil {
 				fmt.Println("err", err)
 			}
-			// fmt.Printf("encode len: %d\n", len(bs))
+			fmt.Printf("encode len: %d\n", len(bs))
 
 			if tc.expectedErr != "" {
 				if err == nil {

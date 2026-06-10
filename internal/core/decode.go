@@ -150,6 +150,9 @@ func (d *decoder) DecodeStream(out any) (n int, err error) {
 func (d *decoder) decode(tag *ir.Tag, path string) (node ir.Node, length int, err error) {
 	var b byte
 	b, err = d.ReadByte()
+	if err != nil {
+		return
+	}
 	prefix := GetPrefix(b)
 	// fmt.Printf("decode prefix: %s %b\n", prefix.String(), b)
 

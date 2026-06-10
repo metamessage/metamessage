@@ -15,7 +15,7 @@ import (
 
 //go test -v -run TestEncodeDecode
 //
-//go test -v -run TestEncodeDecode/datetime
+//go test -v -run TestEncodeDecode/nil
 //
 //go test -bench=BenchmarkEncodeDecode -benchmem
 
@@ -51,6 +51,12 @@ func TestEncodeDecode(t *testing.T) {
 			input: Datetime{
 				Datetime2: now,
 			},
+			expectedErr: "",
+		},
+		{
+			name:        "nil",
+			input:       nil,
+			expectedOut: []byte{},
 			expectedErr: "",
 		},
 		// {
@@ -96,8 +102,21 @@ func TestEncodeDecode(t *testing.T) {
 				t.Fatalf("Unexpected error: %v", err)
 			}
 
-			rs, _ := DecodeToJsonc(bs)
+			// bs = []byte{}
+			rs, err := DecodeToJsonc(bs)
+			if err != nil {
+				t.Fatalf("Unexpected error: %v", err)
+			}
 			fmt.Println(rs)
+
+			// DecodeToValue()
+			var v any
+			err = DecodeToValue(bs, &v)
+			if err != nil {
+				t.Fatalf("DecodeToValue error: %v", err)
+			}
+			fmt.Println("v", v)
+
 			// switch rs.GetType() {
 			// case ir.NodeTypeArray:
 			// case ir.NodeTypeObject:
@@ -115,7 +134,7 @@ func BenchmarkEncodeDecode(b *testing.B) {
 
 	b.ResetTimer()
 
-	for i := 0; i < b.N; i++ {
+	for b.Loop() {
 		n, _ := EncodeFromValue(data, "")
 		_, _ = DecodeToJsonc(n)
 	}
