@@ -33,7 +33,8 @@ export function prefixToString(prefix: Prefix): string {
 }
 
 export enum SimpleValue {
-  NullBool = 0,
+  SimpleNull = 0,
+  NullBool,
   NullInt,
   NullFloat,
   NullString,
@@ -69,6 +70,8 @@ export enum SimpleValue {
 
 export function simpleValueToString(value: SimpleValue): string {
   switch (value) {
+    case SimpleValue.SimpleNull:
+      return 'null';
     case SimpleValue.NullBool:
       return 'null_bool';
     case SimpleValue.NullInt:
@@ -198,7 +201,7 @@ export const PrefixMask = 0b11100000;
 export const SuffixMask = 0b00011111;
 
 export function getPrefix(b: number): Prefix {
-  return b & PrefixMask as Prefix;
+  return b & (PrefixMask as Prefix);
 }
 
 export function getSuffix(b: number): number {

@@ -188,8 +188,8 @@ func TestEncodeBytesArray(t *testing.T) {
 		{
 			name: "varied_sizes",
 			input: [][]byte{
-				[]byte{1},
-				[]byte{1, 2, 3, 4, 5, 6, 7, 8},
+				{1},
+				{1, 2, 3, 4, 5, 6, 7, 8},
 				[]byte("hello"),
 			},
 		},

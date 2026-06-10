@@ -199,6 +199,10 @@ static node_t *dec_decode_simple(mm_decoder_t *d, uint8_t b) {
   mm_tag_init(&val->tag);
 
   switch (suffix) {
+  case MM_SIMPLE_NULL:
+    node_free(node);
+    node = node_new_null();
+    break;
   case MM_SIMPLE_NULLBOOL:
     val->tag.type = MM_VALUE_BOOL;
     val->text = strdup("false");
@@ -1263,6 +1267,9 @@ static node_t *dec_decode_tag(mm_decoder_t *d, uint8_t b,
       if (payload_remaining > 0) {
         uint8_t null_type_byte = dec_read_byte(d);
         switch (null_type_byte) {
+        case MM_SIMPLE_NULL:
+          // SimpleNull means no type - keep as unknown
+          break;
         case MM_SIMPLE_NULLBOOL:
           val->tag.type = MM_VALUE_BOOL;
           free(val->text);
@@ -1543,15 +1550,19 @@ static node_t *dec_decode_node(mm_decoder_t *d, mm_tag_t *parent_tag) {
   }
 
   // For VALUE nodes, apply parent tag type and conversion
-  if (node && node->type == MM_NODE_VALUE && parent_tag) {
-    node_scalar_t *val = &node->data.value;
-    mm_tag_merge(&val->tag, parent_tag);
-    // Preserve inherited semantics: if parent's attributes were inherited,
-    // the merged attributes should remain inherited (not shown in output)
-    if (parent_tag->is_inherit) {
-      val->tag.is_inherit = true;
+  if (node && parent_tag) {
+    if (node->type == MM_NODE_VALUE) {
+      node_scalar_t *val = &node->data.value;
+      mm_tag_merge(&val->tag, parent_tag);
+      // Preserve inherited semantics: if parent's attributes were inherited,
+      // the merged attributes should remain inherited (not shown in output)
+      if (parent_tag->is_inherit) {
+        val->tag.is_inherit = true;
+      }
+      dec_apply_tag_conversion(val);
+    } else if (node->type == MM_NODE_NULL) {
+      mm_tag_merge(&node->tag, parent_tag);
     }
-    dec_apply_tag_conversion(val);
   }
 
   return node;

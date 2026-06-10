@@ -20,7 +20,7 @@ public class NodeScalar : INode
 {
     public object? Data { get; set; }
     public string Text { get; set; }
-    public Tag Tag { get; set; }
+    public Tag TTag { get; set; }
     public string Path { get; set; } = "";
     public MmNodeType NodeType => MmNodeType.Value;
 
@@ -28,44 +28,32 @@ public class NodeScalar : INode
     {
         Data = data;
         Text = text;
-        Tag = tag;
+        TTag = tag;
     }
 }
 
-public class NodeNull : INode
-{
-    public Tag Tag { get; set; }
-    public string Path { get; set; } = "";
-    public MmNodeType NodeType => MmNodeType.Value;
-
-    public NodeNull(Tag tag)
-    {
-        Tag = tag;
-    }
-}
-
-public class NodeArray : INode
+public class MmArray : INode
 {
     public List<INode> Children { get; set; }
     public Tag Tag { get; set; }
     public string Path { get; set; } = "";
     public MmNodeType NodeType => MmNodeType.Array;
 
-    public NodeArray(List<INode> children, Tag tag)
+    public MmArray(List<INode> children, Tag tag)
     {
         Children = children;
         Tag = tag;
     }
 }
 
-public class NodeObject : INode
+public class MmMap : INode
 {
     public List<KeyValuePair<NodeScalar, INode>> Entries { get; set; }
     public Tag Tag { get; set; }
     public string Path { get; set; } = "";
     public MmNodeType NodeType => MmNodeType.Object;
 
-    public NodeObject(List<KeyValuePair<NodeScalar, INode>> entries, Tag tag)
+    public MmMap(List<KeyValuePair<NodeScalar, INode>> entries, Tag tag)
     {
         Entries = entries;
         Tag = tag;

@@ -9,12 +9,14 @@ class NodeType
     public const ARRAY = 2;
     public const VALUE = 3;
     public const DOC = 4;
+    public const NULL = 5;
 
     public const LABEL_UNKNOWN = 'unknown';
     public const LABEL_OBJECT = 'object';
     public const LABEL_ARRAY = 'array';
     public const LABEL_VALUE = 'value';
     public const LABEL_DOC = 'doc';
+    public const LABEL_NULL = 'null';
 
     public static function toString(int $nt): string
     {
@@ -23,6 +25,7 @@ class NodeType
             self::ARRAY => self::LABEL_ARRAY,
             self::VALUE => self::LABEL_VALUE,
             self::DOC => self::LABEL_DOC,
+            self::NULL => self::LABEL_NULL,
             default => self::LABEL_UNKNOWN,
         };
     }
@@ -34,6 +37,7 @@ class NodeType
             self::LABEL_ARRAY => self::ARRAY,
             self::LABEL_VALUE => self::VALUE,
             self::LABEL_DOC => self::DOC,
+            self::LABEL_NULL => self::NULL,
             default => self::UNKNOWN,
         };
     }
@@ -146,6 +150,32 @@ class NodeScalar implements Node
     public function getType(): int
     {
         return NodeType::VALUE;
+    }
+
+    public function getTag(): ?Tag
+    {
+        return $this->Tag;
+    }
+}
+
+class NodeNull implements Node
+{
+    public ?Tag $Tag = null;
+    public string $Path = '';
+
+    public function getPath(): string
+    {
+        return $this->Path;
+    }
+
+    public function setPath(string $path): void
+    {
+        $this->Path = $path;
+    }
+
+    public function getType(): int
+    {
+        return NodeType::NULL;
     }
 
     public function getTag(): ?Tag

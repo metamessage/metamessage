@@ -115,6 +115,24 @@ class NodeScalar(Node):
 
 
 @dataclass
+class NodeNull(Node):
+    tag: Optional['Tag'] = None
+    path: str = ""
+
+    def get_tag(self):
+        return self.tag
+
+    def get_type(self):
+        return NodeType.Unknown
+
+    def get_path(self):
+        return self.path
+
+    def set_path(self, path: str):
+        self.path = path
+
+
+@dataclass
 class Doc(Node):
     fields: List[Field] = field(default_factory=list)
     tag: Optional['Tag'] = None

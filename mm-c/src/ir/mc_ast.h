@@ -9,6 +9,7 @@ typedef enum {
   MM_NODE_OBJECT,
   MM_NODE_ARRAY,
   MM_NODE_VALUE,
+  MM_NODE_NULL,
   MM_NODE_DOC
 } node_type_t;
 
@@ -65,6 +66,7 @@ struct node {
 node_t *node_new_object(void);
 node_t *node_new_array(void);
 node_t *node_new_scalar(void);
+node_t *node_new_null(void);
 node_t *node_new_doc(void);
 void node_free(node_t *node);
 

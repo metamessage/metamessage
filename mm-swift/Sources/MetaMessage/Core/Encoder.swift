@@ -626,6 +626,22 @@ enum TagKey {
 
 // MARK: - Node encoding
 extension Encoder {
+    public func encodeNodeNull(_ node: NodeNull) {
+        buffer.write(MMSimpleValue.null.rawValue)
+
+        if let tag = node.getTag(), needsTagEncoding(tag) {
+            let payloadBytes = Array(buffer.data)
+            let tagBuf = encodeTagToBytes(tag)
+            let tagLenHeader = encodeTagBodyLength(tagBuf.count)
+            let totalLen = tagLenHeader.count + tagBuf.count + payloadBytes.count
+            buffer.reset()
+            writeTagPrefix(totalLen)
+            buffer.write(tagLenHeader)
+            buffer.write(tagBuf)
+            buffer.write(payloadBytes)
+        }
+    }
+
     public func encodeNodeValue(_ node: NodeScalar) {
         guard let tag = node.getTag() else {
             encodeRawValue(node)
@@ -750,6 +766,8 @@ extension Encoder {
             buffer.write(MMSimpleValue.nullBytes.rawValue)
         case .bool:
             buffer.write(MMSimpleValue.nullBool.rawValue)
+        case .unknown:
+            buffer.write(MMSimpleValue.null.rawValue)
         default:
             break
         }
@@ -797,6 +815,10 @@ extension Encoder {
                     let encoder = Encoder()
                     encoder.encodeNodeObject(obj)
                     valBuf.write([UInt8](encoder.buffer.data))
+                } else if let nullNode = item as? NodeNull {
+                    let encoder = Encoder()
+                    encoder.encodeNodeNull(nullNode)
+                    valBuf.write([UInt8](encoder.buffer.data))
                 }
             }
             let payload = [UInt8](valBuf.data)
@@ -829,6 +851,10 @@ extension Encoder {
             } else if let obj = item as? NodeObject {
                 let encoder = Encoder()
                 encoder.encodeNodeObject(obj)
+                valBuf.write([UInt8](encoder.buffer.data))
+            } else if let nullNode = item as? NodeNull {
+                let encoder = Encoder()
+                encoder.encodeNodeNull(nullNode)
                 valBuf.write([UInt8](encoder.buffer.data))
             }
         }
@@ -876,6 +902,8 @@ extension Encoder {
                 valEncoder.encodeNodeArray(arr)
             } else if let obj = field.value as? NodeObject {
                 valEncoder.encodeNodeObject(obj)
+            } else if let nullNode = field.value as? NodeNull {
+                valEncoder.encodeNodeNull(nullNode)
             }
             valBuf.write([UInt8](valEncoder.buffer.data))
         }

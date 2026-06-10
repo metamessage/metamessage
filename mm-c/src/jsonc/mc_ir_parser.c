@@ -329,6 +329,8 @@ static node_t *parse_array(parse_ctx_t *ctx) {
       mm_tag_inherit(&item->data.array.tag, &arr->data.array.tag);
     } else if (item->type == MM_NODE_OBJECT) {
       mm_tag_inherit(&item->data.object.tag, &arr->data.array.tag);
+    } else if (item->type == MM_NODE_NULL) {
+      mm_tag_inherit(&item->tag, &arr->data.array.tag);
     }
   }
 
@@ -362,11 +364,21 @@ static node_t *parse_value(parse_ctx_t *ctx) {
   } else {
     char *raw = parse_raw_string(ctx);
     if (raw) {
+      if (strcmp(raw, "null") == 0) {
+        node_free(node);
+        node = node_new_null();
+        free(raw);
+        if (ctx->has_pending_tag) {
+          mm_tag_t tag = mm_tag_parse(ctx->pending_tag);
+          mm_tag_merge(&node->tag, &tag);
+          mm_tag_cleanup(&tag);
+          ctx->has_pending_tag = 0;
+        }
+        return node;
+      }
       node->data.value.text = raw;
       if (strcmp(raw, "true") == 0 || strcmp(raw, "false") == 0) {
         node->data.value.tag.type = MM_VALUE_BOOL;
-      } else if (strcmp(raw, "null") == 0) {
-        node->data.value.tag.is_null = 1;
       } else if (strchr(raw, '.') || strchr(raw, 'e') || strchr(raw, 'E')) {
         node->data.value.tag.type = MM_VALUE_F64;
       } else {

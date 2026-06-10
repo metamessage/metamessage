@@ -5,7 +5,7 @@ import { mm } from './mm';
 import * as constants from './constants';
 import { Tag } from '../ir/tag';
 import { ValueType } from '../ir/value-type';
-import { Node, NodeScalar, NodeObject, NodeArray } from '../ir/ast';
+import { Node, NodeScalar, NodeObject, NodeArray, NodeNull } from '../ir/ast';
 import { ValueToNode } from './value-to-node';
 
 import { parseJSONC, toJSONC } from '../jsonc/index';
@@ -29,7 +29,9 @@ export function fromJSONC(jsonc: string): Uint8Array {
 }
 
 function nodeToDecodedValue(node: Node): DecodedValue {
-  if (node instanceof NodeScalar) {
+  if (node instanceof NodeNull) {
+    return { type: ValueType.Unknown, value: null };
+  } else if (node instanceof NodeScalar) {
     return {
       type: node.getTag().type,
       value: node.getValue(),

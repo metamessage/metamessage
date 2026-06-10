@@ -23,6 +23,14 @@ func writeIndent(b *strings.Builder, indent int, config *JSONCConfig) {
 	}
 }
 
+func writeNullJSONC(b *strings.Builder, v *ir.NodeNull) {
+	if v == nil {
+		return
+	}
+
+	b.WriteString(ir.Null)
+}
+
 func writeValueJSONC(b *strings.Builder, v *ir.NodeScalar) {
 	if v == nil {
 		return
@@ -122,6 +130,7 @@ func writeNodeJSONC(b *strings.Builder, n ir.Node, indent int, config *JSONCConf
 		writeValueJSONC(b, v)
 
 	case *ir.NodeNull:
+		writeNullJSONC(b, v)
 
 	default:
 	}

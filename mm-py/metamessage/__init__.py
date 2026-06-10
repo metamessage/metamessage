@@ -2,7 +2,7 @@
 metamessage - A binary message encoding library with schema support
 """
 from .ir.tag import Tag, TagKey, ValueType, mm_tag, def_tag, NewTag, MergeTag
-from .ir.ast import NodeObject, Arr, NodeScalar, Field, NodeType, Node
+from .ir.ast import NodeObject, Arr, NodeScalar, Field, NodeType, Node, NodeNull
 from .core.encoder import Encoder
 from .core.decoder import Decoder
 from .core.value_to_node import value_to_node, node_to_value, mm
@@ -75,7 +75,9 @@ def jsonc_to_value(jsonc, target_type=None):
 
 
 def _node_data(node):
-    if isinstance(node, NodeObject):
+    if isinstance(node, NodeNull):
+        return None
+    elif isinstance(node, NodeObject):
         return {f.key: _node_data(f.value) for f in node.fields}
     elif isinstance(node, Arr):
         return [_node_data(item) for item in node.items]
@@ -86,7 +88,7 @@ def _node_data(node):
 
 __all__ = [
     "Tag", "TagKey", "ValueType", "mm_tag", "def_tag", "NewTag", "MergeTag",
-    "NodeObject", "Arr", "NodeScalar", "Field", "NodeType", "Node",
+    "NodeObject", "Arr", "NodeScalar", "NodeNull", "Field", "NodeType", "Node",
     "Encoder", "Decoder",
     "parse_jsonc", "to_jsonc",
     "value_to_node", "node_to_value", "mm",

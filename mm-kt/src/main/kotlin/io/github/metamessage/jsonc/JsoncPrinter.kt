@@ -3,6 +3,7 @@ package io.github.metamessage.jsonc
 import io.github.metamessage.ir.Doc
 import io.github.metamessage.ir.Node
 import io.github.metamessage.ir.NodeArray
+import io.github.metamessage.ir.NodeNull
 import io.github.metamessage.ir.NodeObject as AstObject
 import io.github.metamessage.ir.NodeScalar
 import io.github.metamessage.ir.Tag
@@ -17,6 +18,7 @@ class JsoncPrinter {
                 is AstObject -> objectToString(node, indentLevel)
                 is NodeArray -> arrayToString(node, indentLevel)
                 is NodeScalar -> valueToString(node)
+                is NodeNull -> "null"
                 is Doc -> docToString(node, indentLevel)
             }
         }
@@ -125,6 +127,7 @@ class JsoncPrinter {
                 is AstObject -> compactObject(node)
                 is NodeArray -> compactArray(node)
                 is NodeScalar -> compactValue(node)
+                is NodeNull -> "null"
                 is Doc -> compactDoc(node)
             }
         }

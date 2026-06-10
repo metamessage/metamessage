@@ -37,7 +37,11 @@ public class JSONCPrinter {
         case .array:
             result += printArray(node as! NodeArray)
         case .value:
-            result += printValue(node as! NodeScalar)
+            if node is NodeNull {
+                result += "null"
+            } else {
+                result += printValue(node as! NodeScalar)
+            }
         case .doc:
             result += printObject(node as! MMDoc)
         case .unknown:
@@ -275,6 +279,9 @@ public class JSONCPrinter {
         case .array:
             return printArrayCompact(node as! NodeArray)
         case .value:
+            if node is NodeNull {
+                return "null"
+            }
             return printValueCompact(node as! NodeScalar)
         case .doc:
             return printObjectCompact(node as! MMDoc)

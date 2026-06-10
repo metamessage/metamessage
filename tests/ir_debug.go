@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+
 	"github.com/metamessage/metamessage/internal/core"
 	"github.com/metamessage/metamessage/internal/ir"
 	"github.com/metamessage/metamessage/internal/jsonc"
@@ -18,18 +19,18 @@ func main() {
 		return
 	}
 
-	obj := node.(*ir.Object)
+	obj := node.(*ir.NodeObject)
 	for _, f := range obj.Fields {
 		fmt.Printf("Field: %s\n", f.Key)
 		fmt.Printf("  Field tag ToString: %q\n", f.Value.GetTag().ToString())
-		
-		if arr, ok := f.Value.(*ir.Array); ok {
+
+		if arr, ok := f.Value.(*ir.NodeArray); ok {
 			fmt.Printf("  Array tag ToString: %q\n", arr.Tag.ToString())
 			fmt.Printf("  Array tag ChildDesc: %q\n", arr.Tag.ChildDesc)
 			for i, item := range arr.Items {
 				t := item.GetTag()
 				fmt.Printf("  Item[%d] tag ToString: %q\n", i, t.ToString())
-				fmt.Printf("    Type: %v, IsInherit: %v, Desc: %q, ChildDesc: %q\n", 
+				fmt.Printf("    Type: %v, IsInherit: %v, Desc: %q, ChildDesc: %q\n",
 					t.Type, t.IsInherit, t.Desc, t.ChildDesc)
 			}
 		}

@@ -5,6 +5,7 @@ namespace io\metamessage\core;
 use io\metamessage\ir\NodeObject;
 use io\metamessage\ir\NodeArray;
 use io\metamessage\ir\NodeScalar;
+use io\metamessage\ir\NodeNull;
 use io\metamessage\ir\Node;
 use io\metamessage\ir\Tag;
 use io\metamessage\ir\Field;
@@ -975,6 +976,14 @@ class WireDecoder
         $sv = $prefix & Prefix::SUFFIX_MASK;
 
         switch ($sv) {
+            case SimpleValue::SIMPLE_NULL:
+                if ($tag->type !== ValueType::UNKNOWN) {
+                    throw new MmDecodeException('unsupported value types: ' . $tag->type->name);
+                }
+                $node = new NodeNull();
+                $node->Tag = $tag;
+                $node->Path = $path;
+                break;
             case SimpleValue::FALSE:
                 $tag->type = ValueType::BOOL;
                 $node = new NodeScalar(false, Constants::FALSE, $tag, $path);

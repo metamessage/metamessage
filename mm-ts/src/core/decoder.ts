@@ -51,7 +51,7 @@ import {
   KVersion,
   Tag,
 } from '../ir/tag';
-import { NodeScalar, NodeObject, NodeArray, Node } from '../ir/ast';
+import { NodeScalar, NodeObject, NodeArray, Node, NodeNull } from '../ir/ast';
 import { uint8ToBase64 } from '../jsonc/printer';
 
 export class MMDecoder {
@@ -642,11 +642,7 @@ export class MMDecoder {
     return result;
   }
 
-  private decodeSimple(
-    prefix: number,
-    tag: Tag | null,
-    path: string,
-  ): NodeScalar {
+  private decodeSimple(prefix: number, tag: Tag | null, path: string): Node {
     if (!tag) {
       tag = new Tag();
     }
@@ -656,6 +652,12 @@ export class MMDecoder {
     let text: string;
 
     switch (value) {
+      case SimpleValue.SimpleNull:
+        if (tag.type !== ValueType.Unknown) {
+          throw new Error(`unsupported value types: ${typeToString(tag.type)}`);
+        }
+        return new NodeNull(tag);
+
       case SimpleValue.False:
         tag.type = ValueType.Bool;
         data = false;

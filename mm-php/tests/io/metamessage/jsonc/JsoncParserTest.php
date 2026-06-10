@@ -54,11 +54,10 @@ class JsoncParserTest extends TestCase
         $this->assertEquals(false, $resultFalse->Data);
     }
 
-    public function testParseNullThrowsException(): void
+    public function testParseNullReturnsNodeNull(): void
     {
-        $this->expectException(\Exception::class);
-        $this->expectExceptionMessage('null is not supported');
-        parseJsonc("null");
+        $result = parseJsonc("null");
+        $this->assertInstanceOf(\io\metamessage\ir\NodeNull::class, $result);
     }
 
     public function testParseArray(): void

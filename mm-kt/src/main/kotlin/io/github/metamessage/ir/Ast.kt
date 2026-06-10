@@ -4,7 +4,7 @@ enum class NodeType(val label: String) {
     NodeTypeUnknown("unknown"),
     NodeTypeObject("object"),
     NodeTypeArray("array"),
-    NodeTypeValue("value"),
+    NodeTypeScalar("value"),
     NodeTypeDoc("doc");
 
     override fun toString(): String {
@@ -16,7 +16,7 @@ fun parseNodeType(s: String): NodeType {
     return when (s) {
         "object" -> NodeType.NodeTypeObject
         "array" -> NodeType.NodeTypeArray
-        "value" -> NodeType.NodeTypeValue
+        "value" -> NodeType.NodeTypeScalar
         "doc" -> NodeType.NodeTypeDoc
         else -> NodeType.NodeTypeUnknown
     }
@@ -53,7 +53,11 @@ data class NodeScalar(
         override var tag: Tag? = null,
         override var path: String = ""
 ) : Node() {
-    override fun getType(): NodeType = NodeType.NodeTypeValue
+    override fun getType(): NodeType = NodeType.NodeTypeScalar
+}
+
+data class NodeNull(override var tag: Tag? = null, override var path: String = "") : Node() {
+    override fun getType(): NodeType = NodeType.NodeTypeScalar
 }
 
 class Doc(

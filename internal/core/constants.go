@@ -44,7 +44,8 @@ func (p Prefix) String() string {
 type SimpleValue byte
 
 const (
-	SimpleNullBool SimpleValue = iota
+	SimpleNull SimpleValue = iota
+	SimpleNullBool
 	SimpleNullInt
 	SimpleNullFloat
 	SimpleNullString
@@ -78,11 +79,12 @@ const (
 	SimpleToken
 	SimpleExpireTime
 	SimpleKey
-	SimpleVal
 )
 
 func (s SimpleValue) String() string {
 	switch s {
+	case SimpleNull:
+		return "null"
 	case SimpleNullBool:
 		return "null_bool"
 	case SimpleNullInt:
@@ -145,8 +147,6 @@ func (s SimpleValue) String() string {
 		return "expire_time"
 	case SimpleKey:
 		return "key"
-	case SimpleVal:
-		return "value"
 
 	default:
 		return fmt.Sprintf("SimpleValue(%d)", uint8(s))

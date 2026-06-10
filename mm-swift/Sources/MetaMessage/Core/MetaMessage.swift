@@ -241,6 +241,8 @@ func encodeNode(_ node: Node, with encoder: Encoder) throws -> Data {
         encoder.encodeNodeArray(arr)
     case let val as NodeScalar:
         encoder.encodeNodeValue(val)
+    case let nullNode as NodeNull:
+        encoder.encodeNodeNull(nullNode)
     default:
         throw MMError.unsupportedType
     }

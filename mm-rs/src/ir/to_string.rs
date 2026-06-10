@@ -18,7 +18,19 @@ pub fn to_compact_string(node: &Node) -> String {
 
 fn write_node(buf: &mut String, node: &Node, indent: usize) {
     match node {
-        Node::Value(v) => write_value(buf, v),
+        Node::Value(v) => {
+            if let Some(tag) = &v.tag {
+                let tag_str = tag.to_string();
+                if !tag_str.is_empty() {
+                    buf.push('\n');
+                    write_indent(buf, indent);
+                    buf.push_str("// mm: ");
+                    buf.push_str(&tag_str);
+                    buf.push('\n');
+                }
+            }
+            write_value(buf, v)
+        }
         Node::Object(o) => write_object(buf, o, indent),
         Node::Array(a) => write_array(buf, a, indent),
     }

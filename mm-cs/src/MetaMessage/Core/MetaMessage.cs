@@ -2,7 +2,6 @@ using ValueType = MetaMessage.Ir.ValueType;
 using MetaMessage.Jsonc;
 using MetaMessage.Ir;
 using JsoncParser = MetaMessage.Jsonc.Jsonc;
-using System.Text.Json;
 
 namespace MetaMessage.Core;
 
@@ -148,6 +147,9 @@ public static class MetaMessage
     {
         switch (tag.Type)
         {
+            case ValueType.Unknown:
+                encoder.EncodeSimple(SimpleValue.NULL);
+                return;
             case ValueType.Bool:
                 encoder.EncodeSimple(SimpleValue.NULL_BOOL);
                 return;
@@ -163,7 +165,7 @@ public static class MetaMessage
                 encoder.EncodeSimple(SimpleValue.NULL_INT);
                 return;
             case ValueType.Bigint:
-                encoder.EncodeSimple(SimpleValue.NULL_BIGINT);
+                encoder.EncodeSimple(SimpleValue.NULL_BYTES);
                 return;
             case ValueType.F32:
             case ValueType.F64:
@@ -179,7 +181,7 @@ public static class MetaMessage
             case ValueType.Datetime:
             case ValueType.Date:
             case ValueType.Time:
-                encoder.EncodeSimple(SimpleValue.NULL_DATETIME);
+                encoder.EncodeSimple(SimpleValue.NULL_INT);
                 return;
             case ValueType.Decimal:
                 encoder.EncodeSimple(SimpleValue.NULL_STRING);
@@ -384,6 +386,9 @@ public static class MetaMessage
                 break;
             case NodeObject map:
                 EncodeJsoncMapPayload(payload, map);
+                break;
+            case NodeNull:
+                payload.EncodeSimple(SimpleValue.NULL);
                 break;
         }
 

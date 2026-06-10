@@ -8,6 +8,7 @@ use io\metamessage\ir\Node;
 use io\metamessage\ir\NodeScalar;
 use io\metamessage\ir\NodeObject;
 use io\metamessage\ir\NodeArray;
+use io\metamessage\ir\NodeNull;
 use io\metamessage\ir\Field;
 use io\metamessage\core\CamelToSnake;
 
@@ -102,6 +103,9 @@ class JsoncParser
         while (true) {
             $tok = $this->peek();
             if ($tok->type === JsoncTokenType::EOF) {
+                if ($val === null) {
+                    throw new \Exception("no value parsed");
+                }
                 return $val;
             }
 
@@ -795,7 +799,16 @@ class JsoncParser
                     return $value;
 
                 case JsoncTokenType::Null:
-                    throw new \Exception('null is not supported');
+                    if ($tag === null) {
+                        $tag = Tag::newTag();
+                    }
+                    if ($tag->type !== ValueType::UNKNOWN) {
+                        throw new \Exception(sprintf('null is not supported for type %s', $tag->type->wireName()));
+                    }
+                    $value = new NodeNull();
+                    $value->Tag = $tag;
+                    $value->Path = $path;
+                    return $value;
 
                 default:
                     throw new \Exception(sprintf('unexpected token %s', $tok->type));

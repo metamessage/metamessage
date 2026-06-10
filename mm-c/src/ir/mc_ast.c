@@ -45,6 +45,18 @@ node_t* node_new_scalar(void)
     return node;
 }
 
+node_t* node_new_null(void)
+{
+    node_t* node = (node_t*)malloc(sizeof(node_t));
+    if (!node) return NULL;
+
+    node->type = MM_NODE_NULL;
+    mm_tag_init(&node->tag);
+    node->path = NULL;
+
+    return node;
+}
+
 node_t* node_new_doc(void)
 {
     node_t* node = (node_t*)malloc(sizeof(node_t));
@@ -87,6 +99,9 @@ void node_free(node_t* node)
             node_free(node->data.doc.fields[i].value);
         }
         free(node->data.doc.fields);
+        break;
+    case MM_NODE_NULL:
+        // No extra data to free for null nodes
         break;
     default:
         break;

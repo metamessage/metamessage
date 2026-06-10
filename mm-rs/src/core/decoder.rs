@@ -411,6 +411,14 @@ impl Decoder {
         })?;
 
         let (data, text) = match value {
+            SimpleValue::Null => {
+                return Ok(Node::Value(NodeScalar {
+                    data: ValueData::Null,
+                    text: "null".to_string(),
+                    path: String::new(),
+                    tag: Some(tag.clone()),
+                }));
+            }
             SimpleValue::False => (ValueData::Bool(false), "false".to_string()),
             SimpleValue::True => (ValueData::Bool(true), "true".to_string()),
             SimpleValue::NullBool => (ValueData::Bool(false), "false".to_string()),

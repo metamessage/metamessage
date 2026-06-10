@@ -75,7 +75,7 @@ func (p *Parser) Parse() (val ir.Node, err error) {
 		tok := p.peek()
 		if tok.Type == token.EOF {
 			if val == nil {
-				val = &ir.NodeNull{}
+				err = fmt.Errorf("no value parsed")
 			}
 			return
 		}
@@ -149,8 +149,7 @@ func (p *Parser) parse(path string, example bool, tag *ir.Tag) (val ir.Node, err
 				ir.SimpleAccountStr,
 				ir.SimpleTokenStr,
 				ir.SimpleExpireTimeStr,
-				ir.SimpleKeyStr,
-				ir.SimpleValStr:
+				ir.SimpleKeyStr:
 				tag.Type = ir.ValueTypeStr
 				data, text, err = tag.ValidateStr(text, example || tag.Example)
 				if err != nil {
@@ -777,7 +776,13 @@ func (p *Parser) parse(path string, example bool, tag *ir.Tag) (val ir.Node, err
 			}, nil
 
 		case token.Null:
-			return nil, fmt.Errorf("null is not supported")
+			if tag.Type != ir.ValueTypeUnknown {
+				return nil, fmt.Errorf("null is not supported for type %v", tag.Type)
+			}
+
+			return &ir.NodeNull{
+				Tag: tag,
+			}, nil
 
 		default:
 			return nil, fmt.Errorf("unexpected token %s", tok.Type)

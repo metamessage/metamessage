@@ -114,6 +114,9 @@ public class JSONCParser {
         while true {
             let tok = peek()
             if tok.type == .eof {
+                if result == nil {
+                    throw JSONCParserError.invalidData("no value parsed")
+                }
                 return result
             }
 
@@ -324,7 +327,11 @@ public class JSONCParser {
             return value
 
         case .nullValue:
-            throw JSONCParserError.invalidData("null is not supported")
+            let tag = preTag ?? consumeCommentsFor(tok.line)
+            if let tag = tag, tag.type != .unknown {
+                throw JSONCParserError.invalidData("null is not supported for type \(tag.type)")
+            }
+            return NodeNull(tag: tag == nil ? nil : tag, path: path)
 
         default:
             throw JSONCParserError.unexpectedToken("Unexpected token: \(tok.type)")

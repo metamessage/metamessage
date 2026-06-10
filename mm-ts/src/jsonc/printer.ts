@@ -1,4 +1,4 @@
-import { NodeScalar, NodeObject, NodeArray, MMDoc } from '../ir/ast';
+import { NodeScalar, NodeObject, NodeArray, NodeNull, MMDoc } from '../ir/ast';
 import { ValueType } from '../ir/value-type';
 import { Node } from '../ir/ast';
 
@@ -13,7 +13,9 @@ export class JSONCPrinter {
 
   print(node: Node): string {
     this.indentLevel = 0;
-    const tag = node.getTag();
+    // tag 在 root node 上，不是 MMDoc wrapper 上
+    const targetNode = node instanceof MMDoc ? node.getRoot() : node;
+    const tag = targetNode.getTag();
     let result = '';
 
     if (tag.toString() !== '') {
@@ -29,7 +31,9 @@ export class JSONCPrinter {
   }
 
   private printNode(node: Node): string {
-    if (node instanceof NodeScalar) {
+    if (node instanceof NodeNull) {
+      return 'null';
+    } else if (node instanceof NodeScalar) {
       return this.printValue(node);
     } else if (node instanceof NodeObject) {
       return this.printObject(node);
@@ -42,7 +46,9 @@ export class JSONCPrinter {
   }
 
   private printNodeCompact(node: Node): string {
-    if (node instanceof NodeScalar) {
+    if (node instanceof NodeNull) {
+      return 'null';
+    } else if (node instanceof NodeScalar) {
       return this.printValueCompact(node);
     } else if (node instanceof NodeObject) {
       return this.printObjectCompact(node);

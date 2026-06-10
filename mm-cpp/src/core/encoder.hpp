@@ -81,6 +81,20 @@ public:
     case ir::NodeType::Value:
       n = encodeNodeValue(std::static_pointer_cast<ir::NodeScalar>(node));
       break;
+    case ir::NodeType::NodeNull: {
+      auto *tag = node->getTag();
+      n = encodeSimple(SimpleNull);
+      uint32_t n1 = encodeComment(getEncodedBytes(n), tag);
+      if (n1 == 0) {
+        // no tag, return plain simple null
+        std::vector<uint8_t> out(buf_.begin() + offset_ - n,
+                                 buf_.begin() + offset_);
+        offset_ = 0;
+        return out;
+      }
+      n = n1;
+      break;
+    }
     default:
       throw std::runtime_error("unsupported node type");
     }
@@ -452,6 +466,9 @@ private:
         n = encodeNodeValue(
             std::static_pointer_cast<ir::NodeScalar>(field.value));
         break;
+      case ir::NodeType::NodeNull:
+        n = encodeSimple(SimpleNull);
+        break;
       default:
         throw std::runtime_error("unsupported field type");
       }
@@ -492,6 +509,9 @@ private:
         break;
       case ir::NodeType::Value:
         n = encodeNodeValue(std::static_pointer_cast<ir::NodeScalar>(item));
+        break;
+      case ir::NodeType::NodeNull:
+        n = encodeSimple(SimpleNull);
         break;
       default:
         throw std::runtime_error("unsupported item type");

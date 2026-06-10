@@ -402,6 +402,24 @@ func (e *encoder) Encode(node ir.Node) (out []byte, err error) {
 		n, err = e.encodeNodeArray(val)
 	case *ir.NodeScalar:
 		n, err = e.encodeNodeValue(val)
+	case *ir.NodeNull:
+		n, err = e.encodeSimple(SimpleNull)
+		if err != nil {
+			return
+		}
+
+		var n1 uint32
+		n1, err = e.encodeComment(e.buf[e.offset-n:e.offset], val.Tag)
+		if err != nil {
+			return
+		}
+
+		if n1 == 0 {
+			return
+		}
+
+		n = n1
+
 	default:
 		err = fmt.Errorf("unsupported type %T", val)
 	}

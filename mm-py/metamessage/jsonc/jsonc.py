@@ -8,7 +8,7 @@ from typing import Any, List, Optional
 from dataclasses import dataclass
 
 from ..ir.tag import Tag, ValueType, mm_tag, MergeTag, NewTag
-from ..ir.ast import NodeObject, Arr, NodeScalar, Field, Node
+from ..ir.ast import NodeObject, Arr, NodeScalar, Field, Node, NodeNull
 from ..ir.validator import MmValidator
 
 
@@ -255,10 +255,13 @@ class Parser:
         return mm_tag(tag_str)
 
     def parse(self, path: str = "") -> Node:
+        val = None
         while True:
             tok = self.peek()
             if tok.type == TOKEN_EOF:
-                return None
+                if val is None:
+                    raise Exception("no value parsed")
+                return val
 
             if tok.type == TOKEN_COMMENT:
                 if self.pending:
@@ -269,7 +272,7 @@ class Parser:
                 self.next()
                 continue
 
-            return self._parse_value_or_container(path)
+            val = self._parse_value_or_container(path)
 
     def _parse_value_or_container(self, path: str) -> Node:
         tok = self.peek()
@@ -462,7 +465,9 @@ class Parser:
                     raise Exception(f"Validation error at {path}: {r.error}")
             return NodeScalar(data=False, text="false", tag=tag, path=path)
         elif tok.type == TOKEN_NULL:
-            raise Exception("null is not supported")
+            if tag.type != ValueType.Unknown:
+                raise Exception(f"null is not supported for type {tag.type}")
+            return NodeNull(tag=tag, path=path)
         else:
             return NodeScalar(data=None, text="", tag=tag, path=path)
 
@@ -777,7 +782,9 @@ def write_leading_comments(b: list, tag, indent: int):
 
 
 def write_node_jsonc(b: list, n: Node, indent: int):
-    if isinstance(n, NodeScalar):
+    if isinstance(n, NodeNull):
+        b.append("null")
+    elif isinstance(n, NodeScalar):
         write_value_jsonc(b, n)
     elif isinstance(n, NodeObject):
         write_object_jsonc(b, n, indent)

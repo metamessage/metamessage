@@ -9,8 +9,6 @@ set(MMC_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../../../mm-c")
 set(JSONC_SOURCES
     ${MMC_DIR}/src/jsonc/mc_token.c
     ${MMC_DIR}/src/jsonc/mc_scanner.c
-    ${MMC_DIR}/src/jsonc/mc_ast.c
-    ${MMC_DIR}/src/jsonc/mc_parser.c
 )
 
 set(IR_SOURCES

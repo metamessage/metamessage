@@ -45,7 +45,7 @@ func (t *Tag) ValidateVec(value []Node) (err error) {
 		return
 	}
 
-	if value[0].GetType() != NodeTypeValue {
+	if value[0].GetType() != NodeTypeScalar {
 		return
 	}
 
@@ -90,7 +90,7 @@ func (t *Tag) ValidateArr(value []Node) (err error) {
 		return
 	}
 
-	if value[0].GetType() != NodeTypeValue {
+	if value[0].GetType() != NodeTypeScalar {
 		return
 	}
 

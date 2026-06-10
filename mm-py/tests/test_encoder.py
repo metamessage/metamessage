@@ -20,13 +20,13 @@ def test_encode_bool():
     # True
     b = enc.encode(NodeScalar(True, 'true', Tag(type=ValueType.Bool)))
     assert len(b) == 1
-    assert b[0] == 0x06  # SimpleTrue
+    assert b[0] == 0x07  # SimpleTrue
     assert dec(b).decode() == True
     
     # False
     b = enc.encode(NodeScalar(False, 'false', Tag(type=ValueType.Bool)))
     assert len(b) == 1
-    assert b[0] == 0x05  # SimpleFalse
+    assert b[0] == 0x06  # SimpleFalse
     assert dec(b).decode() == False
 
 
@@ -249,7 +249,7 @@ def test_null_values():
     dec = Decoder
     
     expected = {
-        'bool': False,
+        'bool': None,
         'int': 0,
         'float': 0.0,
         'string': '',

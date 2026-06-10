@@ -145,6 +145,7 @@ impl Encoder {
 
         if is_null {
             match tag.map(|t| t.value_type) {
+                Some(ValueType::Unknown) => self.encode_simple(SimpleValue::Null),
                 Some(ValueType::Bool) => self.encode_simple(SimpleValue::NullBool),
                 Some(ValueType::I) => self.encode_simple(SimpleValue::NullInt),
                 Some(ValueType::F64) | Some(ValueType::F32) => {
@@ -329,7 +330,7 @@ impl Encoder {
                     ValueData::Uint(u) => self.encode_uint64(*u),
                     ValueData::Float(_) => self.encode_float(&val.text),
                     ValueData::Bytes(b) => self.encode_bytes(b),
-                    ValueData::Null => self.encode_simple(SimpleValue::NullInt),
+                    ValueData::Null => self.encode_simple(SimpleValue::Null),
                 },
             }
         } else {
@@ -340,7 +341,7 @@ impl Encoder {
                 ValueData::Uint(u) => self.encode_uint64(*u),
                 ValueData::Float(_) => self.encode_float(&val.text),
                 ValueData::Bytes(b) => self.encode_bytes(b),
-                ValueData::Null => self.encode_simple(SimpleValue::NullInt),
+                ValueData::Null => self.encode_simple(SimpleValue::Null),
             }
         }
 
@@ -889,6 +890,6 @@ mod tests {
     fn test_encode_simple() {
         let mut enc = Encoder::new();
         enc.encode_bool(true);
-        assert_eq!(enc.buf[..enc.offset], vec![0x00 | 6]); // SimpleTrue = 6
+        assert_eq!(enc.buf[..enc.offset], vec![0x00 | 7]); // SimpleTrue = 6
     }
 }

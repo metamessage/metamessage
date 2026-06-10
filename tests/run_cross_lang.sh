@@ -238,11 +238,13 @@ for fixture in "${FIXTURES[@]}"; do
     rel="${fixture#$FIXTURES_DIR/}"
     printf "%-45s" "$rel"
 
+    rev_match=1
     for lang in "${AVAILABLE[@]}"; do
         output1=$("${lang}_run" "$fixture" 2>/dev/null) || true
         if [ -z "$output1" ]; then
             printf " ${RED}FAIL${NC}  "
             REV_FAIL=$((REV_FAIL + 1))
+            rev_match=0
             continue
         fi
 
@@ -254,6 +256,7 @@ for fixture in "${FIXTURES[@]}"; do
         if [ -z "$output2" ]; then
             printf " ${RED}FAIL${NC}  "
             REV_FAIL=$((REV_FAIL + 1))
+            rev_match=0
             continue
         fi
 
@@ -262,6 +265,7 @@ for fixture in "${FIXTURES[@]}"; do
         else
             printf " ${RED}DIFF${NC}  "
             REV_FAIL=$((REV_FAIL + 1))
+            rev_match=0
             rev_file="$RESULTS_DIR/${lang}_${rel//\//_}.rev_diff"
             {
                 echo "=== $rel ($lang) per-language reversibility failure ==="
@@ -277,6 +281,12 @@ for fixture in "${FIXTURES[@]}"; do
             } > "$rev_file"
         fi
     done
+
+    if [ "$rev_match" -eq 1 ]; then
+        printf " ${GREEN}MATCH${NC}"
+    else
+        printf " ${RED}DIFF${NC}"
+    fi
     echo ""
 done
 
@@ -378,12 +388,12 @@ echo -e "Languages: ${#AVAILABLE[@]} (${AVAILABLE[*]})"
 echo -e "  ${GREEN}PASS: $REV_PASS${NC}"
 echo -e "  ${RED}FAIL: $REV_FAIL${NC}"
 echo ""
-echo -e "${CYAN}=== Reversibility: cross-language round-trip ===${NC}"
-echo -e "Fixtures:        ${#FIXTURES[@]}"
-echo -e "Non-Go languages: $(( ${#AVAILABLE[@]} - 1 ))"
-echo -e "  ${GREEN}PASS: $XREV_PASS${NC}"
-echo -e "  ${RED}FAIL: $XREV_FAIL${NC}"
-echo ""
+# echo -e "${CYAN}=== Reversibility: cross-language round-trip ===${NC}"
+# echo -e "Fixtures:        ${#FIXTURES[@]}"
+# echo -e "Non-Go languages: $(( ${#AVAILABLE[@]} - 1 ))"
+# echo -e "  ${GREEN}PASS: $XREV_PASS${NC}"
+# echo -e "  ${RED}FAIL: $XREV_FAIL${NC}"
+# echo ""
 
 TOTAL_FAIL=$((FAIL + REV_FAIL + XREV_FAIL))
 

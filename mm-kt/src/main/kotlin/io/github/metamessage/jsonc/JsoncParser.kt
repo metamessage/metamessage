@@ -4,6 +4,7 @@ import io.github.metamessage.core.CamelToSnake
 import io.github.metamessage.ir.Field
 import io.github.metamessage.ir.Node
 import io.github.metamessage.ir.NodeArray as AstArray
+import io.github.metamessage.ir.NodeNull
 import io.github.metamessage.ir.NodeObject as AstObject
 import io.github.metamessage.ir.NodeScalar
 import io.github.metamessage.ir.Tag
@@ -187,7 +188,10 @@ class JsoncParser(private val tokens: List<JsoncToken>) {
                     return NodeScalar(data = false, text = "false", tag = tag, path = path)
                 }
                 JsoncTokenType.Null -> {
-                    throw JsoncException("null is not supported")
+                    val tag = consumeCommentsFor(tok.line) ?: Tag()
+                    if (tag.type != ValueType.UNKNOWN)
+                            throw JsoncException("null is not supported for type ${tag.type}")
+                    return NodeNull(tag = tag, path = path)
                 }
                 else -> throw JsoncException("unexpected token ${tok.type}")
             }
@@ -1058,6 +1062,7 @@ class JsoncParser(private val tokens: List<JsoncToken>) {
             is NodeScalar -> n.tag = merged
             is AstObject -> n.tag = merged
             is AstArray -> n.tag = merged
+            is NodeNull -> n.tag = merged
             is io.github.metamessage.ir.Doc -> n.tag = merged
         }
     }

@@ -35,6 +35,10 @@ public class JsoncPrinter
         {
             WriteMapJSONC(sb, map.Entries, map.Tag, indent);
         }
+        else if (node is NodeNull)
+        {
+            sb.Append("null");
+        }
     }
 
     private void WriteLeadingComments(System.Text.StringBuilder b, Tag? tag, int indent)

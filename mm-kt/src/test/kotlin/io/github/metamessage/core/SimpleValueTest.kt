@@ -19,9 +19,9 @@ class SimpleValueTest {
     }
 
     @Test
-    fun nullBoolValue() {
-        assertEquals(0, SimpleValue.NULL_BOOL)
-        assertEquals("null_bool", SimpleValue.toString(SimpleValue.NULL_BOOL))
+    fun simpleNullValue() {
+        assertEquals(0, SimpleValue.SIMPLE_NULL)
+        assertEquals("simple_null", SimpleValue.toString(SimpleValue.SIMPLE_NULL))
     }
 
     @Test
@@ -158,7 +158,7 @@ class SimpleValueTest {
         val seen = mutableSetOf<Int>()
         val values =
                 listOf(
-                        SimpleValue.NULL_BOOL,
+                        SimpleValue.SIMPLE_NULL,
                         SimpleValue.NULL_INT,
                         SimpleValue.NULL_FLOAT,
                         SimpleValue.NULL_STRING,

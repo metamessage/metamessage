@@ -394,6 +394,20 @@ private:
   }
 
   std::shared_ptr<ir::Node> decodeSimple(uint8_t b, const ir::Tag *parentTag) {
+    SimpleValue sv = static_cast<SimpleValue>(getSuffix(b));
+
+    if (sv == SimpleNull) {
+      auto node = ir::makeNodeNull();
+      if (parentTag) {
+        *node->getTag() = *parentTag;
+        node->getTag()->inherit(*parentTag);
+      }
+      if (node->getTag()->type != ir::ValueType::Unknown) {
+        throw std::runtime_error("unsupported value types for SimpleNull");
+      }
+      return node;
+    }
+
     auto val = ir::makeNodeScalar();
     auto *tag = val->getTag();
 
@@ -401,8 +415,6 @@ private:
       *tag = *parentTag;
       tag->inherit(*parentTag);
     }
-
-    SimpleValue sv = static_cast<SimpleValue>(getSuffix(b));
 
     switch (sv) {
     case SimpleTrue:

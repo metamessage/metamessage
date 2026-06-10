@@ -31,7 +31,6 @@ const (
 	SimpleTokenStr       = "token"
 	SimpleExpireTimeStr  = "expire_time"
 	SimpleKeyStr         = "key"
-	SimpleValStr         = "value"
 )
 
 const BitSize = 32 << (^uint(0) >> 63)

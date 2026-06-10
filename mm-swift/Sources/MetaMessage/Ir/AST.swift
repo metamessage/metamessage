@@ -124,6 +124,36 @@ public class NodeScalar: Node {
     }
 }
 
+public class NodeNull: Node {
+    public var tag: Tag?
+    public var path: String
+
+    public init(tag: Tag? = nil, path: String = "") {
+        self.tag = tag
+        self.path = path
+    }
+
+    public func getTag() -> Tag? {
+        return tag
+    }
+
+    public func getType() -> NodeType {
+        return .value
+    }
+
+    public func getPath() -> String {
+        return path
+    }
+
+    public func setPath(_ path: String) {
+        self.path = path
+    }
+
+    public func setTag(_ tag: Tag) {
+        self.tag = tag
+    }
+}
+
 public class MMDoc: Node {
     public var fields: [Field]
     public var tag: Tag?

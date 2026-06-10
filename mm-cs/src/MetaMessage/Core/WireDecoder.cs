@@ -69,6 +69,10 @@ public class WireDecoder
 
         switch (val)
         {
+            case SimpleValue.NULL:
+                if (tag.Type != ValueType.Unknown)
+                    throw new MmDecodeException($"unsupported value types: {tag.Type}");
+                return new NodeScalar(null, "null", tag);
             case SimpleValue.NULL_BOOL:
                 return NullBool(tag);
             case SimpleValue.NULL_INT:
@@ -109,7 +113,6 @@ public class WireDecoder
             case SimpleValue.TOKEN:
             case SimpleValue.EXPIRE_TIME:
             case SimpleValue.KEY:
-            case SimpleValue.VAL:
                 {
                     string name = SimpleValue.NameOf(val);
                     tag.Type = ValueType.Str;

@@ -1,6 +1,6 @@
 import { Tag } from './tag';
 
-type NodeType = 'unknown' | 'object' | 'array' | 'value' | 'doc';
+type NodeType = 'unknown' | 'object' | 'array' | 'value' | 'doc' | 'null';
 
 export interface Node {
   getType(): string;
@@ -193,5 +193,33 @@ export class MMDoc implements Node {
 
   setRoot(root: Node): void {
     this.root = root;
+  }
+}
+
+export class NodeNull implements Node {
+  private tag: Tag;
+
+  constructor(tag?: Tag) {
+    this.tag = tag || new Tag();
+  }
+
+  getType(): NodeType {
+    return 'null';
+  }
+
+  getTag(): Tag {
+    return this.tag;
+  }
+
+  getPath(): string {
+    return '';
+  }
+
+  setPath(_path: string): void {
+    // NodeNull has no path
+  }
+
+  setTag(tag: Tag): void {
+    this.tag = tag;
   }
 }

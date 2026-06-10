@@ -101,7 +101,7 @@ func TestEncodeDecode(t *testing.T) {
 			// switch rs.GetType() {
 			// case ir.NodeTypeArray:
 			// case ir.NodeTypeObject:
-			// case ir.NodeTypeValue:
+			// case ir.NodeTypeScalar:
 			// 	if !reflect.DeepEqual(rs.(*ir.NodeScalar).Data, tc.expectedOut) {
 			// 		t.Errorf("Expected output: %v %T, actual output: %v %T", tc.expectedOut, tc.expectedOut, bs2.(*ir.NodeScalar).Data, bs2.(*ir.NodeScalar).Data)
 			// 	}

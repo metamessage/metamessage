@@ -3,6 +3,7 @@ package io.github.metamessage.core
 import io.github.metamessage.ir.Field
 import io.github.metamessage.ir.Node
 import io.github.metamessage.ir.NodeArray
+import io.github.metamessage.ir.NodeNull
 import io.github.metamessage.ir.NodeObject
 import io.github.metamessage.ir.NodeScalar
 import io.github.metamessage.ir.Tag
@@ -173,6 +174,7 @@ class Decoder() {
         val tag = inherited?.copy() ?: Tag.empty()
         val sv = first and Prefix.SUFFIX_MASK
         return when (sv) {
+            SimpleValue.SIMPLE_NULL -> NodeNull(tag)
             SimpleValue.FALSE -> {
                 tag.type = ValueType.BOOL
                 NodeScalar(false, "false", tag)
@@ -181,7 +183,6 @@ class Decoder() {
                 tag.type = ValueType.BOOL
                 NodeScalar(true, "true", tag)
             }
-            SimpleValue.NULL_BOOL -> nullBool(tag)
             SimpleValue.NULL_INT -> nullInt(tag)
             SimpleValue.NULL_FLOAT -> nullFloat(tag)
             SimpleValue.NULL_STRING -> nullString(tag)
@@ -190,12 +191,6 @@ class Decoder() {
                     NodeScalar(SimpleValue.toString(sv), SimpleValue.toString(sv), tag)
             else -> throw MmDecodeException("unsupported simple: $sv")
         }
-    }
-
-    private fun nullBool(tag: Tag): Node {
-        if (tag.type == ValueType.UNKNOWN) tag.type = ValueType.BOOL
-        if (tag.type != ValueType.BOOL) throw MmDecodeException("null_bool type mismatch")
-        return NodeScalar(false, "false", tag)
     }
 
     private fun nullInt(tag: Tag): Node {

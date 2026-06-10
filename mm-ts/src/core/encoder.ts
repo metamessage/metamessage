@@ -39,7 +39,7 @@ import {
   FloatLen8Byte,
 } from './constants';
 import { ValueType } from '../ir/value-type';
-import { Node, NodeScalar, NodeObject, NodeArray } from '../ir/ast';
+import { Node, NodeScalar, NodeObject, NodeArray, NodeNull } from '../ir/ast';
 import { Tag } from '../ir/tag';
 import { ValueToNode } from './value-to-node';
 import { toJSONC } from '../jsonc/printer';
@@ -81,6 +81,17 @@ export class MMEncoder {
       case 'value':
         n = this.encodeNodeValue(node as NodeScalar);
         break;
+      case 'null':
+        {
+          const tag = node.getTag();
+          const n = this.encodeSimple(SimpleValue.SimpleNull);
+          const buf = this.buffer.getBytes(this.buffer.offset - n);
+          const n1 = this.encodeComment(buf, tag);
+          if (n1 === 0) {
+            return buf;
+          }
+          return this.buffer.getBytes(this.buffer.offset - n1);
+        }
       default:
         throw new Error(`unsupported node type: ${node.getType()}`);
     }
@@ -414,7 +425,7 @@ export class MMEncoder {
   }
 
   encodeNil(): void {
-    this.encodeSimple(SimpleValue.NullInt);
+    this.encodeSimple(SimpleValue.SimpleNull);
   }
 
   encodeInt(value: bigint): void {

@@ -5,6 +5,7 @@ namespace io\metamessage\jsonc;
 use io\metamessage\ir\NodeObject;
 use io\metamessage\ir\NodeArray;
 use io\metamessage\ir\NodeScalar;
+use io\metamessage\ir\NodeNull;
 use io\metamessage\ir\Node;
 use io\metamessage\ir\Tag;
 use io\metamessage\ir\ValueType;
@@ -23,7 +24,9 @@ class JsoncPrinter
 
     private static function writeNodeJSONC(Node $n, int $indent): string
     {
-        if ($n instanceof NodeScalar) {
+        if ($n instanceof NodeNull) {
+            return self::writeLeadingComments($n->getTag(), $indent) . 'null';
+        } elseif ($n instanceof NodeScalar) {
             return self::writeValueJSONC($n);
         } elseif ($n instanceof NodeObject) {
             return self::writeObjectJSONC($n, $indent);

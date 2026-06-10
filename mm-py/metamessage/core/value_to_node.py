@@ -28,7 +28,7 @@ from datetime import datetime, date, time as dt_time
 from enum import Enum
 
 from ..ir.tag import Tag, ValueType, NewTag, MergeTag, mm_tag
-from ..ir.ast import NodeObject, Arr, NodeScalar, Field, Node
+from ..ir.ast import NodeObject, Arr, NodeScalar, Field, Node, NodeNull
 from .encoder import Encoder
 from .decoder import Decoder
 
@@ -310,7 +310,7 @@ def value_to_node(value: Any, tag: Optional[Tag] = None, depth: int = 0, path: s
 
     if value is None:
         if tag.type == ValueType(0):
-            raise ValueError("invalid input: v is None (no concrete type/value)")
+            return NodeNull(tag=tag, path=path)
         tag.is_null = True
         return NodeScalar(data=None, text="null", tag=tag, path=path)
 
@@ -805,7 +805,9 @@ def node_to_value(node: Node, target_type: Any) -> Any:
     
     Python equivalent of Go's Bind() function.
     """
-    if isinstance(node, NodeObject):
+    if isinstance(node, NodeNull):
+        return None
+    elif isinstance(node, NodeObject):
         return _bind_object(node, target_type)
     elif isinstance(node, Arr):
         return _bind_array(node, target_type)
@@ -932,7 +934,9 @@ def _bind_value(val: NodeScalar, target_type: Any) -> Any:
 
 def _bind_value_or_node(node: Node) -> Any:
     """Bind a node to a plain Python value (no type info)."""
-    if isinstance(node, NodeObject):
+    if isinstance(node, NodeNull):
+        return None
+    elif isinstance(node, NodeObject):
         result = {}
         for field in node.fields:
             result[field.key] = _bind_value_or_node(field.value)

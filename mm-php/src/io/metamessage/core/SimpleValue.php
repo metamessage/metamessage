@@ -4,44 +4,46 @@ namespace io\metamessage\core;
 
 class SimpleValue
 {
-    public const NULL_BOOL = 0;
-    public const NULL_INT = 1;
-    public const NULL_FLOAT = 2;
-    public const NULL_STRING = 3;
-    public const NULL_BYTES = 4;
-    public const FALSE = 5;
-    public const TRUE = 6;
+    public const SIMPLE_NULL = 0;
+    public const NULL_BOOL = 1;
+    public const NULL_INT = 2;
+    public const NULL_FLOAT = 3;
+    public const NULL_STRING = 4;
+    public const NULL_BYTES = 5;
+    public const FALSE = 6;
+    public const TRUE = 7;
 
-    public const CODE = 7;
-    public const MESSAGE = 8;
-    public const DATA = 9;
-    public const SUCCESS = 10;
-    public const ERROR = 11;
-    public const UNKNOWN = 12;
+    public const CODE = 8;
+    public const MESSAGE = 9;
+    public const DATA = 10;
+    public const SUCCESS = 11;
+    public const ERROR = 12;
+    public const UNKNOWN = 13;
 
-    public const PAGE = 13;
-    public const LIMIT = 14;
-    public const OFFSET = 15;
-    public const TOTAL = 16;
-    public const ID = 17;
-    public const NAME = 18;
-    public const DESCRIPTION = 19;
-    public const TYPE = 20;
-    public const VERSION = 21;
-    public const STATUS = 22;
-    public const URL = 23;
-    public const CREATE_TIME = 24;
-    public const UPDATE_TIME = 25;
-    public const DELETE_TIME = 26;
-    public const ACCOUNT = 27;
-    public const TOKEN = 28;
-    public const EXPIRE_TIME = 29;
-    public const KEY = 30;
-    public const VAL = 31;
+    public const PAGE = 14;
+    public const LIMIT = 15;
+    public const OFFSET = 16;
+    public const TOTAL = 17;
+    public const ID = 18;
+    public const NAME = 19;
+    public const DESCRIPTION = 20;
+    public const TYPE = 21;
+    public const VERSION = 22;
+    public const STATUS = 23;
+    public const URL = 24;
+    public const CREATE_TIME = 25;
+    public const UPDATE_TIME = 26;
+    public const DELETE_TIME = 27;
+    public const ACCOUNT = 28;
+    public const TOKEN = 29;
+    public const EXPIRE_TIME = 30;
+    public const KEY = 31;
+    public const VAL = 32;
 
     public static function nameOf(int $sv): string
     {
         return match ($sv) {
+            self::SIMPLE_NULL => 'simple_null',
             self::NULL_BOOL => 'null_bool',
             self::NULL_INT => 'null_int',
             self::NULL_FLOAT => 'null_float',

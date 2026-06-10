@@ -1,5 +1,5 @@
 import { JSONCScanner, TokenType, Token } from './scanner';
-import { NodeScalar, NodeObject, NodeArray, MMDoc } from '../ir/ast';
+import { NodeScalar, NodeObject, NodeArray, NodeNull, MMDoc } from '../ir/ast';
 import { ValidationResult } from '../ir/tag';
 import { ValueType } from '../ir/value-type';
 import { Tag, parseMMTag } from '../ir/tag';
@@ -24,6 +24,9 @@ export class JSONCParser {
     while (true) {
       const tok = this.peek();
       if (tok.type === TokenType.EOF) {
+        if (val === null) {
+          throw new Error('no value parsed');
+        }
         break;
       }
 
@@ -519,7 +522,16 @@ export class JSONCParser {
           return falseValue;
 
         case TokenType.NULL:
-          throw new Error(`null is not supported`);
+          let nullTag = existingTag || this.consumeCommentsFor(tok.line);
+          if (!nullTag) {
+            nullTag = new Tag();
+          }
+          if (nullTag.type !== ValueType.Unknown) {
+            throw new Error(`null is not supported for type ${nullTag.type}`);
+          }
+          const nullNode = new NodeNull(nullTag);
+          nullNode.setPath(path);
+          return nullNode;
 
         default:
           throw new Error(`unexpected token ${tok.type}`);

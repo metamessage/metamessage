@@ -9,7 +9,7 @@ from datetime import datetime, timezone, date, time as dt_time
 from typing import Any, Optional, Tuple
 
 from ..ir.tag import Tag, TagKey, ValueType
-from ..ir.ast import NodeObject, Arr, NodeScalar, Field, Node, NodeType
+from ..ir.ast import NodeObject, Arr, NodeScalar, Field, Node, NodeType, NodeNull
 from ..ir.mime import MIME
 
 Simple       = 0b000 << 5
@@ -21,38 +21,38 @@ PrefixBytes  = 0b101 << 5
 Container    = 0b110 << 5
 PrefixTag    = 0b111 << 5
 
-SimpleNullBool   = 0
-SimpleNullInt    = 1
-SimpleNullFloat  = 2
-SimpleNullString = 3
-SimpleNullBytes  = 4
-SimpleFalse      = 5
-SimpleTrue       = 6
-SimpleCode       = 7
-SimpleMessage    = 8
-SimpleData       = 9
-SimpleSuccess    = 10
-SimpleError      = 11
-SimpleUnknown    = 12
-SimplePage       = 13
-SimpleLimit      = 14
-SimpleOffset     = 15
-SimpleTotal      = 16
-SimpleId         = 17
-SimpleName       = 18
-SimpleDescription = 19
-SimpleType       = 20
-SimpleVersion    = 21
-SimpleStatus     = 22
-SimpleUrl        = 23
-SimpleCreateTime = 24
-SimpleUpdateTime = 25
-SimpleDeleteTime = 26
-SimpleAccount    = 27
-SimpleToken      = 28
-SimpleExpireTime = 29
-SimpleKey        = 30
-SimpleVal        = 31
+SimpleNull       = 0
+SimpleNullBool   = 1
+SimpleNullInt    = 2
+SimpleNullFloat  = 3
+SimpleNullString = 4
+SimpleNullBytes  = 5
+SimpleFalse      = 6
+SimpleTrue       = 7
+SimpleCode       = 8
+SimpleMessage    = 9
+SimpleData       = 10
+SimpleSuccess    = 11
+SimpleError      = 12
+SimpleUnknown    = 13
+SimplePage       = 14
+SimpleLimit      = 15
+SimpleOffset     = 16
+SimpleTotal      = 17
+SimpleId         = 18
+SimpleName       = 19
+SimpleDescription = 20
+SimpleType       = 21
+SimpleVersion    = 22
+SimpleStatus     = 23
+SimpleUrl        = 24
+SimpleCreateTime = 25
+SimpleUpdateTime = 26
+SimpleDeleteTime = 27
+SimpleAccount    = 28
+SimpleToken      = 29
+SimpleExpireTime = 30
+SimpleKey        = 31
 
 Max1Byte = 0xFF
 Max2Byte = 0xFFFF
@@ -538,7 +538,12 @@ class Decoder:
 
         suffix = b & SuffixMask
 
-        if suffix == SimpleFalse:
+        if suffix == SimpleNull:
+            if tag.type != ValueType.Unknown:
+                raise ValueError(f"unsupported value types: {tag.type}")
+            node = NodeNull(tag=tag, path=path)
+            return node, 1
+        elif suffix == SimpleFalse:
             tag.type = ValueType.Bool
             return NodeScalar(data=False, text='false', tag=tag, path=path), 1
         elif suffix == SimpleTrue:
@@ -546,7 +551,8 @@ class Decoder:
             return NodeScalar(data=True, text='true', tag=tag, path=path), 1
         elif suffix == SimpleNullBool:
             tag.type = ValueType.Bool
-            return NodeScalar(data=False, text='false', tag=tag, path=path), 1
+            tag.is_null = True
+            return NodeScalar(data=None, text='null', tag=tag, path=path), 1
         elif suffix == SimpleNullInt:
             tag.type = ValueType.I
             return NodeScalar(data=0, text='0', tag=tag, path=path), 1
@@ -631,9 +637,6 @@ class Decoder:
         elif suffix == SimpleKey:
             tag.type = ValueType.Str
             return NodeScalar(data=None, text='key', tag=tag, path=path), 1
-        elif suffix == SimpleVal:
-            tag.type = ValueType.Str
-            return NodeScalar(data=None, text='val', tag=tag, path=path), 1
         else:
             raise ValueError(f"unsupported simple value: {b}")
 
@@ -979,7 +982,9 @@ class Decoder:
 
 
 def _node_to_python(node: Node) -> Any:
-    if isinstance(node, NodeScalar):
+    if isinstance(node, NodeNull):
+        return None
+    elif isinstance(node, NodeScalar):
         return node.data
     elif isinstance(node, Arr):
         return [_node_to_python(item) for item in node.items]

@@ -446,15 +446,27 @@ public class NodeDecoder {
         }
 
         let resolvedTag = tag ?? Tag()
-        if resolvedTag.type == .unknown {
-            resolvedTag.type = .bool
-        }
 
         guard let simpleValue = MMSimpleValue(rawValue: byte) else {
             throw MMError.invalidData
         }
 
+        // Handle null before modifying tag type — null must keep .unknown type
+        if simpleValue == .null {
+            if resolvedTag.type != .unknown {
+                throw MMError.invalidData
+            }
+            return NodeNull(tag: resolvedTag, path: path)
+        }
+
+        if resolvedTag.type == .unknown {
+            resolvedTag.type = .bool
+        }
+
         switch simpleValue {
+        case .null:
+            // Unreachable — handled above
+            throw MMError.invalidData
         case .trueValue:
             return NodeScalar(data: true, text: "true", tag: resolvedTag, path: path)
         case .falseValue:
@@ -502,7 +514,6 @@ public class NodeDecoder {
             case .token: text = "token"
             case .expireTime: text = "expire_time"
             case .key: text = "key"
-            case .val: text = "val"
             default: text = "null"
             }
             resolvedTag.type = .str

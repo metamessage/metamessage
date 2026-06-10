@@ -3,6 +3,7 @@ package io.github.metamessage.core
 import io.github.metamessage.MM
 import io.github.metamessage.ir.Node
 import io.github.metamessage.ir.NodeArray as AstArray
+import io.github.metamessage.ir.NodeNull
 import io.github.metamessage.ir.NodeObject as AstObject
 import io.github.metamessage.ir.NodeScalar as AstValue
 import io.github.metamessage.ir.Tag
@@ -29,6 +30,12 @@ object Encoder {
             is AstObject -> encodeObjectNode(enc, node)
             is AstArray -> encodeArrayNode(enc, node)
             is AstValue -> encodeValueNode(enc, node)
+            is NodeNull -> {
+                val tag = node.tag ?: Tag.empty()
+                val tmp = WireEncoder()
+                tmp.encodeSimple(SimpleValue.SIMPLE_NULL)
+                enc.encodeTaggedPayload(tmp.toByteArray(), tag.toBytes())
+            }
             is io.github.metamessage.ir.Doc -> encodeDocNode(enc, node)
         }
     }
@@ -259,7 +266,7 @@ object Encoder {
             }
             ValueType.BOOL -> {
                 if (tag.isNull) {
-                    tmp.encodeSimple(SimpleValue.NULL_BOOL)
+                    tmp.encodeSimple(SimpleValue.SIMPLE_NULL)
                 } else {
                     val boolValue = value.data as? Boolean ?: false
                     tmp.encodeBool(boolValue)

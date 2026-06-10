@@ -7,14 +7,14 @@ const (
 	NodeTypeDoc
 	NodeTypeObject
 	NodeTypeArray
-	NodeTypeValue
+	NodeTypeScalar
 	NodeTypeNull
 
 	LabelNodeTypeUnknown = "unknown"
 	LabelNodeTypeDoc     = "doc"
 	LabelNodeTypeObject  = "object"
 	LabelNodeTypeArray   = "array"
-	LabelNodeTypeValue   = "value"
+	LabelNodeTypeScalar  = "scalar"
 	LabelNodeTypeNull    = "null"
 )
 
@@ -26,8 +26,8 @@ func (nt NodeType) String() string {
 		return LabelNodeTypeObject
 	case NodeTypeArray:
 		return LabelNodeTypeArray
-	case NodeTypeValue:
-		return LabelNodeTypeValue
+	case NodeTypeScalar:
+		return LabelNodeTypeScalar
 	case NodeTypeNull:
 		return LabelNodeTypeNull
 	default:
@@ -43,8 +43,8 @@ func ParseNodeType(s string) NodeType {
 		return NodeTypeObject
 	case LabelNodeTypeArray:
 		return NodeTypeArray
-	case LabelNodeTypeValue:
-		return NodeTypeValue
+	case LabelNodeTypeScalar:
+		return NodeTypeScalar
 	case LabelNodeTypeNull:
 		return NodeTypeNull
 	default:
@@ -120,7 +120,7 @@ func (v *NodeScalar) GetPath() string { return v.Path }
 
 func (v *NodeScalar) SetPath(path string) { v.Path = path }
 
-func (v *NodeScalar) GetType() NodeType { return NodeTypeValue }
+func (v *NodeScalar) GetType() NodeType { return NodeTypeScalar }
 
 func (v *NodeScalar) GetTag() *Tag {
 	if v == nil {
@@ -154,7 +154,9 @@ func (d *Doc) GetTag() *Tag {
 	return nil
 }
 
-type NodeNull struct{}
+type NodeNull struct {
+	Tag *Tag
+}
 
 func (d *NodeNull) GetPath() string { return "" }
 
@@ -163,5 +165,11 @@ func (d *NodeNull) SetPath(path string) {}
 func (d *NodeNull) GetType() NodeType { return NodeTypeNull }
 
 func (d *NodeNull) GetTag() *Tag {
+	if d == nil {
+		return nil
+	}
+	if d.Tag != nil {
+		return d.Tag
+	}
 	return nil
 }

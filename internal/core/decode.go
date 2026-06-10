@@ -1074,6 +1074,16 @@ func (d *decoder) decodeSimple(prefix byte, tag *ir.Tag, path string) (node ir.N
 	}
 
 	switch SimpleValue(prefix) {
+	case SimpleNull:
+		if tag.Type != ir.ValueTypeUnknown {
+			err = fmt.Errorf("unsupported value types: %v", tag.Type)
+			return
+		}
+
+		node = &ir.NodeNull{
+			Tag: tag,
+		}
+
 	case SimpleFalse:
 		tag.Type = ir.ValueTypeBool
 		node = &ir.NodeScalar{
@@ -1388,14 +1398,7 @@ func (d *decoder) decodeSimple(prefix byte, tag *ir.Tag, path string) (node ir.N
 			Tag:  tag,
 			Path: path,
 		}
-	case SimpleVal:
-		tag.Type = ir.ValueTypeStr
-		node = &ir.NodeScalar{
-			Data: nil,
-			Text: ir.SimpleValStr,
-			Tag:  tag,
-			Path: path,
-		}
+
 	default:
 		err = fmt.Errorf("unsupported value: %v", prefix)
 		return

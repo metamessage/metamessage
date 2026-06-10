@@ -9,8 +9,6 @@ include_directories(src)
 set(JSONC_SOURCES
     src/jsonc/mc_token.c
     src/jsonc/mc_scanner.c
-    src/jsonc/mc_ast.c
-    src/jsonc/mc_parser.c
 )
 
 set(IR_SOURCES

@@ -16,13 +16,13 @@ def test_decode_bool():
     dec = Decoder
     
     # SimpleTrue
-    assert dec(bytes([0x06])).decode() == True
+    assert dec(bytes([0x07])).decode() == True
     
     # SimpleFalse
-    assert dec(bytes([0x05])).decode() == False
+    assert dec(bytes([0x06])).decode() == False
     
     # Tag-wrapped True
-    assert dec(bytes([0xE2, 0x01, 0x08, 0x06])).decode() == True
+    assert dec(bytes([0xE2, 0x01, 0x08, 0x07])).decode() == True
 
 
 def test_decode_int():

@@ -122,10 +122,6 @@ func resolveDefaultValue(tag *ir.Tag) (data any, text string, ok bool) {
 }
 
 func ValueToNode(v any, tagStr string) (node ir.Node, err error) {
-	if v == nil {
-		return &ir.NodeNull{}, nil
-	}
-
 	var tag *ir.Tag
 	if tagStr != "" {
 		if tag, err = ir.ParseMMTag(tagStr); err != nil {
@@ -135,6 +131,12 @@ func ValueToNode(v any, tagStr string) (node ir.Node, err error) {
 
 	if tag == nil {
 		tag = ir.NewTag()
+	}
+
+	if v == nil {
+		return &ir.NodeNull{
+			Tag: tag,
+		}, nil
 	}
 
 	example := tag.Example
@@ -152,13 +154,9 @@ func valueToNode(v any, tag *ir.Tag, depth int, path string, example bool) (node
 	text = ir.Null
 	switch val := v.(type) {
 	case nil:
-		// var val interface{} = nil
-		// val.IsValid()
 
-		if tag.Type == ir.ValueTypeUnknown {
-			return nil, fmt.Errorf("invalid input: v is untyped nil (no concrete type/value)")
-		}
-		tag.IsNull = true
+		// var val any = nil
+		return &ir.NodeNull{}, nil
 
 	case []byte:
 		if tag.Type == ir.ValueTypeUnknown {

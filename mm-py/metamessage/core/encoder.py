@@ -10,7 +10,7 @@ from datetime import datetime, date, time as dt_time, timezone
 from typing import Any, Optional, Union
 
 from ..ir.tag import Tag, ValueType
-from ..ir.ast import NodeObject, Arr, NodeScalar, Field, Node, NodeType
+from ..ir.ast import NodeObject, Arr, NodeScalar, Field, Node, NodeType, NodeNull
 
 # ===== Constants (matching Go internal/core/constants.go) =====
 
@@ -25,39 +25,39 @@ Container    = 0b110 << 5
 PrefixTag    = 0b111 << 5
 
 # Simple values
-SimpleNullBool   = 0
-SimpleNullInt    = 1
-SimpleNullFloat  = 2
-SimpleNullString = 3
-SimpleNullBytes  = 4
-SimpleFalse      = 5
-SimpleTrue       = 6
+SimpleNull       = 0
+SimpleNullBool   = 1
+SimpleNullInt    = 2
+SimpleNullFloat  = 3
+SimpleNullString = 4
+SimpleNullBytes  = 5
+SimpleFalse      = 6
+SimpleTrue       = 7
 
-SimpleCode       = 7
-SimpleMessage    = 8
-SimpleData       = 9
-SimpleSuccess    = 10
-SimpleError      = 11
-SimpleUnknown    = 12
-SimplePage       = 13
-SimpleLimit      = 14
-SimpleOffset     = 15
-SimpleTotal      = 16
-SimpleId         = 17
-SimpleName       = 18
-SimpleDescription = 19
-SimpleType       = 20
-SimpleVersion    = 21
-SimpleStatus     = 22
-SimpleUrl        = 23
-SimpleCreateTime = 24
-SimpleUpdateTime = 25
-SimpleDeleteTime = 26
-SimpleAccount    = 27
-SimpleToken      = 28
-SimpleExpireTime = 29
-SimpleKey        = 30
-SimpleVal        = 31
+SimpleCode       = 8
+SimpleMessage    = 9
+SimpleData       = 10
+SimpleSuccess    = 11
+SimpleError      = 12
+SimpleUnknown    = 13
+SimplePage       = 14
+SimpleLimit      = 15
+SimpleOffset     = 16
+SimpleTotal      = 17
+SimpleId         = 18
+SimpleName       = 19
+SimpleDescription = 20
+SimpleType       = 21
+SimpleVersion    = 22
+SimpleStatus     = 23
+SimpleUrl        = 24
+SimpleCreateTime = 25
+SimpleUpdateTime = 26
+SimpleDeleteTime = 27
+SimpleAccount    = 28
+SimpleToken      = 29
+SimpleExpireTime = 30
+SimpleKey        = 31
 
 # Integer length constants
 Max1Byte = 0xFF
@@ -640,8 +640,18 @@ class Encoder:
             return self._encode_node_array(node)
         elif isinstance(node, NodeScalar):
             return self._encode_node_value(node)
+        elif isinstance(node, NodeNull):
+            return self._encode_node_null(node)
         else:
             raise ValueError(f"unsupported node type: {type(node)}")
+
+    def _encode_node_null(self, val: NodeNull) -> int:
+        n = self._encode_simple(SimpleNull)
+        tag = val.get_tag()
+        n1 = self._encode_comment(bytes(self.buf[self.offset - n:self.offset]), tag)
+        if n1 == 0:
+            return n
+        return n1
 
     def _encode_node_value(self, val: NodeScalar) -> int:
         tag = val.get_tag()

@@ -23,7 +23,7 @@ public class JsoncParser
         {
             var tok = _scanner.NextToken();
             if (tok.Type == JsoncTokenType.EOF)
-                return new NodeScalar(null, "null", Tag.NewTag());
+                throw new Exception("no value parsed");
 
             if (tok.Type == JsoncTokenType.Comment)
             {
@@ -149,7 +149,9 @@ public class JsoncParser
                     return ParseBool(tok, path, example, tag);
 
                 case JsoncTokenType.Null:
-                    throw new Exception("null is not supported");
+                    if (tag.Type != ValueType.Unknown)
+                        throw new Exception($"null is not supported for type {tag.Type}");
+                    return new NodeNull(tag);
 
                 default:
                     throw new Exception($"unexpected token {tok.Type} at line {tok.Line}");

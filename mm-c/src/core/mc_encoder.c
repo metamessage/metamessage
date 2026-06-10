@@ -958,6 +958,13 @@ static void enc_encode(encoder_t *e, node_t *node) {
   case MM_NODE_DOC:
     enc_encode_node_doc(e, &node->data.doc);
     break;
+  case MM_NODE_NULL: {
+    encoder_t tmp = {0};
+    enc_encode_simple(&tmp, MM_SIMPLE_NULL);
+    enc_encode_tag(e, &node->tag, tmp.buf, tmp.size);
+    free(tmp.buf);
+    break;
+  }
   default:
     break;
   }

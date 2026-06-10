@@ -189,6 +189,19 @@ private:
     auto &tok = tokens_[pos_];
     ++pos_;
 
+    // Handle null early - return NodeNull without creating a scalar
+    if (tok.type == TokenType::Null) {
+      auto nullVal = ir::makeNodeNull();
+      applyTagToNode(nullVal);
+      // Check that the applied tag doesn't conflict with null
+      if (nullVal->getTag()->type != ir::ValueType::Unknown) {
+        throw std::runtime_error(
+            "null is not supported for type " +
+            std::to_string(static_cast<int>(nullVal->getTag()->type)));
+      }
+      return nullVal;
+    }
+
     auto val = ir::makeNodeScalar();
     auto *tag = val->getTag();
     val->text = tok.literal;
@@ -214,8 +227,6 @@ private:
       if (tag->type == ir::ValueType::Unknown)
         tag->type = ir::ValueType::Bool;
       break;
-    case TokenType::Null:
-      throw std::runtime_error("null is not supported");
     default:
       break;
     }

@@ -5,6 +5,7 @@ namespace io\metamessage\core;
 use io\metamessage\ir\NodeObject;
 use io\metamessage\ir\NodeArray;
 use io\metamessage\ir\NodeScalar;
+use io\metamessage\ir\NodeNull;
 use io\metamessage\ir\Node;
 use io\metamessage\ir\Tag;
 use io\metamessage\ir\ValueType;
@@ -38,6 +39,8 @@ class WireEncoder
             $n = $this->encodeNodeArray($node);
         } elseif ($node instanceof NodeScalar) {
             $n = $this->encodeNodeValue($node);
+        } elseif ($node instanceof NodeNull) {
+            $n = $this->encodeNodeNull($node);
         } else {
             throw new \Exception('encode error: unsupported type ' . get_class($node));
         }
@@ -112,6 +115,8 @@ class WireEncoder
                 $n = $this->encodeNodeArray($item);
             } elseif ($item instanceof NodeScalar) {
                 $n = $this->encodeNodeValue($item);
+            } elseif ($item instanceof NodeNull) {
+                $n = $this->encodeNodeNull($item);
             } else {
                 throw new \Exception('unsupported type ' . get_class($item));
             }
@@ -383,6 +388,17 @@ class WireEncoder
                 throw new \Exception('type error: unsupported type: ' . $val->getTag()->type->name . ', value: ' . var_export($val->Data, true));
         }
 
+        $n1 = $this->encodeComment(array_slice($this->buf, $this->offset - $n, $n), $tag);
+        if ($n1 === 0) {
+            return $n;
+        }
+        return $n1;
+    }
+
+    private function encodeNodeNull(NodeNull $val): int
+    {
+        $n = $this->encodeSimple(SimpleValue::SIMPLE_NULL);
+        $tag = $val->getTag();
         $n1 = $this->encodeComment(array_slice($this->buf, $this->offset - $n, $n), $tag);
         if ($n1 === 0) {
             return $n;
