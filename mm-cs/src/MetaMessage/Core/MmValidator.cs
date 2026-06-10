@@ -1944,7 +1944,7 @@ public class MmValidator
             return;
         }
 
-        int l = vidBytes.Length;
+        int l = mediaBytes.Length;
 
         if (l == 0)
         {

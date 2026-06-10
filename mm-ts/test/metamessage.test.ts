@@ -222,13 +222,13 @@ describe('Build Value', () => {
 
   describe('image', () => {
     test('', () => {
-      const v = mm.image(new Uint8Array([0x89, 0x50, 0x4e, 0x47]));
+      const v = mm.media(new Uint8Array([0x89, 0x50, 0x4e, 0x47]));
     });
   });
 
   describe('video', () => {
     test('', () => {
-      const v = mm.video(new Uint8Array([0x00, 0x00, 0x00, 0x18]));
+      const v = mm.media(new Uint8Array([0x00, 0x00, 0x00, 0x18]));
     });
   });
 

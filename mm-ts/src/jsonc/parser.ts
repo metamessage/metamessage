@@ -231,29 +231,6 @@ export class JSONCParser {
               }
               break;
 
-            case ValueType.Image:
-              if (strTag.isNull) {
-                if (text !== '') {
-                  throw new Error(`invalid image: "${text}", valid: ""`);
-                }
-                data = new Uint8Array();
-              } else {
-                try {
-                  const decoded = base64ToUint8(text);
-                  const result = strTag.validateImage(decoded);
-                  if (!result.valid) {
-                    throw new Error(result.error || 'Image validation failed');
-                  }
-                  data = result.data;
-                  text = result.text || text;
-                } catch (e) {
-                  throw new Error(
-                    `invalid base64 image "${text}": ${(e as Error).message}`,
-                  );
-                }
-              }
-              break;
-
             case ValueType.Media:
               if (strTag.isNull) {
                 if (text !== '') {
