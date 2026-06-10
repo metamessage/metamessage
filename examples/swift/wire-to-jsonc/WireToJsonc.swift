@@ -18,15 +18,15 @@ print("Original JSONC:")
 print(jsonc)
 
 // 编码到 Wire
-let wire = MetaMessage.encode(Person(name: "test", age: 0))
+if let wire = try? fromJSONC(jsonc) {
+    print("\nEncoded Wire:")
+    print(bytesToHex(wire))
 
-print("\nEncoded Wire:")
-print(bytesToHex(wire))
-
-// 从 Wire 解码到 JSONC
-if let jsoncOut = try? MetaMessage.toJSONC(wire) {
-    print("\nDecoded to JSONC:")
-    print(jsoncOut)
+    // 从 Wire 解码到 JSONC
+    if let jsoncOut = try? toJSONC(wire) {
+        print("\nDecoded to JSONC:")
+        print(jsoncOut)
+    }
 }
 
 func bytesToHex(_ data: Data) -> String {

@@ -17,12 +17,12 @@ let jsonc = """
 print("Input JSONC:")
 print(jsonc)
 
-// 解析 JSONC
-if let parsed = try? JSONC.parse(jsonc) {
-    print("\nParsed:")
-    print(parsed.description)
+// 从 JSONC 编码到 Wire 格式
+if let wire = try? fromJSONC(jsonc) {
+    print("\nEncoded Wire:")
+    print(bytesToHex(wire))
 }
 
-// 编码到 Wire 格式
-// 注意: 需要先将 JSONC 转换为可编码的格式
-print("\nEncoded Wire:")
+func bytesToHex(_ data: Data) -> String {
+    return data.map { String(format: "%02x", $0) }.joined()
+}

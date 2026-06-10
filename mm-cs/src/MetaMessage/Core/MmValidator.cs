@@ -119,11 +119,8 @@ public class MmValidator
             case ValueType.Ip:
                 ValidateIp(value, tag, result);
                 break;
-            case ValueType.Image:
-                ValidateImage(value, tag, result);
-                break;
-            case ValueType.Video:
-                ValidateVideo(value, tag, result);
+            case ValueType.Media:
+                ValidateMedia(value, tag, result);
                 break;
             case ValueType.Datetime:
             case ValueType.Date:
@@ -1933,80 +1930,9 @@ public class MmValidator
         }
     }
 
-    public void ValidateImage(dynamic value, Tag tag, ValidationResult result)
+    public void ValidateMedia(dynamic value, Tag tag, ValidationResult result)
     {
-        if (!(value is byte[] imgBytes))
-        {
-            result.AddError("value must be a byte array");
-            return;
-        }
-
-        if (tag.Desc.Length > 65535)
-        {
-            result.AddError("desc length exceeds 65535 bytes");
-            return;
-        }
-
-        int l = imgBytes.Length;
-
-        if (l == 0)
-        {
-            if (tag.AllowEmpty)
-            {
-                return;
-            }
-            result.AddError("not allow empty (add 'allow_empty' tag if empty is allowed)");
-            return;
-        }
-
-        if (!string.IsNullOrEmpty(tag.Min))
-        {
-            if (int.TryParse(tag.Min, out int minVal))
-            {
-                if (l < minVal)
-                {
-                    result.AddError($"[]byte length {l} < min {minVal}");
-                    return;
-                }
-            }
-            else
-            {
-                return;
-            }
-        }
-
-        if (!string.IsNullOrEmpty(tag.Max))
-        {
-            if (int.TryParse(tag.Max, out int maxVal))
-            {
-                if (l > maxVal)
-                {
-                    result.AddError($"[]byte length {l} > max {maxVal}");
-                    return;
-                }
-            }
-            else
-            {
-                return;
-            }
-        }
-
-        if (tag.Size != 0 && l != tag.Size)
-        {
-            result.AddError($"[]byte length {l} != size {tag.Size}");
-            return;
-        }
-
-        if (tag.Location != 0)
-        {
-            result.AddError($"type image not support location UTC{tag.Location}");
-            return;
-        }
-    }
-
-    public void ValidateVideo(dynamic value, Tag tag, ValidationResult result)
-    {
-        if (!(value is byte[] vidBytes))
+        if (!(value is byte[] mediaBytes))
         {
             result.AddError("value must be a byte array");
             return;

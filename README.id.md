@@ -101,8 +101,7 @@ Definisikan tipe data menggunakan tag `type=`. Formatnya adalah `type=typeIdenti
 - url: URL, valid
 - email: email, valid
 - enums: enum, nilai adalah string yang dipisahkan oleh |
-- image: gambar, bytes di bawahnya
-- video: video, bytes di bawahnya
+- media: media, bytes di bawahnya
 
 ## Tag
 

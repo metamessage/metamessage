@@ -42,7 +42,7 @@ mm-c/
 
 ## Features
 
-- **30+ value types**: `str`, `bool`, `i8`-`i64`, `u8`-`u64`, `f32`, `f64`, `datetime`, `uuid`, `email`, `url`, `ip`, `image`, `video`, etc.
+- **30+ value types**: `str`, `bool`, `i8`-`i64`, `u8`-`u64`, `f32`, `f64`, `datetime`, `uuid`, `email`, `url`, `ip`, `media`, etc.
 - **Rich metadata**: Each value carries an extensible tag with `desc`, `min`, `max`, `size`, `nullable`, `enums`, `pattern`, `default_val`, `version`, `mime`, and child element constraints.
 - **Binary encoding**: Compact wire format for efficient storage and transmission.
 - **JSONC support**: Parse and print JSONC with comment-embedded metadata annotations.
@@ -257,7 +257,7 @@ The comprehensive test suite covers:
 | `bytes`, `uuid`, `datetime`, `date`, `time` |                    |
 | `url`, `email`, `ip`                        |                    |
 | `bigint`, `decimal`, `enums`                |                    |
-| `image`, `video`                            |                    |
+| `media`                                     |                    |
 | `doc`, `vec`, `arr`, `obj`, `map`           |                    |
 
 ## License

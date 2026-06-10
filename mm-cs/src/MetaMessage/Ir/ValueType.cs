@@ -41,10 +41,7 @@ public enum ValueType
 
     Enums,
 
-    Media,
-
-    Image,
-    Video,
+    Media
 }
 
 public static class ValueTypeConstants
@@ -80,8 +77,6 @@ public static class ValueTypeConstants
     public const string UrlStr = "url";
     public const string EmailStr = "email";
     public const string EnumStr = "enums";
-    public const string ImageStr = "image";
-    public const string VideoStr = "video";
     public const string MediaStr = "media";
 }
 
@@ -120,8 +115,6 @@ public static class ValueTypeExtensions
         { ValueTypeConstants.UrlStr, ValueType.Url },
         { ValueTypeConstants.EmailStr, ValueType.Email },
         { ValueTypeConstants.EnumStr, ValueType.Enums },
-        { ValueTypeConstants.ImageStr, ValueType.Image },
-        { ValueTypeConstants.VideoStr, ValueType.Video },
         { ValueTypeConstants.MediaStr, ValueType.Media }
     };
 
@@ -160,8 +153,6 @@ public static class ValueTypeExtensions
             ValueType.Url => ValueTypeConstants.UrlStr,
             ValueType.Email => ValueTypeConstants.EmailStr,
             ValueType.Enums => ValueTypeConstants.EnumStr,
-            ValueType.Image => ValueTypeConstants.ImageStr,
-            ValueType.Video => ValueTypeConstants.VideoStr,
             ValueType.Media => ValueTypeConstants.MediaStr,
             _ => ValueTypeConstants.UnknownStr
         };

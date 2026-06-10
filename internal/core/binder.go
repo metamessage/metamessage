@@ -317,16 +317,8 @@ func convertScalar(val *ir.NodeScalar, outVal reflect.Value) error {
 			return fmt.Errorf("unsupported type for enum conversion: %T", d)
 		}
 
-	// case ir.ValueTypeImage:
-	// 	return fmt.Errorf("unsupported type: %s", tag.Type)
-	// case ir.ValueTypeVideo:
-	// 	return fmt.Errorf("unsupported type: %s", tag.Type)
 	case ir.ValueTypeDoc:
 		return fmt.Errorf("unsupported type: %s", tag.Type)
-	// case ir.ValueTypeAudio:
-	// 	return fmt.Errorf("unsupported type: %s", tag.Type)
-	// case ir.ValueTypeFont:
-	// 	return fmt.Errorf("unsupported type: %s", tag.Type)
 
 	case ir.ValueTypeMedia:
 		return fmt.Errorf("unsupported type: %s", tag.Type)

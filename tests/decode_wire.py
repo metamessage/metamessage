@@ -22,7 +22,7 @@ VT = {
     13: "I64", 14: "U", 15: "U8", 16: "U16", 17: "U32", 18: "U64",
     19: "F32", 20: "F64", 21: "Bigint", 22: "Datetime", 23: "Date", 24: "Time",
     25: "Uuid", 26: "Decimal", 27: "Ip", 28: "Url", 29: "Email",
-    30: "Enums", 31: "Media", 32: "Image", 33: "Video"
+    30: "Enums", 31: "Media"
 }
 
 TAG_KEY = {

@@ -105,8 +105,7 @@ Defina tipos de datos usando la etiqueta `type=`. El formato es `type=typeIdenti
 - url: URL, debe ser una URL válida
 - email: correo electrónico, debe ser válido
 - enums: enum, valores son cadenas separadas por |
-- image: imagen, bytes subyacentes
-- video: video, bytes subyacentes
+- media: medios, bytes subyacentes
 
 ## Etiquetas
 

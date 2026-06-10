@@ -441,7 +441,8 @@ private:
       uint32_t n = 0;
       switch (field.value->getType()) {
       case ir::NodeType::NodeObject:
-        n = encodeNodeObject(std::static_pointer_cast<ir::NodeObject>(field.value));
+        n = encodeNodeObject(
+            std::static_pointer_cast<ir::NodeObject>(field.value));
         break;
       case ir::NodeType::NodeArray:
         n = encodeNodeArray(
@@ -715,8 +716,6 @@ private:
         n = encodeString(val->text);
       break;
 
-    case ir::ValueType::Image:
-    case ir::ValueType::Video:
     case ir::ValueType::Media:
       if (tag->isNull)
         n = encodeSimple(SimpleNullBytes);

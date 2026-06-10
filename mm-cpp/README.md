@@ -54,7 +54,7 @@ mm-cpp/
 ## Features
 
 - **Header-heavy design**: Most logic is in `.hpp` headers; only the scanner has a `.cpp` file.
-- **30+ value types**: `str`, `bool`, `i8`-`i64`, `u8`-`u64`, `f32`, `f64`, `datetime`, `uuid`, `email`, `url`, `ip`, `image`, `video`, `bytes`, `bigint`, `decimal`, `enums`, etc.
+- **30+ value types**: `str`, `bool`, `i8`-`i64`, `u8`-`u64`, `f32`, `f64`, `datetime`, `uuid`, `email`, `url`, `ip`, `media`, `bytes`, `bigint`, `decimal`, `enums`, etc.
 - **Rich metadata tags**: `desc`, `min`, `max`, `size`, `nullable`, `raw`, `allowEmpty`, `unique`, `default_val`, `enums`, `pattern`, `location`, `version`, `mime` — plus child element variants.
 - **JSONC with inline** **`mm:`** **annotations**: Parse comments like `// mm: type=u8; min=0; max=150` to attach metadata.
 - **Declarative macro system**: `MM_OBJECT` / `MM_FIELD` for compile-time schema definition and auto-generated serializer/deserializer.
@@ -382,5 +382,5 @@ Key methods:
 | `datetime`, `date`, `time`        | —     | Temporal    |
 | `uuid`, `ip`, `url`, `email`      | —     | Identifier  |
 | `enums`                           | —     | Enumeration |
-| `image`, `video`                  | —     | Media       |
+| `media`                           | —     | Media       |
 | `doc`, `vec`, `arr`, `obj`, `map` | —     | Container   |

@@ -71,8 +71,6 @@ public class JsoncPrinter
                 case ValueType.Str:
                 case ValueType.Bytes:
                 case ValueType.Media:
-                case ValueType.Image:
-                case ValueType.Video:
                 case ValueType.Datetime:
                 case ValueType.Date:
                 case ValueType.Time:

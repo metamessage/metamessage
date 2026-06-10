@@ -5,11 +5,11 @@ let person = Person(name: "Ed", age: 30)
 print("Original: Name=\(person.name), Age=\(person.age)")
 
 // 编码到 Wire 格式
-let wire = MetaMessage.encode(Person(name: "Ed", age: 30))
+let wire = encode(Person(name: "Ed", age: 30))
 print("Encoded: \(bytesToHex(wire))")
 
 // 从 Wire 解码
-if let decoded = try? MetaMessage.decodeToValue(wire) {
+if let decoded = try? decodeToValue(wire) {
     print("Decoded: \(decoded)")
 }
 

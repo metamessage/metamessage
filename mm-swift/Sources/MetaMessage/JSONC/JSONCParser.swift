@@ -155,245 +155,74 @@ public class JSONCParser {
                     if tag.type == .unknown {
                         tag.type = .str
                     }
-
-                    var parsedData: Any = text
-
-                    switch tag.type {
-                    case .str:
-                        if tag.isNull {
-                            if text != "" {
-                                throw JSONCParserError.invalidData("invalid string: \(text), valid: \"\"")
-                            }
-                            parsedData = ""
-                        } else {
-                            let strResult = validator.validate(text, tag: tag)
-                            if !strResult.isValid {
-                                throw JSONCParserError.invalidData(strResult.errors.joined(separator: ", "))
-                            }
+                    if tag.isNull {
+                        if text != "" {
+                            throw JSONCParserError.invalidData("invalid string: \(text), valid: \"\"")
                         }
-
-                    case .bytes:
-                        if tag.isNull {
-                            if text != "" {
-                                throw JSONCParserError.invalidData("invalid bytes: \(text), valid: \"\"")
-                            }
-                            parsedData = Data()
-                        } else {
-                            guard let data = Data(base64Encoded: text) else {
-                                throw JSONCParserError.invalidData("invalid base64 bytes: \(text)")
-                            }
-                            let bytesResult = validator.validate(data, tag: tag)
-                            if !bytesResult.isValid {
-                                throw JSONCParserError.invalidData(bytesResult.errors.joined(separator: ", "))
-                            }
-                            parsedData = data
-                        }
-
-                    case .datetime:
-                        if tag.isNull {
-                            let formatter = DateFormatter()
-                            formatter.dateFormat = "yyyy-MM-dd HH:mm:ss"
-                            formatter.timeZone = TimeZone(abbreviation: "UTC")
-                            let defaultTime = formatter.string(from: Date(timeIntervalSince1970: 0))
-                            if text != defaultTime {
-                                throw JSONCParserError.invalidData("invalid datetime: \(text), valid: \(defaultTime)")
-                            }
-                            parsedData = Date(timeIntervalSince1970: 0)
-                        } else {
-                            let formatter = DateFormatter()
-                            formatter.dateFormat = "yyyy-MM-dd HH:mm:ss"
-                            formatter.timeZone = TimeZone(abbreviation: "UTC")
-                            if let date = formatter.date(from: text) {
-                                let dtResult = validator.validate(date, tag: tag)
-                                if !dtResult.isValid {
-                                    throw JSONCParserError.invalidData(dtResult.errors.joined(separator: ", "))
-                                }
-                                parsedData = date
-                            } else {
-                                throw JSONCParserError.invalidData("invalid datetime: \(text)")
-                            }
-                        }
-
-                    case .date:
-                        if tag.isNull {
-                            let formatter = DateFormatter()
-                            formatter.dateFormat = "yyyy-MM-dd"
-                            formatter.timeZone = TimeZone(abbreviation: "UTC")
-                            let defaultDate = formatter.string(from: Date(timeIntervalSince1970: 0))
-                            if text != defaultDate {
-                                throw JSONCParserError.invalidData("invalid date: \(text), valid: \(defaultDate)")
-                            }
-                            parsedData = Date(timeIntervalSince1970: 0)
-                        } else {
-                            let formatter = DateFormatter()
-                            formatter.dateFormat = "yyyy-MM-dd"
-                            formatter.timeZone = TimeZone(abbreviation: "UTC")
-                            if let date = formatter.date(from: text) {
-                                let dResult = validator.validate(date, tag: tag)
-                                if !dResult.isValid {
-                                    throw JSONCParserError.invalidData(dResult.errors.joined(separator: ", "))
-                                }
-                                parsedData = date
-                            } else {
-                                throw JSONCParserError.invalidData("invalid date: \(text)")
-                            }
-                        }
-
-                    case .time:
-                        if tag.isNull {
-                            let formatter = DateFormatter()
-                            formatter.dateFormat = "HH:mm:ss"
-                            formatter.timeZone = TimeZone(abbreviation: "UTC")
-                            let defaultTime = formatter.string(from: Date(timeIntervalSince1970: 0))
-                            if text != defaultTime {
-                                throw JSONCParserError.invalidData("invalid time: \(text), valid: \(defaultTime)")
-                            }
-                            parsedData = Date(timeIntervalSince1970: 0)
-                        } else {
-                            let formatter = DateFormatter()
-                            formatter.dateFormat = "HH:mm:ss"
-                            formatter.timeZone = TimeZone(abbreviation: "UTC")
-                            if let date = formatter.date(from: text) {
-                                let tResult = validator.validate(date, tag: tag)
-                                if !tResult.isValid {
-                                    throw JSONCParserError.invalidData(tResult.errors.joined(separator: ", "))
-                                }
-                                parsedData = date
-                            } else {
-                                throw JSONCParserError.invalidData("invalid time: \(text)")
-                            }
-                        }
-
-                    case .uuid:
-                        if tag.isNull {
-                            if text != "" {
-                                throw JSONCParserError.invalidData("invalid uuid: \(text), valid: \"\"")
-                            }
-                            parsedData = [UInt8](repeating: 0, count: 16)
-                        } else {
-                            let hexStr = text.replacingOccurrences(of: "-", with: "")
-                            var uuidBytes = [UInt8]()
-                            var index = hexStr.startIndex
-                            while index < hexStr.endIndex {
-                                let next = hexStr.index(index, offsetBy: 2, limitedBy: hexStr.endIndex) ?? hexStr.endIndex
-                                if let byte = UInt8(hexStr[index..<next], radix: 16) {
-                                    uuidBytes.append(byte)
-                                }
-                                index = next
-                            }
-                            if uuidBytes.count == 16 {
-                                parsedData = uuidBytes
-                            }
-                            let uuidResult = validator.validate(parsedData, tag: tag)
-                            if !uuidResult.isValid {
-                                throw JSONCParserError.invalidData(uuidResult.errors.joined(separator: ", "))
-                            }
-                        }
-
-                    case .decimal:
-                        if tag.isNull {
-                            if text != "" {
-                                throw JSONCParserError.invalidData("invalid decimal: \(text), valid: \"\"")
-                            }
-                            parsedData = ""
-                        } else {
-                            let decResult = validator.validate(text, tag: tag)
-                            if !decResult.isValid {
-                                throw JSONCParserError.invalidData(decResult.errors.joined(separator: ", "))
-                            }
-                        }
-
-                    case .ip:
-                        if tag.isNull {
-                            if text != "" {
-                                throw JSONCParserError.invalidData("invalid ip: \(text), valid: \"\"")
-                            }
-                            parsedData = ""
-                        } else {
-                            let ipResult = validator.validate(text, tag: tag)
-                            if !ipResult.isValid {
-                                throw JSONCParserError.invalidData(ipResult.errors.joined(separator: ", "))
-                            }
-                        }
-
-                    case .url:
-                        if tag.isNull {
-                            if text != "" {
-                                throw JSONCParserError.invalidData("invalid url: \(text), valid: \"\"")
-                            }
-                            parsedData = ""
-                        } else {
-                            let urlResult = validator.validate(text, tag: tag)
-                            if !urlResult.isValid {
-                                throw JSONCParserError.invalidData(urlResult.errors.joined(separator: ", "))
-                            }
-                        }
-
-                    case .email:
-                        if tag.isNull {
-                            if text != "" {
-                                throw JSONCParserError.invalidData("invalid email: \(text), valid: \"\"")
-                            }
-                            parsedData = ""
-                        } else {
-                            let emailResult = validator.validate(text, tag: tag)
-                            if !emailResult.isValid {
-                                throw JSONCParserError.invalidData(emailResult.errors.joined(separator: ", "))
-                            }
-                        }
-
-                    case .enums:
-                        if tag.enums.isEmpty {
-                            throw JSONCParserError.invalidData("enum empty")
-                        }
-                        if tag.isNull {
-                            if text != "" {
-                                throw JSONCParserError.invalidData("invalid enums: \(text), valid: \"\"")
-                            }
-                            parsedData = -1
-                        } else {
-                            let enumResult = validator.validate(text, tag: tag)
-                            if !enumResult.isValid {
-                                throw JSONCParserError.invalidData(enumResult.errors.joined(separator: ", "))
-                            }
-                        }
-
-                    case .media:
-                        if tag.isNull {
-                            if text != "" {
-                                throw JSONCParserError.invalidData("invalid media: \(text), valid: \"\"")
-                            }
-                            parsedData = Data()
-                        } else {
-                            guard let data = Data(base64Encoded: text) else {
-                                throw JSONCParserError.invalidData("invalid base64 media: \(text)")
-                            }
-                            parsedData = data
-                        }
-
-                    default:
-                        let strResult = validator.validate(text, tag: tag)
-                        if !strResult.isValid {
-                            throw JSONCParserError.invalidData(strResult.errors.joined(separator: ", "))
-                        }
+                        return NodeScalar(data: "", text: "", tag: tag, path: path)
                     }
-
-                    let value = NodeScalar(data: parsedData, text: text, tag: tag, path: path)
-                    return value
                 }
 
-                let value = NodeScalar(data: text, text: text, tag: tag, path: path)
+                var parsedData: Any = text
+                if let tag = tag {
+                    switch tag.type {
+                    case .datetime:
+                        let formatter = DateFormatter()
+                        formatter.dateFormat = "yyyy-MM-dd HH:mm:ss"
+                        formatter.timeZone = TimeZone(abbreviation: "UTC")
+                        if let date = formatter.date(from: text) {
+                            parsedData = date
+                        }
+                    case .date:
+                        let formatter = DateFormatter()
+                        formatter.dateFormat = "yyyy-MM-dd"
+                        formatter.timeZone = TimeZone(abbreviation: "UTC")
+                        if let date = formatter.date(from: text) {
+                            parsedData = date
+                        }
+                    case .time:
+                        let formatter = DateFormatter()
+                        formatter.dateFormat = "HH:mm:ss"
+                        formatter.timeZone = TimeZone(abbreviation: "UTC")
+                        if let date = formatter.date(from: text) {
+                            parsedData = date
+                        }
+                    case .uuid:
+                        let hexStr = text.replacingOccurrences(of: "-", with: "")
+                        var uuidBytes = [UInt8]()
+                        var index = hexStr.startIndex
+                        while index < hexStr.endIndex {
+                            let next = hexStr.index(index, offsetBy: 2)
+                            if let byte = UInt8(hexStr[index..<next], radix: 16) {
+                                uuidBytes.append(byte)
+                            }
+                            index = next
+                        }
+                        if uuidBytes.count == 16 {
+                            parsedData = uuidBytes
+                        }
+                    case .bytes:
+                        break
+                    default:
+                        break
+                    }
+
+                    let stringResult = validator.validate(parsedData, tag: tag)
+                    if !stringResult.isValid {
+                        throw JSONCParserError.invalidData(stringResult.errors.joined(separator: ", "))
+                    }
+                }
+
+                let value = NodeScalar(data: parsedData, text: text, tag: tag, path: path)
                 return value
 
         case .number:
             let tag = preTag ?? consumeCommentsFor(tok.line)
-            let text = tok.literal
-
             if let tag = tag {
                 if tag.type == .unknown {
-                    if text.contains(".") {
+                    if tok.literal.contains(".") {
                         tag.type = .f64
-                    } else if text.hasPrefix("-") {
+                    } else if tok.literal.hasPrefix("-") {
                         tag.type = .i
                     } else {
                         tag.type = .i
@@ -401,224 +230,46 @@ public class JSONCParser {
                 }
 
                 if tag.isNull {
-                    if text.contains(".") {
-                        if text != "0.0" {
-                            throw JSONCParserError.invalidData("invalid float: \(text), valid: 0.0")
+                    if tok.literal.contains(".") {
+                        if tok.literal != "0.0" {
+                            throw JSONCParserError.invalidData("invalid float: \(tok.literal), valid: 0.0")
                         }
-                        switch tag.type {
-                        case .f32:
-                            return NodeScalar(data: Float(0.0), text: text, tag: tag, path: path)
-                        case .decimal:
-                            return NodeScalar(data: "", text: text, tag: tag, path: path)
-                        default:
-                            return NodeScalar(data: Double(0.0), text: text, tag: tag, path: path)
-                        }
+                        return NodeScalar(data: tag.type == .f32 ? Float(0.0) : Double(0.0), text: tok.literal, tag: tag, path: path)
                     } else {
-                        if text != "0" {
-                            throw JSONCParserError.invalidData("invalid int: \(text), valid: 0")
+                        if tok.literal != "0" {
+                            throw JSONCParserError.invalidData("invalid int: \(tok.literal), valid: 0")
                         }
                         if tag.type == .bigint {
-                            return NodeScalar(data: "0", text: text, tag: tag, path: path)
+                            return NodeScalar(data: "0", text: tok.literal, tag: tag, path: path)
                         }
-                        return NodeScalar(data: Int(0), text: text, tag: tag, path: path)
+                        return NodeScalar(data: Int(0), text: tok.literal, tag: tag, path: path)
                     }
                 }
             }
 
             var data: Any?
 
-            if text.contains(".") {
-                if let tag = tag {
-                    switch tag.type {
-                    case .f32:
-                        if let f = Float(text) {
-                            data = f
-                            let numResult = validator.validate(data!, tag: tag)
-                            if !numResult.isValid {
-                                throw JSONCParserError.invalidData(numResult.errors.joined(separator: ", "))
-                            }
-                        }
-                    case .decimal:
-                        data = text
-                        let numResult = validator.validate(data!, tag: tag)
-                        if !numResult.isValid {
-                            throw JSONCParserError.invalidData(numResult.errors.joined(separator: ", "))
-                        }
-                    default:
-                        if let d = Double(text) {
-                            data = d
-                            let numResult = validator.validate(data!, tag: tag)
-                            if !numResult.isValid {
-                                throw JSONCParserError.invalidData(numResult.errors.joined(separator: ", "))
-                            }
-                        }
-                    }
-                } else {
-                    data = Double(text)
-                }
-            } else if text.hasPrefix("-") {
-                if let tag = tag {
-                    switch tag.type {
-                    case .i8:
-                        if let v = Int8(text) {
-                            data = Int(v)
-                            let numResult = validator.validate(data!, tag: tag)
-                            if !numResult.isValid {
-                                throw JSONCParserError.invalidData(numResult.errors.joined(separator: ", "))
-                            }
-                        }
-                    case .i16:
-                        if let v = Int16(text) {
-                            data = Int(v)
-                            let numResult = validator.validate(data!, tag: tag)
-                            if !numResult.isValid {
-                                throw JSONCParserError.invalidData(numResult.errors.joined(separator: ", "))
-                            }
-                        }
-                    case .i32:
-                        if let v = Int32(text) {
-                            data = Int(v)
-                            let numResult = validator.validate(data!, tag: tag)
-                            if !numResult.isValid {
-                                throw JSONCParserError.invalidData(numResult.errors.joined(separator: ", "))
-                            }
-                        }
-                    case .i64:
-                        if let v = Int64(text) {
-                            data = Int(v)
-                            let numResult = validator.validate(data!, tag: tag)
-                            if !numResult.isValid {
-                                throw JSONCParserError.invalidData(numResult.errors.joined(separator: ", "))
-                            }
-                        }
-                    case .bigint:
-                        data = text
-                        let numResult = validator.validate(data!, tag: tag)
-                        if !numResult.isValid {
-                            throw JSONCParserError.invalidData(numResult.errors.joined(separator: ", "))
-                        }
-                    default:
-                        if let v = Int(text) {
-                            data = v
-                            let numResult = validator.validate(data!, tag: tag)
-                            if !numResult.isValid {
-                                throw JSONCParserError.invalidData(numResult.errors.joined(separator: ", "))
-                            }
-                        } else if let v = Int64(text) {
-                            data = v
-                            let numResult = validator.validate(data!, tag: tag)
-                            if !numResult.isValid {
-                                throw JSONCParserError.invalidData(numResult.errors.joined(separator: ", "))
-                            }
-                        }
-                    }
-                } else {
-                    if let ival = Int(text) {
-                        data = ival
-                    } else {
-                        data = Int64(text)
-                    }
+            if let tag = tag, tag.type == .bigint {
+                data = tok.literal
+                let numberResult = validator.validate(data!, tag: tag)
+                if !numberResult.isValid {
+                    throw JSONCParserError.invalidData(numberResult.errors.joined(separator: ", "))
                 }
             } else {
-                if let tag = tag {
-                    switch tag.type {
-                    case .u:
-                        if let v = UInt(text) {
-                            data = Int(v)
-                            let numResult = validator.validate(data!, tag: tag)
-                            if !numResult.isValid {
-                                throw JSONCParserError.invalidData(numResult.errors.joined(separator: ", "))
-                            }
-                        }
-                    case .u8:
-                        if let v = UInt8(text) {
-                            data = Int(v)
-                            let numResult = validator.validate(data!, tag: tag)
-                            if !numResult.isValid {
-                                throw JSONCParserError.invalidData(numResult.errors.joined(separator: ", "))
-                            }
-                        }
-                    case .u16:
-                        if let v = UInt16(text) {
-                            data = Int(v)
-                            let numResult = validator.validate(data!, tag: tag)
-                            if !numResult.isValid {
-                                throw JSONCParserError.invalidData(numResult.errors.joined(separator: ", "))
-                            }
-                        }
-                    case .u32:
-                        if let v = UInt32(text) {
-                            data = Int(v)
-                            let numResult = validator.validate(data!, tag: tag)
-                            if !numResult.isValid {
-                                throw JSONCParserError.invalidData(numResult.errors.joined(separator: ", "))
-                            }
-                        }
-                    case .u64:
-                        if let v = UInt64(text) {
-                            if v <= UInt64(Int.max) {
-                                data = Int(v)
-                            } else {
-                                data = v
-                            }
-                            let numResult = validator.validate(data!, tag: tag)
-                            if !numResult.isValid {
-                                throw JSONCParserError.invalidData(numResult.errors.joined(separator: ", "))
-                            }
-                        }
-                    case .i8:
-                        if let v = Int8(text) {
-                            data = Int(v)
-                            let numResult = validator.validate(data!, tag: tag)
-                            if !numResult.isValid {
-                                throw JSONCParserError.invalidData(numResult.errors.joined(separator: ", "))
-                            }
-                        }
-                    case .i16:
-                        if let v = Int16(text) {
-                            data = Int(v)
-                            let numResult = validator.validate(data!, tag: tag)
-                            if !numResult.isValid {
-                                throw JSONCParserError.invalidData(numResult.errors.joined(separator: ", "))
-                            }
-                        }
-                    case .i32:
-                        if let v = Int32(text) {
-                            data = Int(v)
-                            let numResult = validator.validate(data!, tag: tag)
-                            if !numResult.isValid {
-                                throw JSONCParserError.invalidData(numResult.errors.joined(separator: ", "))
-                            }
-                        }
-                    case .i64:
-                        if let v = Int64(text) {
-                            data = Int(v)
-                            let numResult = validator.validate(data!, tag: tag)
-                            if !numResult.isValid {
-                                throw JSONCParserError.invalidData(numResult.errors.joined(separator: ", "))
-                            }
-                        }
-                    case .bigint:
-                        data = text
-                        let numResult = validator.validate(data!, tag: tag)
-                        if !numResult.isValid {
-                            throw JSONCParserError.invalidData(numResult.errors.joined(separator: ", "))
-                        }
-                    default:
-                        if let uval = UInt64(text) {
-                            if uval > UInt64(Int.max) {
-                                data = uval
-                            } else {
-                                data = Int(uval)
-                            }
-                            let numResult = validator.validate(data!, tag: tag)
-                            if !numResult.isValid {
-                                throw JSONCParserError.invalidData(numResult.errors.joined(separator: ", "))
-                            }
-                        }
+                if tok.literal.contains(".") {
+                    if let tag = tag, tag.type == .f32 {
+                        data = Float(tok.literal)
+                    } else {
+                        data = Double(tok.literal)
+                    }
+                } else if tok.literal.hasPrefix("-") {
+                    if let ival = Int(tok.literal) {
+                        data = ival
+                    } else {
+                        data = Int64(tok.literal)
                     }
                 } else {
-                    if let uval = UInt64(text) {
+                    if let uval = UInt64(tok.literal) {
                         if uval > UInt64(Int.max) {
                             data = uval
                         } else {
@@ -626,9 +277,16 @@ public class JSONCParser {
                         }
                     }
                 }
+
+                if let tag = tag {
+                    let numberResult = validator.validate(data, tag: tag)
+                    if !numberResult.isValid {
+                        throw JSONCParserError.invalidData(numberResult.errors.joined(separator: ", "))
+                    }
+                }
             }
 
-            let value = NodeScalar(data: data, text: text, tag: tag, path: path)
+            let value = NodeScalar(data: data, text: tok.literal, tag: tag, path: path)
             return value
 
         case .trueValue:
@@ -637,17 +295,12 @@ public class JSONCParser {
                 if tag.type == .unknown {
                     tag.type = .bool
                 }
-                switch tag.type {
-                case .bool:
-                    if tag.isNull {
-                        throw JSONCParserError.invalidData("bool must false when bool is null")
-                    }
-                    let trueResult = validator.validate(true, tag: tag)
-                    if !trueResult.isValid {
-                        throw JSONCParserError.invalidData(trueResult.errors.joined(separator: ", "))
-                    }
-                default:
-                    throw JSONCParserError.invalidData("unsupported type \(tag.type.stringValue) for boolean literal")
+                if tag.isNull {
+                    throw JSONCParserError.invalidData("bool must false when bool is null")
+                }
+                let trueResult = validator.validate(true, tag: tag)
+                if !trueResult.isValid {
+                    throw JSONCParserError.invalidData(trueResult.errors.joined(separator: ", "))
                 }
             }
             let value = NodeScalar(data: true, text: "true", tag: tag, path: path)
@@ -659,17 +312,12 @@ public class JSONCParser {
                 if tag.type == .unknown {
                     tag.type = .bool
                 }
-                switch tag.type {
-                case .bool:
-                    if tag.isNull {
-                        return NodeScalar(data: false, text: "false", tag: tag, path: path)
-                    }
-                    let falseResult = validator.validate(false, tag: tag)
-                    if !falseResult.isValid {
-                        throw JSONCParserError.invalidData(falseResult.errors.joined(separator: ", "))
-                    }
-                default:
-                    throw JSONCParserError.invalidData("unsupported type \(tag.type.stringValue) for boolean literal")
+                if tag.isNull {
+                    return NodeScalar(data: false, text: "false", tag: tag, path: path)
+                }
+                let falseResult = validator.validate(false, tag: tag)
+                if !falseResult.isValid {
+                    throw JSONCParserError.invalidData(falseResult.errors.joined(separator: ", "))
                 }
             }
             let value = NodeScalar(data: false, text: "false", tag: tag, path: path)
@@ -704,16 +352,14 @@ public class JSONCParser {
             }
         }
 
-        var localPath = path
-        if let tag = tag, !tag.name.isEmpty {
-            if localPath.isEmpty {
-                localPath = tag.name
-            } else {
-                localPath = "\(localPath).\(tag.name)"
+        let obj = NodeObject(tag: tag, path: path)
+
+        if let tag = tag, !tag.example {
+            let structResult = validator.validate(obj, tag: tag)
+            if !structResult.isValid {
+                throw JSONCParserError.invalidData(structResult.errors.joined(separator: ", "))
             }
         }
-
-        let obj = NodeObject(tag: tag, path: localPath)
 
         while true {
             let tok = peek()
@@ -743,34 +389,22 @@ public class JSONCParser {
                 throw JSONCParserError.unexpectedToken("Expected string key")
             }
 
-            let key = camelToSnake(keyTok.literal)
+            let key = keyTok.literal
 
-            let tok2 = peek()
             _ = next()
 
+            let childPath = "\(path).\(key)"
+            let valueTok = peek()
             if let parentTag = tag {
-                let ownTag = consumeCommentsFor(tok2.line)
+                let ownTag = consumeCommentsFor(valueTok.line)
                 let childTag = ownTag ?? Tag()
+                childTag.inherit(from: parentTag)
 
-                if parentTag.type == .map {
-                    childTag.inherit(from: parentTag)
-                    if childTag.example {
-                        parentTag.isEmpty = true
-                    }
-                }
-
-                let childPath: String
-                if parentTag.type == .map {
-                    childPath = "\(localPath)[\(key)]"
-                } else {
-                    childPath = "\(localPath).\(key)"
-                }
                 if let val = try parseNode(childPath, childTag) {
                     let field = Field(key: key, value: val)
                     obj.fields.append(field)
                 }
             } else {
-                let childPath = "\(localPath).\(key)"
                 if let val = try parseNode(childPath) {
                     let field = Field(key: key, value: val)
                     obj.fields.append(field)
@@ -779,15 +413,6 @@ public class JSONCParser {
 
             if peek().type == .comma {
                 _ = next()
-            }
-        }
-
-        if let tag = tag, !tag.example {
-            if tag.type == .obj || tag.type == .map {
-                let structResult = validator.validate(obj, tag: tag)
-                if !structResult.isValid {
-                    throw JSONCParserError.invalidData(structResult.errors.joined(separator: ", "))
-                }
             }
         }
 
@@ -809,25 +434,13 @@ public class JSONCParser {
             }
             tag!.inherit(from: pt)
         }
-        // Reset the container's type so it gets typed as vec/arr instead of
-        // inheriting childType from the field's tag (which is meant for items).
-        tag?.type = .unknown
         if let tag = tag {
             if tag.type == .unknown {
                 tag.type = .vec
             }
         }
 
-        var localPath = path
-        if let tag = tag, !tag.name.isEmpty {
-            if localPath.isEmpty {
-                localPath = tag.name
-            } else {
-                localPath = "\(localPath).\(tag.name)"
-            }
-        }
-
-        let arr = NodeArray(tag: tag, path: localPath)
+        let arr = NodeArray(tag: tag, path: path)
 
         if let tag = tag, !tag.example {
             let arrayResult = validator.validate(arr, tag: tag)
@@ -859,21 +472,11 @@ public class JSONCParser {
                 continue
             }
 
-            let itemPath = "\(localPath)[\(index)]"
+            let itemPath = "\(path)[\(index)]"
             if let parentTag = tag {
-                let elemOwnTag: Tag?
-                if openLine != tok.line {
-                    elemOwnTag = consumeCommentsFor(tok.line)
-                } else {
-                    elemOwnTag = nil
-                }
+                let elemOwnTag = consumeCommentsFor(tok.line)
                 let childTag = elemOwnTag ?? Tag()
-                // Items inherit from the field's original tag (preTag) which
-                // carries child_* attributes, falling back to the array tag.
-                childTag.inherit(from: preTag ?? parentTag)
-                if childTag.example {
-                    parentTag.isEmpty = true
-                }
+                childTag.inherit(from: parentTag)
 
                 if let item = try parseNode(itemPath, childTag) {
                     if let value = item as? NodeScalar, childTag.type == .bigint, value.data == nil {

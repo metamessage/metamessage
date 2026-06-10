@@ -101,8 +101,7 @@ Definieren Sie Datentypen mit dem Tag `type=`. Das Format ist `type=typeIdentifi
 - url: URL, muss eine gültige URL sein
 - email: E-Mail, muss gültig sein
 - enum: enum, Werte sind Strings, getrennt durch |
-- image: Bild, intern bytes
-- video: Video, intern bytes
+- media: Medien, intern bytes
 
 ## Tags
 

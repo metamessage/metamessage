@@ -80,7 +80,7 @@ string simpleJsonc = @"{
 Console.WriteLine("输入:");
 Console.WriteLine(simpleJsonc);
 
-var wireBytes = MetaMessage.Core.MetaMessage.EncodeFromJsonc(simpleJsonc);
+var wireBytes = MetaMessage.Core.MetaMessage.FromJSONC(simpleJsonc);
 Console.WriteLine($"Wire 编码: {BitConverter.ToString(wireBytes).Replace("-", "").ToLower()}");
 
 string decodedJsonc = MetaMessage.Core.MetaMessage.DecodeToJsonc(wireBytes);

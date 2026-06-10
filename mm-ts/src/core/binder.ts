@@ -198,8 +198,7 @@ export class Binder {
         return false;
 
       case ValueType.Bytes:
-      case ValueType.Image:
-      case ValueType.Video:
+      case ValueType.Media:
         return new Uint8Array();
 
       case ValueType.Datetime:

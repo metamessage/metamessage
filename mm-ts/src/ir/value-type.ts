@@ -30,8 +30,6 @@ export enum ValueType {
   Url,
   Email,
   Enums,
-  Image,
-  Video,
   Media,
 }
 
@@ -68,8 +66,6 @@ export const ValueTypeStr = [
   'url',
   'email',
   'enums',
-  'image',
-  'video',
   'media',
 ];
 
@@ -139,10 +135,6 @@ export function stringToType(value: string): ValueType {
       return ValueType.Email;
     case 'enums':
       return ValueType.Enums;
-    case 'image':
-      return ValueType.Image;
-    case 'video':
-      return ValueType.Video;
     case 'media':
       return ValueType.Media;
     default:

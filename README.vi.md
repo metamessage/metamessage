@@ -101,8 +101,7 @@ Lưu ý:
 - url: URL, hợp lệ
 - email: email, hợp lệ
 - enum: enum, giá trị là chuỗi phân tách bởi |
-- image: ảnh, dạng bytes
-- video: video, dạng bytes
+- media: phương tiện, dạng bytes
 
 ## Thẻ
 

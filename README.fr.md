@@ -101,8 +101,7 @@ Définissez les types de données à l'aide du tag `type=`. Le format est `type=
 - url: URL, doit être une URL valide
 - email: e-mail, doit être valide
 - enums: enum, les valeurs sont des chaînes séparées par |
-- image: image, sous-jacent bytes
-- video: vidéo, sous-jacent bytes
+- media: média, sous-jacent bytes
 
 ## Tags
 

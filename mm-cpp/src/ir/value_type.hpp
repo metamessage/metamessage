@@ -47,8 +47,6 @@ enum class ValueType : uint8_t {
   Email = 29,
 
   Enums = 30,
-  Image = 31,
-  Video = 32,
   Media = 33
 };
 
@@ -116,10 +114,6 @@ inline std::string valueTypeToString(ValueType vt) {
     return "email";
   case ValueType::Enums:
     return "enums";
-  case ValueType::Image:
-    return "image";
-  case ValueType::Video:
-    return "video";
   case ValueType::Media:
     return "media";
   default:
@@ -160,8 +154,6 @@ inline ValueType parseValueType(const std::string &s) {
       {"url", ValueType::Url},
       {"email", ValueType::Email},
       {"enums", ValueType::Enums},
-      {"image", ValueType::Image},
-      {"video", ValueType::Video},
       {"media", ValueType::Media}};
 
   std::string lower = s;

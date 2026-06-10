@@ -141,10 +141,8 @@ mm.decimal = (v: string, tag?: Tag) =>
   new NodeScalar(v, { ...tag, type: ValueType.Decimal } as Tag);
 mm.enum = (v: number, tag?: Tag) =>
   new NodeScalar(v, { ...tag, type: ValueType.Enums } as Tag);
-mm.image = (v: Uint8Array, tag?: Tag) =>
-  new NodeScalar(v, { ...tag, type: ValueType.Image } as Tag);
-mm.video = (v: Uint8Array, tag?: Tag) =>
-  new NodeScalar(v, { ...tag, type: ValueType.Video } as Tag);
+mm.media = (v: Uint8Array, tag?: Tag) =>
+  new NodeScalar(v, { ...tag, type: ValueType.Media } as Tag);
 mm.i = (v: bigint, tag?: Tag) =>
   new NodeScalar(v, { ...tag, type: ValueType.I } as Tag);
 mm.i8 = (v: number, tag?: Tag) =>

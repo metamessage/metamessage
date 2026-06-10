@@ -101,8 +101,7 @@ Define data types using the tag `type=`. The format is `type=typeIdentifier`, e.
 - url: URL, must be a valid URL
 - email: email, must be a valid email address
 - enum: enum values are strings separated by |
-- image: image, underlying bytes
-- video: video, underlying bytes
+- media: media, underlying bytes
 
 ## Tags
 

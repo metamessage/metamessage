@@ -261,8 +261,6 @@ export class MMEncoder {
           );
         }
         break;
-      case ValueType.Image:
-      case ValueType.Video:
       case ValueType.Media:
         if (!tag.isNull) {
           const data = val.getValue();

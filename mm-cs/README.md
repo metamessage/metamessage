@@ -370,8 +370,7 @@ child_enums=<val1>|<val2>|<val3>
 | `vec`      | 数组/列表   | `List<T>`/`T[]`    |
 | `arr`      | 定长数组    | `T[]`              |
 | `doc`      | 文档根      | -                  |
-| `image`    | 图片        | `byte[]`           |
-| `video`    | 视频        | `byte[]`           |
+| `media`    | 媒体        | `byte[]`           |
 
 ## 5. 树节点类型
 

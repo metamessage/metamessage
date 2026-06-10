@@ -101,8 +101,7 @@ MetaMessage는 AI의 이해와 상호작용에 자연스럽게 맞으며, 모호
 - url: URL, 표준 URL 형식
 - email: 이메일, 표준 이메일 형식
 - enum: enum, 값은 | 로 구분된 문자열입니다
-- image: 이미지, 내부는 bytes
-- video: 비디오, 내부는 bytes
+- media: 미디어, 내부는 bytes
 
 ## 태그
 
