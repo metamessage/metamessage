@@ -9,9 +9,9 @@ from typing import Any
 from metamessage import Encoder, Decoder
 from metamessage.core.value_to_node import (
     value_to_node, node_to_value, encode_from_value, decode_to_value,
-    mm, get_mm_tag_for_class, get_mm_tag_for_field,
     _camel_to_snake
 )
+from metamessage.core.mm import mm, get_mm_tag_for_class, get_mm_tag_for_field
 from metamessage.ir.tag import Tag, ValueType, NewTag
 
 

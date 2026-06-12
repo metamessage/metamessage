@@ -334,9 +334,34 @@ PYTHONPATH=. python3 examples/python/nested_structures.py
 
 ### 装饰器
 
-| 装饰器     | 说明           |
-| ---------- | -------------- |
-| `@mm(...)` | 类级标记装饰器 |
+`@mm(...)`
+`@mm(type=map)`
+`@mm(child_type=i8)`
+
+`nullable` 根據是否optional自動設置，只有optional的字段才可以設置`is_null`
+
+| 类型 | 允许出现位置 | 语义 | 对应类型 | 允许标签 |
+| ---- | ---- | ---- | ---- | ---- |
+| Obj | class | 自定义结构体模型 | 自定义 MM 模型类 | `is_null`</br>`example`</br>`deprecated`</br>`name`</br>`desc`</br>`allow_empty` |
+| Map | class | 字典</br>键值集合 | `dict[K, V]` | `is_null`</br>`example`</br>`deprecated`</br>`name`</br>`type`</br>`desc`</br>`allow_empty` |
+| Vec | field | 一维数组 | `list[T]` </br> `[T]` | `is_null`</br>`example`</br>`deprecated`</br>`name`</br>`desc`</br>`type`</br>`allow_empty`</br>`min`</br>`max`</br>`size`</br>`unique`</br>**全部 `child_*` 子元素标签** |
+| Arr | field | 固定长度数组 | `list[T]` </br> `[T]` | `is_null`</br>`example`</br>`deprecated`</br>`name`</br>`desc`</br>`allow_empty`</br>`min`</br>`max`</br>`size`</br>`unique`</br>**全部 `child_*` 子元素标签** |
+| Str | field | 文本 | `str` | `is_null`</br>`example`</br>`deprecated`</br>`name`</br>`desc`</br>`allow_empty`</br>`min`</br>`max`</br>`size`</br>`pattern` |
+| Bytes | field | 二进制数据、文件、媒体流 | `bytes` | `is_null`</br>`example`</br>`deprecated`</br>`name`</br>`desc`</br>`allow_empty`</br>`min`</br>`max`</br>`size` |
+| Bool | field | 真假状态 | `bool` | `is_null`</br>`example`</br>`deprecated`</br>`name`</br>`desc` |
+| I、I8、I16、I32、I64、U、U8、U16、U32、U64、Bigint | field | 数字ID、数值、计数 | `int` | `is_null`</br>`example`</br>`deprecated`</br>`name`</br>`desc`</br>`allow_empty`</br>`min`</br>`max`</br>`size` |
+| F32 | field | 普通小数（非金额） | `float` | `is_null`</br>`example`</br>`deprecated`</br>`name`</br>`desc`</br>`allow_empty`</br>`min`</br>`max`</br>`size` |
+| F64 | field | 普通小数（非金额） | `float` | `is_null`</br>`example`</br>`deprecated`</br>`name`</br>`desc`</br>`allow_empty`</br>`min`</br>`max`</br>`size` |
+| Datetime | field | 完整时间戳 | `datetime` | `is_null`</br>`example`</br>`deprecated`</br>`name`</br>`desc`</br>`allow_empty`</br>`min`</br>`max`</br>`location` |
+| Date | field | 年月日 | `date` | `is_null`</br>`example`</br>`deprecated`</br>`name`</br>`desc`</br>`allow_empty`</br>`min`</br>`max`</br>`location` |
+| Time | field | 时分秒 | `time` | `is_null`</br>`example`</br>`deprecated`</br>`name`</br>`desc`</br>`allow_empty`</br>`min`</br>`max`</br>`location` |
+| Uuid | field | 唯一ID | `str` | `is_null`</br>`example`</br>`deprecated`</br>`name`</br>`desc`</br>`allow_empty`</br>`min`</br>`max`</br>`size`</br>`version` |
+| Decimal | field | Decimal | `str` | `is_null`</br>`example`</br>`deprecated`</br>`name`</br>`desc`</br>`allow_empty`</br>`min`</br>`max`</br>`size` |
+| Ip | field | Ip | `str` | `is_null`</br>`example`</br>`deprecated`</br>`name`</br>`desc`</br>`allow_empty`</br>`min`</br>`max`</br>`size`</br>`version` |
+| Url | field | Url | `str` | `is_null`</br>`example`</br>`deprecated`</br>`name`</br>`desc`</br>`allow_empty`</br>`min`</br>`max`</br>`size`</br>`pattern` |
+| Email | field | Email | `str` | `is_null`</br>`example`</br>`deprecated`</br>`name`</br>`desc`</br>`allow_empty`</br>`min`</br>`max`</br>`size`</br>`pattern` |
+| Enums | field | 状态、选项、固定枚举值 | 自定义 `Enum` 子类 | `is_null`</br>`example`</br>`deprecated`</br>`name`</br>`desc`</br>`allow_empty`</br>`enums` |
+| Media | field | 图片</br>音视频</br>文件二进制 | `bytes` | `is_null`</br>`example`</br>`deprecated`</br>`name`</br>`desc`</br>`allow_empty`</br>`min`</br>`max`</br>`size`</br>`mime` |
 
 ## 测试
 

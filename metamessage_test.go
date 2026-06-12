@@ -18,6 +18,7 @@ import (
 // go test -v -run TestEncodeDecode/nil
 //
 // go test -v -run TestJsonc
+// go test -v -run TestBytes
 //
 // go test -bench=BenchmarkEncodeDecode -benchmem
 
@@ -147,6 +148,22 @@ func TestJsonc(t *testing.T) {
 	var v *any
 	e := JsoncToValue(jsonc, v)
 	fmt.Println("1111", e, v)
+}
+
+func TestValue(t *testing.T) {
+	var v *any = nil
+	jsonc, e := ValueToJsonc(*v, "")
+	fmt.Println("1111", e, jsonc)
+}
+
+func TestBytes(t *testing.T) {
+	bs := []byte{52, 48, 52, 32, 112, 97, 103, 101, 32, 110, 111, 116, 32, 102, 111, 117, 110, 100, 10}
+	var v any
+	err := DecodeToValue(bs, &v)
+	if err != nil {
+		t.Fatalf("DecodeToValue error: %v", err)
+	}
+	fmt.Println("v", v)
 }
 
 func TestGenerateGoBasic(t *testing.T) {

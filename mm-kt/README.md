@@ -117,6 +117,31 @@ public class Example {
 }
 ```
 
+`nullable` 根據是否指針類型自動設置，只有指針類型的字段才可以設置`is_null`
+
+| 类型 | 允许出现位置 | 语义 | 对应类型 | 允许标签 |
+| ---- | ---- | ---- | ---- | ---- |
+| Obj | class | 自定义结构体模型 | 自定义 MM 模型类 | `example`</br>`deprecated`</br>`name`</br>`desc`</br>`allow_empty` |
+| Map | class | 字典</br>键值集合 | `dict[K, V]` | `example`</br>`deprecated`</br>`name`</br>`type`</br>`desc`</br>`allow_empty` |
+| Vec | field | 一维数组 | `list[T]` </br> `[T]` | `example`</br>`deprecated`</br>`name`</br>`desc`</br>`type`</br>`allow_empty`</br>`min`</br>`max`</br>`size`</br>`unique`</br>**全部 `child_*` 子元素标签** |
+| Arr | field | 固定长度数组 | `list[T]` </br> `[T]` | `example`</br>`deprecated`</br>`name`</br>`desc`</br>`allow_empty`</br>`min`</br>`max`</br>`size`</br>`unique`</br>**全部 `child_*` 子元素标签** |
+| Str | field | 文本 | `str` | `example`</br>`deprecated`</br>`name`</br>`desc`</br>`allow_empty`</br>`min`</br>`max`</br>`size`</br>`pattern` |
+| Bytes | field | 二进制数据、文件、媒体流 | `bytes` | `example`</br>`deprecated`</br>`name`</br>`desc`</br>`allow_empty`</br>`min`</br>`max`</br>`size` |
+| Bool | field | 真假状态 | `bool` | `example`</br>`deprecated`</br>`name`</br>`desc`</br>`nullable` |
+| I、I8、I16、I32、I64、U、U8、U16、U32、U64、Bigint | field | 数字ID、数值、计数 | `int` | `example`</br>`deprecated`</br>`name`</br>`desc`</br>`allow_empty`</br>`min`</br>`max`</br>`size` |
+| F32、F64 | field | 普通小数（非金额） | `float` | `example`</br>`deprecated`</br>`name`</br>`desc`</br>`allow_empty`</br>`min`</br>`max`</br>`size` |
+| Datetime | field | 完整时间戳 | `datetime` | `example`</br>`deprecated`</br>`name`</br>`desc`</br>`allow_empty`</br>`min`</br>`max`</br>`location` |
+| Date | field | 年月日 | `date` | `example`</br>`deprecated`</br>`name`</br>`desc`</br>`allow_empty`</br>`min`</br>`max`</br>`location` |
+| Time | field | 时分秒 | `time` | `example`</br>`deprecated`</br>`name`</br>`desc`</br>`allow_empty`</br>`min`</br>`max`</br>`location` |
+| Uuid | field | 唯一ID | `str` | `example`</br>`deprecated`</br>`name`</br>`desc`</br>`allow_empty`</br>`min`</br>`max`</br>`size`</br>`pattern`</br>`version` |
+| Decimal | field | Decimal | `str` | `example`</br>`deprecated`</br>`name`</br>`desc`</br>`allow_empty`</br>`min`</br>`max`</br>`size`</br>`pattern` |
+| Ip | field | Ip | `str` | `example`</br>`deprecated`</br>`name`</br>`desc`</br>`allow_empty`</br>`min`</br>`max`</br>`size`</br>`pattern`</br>`version` |
+| Url | field | Url | `str` | `example`</br>`deprecated`</br>`name`</br>`desc`</br>`allow_empty`</br>`min`</br>`max`</br>`size`</br>`pattern` |
+| Email | field | Email | `str` | `example`</br>`deprecated`</br>`name`</br>`desc`</br>`allow_empty`</br>`min`</br>`max`</br>`size`</br>`pattern` |
+| Enums | field | 状态、选项、固定枚举值 | 自定义 `Enum` 子类 | `example`</br>`deprecated`</br>`name`</br>`desc`</br>`allow_empty`</br>`enums` |
+| Media | field | 图片</br>音视频</br>文件二进制 | `bytes` | `example`</br>`deprecated`</br>`name`</br>`desc`</br>`allow_empty`</br>`min`</br>`max`</br>`size`</br>`mime` |
+
+
 ## 3. 测试方法
 
 ### 3.1 运行现有测试

@@ -5,7 +5,8 @@ from .ir.tag import Tag, TagKey, ValueType, mm_tag, def_tag, NewTag, MergeTag
 from .ir.ast import NodeObject, Arr, NodeScalar, Field, NodeType, Node, NodeNull
 from .core.encoder import Encoder
 from .core.decoder import Decoder
-from .core.value_to_node import value_to_node, node_to_value, mm
+from .core.value_to_node import value_to_node, node_to_value
+from .core.mm import mm
 from .jsonc import parse_jsonc, to_jsonc
 
 

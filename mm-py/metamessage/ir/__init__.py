@@ -1,4 +1,5 @@
-from .tag import Tag, TagKey, ValueType, mm_tag, def_tag, NewTag, MergeTag, parse_value_type
+from .value_type import ValueType, parse_value_type
+from .tag import Tag, TagKey, mm_tag, def_tag, NewTag, MergeTag
 from .ast import (
     NodeObject, Arr, NodeScalar, Field, Doc, NodeType, Node, parse_node_type,
     Empty, Null, TrueStr, FalseStr,

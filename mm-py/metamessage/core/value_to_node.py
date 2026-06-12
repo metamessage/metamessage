@@ -27,10 +27,11 @@ from typing import Any, Dict, List, Optional, Type, Tuple, get_type_hints, Union
 from datetime import datetime, date, time as dt_time
 from enum import Enum
 
-from ..ir.tag import Tag, ValueType, NewTag, MergeTag, mm_tag
+from ..ir.tag import Tag, ValueType, NewTag, MergeTag
 from ..ir.ast import NodeObject, Arr, NodeScalar, Field, Node, NodeNull
 from .encoder import Encoder
 from .decoder import Decoder
+from .mm import get_mm_tag_for_class, get_mm_tag_for_field
 
 
 def _camel_to_snake(name: str) -> str:
@@ -51,182 +52,6 @@ def _camel_to_snake(name: str) -> str:
         else:
             result.append(c)
     return ''.join(result)
-
-
-# ===== Decorator-based MM Tag =====
-
-_MM_FIELD_REGISTRY: Dict[Type, Dict[str, Tag]] = {}
-_MM_CLASS_REGISTRY: Dict[Type, Tag] = {}
-
-
-class mm:
-    """MetaMessage tag annotation.
-
-    Can be used as:
-    1. Class decorator (recommended): @mm(desc="User information")
-    2. Field decorator: @mm inside class body (see examples)
-    3. Tag string: @mm("type=i64; desc=用户ID")
-
-    Examples:
-        @mm(desc="User information")
-        class User:
-            @mm(desc="User ID")
-            id: int
-            @mm(desc="User name")
-            name: str
-            @mm(type=ValueType.U8, desc="User age")
-            age: int
-
-    How it works:
-    - When used as a class decorator (@mm above class), it registers the tag
-      for the entire class.
-    - When used as a field decorator (@mm above a field annotation), Python's
-      class creation machinery processes it via __init_subclass__.
-      The mm instance stores the tag and associates it with the next
-      annotated field name.
-    """
-    # Track the last field name that was annotated
-    _last_field_name: Optional[str] = None
-
-    def __new__(cls, *args, **kwargs):
-        instance = super().__new__(cls)
-        instance._tag = None
-        if args and isinstance(args[0], str):
-            # mm("type=i64; desc=用户ID")
-            instance._tag_str = args[0]
-            instance._kwargs = {}
-        else:
-            # mm(type=ValueType.I64, desc="用户ID")
-            instance._tag_str = None
-            instance._kwargs = kwargs
-        return instance
-
-    def __call__(self, target):
-        tag = self._build_tag()
-
-        if isinstance(target, type):
-            # Class decorator: @mm(desc="...")
-            _MM_CLASS_REGISTRY[target] = tag
-            _MM_FIELD_REGISTRY.setdefault(target, {})
-            return target
-        else:
-            # If used as a regular decorator on a non-class (function, etc.),
-            # just return the target unchanged
-            return target
-
-    def __set_name__(self, owner, name):
-        """Descriptor protocol: called when the class is created.
-        
-        This allows mm instances used as default values to register
-        themselves into the field registry.
-        """
-        tag = self._build_tag()
-        _MM_FIELD_REGISTRY.setdefault(owner, {})
-        _MM_FIELD_REGISTRY[owner][name] = tag
-
-    def _build_tag(self) -> Tag:
-        """Build Tag from stored args/kwargs."""
-        if self._tag is None:
-            if self._tag_str:
-                self._tag = mm_tag(self._tag_str)
-            else:
-                self._tag = self._kwargs_to_tag(self._kwargs)
-        return self._tag
-
-    def get_tag(self) -> Tag:
-        """Get the Tag stored in this mm instance."""
-        return self._build_tag()
-
-    def _kwargs_to_tag(self, kwargs: dict) -> Tag:
-        """Convert keyword arguments to a Tag."""
-        tag = NewTag()
-        
-        for k, v in kwargs.items():
-            k = k.lower()
-            if k == 'type':
-                if isinstance(v, ValueType):
-                    tag.type = v
-                elif isinstance(v, str):
-                    from ..ir.tag import parse_value_type
-                    tag.type = parse_value_type(v)
-                elif isinstance(v, int):
-                    tag.type = ValueType(v)
-            elif k == 'desc':
-                tag.desc = str(v)
-            elif k == 'is_null':
-                tag.is_null = bool(v)
-            elif k == 'nullable':
-                tag.nullable = bool(v)
-            elif k == 'deprecated':
-                tag.deprecated = bool(v)
-            elif k == 'example':
-                tag.example = bool(v)
-            elif k == 'allow_empty':
-                tag.allow_empty = bool(v)
-            elif k == 'unique':
-                tag.unique = bool(v)
-            elif k == 'default_val':
-                tag.default_val = str(v)
-            elif k == 'min':
-                tag.min = str(v)
-            elif k == 'max':
-                tag.max = str(v)
-            elif k == 'size':
-                tag.size = int(v)
-            elif k == 'enums':
-                tag.type = ValueType.Enums
-                tag.enums = str(v)
-            elif k == 'pattern':
-                tag.pattern = str(v)
-            elif k == 'version':
-                tag.version = int(v)
-            elif k == 'mime':
-                tag.mime = str(v)
-            elif k == 'child_desc':
-                tag.child_desc = str(v)
-            elif k == 'child_type':
-                if isinstance(v, ValueType):
-                    tag.child_type = v
-                elif isinstance(v, str):
-                    from ..ir.tag import parse_value_type
-                    tag.child_type = parse_value_type(v)
-            elif k == 'child_nullable':
-                tag.child_nullable = bool(v)
-            elif k == 'child_allow_empty':
-                tag.child_allow_empty = bool(v)
-            elif k == 'child_unique':
-                tag.child_unique = bool(v)
-            elif k == 'child_default_val':
-                tag.child_default_val = str(v)
-            elif k == 'child_min':
-                tag.child_min = str(v)
-            elif k == 'child_max':
-                tag.child_max = str(v)
-            elif k == 'child_size':
-                tag.child_size = int(v)
-            elif k == 'child_enums':
-                tag.child_enums = str(v)
-            elif k == 'child_pattern':
-                tag.child_pattern = str(v)
-            elif k == 'child_version':
-                tag.child_version = int(v)
-            elif k == 'child_mime':
-                tag.child_mime = str(v)
-        
-        return tag
-
-
-def get_mm_tag_for_class(cls: Type) -> Optional[Tag]:
-    """Get the class-level MM tag for a class."""
-    return _MM_CLASS_REGISTRY.get(cls)
-
-
-def get_mm_tag_for_field(cls: Type, field_name: str) -> Optional[Tag]:
-    """Get the field-level MM tag for a class field."""
-    field_registry = _MM_FIELD_REGISTRY.get(cls)
-    if field_registry:
-        return field_registry.get(field_name)
-    return None
 
 
 # ===== Python to Node Type Mapping =====
@@ -266,8 +91,8 @@ def _is_union_type_with_none(py_type: Any) -> bool:
     
     # Check for Python 3.10+ union syntax (e.g., int | None)
     # In Python 3.10+, int | None creates a types.UnionType which has __args__
-    print("types location:", types.__file__)  # 临时调试
-    if isinstance(py_type, types.UnionType):
+    union_type = getattr(types, 'UnionType', None)
+    if union_type is not None and isinstance(py_type, union_type):
         return type(None) in py_type.__args__
     
     # Check for typing.Union syntax (e.g., Union[int, None])
