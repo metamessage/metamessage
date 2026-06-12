@@ -226,7 +226,7 @@ class mm:
             self._validate_class_level(tag, target)
             _MM_CLASS_REGISTRY[target] = tag
             _MM_FIELD_REGISTRY.setdefault(target, {})
-            return target
+            return dataclass(target)  # apply @dataclass to the user's class
         return target
 
     def __set_name__(self, owner, name):
