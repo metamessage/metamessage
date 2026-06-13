@@ -374,6 +374,10 @@ python3 tests/test_encoder.py
 python3 tests/test_decoder.py
 python3 tests/test_jsonc.py
 python3 tests/test_value_to_node.py
+
+uv run test
+uv run python tests/test_mm.py 
+uv run python tests/test_value_to_node.py 
 ```
 
 ## 许可

@@ -8,7 +8,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 from metamessage.core.encoder import Encoder
 from metamessage.core.decoder import Decoder
 from metamessage.ir.tag import Tag, ValueType
-from metamessage.ir.ast import NodeObject, Arr, NodeScalar, Field
+from metamessage.ir.ast import NodeObject, NodeArray, NodeScalar, Field
 
 
 def test_decode_bool():
@@ -85,7 +85,7 @@ def test_decode_array():
     dec = Decoder
     
     # [1, 2, 3]
-    arr = Arr(items=[
+    arr = NodeArray(items=[
         NodeScalar(1, '1', Tag(type=ValueType.I)),
         NodeScalar(2, '2', Tag(type=ValueType.I)),
         NodeScalar(3, '3', Tag(type=ValueType.I)),
@@ -95,7 +95,7 @@ def test_decode_array():
     assert result == [1, 2, 3]
     
     # Empty array
-    arr = Arr(items=[])
+    arr = NodeArray(items=[])
     b = enc.encode(arr)
     result = dec(b).decode()
     assert result == []
@@ -129,7 +129,7 @@ def test_decode_nested():
     nested = NodeObject(fields=[
         Field(key='user', value=NodeObject(fields=[
             Field(key='name', value=NodeScalar('Bob', 'Bob', Tag(type=ValueType.Str))),
-            Field(key='scores', value=Arr(items=[
+            Field(key='scores', value=NodeArray(items=[
                 NodeScalar(10, '10', Tag(type=ValueType.I)),
                 NodeScalar(20, '20', Tag(type=ValueType.I)),
             ])),

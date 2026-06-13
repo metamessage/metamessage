@@ -9,7 +9,7 @@ from datetime import datetime, timezone, date, time as dt_time
 from typing import Any, Optional, Tuple
 
 from ..ir.tag import Tag, TagKey, ValueType
-from ..ir.ast import NodeObject, Arr, NodeScalar, Field, Node, NodeType, NodeNull
+from ..ir.ast import NodeObject, NodeArray, NodeScalar, Field, Node, NodeType, NodeNull
 from ..ir.mime import MIME
 
 Simple       = 0b000 << 5
@@ -924,7 +924,7 @@ class Decoder:
             bs = self._read_bytes(2)
             l2 = (bs[0] << 8) | bs[1]
 
-        arr = Arr(tag=tag, path=path)
+        arr = NodeArray(tag=tag, path=path)
         index = 0
         while index < l2:
             child_tag = Tag()
@@ -986,7 +986,7 @@ def _node_to_python(node: Node) -> Any:
         return None
     elif isinstance(node, NodeScalar):
         return node.data
-    elif isinstance(node, Arr):
+    elif isinstance(node, NodeArray):
         return [_node_to_python(item) for item in node.items]
     elif isinstance(node, NodeObject):
         return {field.key: _node_to_python(field.value) for field in node.fields}

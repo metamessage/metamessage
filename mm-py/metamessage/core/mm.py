@@ -251,6 +251,11 @@ class mm:
 
     def _fields_to_tag(self) -> Tag:
         tag = NewTag()
+        # Fields that must be stored as strings on Tag
+        _str_fields = {'name', 'desc', 'default_val', 'min', 'max',
+                       'enums', 'pattern', 'mime',
+                       'child_desc', 'child_default_val', 'child_min', 'child_max',
+                       'child_enums', 'child_pattern', 'child_mime'}
         for k, v in {
             'name': self.name, 'desc': self.desc, 'is_null': self.is_null,
             'nullable': self.nullable, 'deprecated': self.deprecated,
@@ -270,7 +275,13 @@ class mm:
             'child_pattern': self.child_pattern,
             'child_version': self.child_version, 'child_mime': self.child_mime,
         }.items():
-            if v or (k == 'size' and v != 0):
+            if k in _str_fields:
+                # Convert to str first so numeric falsy values like 0, 0.0
+                # (e.g. min=0.0) become truthy "0.0" and are not skipped.
+                v = str(v) if v is not None else v
+                if v:
+                    setattr(tag, k, str(v))
+            elif v or (k == 'size' and v != 0):
                 setattr(tag, k, v)
 
         if self.type is not None:

@@ -1,13 +1,51 @@
 """
 metamessage - A binary message encoding library with schema support
 """
+import builtins as _builtins
+from dataclasses import dataclass as _dataclass
+
 from .ir.tag import Tag, TagKey, ValueType, mm_tag, def_tag, NewTag, MergeTag
-from .ir.ast import NodeObject, Arr, NodeScalar, Field, NodeType, Node, NodeNull
+from .ir.ast import NodeObject, NodeArray, NodeScalar, Field, NodeType, Node, NodeNull
 from .core.encoder import Encoder
 from .core.decoder import Decoder
 from .core.value_to_node import value_to_node, node_to_value
 from .core.mm import mm
 from .jsonc import parse_jsonc, to_jsonc
+
+
+# Auto-apply @mm + @dataclass to any class with type annotations
+_build_class = getattr(_builtins, '__build_class__', None)
+if _build_class is not None:
+    def _mm_build_class(func, name, *bases, **kwargs):
+        cls = _build_class(func, name, *bases, **kwargs)
+        if (isinstance(cls, type)
+                and hasattr(cls, '__annotations__')
+                and cls.__annotations__
+                and not hasattr(cls, '__dataclass_fields__')):
+            try:
+                # Strip mm() instances from class dict before @dataclass,
+                # otherwise they are treated as field defaults and can break
+                # field ordering (a field with an mm() default cannot precede
+                # a field without a default).
+                from .core.mm import mm as _mm_cls
+                _saved = {}
+                for _attr in list(cls.__dict__):
+                    if isinstance(cls.__dict__[_attr], _mm_cls):
+                        _saved[_attr] = cls.__dict__[_attr]
+                        try:
+                            delattr(cls, _attr)
+                        except (AttributeError, TypeError):
+                            pass
+                _dataclass(cls)
+                for _attr, _val in _saved.items():
+                    setattr(cls, _attr, _val)
+                from .core.mm import _MM_CLASS_REGISTRY, _MM_FIELD_REGISTRY
+                _MM_CLASS_REGISTRY.setdefault(cls, NewTag())
+                _MM_FIELD_REGISTRY.setdefault(cls, {})
+            except Exception:
+                pass
+        return cls
+    _builtins.__build_class__ = _mm_build_class
 
 
 def encode_from_value(value, tag=None):
@@ -80,7 +118,7 @@ def _node_data(node):
         return None
     elif isinstance(node, NodeObject):
         return {f.key: _node_data(f.value) for f in node.fields}
-    elif isinstance(node, Arr):
+    elif isinstance(node, NodeArray):
         return [_node_data(item) for item in node.items]
     elif isinstance(node, NodeScalar):
         return node.data
@@ -89,7 +127,7 @@ def _node_data(node):
 
 __all__ = [
     "Tag", "TagKey", "ValueType", "mm_tag", "def_tag", "NewTag", "MergeTag",
-    "NodeObject", "Arr", "NodeScalar", "NodeNull", "Field", "NodeType", "Node",
+    "NodeObject", "NodeArray", "NodeScalar", "NodeNull", "Field", "NodeType", "Node",
     "Encoder", "Decoder",
     "parse_jsonc", "to_jsonc",
     "value_to_node", "node_to_value", "mm",

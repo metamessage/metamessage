@@ -8,7 +8,7 @@ from typing import Any, List, Optional
 from dataclasses import dataclass
 
 from ..ir.tag import Tag, ValueType, mm_tag, MergeTag, NewTag
-from ..ir.ast import NodeObject, Arr, NodeScalar, Field, Node, NodeNull
+from ..ir.ast import NodeObject, NodeArray, NodeScalar, Field, Node, NodeNull
 from ..ir.validator import MmValidator
 
 
@@ -342,7 +342,7 @@ class Parser:
         self.depth -= 1
         return NodeObject(fields=fields, tag=tag or NewTag(), path=path)
 
-    def _parse_array(self, anchor_line: int, path: str) -> Arr:
+    def _parse_array(self, anchor_line: int, path: str) -> NodeArray:
         self.next()  # consume [
         self.depth += 1
         if self.depth > MAX_DEPTH:
@@ -390,13 +390,13 @@ class Parser:
             self.next()
 
         self.depth -= 1
-        arr = Arr(items=items, tag=tag or NewTag(), path=path)
+        arr = NodeArray(items=items, tag=tag or NewTag(), path=path)
         r = MmValidator.validate_arr(arr, tag)
 
         if r.error:
             raise Exception(f"Validation error at {path}: {r.error}")
         else:
-            return Arr(items=items, tag=tag or NewTag(), path=path)
+            return NodeArray(items=items, tag=tag or NewTag(), path=path)
 
     def _parse_value(self, path: str, anchor_line: int) -> NodeScalar:
         if self.depth > MAX_DEPTH:
@@ -788,7 +788,7 @@ def write_node_jsonc(b: list, n: Node, indent: int):
         write_value_jsonc(b, n)
     elif isinstance(n, NodeObject):
         write_object_jsonc(b, n, indent)
-    elif isinstance(n, Arr):
+    elif isinstance(n, NodeArray):
         write_array_jsonc(b, n, indent)
 
 
@@ -823,7 +823,7 @@ def _tag_has_child(tag) -> bool:
             tag.child_mime != "")
 
 
-def write_array_jsonc(b: list, a: Arr, indent: int):
+def write_array_jsonc(b: list, a: NodeArray, indent: int):
     b.append("[\n")
     for item in a.items:
         item_tag = item.get_tag()

@@ -1,6 +1,6 @@
 import unittest
 from datetime import datetime, date, time as dt_time
-from metamessage import Tag, ValueType, NodeObject, Arr, NodeScalar, Field, Encoder, Decoder, parse_jsonc, to_jsonc
+from metamessage import Tag, ValueType, NodeObject, NodeArray, NodeScalar, Field, Encoder, Decoder, parse_jsonc, to_jsonc
 
 
 class TestParseJSONC(unittest.TestCase):
@@ -19,7 +19,7 @@ class TestParseJSONC(unittest.TestCase):
     def test_parse_simple_array(self):
         source = '["a", "b", "c"]'
         result = parse_jsonc(source)
-        self.assertIsInstance(result, Arr)
+        self.assertIsInstance(result, NodeArray)
         self.assertEqual(len(result.items), 3)
 
     def test_parse_nested_object(self):
@@ -33,7 +33,7 @@ class TestParseJSONC(unittest.TestCase):
     def test_parse_array_of_objects(self):
         source = '[{"id": 1}, {"id": 2}]'
         result = parse_jsonc(source)
-        self.assertIsInstance(result, Arr)
+        self.assertIsInstance(result, NodeArray)
         self.assertEqual(len(result.items), 2)
 
     def test_parse_with_comments(self):
@@ -73,7 +73,7 @@ class TestParseJSONC(unittest.TestCase):
     # def test_parse_empty_array(self):
     #     source = '[]'
     #     result = parse_jsonc(source)
-    #     self.assertIsInstance(result, Arr)
+    #     self.assertIsInstance(result, NodeArray)
     #     self.assertEqual(len(result.items), 0)
 
     def test_parse_string_with_spaces(self):
@@ -268,12 +268,12 @@ class TestEncoderComplexTypes(unittest.TestCase):
         self.encoder = Encoder()
 
     def test_encode_array_empty(self):
-        arr = Arr(items=[], tag=Tag(type=ValueType.Arr))
+        arr = NodeArray(items=[], tag=Tag(type=ValueType.Arr))
         result = self.encoder.encode(arr)
         self.assertIsInstance(result, bytes)
 
     def test_encode_array_with_strings(self):
-        arr = Arr(
+        arr = NodeArray(
             items=[
                 NodeScalar(data="a", text="a", tag=Tag(type=ValueType.Str)),
                 NodeScalar(data="b", text="b", tag=Tag(type=ValueType.Str)),
@@ -285,7 +285,7 @@ class TestEncoderComplexTypes(unittest.TestCase):
         self.assertGreater(len(result), 0)
 
     def test_encode_array_with_ints(self):
-        arr = Arr(
+        arr = NodeArray(
             items=[
                 NodeScalar(data=1, text="1", tag=Tag(type=ValueType.I)),
                 NodeScalar(data=2, text="2", tag=Tag(type=ValueType.I)),
@@ -434,7 +434,7 @@ class TestToJSONC(unittest.TestCase):
         self.assertIn('}', result)
 
     def test_to_jsonc_array(self):
-        arr = Arr(
+        arr = NodeArray(
             items=[
                 NodeScalar(data="a", text="a", tag=Tag(type=ValueType.Str)),
                 NodeScalar(data="b", text="b", tag=Tag(type=ValueType.Str)),
@@ -518,7 +518,7 @@ class TestEncoderDecoder(unittest.TestCase):
         self.assertEqual(decoded, b"hello")
 
     def test_encode_decode_array(self):
-        arr = Arr(
+        arr = NodeArray(
             items=[
                 NodeScalar(data="a", text="a", tag=Tag(type=ValueType.Str)),
                 NodeScalar(data="b", text="b", tag=Tag(type=ValueType.Str)),

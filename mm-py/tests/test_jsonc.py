@@ -110,7 +110,7 @@ def test_roundtrip_keeps_structure():
 def test_to_jsonc():
     """Test JSONC generation."""
     from metamessage.ir.tag import Tag, ValueType
-    from metamessage.ir.ast import NodeObject, Arr, NodeScalar, Field
+    from metamessage.ir.ast import NodeObject, NodeArray, NodeScalar, Field
     
     obj = NodeObject(fields=[
         Field(key='name', value=NodeScalar('Alice', 'Alice', Tag(type=ValueType.Str))),

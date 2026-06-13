@@ -9,7 +9,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 from metamessage.core.encoder import Encoder
 from metamessage.core.decoder import Decoder
 from metamessage.ir.tag import Tag, ValueType
-from metamessage.ir.ast import NodeObject, Arr, NodeScalar, Field
+from metamessage.ir.ast import NodeObject, NodeArray, NodeScalar, Field
 
 
 def test_encode_bool():
@@ -185,7 +185,7 @@ def test_encode_array():
     enc = Encoder()
     dec = Decoder
     
-    arr = Arr(items=[
+    arr = NodeArray(items=[
         NodeScalar(1, '1', Tag(type=ValueType.I)),
         NodeScalar(2, '2', Tag(type=ValueType.I)),
         NodeScalar(3, '3', Tag(type=ValueType.I)),
@@ -195,15 +195,15 @@ def test_encode_array():
     assert result == [1, 2, 3]
     
     # Empty array
-    arr = Arr(items=[])
+    arr = NodeArray(items=[])
     b = enc.encode(arr)
     result = dec(b).decode()
     assert result == []
     
     # Nested array
-    arr = Arr(items=[
-        Arr(items=[NodeScalar(1, '1', Tag(type=ValueType.I))]),
-        Arr(items=[NodeScalar(2, '2', Tag(type=ValueType.I))]),
+    arr = NodeArray(items=[
+        NodeArray(items=[NodeScalar(1, '1', Tag(type=ValueType.I))]),
+        NodeArray(items=[NodeScalar(2, '2', Tag(type=ValueType.I))]),
     ])
     b = enc.encode(arr)
     result = dec(b).decode()
@@ -220,7 +220,7 @@ def test_roundtrip_complex():
         Field(key='name', value=NodeScalar('Bob', 'Bob', Tag(type=ValueType.Str))),
         Field(key='active', value=NodeScalar(True, 'true', Tag(type=ValueType.Bool))),
         Field(key='score', value=NodeScalar(98.5, '98.5', Tag(type=ValueType.F64))),
-        Field(key='tags', value=Arr(items=[
+        Field(key='tags', value=NodeArray(items=[
             NodeScalar('admin', 'admin', Tag(type=ValueType.Str)),
             NodeScalar('user', 'user', Tag(type=ValueType.Str)),
         ])),

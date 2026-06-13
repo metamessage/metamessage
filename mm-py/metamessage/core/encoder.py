@@ -10,7 +10,7 @@ from datetime import datetime, date, time as dt_time, timezone
 from typing import Any, Optional, Union
 
 from ..ir.tag import Tag, ValueType
-from ..ir.ast import NodeObject, Arr, NodeScalar, Field, Node, NodeType, NodeNull
+from ..ir.ast import NodeObject, NodeArray, NodeScalar, Field, Node, NodeType, NodeNull
 
 # ===== Constants (matching Go internal/core/constants.go) =====
 
@@ -616,7 +616,7 @@ class Encoder:
         n = n1
         return n
 
-    def _encode_node_array(self, arr: Arr) -> int:   
+    def _encode_node_array(self, arr: NodeArray) -> int:   
         tag = arr.get_tag()
         buf = bytearray()
 
@@ -636,7 +636,7 @@ class Encoder:
     def _encode_any_node(self, node: Node) -> int:
         if isinstance(node, NodeObject):
             return self._encode_node_object(node)
-        elif isinstance(node, Arr):
+        elif isinstance(node, NodeArray):
             return self._encode_node_array(node)
         elif isinstance(node, NodeScalar):
             return self._encode_node_value(node)
@@ -883,7 +883,7 @@ class Encoder:
             return NodeObject(fields=fields, tag=Tag(), path=path)
         elif isinstance(data, list):
             items = [self._struct_to_mm(item, f"{path}.{i}") for i, item in enumerate(data)]
-            return Arr(items=items, tag=Tag(type=ValueType.Arr), path=path)
+            return NodeArray(items=items, tag=Tag(type=ValueType.Arr), path=path)
         elif isinstance(data, bool):
             return NodeScalar(data=data, text="true" if data else "false", tag=Tag(type=ValueType.Bool), path=path)
         elif isinstance(data, int):

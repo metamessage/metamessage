@@ -9,17 +9,19 @@ if TYPE_CHECKING:
 class NodeType(IntEnum):
     Unknown = 0
     Object = 1
-    NodeArray = 2
+    Array = 2
     Value = 3
     Doc = 4
+    Null = 5
 
     def __str__(self) -> str:
         mapping = {
             NodeType.Unknown: "unknown",
             NodeType.Object: "object",
-            NodeType.NodeArray: "array",
+            NodeType.Array: "array",
             NodeType.Value: "value",
             NodeType.Doc: "doc",
+            NodeType.Null: "null",
         }
         return mapping.get(self, "unknown")
 
@@ -29,9 +31,10 @@ def parse_node_type(s: str) -> NodeType:
     mapping = {
         "unknown": NodeType.Unknown,
         "object": NodeType.Object,
-        "array": NodeType.NodeArray,
+        "array": NodeType.Array,
         "value": NodeType.Value,
         "doc": NodeType.Doc,
+        "null": NodeType.Null,
     }
     return mapping.get(s, NodeType.Unknown)
 
@@ -76,7 +79,7 @@ class NodeObject(Node):
 
 
 @dataclass
-class Arr(Node):
+class NodeArray(Node):
     items: List['Node'] = field(default_factory=list)
     tag: Optional['Tag'] = None
     path: str = ""
@@ -85,7 +88,7 @@ class Arr(Node):
         return self.tag
 
     def get_type(self):
-        return NodeType.NodeArray
+        return NodeType.Array
 
     def get_path(self):
         return self.path
@@ -122,8 +125,8 @@ class NodeNull(Node):
     def get_tag(self):
         return self.tag
 
-    def get_type(self):
-        return NodeType.Unknown
+    def get_type(self) -> NodeType:
+        return NodeType.Null
 
     def get_path(self):
         return self.path

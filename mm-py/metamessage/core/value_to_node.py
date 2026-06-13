@@ -28,10 +28,10 @@ from datetime import datetime, date, time as dt_time
 from enum import Enum
 
 from ..ir.tag import Tag, ValueType, NewTag, MergeTag
-from ..ir.ast import NodeObject, Arr, NodeScalar, Field, Node, NodeNull
+from ..ir.ast import NodeObject, NodeArray, NodeScalar, Field, Node, NodeNull
 from .encoder import Encoder
 from .decoder import Decoder
-from .mm import get_mm_tag_for_class, get_mm_tag_for_field
+from .mm import get_mm_tag_for_class, get_mm_tag_for_field, _MM_CLASS_REGISTRY, _MM_FIELD_REGISTRY
 
 
 def _camel_to_snake(name: str) -> str:
@@ -121,14 +121,19 @@ def _is_union_type_with_none(py_type: Any) -> bool:
 
 _MAX_DEPTH = 32
 
+def value_to_node(value: Any, tag: Optional[Tag] = None) -> Node:
+    return _value_to_node(value=value, tag=tag) 
 
-def value_to_node(value: Any, tag: Optional[Tag] = None, depth: int = 0, path: str = "") -> Node:
+def _value_to_node(value: Any, tag: Optional[Tag] = None, depth: int = 0, path: str = "") -> Node:
     """Convert a Python value to a MetaMessage Node tree.
 
     This is the Python equivalent of Go's ValueToNode() function.
     """
     if depth > _MAX_DEPTH:
         raise ValueError(f"max depth: {_MAX_DEPTH}")
+
+    if isinstance(tag, dict):
+        tag = Tag(**tag)
 
     if tag is None:
         tag = NewTag()
@@ -400,6 +405,16 @@ def _any_to_node_object(obj: Any, tag: Tag, depth: int, path: str) -> NodeObject
 
     # Check for class-level @mm decorator tag
     class_tag = get_mm_tag_for_class(cls)
+    if class_tag is None:
+        # Auto-apply @mm() + @dataclass if not already decorated
+        from dataclasses import dataclass
+        try:
+            dataclass(cls)
+        except Exception:
+            pass
+        _MM_CLASS_REGISTRY[cls] = NewTag()
+        _MM_FIELD_REGISTRY.setdefault(cls, {})
+        class_tag = _MM_CLASS_REGISTRY[cls]
     if class_tag is not None:
         tag = MergeTag(tag, class_tag)
         if class_tag.nullable or _is_union_type_with_null(class_tag.type):
@@ -427,12 +442,40 @@ def _any_to_node_object(obj: Any, tag: Tag, depth: int, path: str) -> NodeObject
             if auto_type != ValueType(0):
                 field_tag.type = auto_type
         
+        # Handle list type annotations for child_type inference
+        # list[T] → auto-infer child_type from generic element type
+        # bare list → must specify child_type explicitly
+        _field_origin = getattr(field_type, '__origin__', None)
+        if _field_origin is list:
+            # Generic list[T] annotation (e.g., list[str], list[User])
+            if field_tag.type == ValueType(0):
+                field_tag.type = ValueType.Vec
+            _args = getattr(field_type, '__args__', ())
+            if _args:
+                child_py_type = _args[0]
+                if field_tag.child_type == ValueType(0):
+                    child_val_type = _python_type_to_value_type(child_py_type)
+                    if child_val_type != ValueType.Unknown:
+                        field_tag.child_type = child_val_type
+                    elif isinstance(child_py_type, type) and hasattr(child_py_type, '__annotations__'):
+                        # Custom class with annotations → Object type
+                        field_tag.child_type = ValueType.Obj
+        elif field_type is list:
+            # Bare list without generics: must have explicit child_type
+            if field_tag.type == ValueType(0):
+                field_tag.type = ValueType.Vec
+            if field_tag.child_type == ValueType(0):
+                raise ValueError(
+                    f"field '{field_name}' with bare 'list' type must specify child_type. "
+                    f"Use list[T] annotation (e.g., list[str]) or set child_type via @mm."
+                )
+        
         # Check for union type with null (e.g., "int|null" as type kwarg)
         if field_tag.nullable or _is_union_type_with_null(field_tag.type):
             field_tag.nullable = True
         
         p = f"{path}.{field_key}"
-        child_node = value_to_node(field_value, field_tag, depth, p)
+        child_node = _value_to_node(field_value, field_tag, depth, p)
         
         nodes.append(Field(key=field_key, value=child_node))
     
@@ -488,7 +531,7 @@ def _any_to_node_dict(value: dict, tag: Tag, depth: int, path: str) -> NodeObjec
         tag_item.name = key_str
         
         p = f"{path}[{key_str}]"
-        child_node = value_to_node(val, tag_item, depth, p)
+        child_node = _value_to_node(val, tag_item, depth, p)
         tag_item = child_node.tag
         
         if not set_tag:
@@ -515,7 +558,7 @@ def _any_to_node_dict(value: dict, tag: Tag, depth: int, path: str) -> NodeObjec
         tag_item.inherit(tag)
         tag_item.example = True
         p = f"{path}[]"
-        child_node = value_to_node("", tag_item, depth, p)
+        child_node = _value_to_node("", tag_item, depth, p)
         
         tag.child_type = tag_item.type
         
@@ -524,13 +567,17 @@ def _any_to_node_dict(value: dict, tag: Tag, depth: int, path: str) -> NodeObjec
     return NodeObject(fields=nodes, tag=tag, path=path)
 
 
-def _any_to_node_list(value: list, tag: Tag, depth: int, path: str) -> Arr:
+def _any_to_node_list(value: list, tag: Tag, depth: int, path: str) -> NodeArray:
     """Convert a list/tuple to a NodeArray (slice) node."""
     depth += 1
     if depth > _MAX_DEPTH:
         raise ValueError(f"max depth: {_MAX_DEPTH}")
 
-    tag.type = ValueType.Vec
+    if tag.type in (ValueType(0), ValueType.Str, ValueType.Unknown):
+        tag.type = ValueType.Vec
+
+    if tag.type not in (ValueType.Vec, ValueType.Arr):
+        raise ValueError(f"list: unsupported type {tag.type}")
 
     items = []
     set_tag = False
@@ -539,7 +586,7 @@ def _any_to_node_list(value: list, tag: Tag, depth: int, path: str) -> Arr:
         tag_item.inherit(tag)
         
         p = f"{path}[{i}]"
-        child_node = value_to_node(item, tag_item, depth, p)
+        child_node = _value_to_node(item, tag_item, depth, p)
         tag_item = child_node.tag
         
         if not set_tag:
@@ -566,13 +613,13 @@ def _any_to_node_list(value: list, tag: Tag, depth: int, path: str) -> Arr:
         tag_item.inherit(tag)
         tag_item.example = True
         p = f"{path}[0]"
-        child_node = value_to_node("", tag_item, depth, p)
+        child_node = _value_to_node("", tag_item, depth, p)
         
         tag.child_type = tag_item.type
         
         items.append(child_node)
     
-    return Arr(items=items, tag=tag, path=path)
+    return NodeArray(items=items, tag=tag, path=path)
 
 
 def _get_type_hints(cls: type) -> Dict[str, type]:
@@ -634,7 +681,7 @@ def node_to_value(node: Node, target_type: Any) -> Any:
         return None
     elif isinstance(node, NodeObject):
         return _bind_object(node, target_type)
-    elif isinstance(node, Arr):
+    elif isinstance(node, NodeArray):
         return _bind_array(node, target_type)
     elif isinstance(node, NodeScalar):
         return _bind_value(node, target_type)
@@ -688,7 +735,7 @@ def _bind_object(obj: NodeObject, target_type: Any) -> Any:
     return result
 
 
-def _bind_array(arr: Arr, target_type: Any) -> Any:
+def _bind_array(arr: NodeArray, target_type: Any) -> Any:
     """Bind a NodeArray node to a Python list."""
     if target_type is list or target_type is Any or target_type is tuple:
         result = []
@@ -766,7 +813,7 @@ def _bind_value_or_node(node: Node) -> Any:
         for field in node.fields:
             result[field.key] = _bind_value_or_node(field.value)
         return result
-    elif isinstance(node, Arr):
+    elif isinstance(node, NodeArray):
         return [_bind_value_or_node(item) for item in node.items]
     elif isinstance(node, NodeScalar):
         if node.tag.is_null:
@@ -835,7 +882,7 @@ def encode_from_value(value: Any) -> bytes:
     return encoder.encode(node)
 
 
-def decode_to_value(data: bytes, target_type: Any = Any) -> Any:
+def decode_to_value(data: bytes, target_type: type | None = None) -> Any:
     """Decode MetaMessage binary format directly to a Python value.
     
     Python equivalent of calling Decode then Bind.
@@ -843,15 +890,12 @@ def decode_to_value(data: bytes, target_type: Any = Any) -> Any:
     decoder = Decoder(data)
     decoded = decoder.decode()
     
-    if target_type is Any or target_type is dict or target_type is list:
+    if target_type is None or target_type is dict or target_type is list:
         return decoded
     
-    # We need to go through Node tree for proper binding
-    # Re-encode the decoded value to get back Nodes
-    # Actually we need proper decoder that returns Nodes
-    # For now, use the simple decoder output
-    
-    return decoded
+    # Bind to target type via Node intermediate representation
+    node = value_to_node(decoded)
+    return node_to_value(node, target_type)
 
 
 def decode_to_value_with_node(data: bytes, target_type: Any) -> Any:

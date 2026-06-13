@@ -3,7 +3,7 @@ import base64
 from typing import Any, Optional, List
 
 from .tag import Tag, ValueType
-from .ast import Arr
+from .ast import NodeArray
 
 
 class ValidationResult:
@@ -20,7 +20,7 @@ class MmValidator:
     uuid_regex = re.compile(r'^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$')
 
     @staticmethod
-    def validate_arr(value: Arr, tag: Tag) -> ValidationResult:
+    def validate_arr(value: NodeArray, tag: Tag) -> ValidationResult:
         if len(tag.desc) > 65535:
             return ValidationResult(False, "desc length exceeds 65535 bytes")
 
