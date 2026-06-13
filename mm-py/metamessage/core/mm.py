@@ -236,6 +236,16 @@ class mm:
         _MM_FIELD_REGISTRY.setdefault(owner, {})
         _MM_FIELD_REGISTRY[owner][name] = tag
 
+        # Replace the mm() mutable instance with a dataclasses.field()
+        # so @dataclass never sees a mutable default (Python 3.11+ rejects
+        # mutable defaults like list, dict, or custom dataclass instances).
+        # The mm metadata is already stored in _MM_FIELD_REGISTRY above.
+        from dataclasses import field, MISSING
+        try:
+            setattr(owner, name, field(default=MISSING, compare=False, repr=False))
+        except (AttributeError, TypeError):
+            pass
+
     def get_tag(self) -> Tag:
         return self._build_tag()
 

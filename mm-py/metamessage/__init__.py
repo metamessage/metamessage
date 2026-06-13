@@ -23,22 +23,7 @@ if _build_class is not None:
                 and cls.__annotations__
                 and not hasattr(cls, '__dataclass_fields__')):
             try:
-                # Strip mm() instances from class dict before @dataclass,
-                # otherwise they are treated as field defaults and can break
-                # field ordering (a field with an mm() default cannot precede
-                # a field without a default).
-                from .core.mm import mm as _mm_cls
-                _saved = {}
-                for _attr in list(cls.__dict__):
-                    if isinstance(cls.__dict__[_attr], _mm_cls):
-                        _saved[_attr] = cls.__dict__[_attr]
-                        try:
-                            delattr(cls, _attr)
-                        except (AttributeError, TypeError):
-                            pass
                 _dataclass(cls)
-                for _attr, _val in _saved.items():
-                    setattr(cls, _attr, _val)
                 from .core.mm import _MM_CLASS_REGISTRY, _MM_FIELD_REGISTRY
                 _MM_CLASS_REGISTRY.setdefault(cls, NewTag())
                 _MM_FIELD_REGISTRY.setdefault(cls, {})
