@@ -43,10 +43,19 @@ def test_value_to_node_basic():
     assert node.text == "true"
     assert node.tag.type == ValueType.Bool
 
-    # None (needs a tag with type)
-    node = value_to_node(None)
-    print(node.get_type().name)
-    assert node.get_type().name == 'Null'
+    # None without a tag type → error (no type not allowed)
+    try:
+        value_to_node(None)
+        assert False, "expected ValueError for None without type"
+    except ValueError:
+        pass
+
+    # None with a type → uses zero value for the type
+    node = value_to_node(None, tag=Tag(type=ValueType.Str))
+    assert node.data == ""
+    assert node.text == ""
+    assert node.tag.type == ValueType.Str
+    assert node.tag.is_null
 
     print("  basic value_to_node OK")
 

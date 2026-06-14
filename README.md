@@ -277,32 +277,32 @@ false
 | Map | field | `map` | `example`</br>`deprecated`</br>`name`</br>`desc`</br>`allow_empty` |
 | Vec | field | `[]T` | `example`</br>`deprecated`</br>`name`</br>`desc`</br>`allow_empty`</br>`min`</br>`max`</br>`size`</br>`unique`</br>**全部 `child_*` 子元素标签** |
 | Arr | field | `[N]T` | `example`</br>`deprecated`</br>`name`</br>`desc`</br>`allow_empty`</br>`min`</br>`max`</br>`size`</br>`unique`</br>**全部 `child_*` 子元素标签** |
-| Str | field | `string` | `example`</br>`deprecated`</br>`name`</br>`desc`</br>`allow_empty`</br>`min`</br>`max`</br>`size`</br>`pattern` |
-| Bytes | field | `[]byte` | `example`</br>`deprecated`</br>`name`</br>`desc`</br>`allow_empty`</br>`min`</br>`max`</br>`size` |
-| Bool | field | `bool` | `example`</br>`deprecated`</br>`name`</br>`desc` |
-| I | field | `int` | `example`</br>`deprecated`</br>`name`</br>`desc`</br>`allow_empty`</br>`min`</br>`max`</br>`size` |
-| I8 | field | `int8` | `example`</br>`deprecated`</br>`name`</br>`desc`</br>`allow_empty`</br>`min`</br>`max`</br>`size` |
-| I16 | field | `int16` | `example`</br>`deprecated`</br>`name`</br>`desc`</br>`allow_empty`</br>`min`</br>`max`</br>`size` |
-| I32 | field | `int32` | `example`</br>`deprecated`</br>`name`</br>`desc`</br>`allow_empty`</br>`min`</br>`max`</br>`size` |
-| I64 | field | `int64` | `example`</br>`deprecated`</br>`name`</br>`desc`</br>`allow_empty`</br>`min`</br>`max`</br>`size` |
-| U | field | `uint` | `example`</br>`deprecated`</br>`name`</br>`desc`</br>`allow_empty`</br>`min`</br>`max`</br>`size` |
-| U8 | field | `uint8` | `example`</br>`deprecated`</br>`name`</br>`desc`</br>`allow_empty`</br>`min`</br>`max`</br>`size` |
-| U16 | field | `uint16` | `example`</br>`deprecated`</br>`name`</br>`desc`</br>`allow_empty`</br>`min`</br>`max`</br>`size` |
-| U32 | field | `uint32` | `example`</br>`deprecated`</br>`name`</br>`desc`</br>`allow_empty`</br>`min`</br>`max`</br>`size` |
-| U64 | field | `uint64` | `example`</br>`deprecated`</br>`name`</br>`desc`</br>`allow_empty`</br>`min`</br>`max`</br>`size` |
-| Bigint | field | `big.Int` | `example`</br>`deprecated`</br>`name`</br>`desc`</br>`allow_empty`</br>`min`</br>`max`</br>`size` |
-| F32 | field | `float32` | `example`</br>`deprecated`</br>`name`</br>`desc`</br>`allow_empty`</br>`min`</br>`max`</br>`size` |
-| F64 | field | `float64` | `example`</br>`deprecated`</br>`name`</br>`desc`</br>`allow_empty`</br>`min`</br>`max`</br>`size` |
-| Datetime | field | `time.Time` | `example`</br>`deprecated`</br>`name`</br>`desc`</br>`allow_empty`</br>`min`</br>`max`</br>`location` |
-| Date | field | `time.Time` | `example`</br>`deprecated`</br>`name`</br>`desc`</br>`allow_empty`</br>`min`</br>`max`</br>`location` |
-| Time | field | `time.Time` | `example`</br>`deprecated`</br>`name`</br>`desc`</br>`allow_empty`</br>`min`</br>`max`</br>`location` |
-| Uuid | field | `string` | `example`</br>`deprecated`</br>`name`</br>`desc`</br>`allow_empty`</br>`min`</br>`max`</br>`size`</br>`version` |
-| Decimal | field | `string` | `example`</br>`deprecated`</br>`name`</br>`desc`</br>`allow_empty`</br>`min`</br>`max`</br>`size` |
-| Ip | field | `net.IP` | `example`</br>`deprecated`</br>`name`</br>`desc`</br>`allow_empty`</br>`min`</br>`max`</br>`size`</br>`pattern`</br>`version` |
-| Url | field | `url.URL` | `example`</br>`deprecated`</br>`name`</br>`desc`</br>`allow_empty`</br>`min`</br>`max`</br>`size`</br>`pattern` |
-| Email | field | `string` | `example`</br>`deprecated`</br>`name`</br>`desc`</br>`allow_empty`</br>`min`</br>`max`</br>`size`</br>`pattern` |
-| Enums | field | `[]string` | `example`</br>`deprecated`</br>`name`</br>`desc`</br>`allow_empty`</br>`enums` |
-| Media | field | `[]byte` | `example`</br>`deprecated`</br>`name`</br>`desc`</br>`allow_empty`</br>`min`</br>`max`</br>`size`</br>`mime` |
+| Str | field | `string` | `example`</br>`deprecated`</br>`name`</br>`desc`</br>`allow_empty`</br>`default_val`</br>`min`</br>`max`</br>`size`</br>`pattern` |
+| Bytes | field | `[]byte` | `example`</br>`deprecated`</br>`name`</br>`desc`</br>`allow_empty`</br>`default_val`</br>`min`</br>`max`</br>`size` |
+| Bool | field | `bool` | `example`</br>`deprecated`</br>`name`</br>`desc`</br>`default_val` |
+| I | field | `int` | `example`</br>`deprecated`</br>`name`</br>`desc`</br>`allow_empty`</br>`default_val`</br>`min`</br>`max`</br>`size` |
+| I8 | field | `int8` | `example`</br>`deprecated`</br>`name`</br>`desc`</br>`allow_empty`</br>`default_val`</br>`min`</br>`max`</br>`size` |
+| I16 | field | `int16` | `example`</br>`deprecated`</br>`name`</br>`desc`</br>`allow_empty`</br>`default_val`</br>`min`</br>`max`</br>`size` |
+| I32 | field | `int32` | `example`</br>`deprecated`</br>`name`</br>`desc`</br>`allow_empty`</br>`default_val`</br>`min`</br>`max`</br>`size` |
+| I64 | field | `int64` | `example`</br>`deprecated`</br>`name`</br>`desc`</br>`allow_empty`</br>`default_val`</br>`min`</br>`max`</br>`size` |
+| U | field | `uint` | `example`</br>`deprecated`</br>`name`</br>`desc`</br>`allow_empty`</br>`default_val`</br>`min`</br>`max`</br>`size` |
+| U8 | field | `uint8` | `example`</br>`deprecated`</br>`name`</br>`desc`</br>`allow_empty`</br>`default_val`</br>`min`</br>`max`</br>`size` |
+| U16 | field | `uint16` | `example`</br>`deprecated`</br>`name`</br>`desc`</br>`allow_empty`</br>`default_val`</br>`min`</br>`max`</br>`size` |
+| U32 | field | `uint32` | `example`</br>`deprecated`</br>`name`</br>`desc`</br>`allow_empty`</br>`default_val`</br>`min`</br>`max`</br>`size` |
+| U64 | field | `uint64` | `example`</br>`deprecated`</br>`name`</br>`desc`</br>`allow_empty`</br>`default_val`</br>`min`</br>`max`</br>`size` |
+| Bigint | field | `big.Int` | `example`</br>`deprecated`</br>`name`</br>`desc`</br>`allow_empty`</br>`default_val`</br>`min`</br>`max`</br>`size` |
+| F32 | field | `float32` | `example`</br>`deprecated`</br>`name`</br>`desc`</br>`allow_empty`</br>`default_val`</br>`min`</br>`max`</br>`size` |
+| F64 | field | `float64` | `example`</br>`deprecated`</br>`name`</br>`desc`</br>`allow_empty`</br>`default_val`</br>`min`</br>`max`</br>`size` |
+| Datetime | field | `time.Time` | `example`</br>`deprecated`</br>`name`</br>`desc`</br>`allow_empty`</br>`default_val`</br>`min`</br>`max`</br>`location` |
+| Date | field | `time.Time` | `example`</br>`deprecated`</br>`name`</br>`desc`</br>`allow_empty`</br>`default_val`</br>`min`</br>`max`</br>`location` |
+| Time | field | `time.Time` | `example`</br>`deprecated`</br>`name`</br>`desc`</br>`allow_empty`</br>`default_val`</br>`min`</br>`max`</br>`location` |
+| Uuid | field | `string` | `example`</br>`deprecated`</br>`name`</br>`desc`</br>`allow_empty`</br>`default_val`</br>`min`</br>`max`</br>`size`</br>`version` |
+| Decimal | field | `string` | `example`</br>`deprecated`</br>`name`</br>`desc`</br>`allow_empty`</br>`default_val`</br>`min`</br>`max`</br>`size` |
+| Ip | field | `net.IP` | `example`</br>`deprecated`</br>`name`</br>`desc`</br>`allow_empty`</br>`default_val`</br>`min`</br>`max`</br>`size`</br>`pattern`</br>`version` |
+| Url | field | `url.URL` | `example`</br>`deprecated`</br>`name`</br>`desc`</br>`allow_empty`</br>`default_val`</br>`min`</br>`max`</br>`size`</br>`pattern` |
+| Email | field | `string` | `example`</br>`deprecated`</br>`name`</br>`desc`</br>`allow_empty`</br>`default_val`</br>`min`</br>`max`</br>`size`</br>`pattern` |
+| Enums | field | `[]string` | `example`</br>`deprecated`</br>`name`</br>`desc`</br>`allow_empty`</br>`default_val`</br>`enums` |
+| Media | field | `[]byte` | `example`</br>`deprecated`</br>`name`</br>`desc`</br>`allow_empty`</br>`default_val`</br>`min`</br>`max`</br>`size`</br>`mime` |
 
 ## 使用方法
 

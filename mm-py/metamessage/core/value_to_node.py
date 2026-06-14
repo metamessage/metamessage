@@ -117,6 +117,128 @@ def _is_union_type_with_none(py_type: Any) -> bool:
     return False
 
 
+# ===== Null / default helpers (Go resolveDefaultValue / zero value) =====
+
+def _resolve_default_value(tag: Tag) -> Optional[Tuple[Any, str]]:
+    """Return (data, text) from tag.DefaultVal, or None if unset.
+    Mirrors Go's resolveDefaultValue in value_to_node.go lines 29-122.
+
+    Uses a Go-style approach: sets data/text variables in each branch,
+    then falls through to a final fallback if data is still None.
+    """
+    if not tag.default_val:
+        return None
+    text = tag.default_val
+    data = None
+
+    # Group all int-like types together (Go treats I/U/bit sizes separately
+    # for type precision; Python's int handles all sizes).
+    _INT_TYPES = {
+        ValueType.I, ValueType.I8, ValueType.I16, ValueType.I32, ValueType.I64,
+        ValueType.U, ValueType.U8, ValueType.U16, ValueType.U32, ValueType.U64,
+    }
+
+    if tag.type in (ValueType.Bytes, ValueType.Media):
+        data = tag.default_val.encode("utf-8")
+    elif tag.type == ValueType.Bool:
+        if tag.default_val.lower() in ("true", "1"):
+            data = True
+            text = "true"
+        else:
+            data = False
+            text = "false"
+    elif tag.type in _INT_TYPES:
+        try:
+            data = int(tag.default_val)
+        except ValueError:
+            pass
+    elif tag.type in (ValueType.F32, ValueType.F64):
+        try:
+            data = float(tag.default_val)
+        except ValueError:
+            pass
+    elif tag.type in (ValueType.Str, ValueType.Decimal, ValueType.Email,
+                      ValueType.Url, ValueType.Ip):
+        data = tag.default_val
+    elif tag.type == ValueType.Enums:
+        data = -1
+    elif tag.type == ValueType.Uuid:
+        data = b"\x00" * 16
+    elif tag.type == ValueType.Bigint:
+        from decimal import Decimal
+        try:
+            data = int(tag.default_val)
+        except ValueError:
+            try:
+                data = Decimal(tag.default_val)
+            except ValueError:
+                pass
+    elif tag.type == ValueType.Datetime:
+        from datetime import datetime
+        try:
+            dt = datetime.fromisoformat(tag.default_val)
+            data = dt
+            text = dt.isoformat()
+        except ValueError:
+            pass
+    elif tag.type == ValueType.Date:
+        from datetime import date
+        try:
+            d = date.fromisoformat(tag.default_val)
+            data = d
+            text = d.isoformat()
+        except ValueError:
+            pass
+    elif tag.type == ValueType.Time:
+        from datetime import time
+        try:
+            t = time.fromisoformat(tag.default_val)
+            data = t
+            text = t.isoformat()
+        except ValueError:
+            pass
+    # Go's fallback: if data == nil { data = tag.DefaultVal }
+    if data is None:
+        data = tag.default_val
+    return (data, text)
+
+
+def _zero_value_for_type(vt: ValueType) -> Tuple[Any, str]:
+    """Return the Go-style zero value (data, text) for a ValueType.
+    Mirrors the default branches in Go's valueToNode for nil pointers.
+    """
+    if vt == ValueType.Bool:
+        return (False, "false")
+    if vt in (ValueType.I, ValueType.I8, ValueType.I16, ValueType.I32, ValueType.I64,
+              ValueType.U, ValueType.U8, ValueType.U16, ValueType.U32, ValueType.U64,
+              ValueType.Bigint):
+        return (0, "0")
+    if vt in (ValueType.F32, ValueType.F64):
+        return (0.0, "0.0")
+    if vt in (ValueType.Str, ValueType.Decimal, ValueType.Email,
+              ValueType.Url, ValueType.Ip, ValueType.Enums):
+        return ("", "")
+    if vt == ValueType.Bytes:
+        return (b"", "")
+    if vt == ValueType.Media:
+        return (b"", "")
+    if vt == ValueType.Uuid:
+        return (b"\x00" * 16, "")
+    if vt == ValueType.Datetime:
+        from datetime import datetime
+        dt = datetime(1, 1, 1)
+        return (dt, dt.isoformat())
+    if vt == ValueType.Date:
+        from datetime import date
+        d = date(1, 1, 1)
+        return (d, d.isoformat())
+    if vt == ValueType.Time:
+        from datetime import time
+        t = time(0, 0, 0)
+        return (t, t.isoformat())
+    return (None, "null")
+
+
 # ===== ValueToNode =====
 
 _MAX_DEPTH = 32
@@ -139,15 +261,24 @@ def _value_to_node(value: Any, tag: Optional[Tag] = None, depth: int = 0, path: 
         tag = NewTag()
 
     if value is None:
-        if tag.type == ValueType(0):
-            return NodeNull(tag=tag, path=path)
+        # No type at all is an error — cannot determine zero value.
+        if tag.type == ValueType.Unknown:
+            raise ValueError(
+                "cannot infer type for None value, tag has no type annotation"
+            )
+        # Try default_val from the tag first; fall back to zero value.
+        resolved = _resolve_default_value(tag)
+        if resolved is not None:
+            data, text = resolved
+        else:
+            data, text = _zero_value_for_type(tag.type)
         tag.is_null = True
-        return NodeScalar(data=None, text="null", tag=tag, path=path)
+        return NodeScalar(data=data, text=text, tag=tag, path=path)
 
     # bool must be checked before int (bool is subclass of int in Python)
     if isinstance(value, bool):
         # Auto-detect type: override inherited/incorrect types
-        if tag.type in (ValueType(0), ValueType.Str, ValueType.I, ValueType.F64):
+        if tag.type in (ValueType.Unknown, ValueType.Str, ValueType.I, ValueType.F64):
             tag.type = ValueType.Bool
         if tag.type == ValueType.Bool:
             _, text = _validate_bool(value, tag)
@@ -155,7 +286,7 @@ def _value_to_node(value: Any, tag: Optional[Tag] = None, depth: int = 0, path: 
         raise ValueError(f"{tag.type} unsupported type: bool")
 
     elif isinstance(value, int):
-        if tag.type in (ValueType(0), ValueType.Str, ValueType.F64, ValueType.Bool):
+        if tag.type in (ValueType.Unknown, ValueType.Str, ValueType.F64, ValueType.Bool):
             tag.type = ValueType.I
         if tag.type in (ValueType.I, ValueType.I8, ValueType.I16, ValueType.I32, ValueType.I64,
                         ValueType.U, ValueType.U8, ValueType.U16, ValueType.U32, ValueType.U64):
@@ -166,7 +297,7 @@ def _value_to_node(value: Any, tag: Optional[Tag] = None, depth: int = 0, path: 
         raise ValueError(f"{tag.type} unsupported type: int")
 
     elif isinstance(value, float):
-        if tag.type in (ValueType(0), ValueType.Str, ValueType.I, ValueType.Bool):
+        if tag.type in (ValueType.Unknown, ValueType.Str, ValueType.I, ValueType.Bool):
             tag.type = ValueType.F64
         if tag.type in (ValueType.F32, ValueType.F64):
             val_float = _validate_f(value, tag)
@@ -177,7 +308,7 @@ def _value_to_node(value: Any, tag: Optional[Tag] = None, depth: int = 0, path: 
 
     elif isinstance(value, str):
         # Auto-detect: any non-string type that got inherited gets overridden
-        if tag.type == ValueType(0) or tag.type not in (ValueType.Str, ValueType.Email, ValueType.Enums, ValueType.Decimal, ValueType.Uuid,
+        if tag.type == ValueType.Unknown or tag.type not in (ValueType.Str, ValueType.Email, ValueType.Enums, ValueType.Decimal, ValueType.Uuid,
                             ValueType.Url, ValueType.Bigint):
             tag.type = ValueType.Str
         if tag.type in (ValueType.Str, ValueType.Email, ValueType.Enums, ValueType.Decimal, ValueType.Uuid,
@@ -189,7 +320,7 @@ def _value_to_node(value: Any, tag: Optional[Tag] = None, depth: int = 0, path: 
         raise ValueError(f"{tag.type} unsupported type: str")
 
     elif isinstance(value, bytes):
-        if tag.type == ValueType(0):
+        if tag.type == ValueType.Unknown:
             tag.type = ValueType.Bytes
         val_bytes = _validate_bytes(value, tag)
         if val_bytes is not None:
@@ -198,7 +329,7 @@ def _value_to_node(value: Any, tag: Optional[Tag] = None, depth: int = 0, path: 
         raise ValueError(f"{tag.type} unsupported type: bytes")
 
     elif isinstance(value, datetime):
-        if tag.type == ValueType(0):
+        if tag.type == ValueType.Unknown:
             tag.type = ValueType.Datetime
         val_dt = _validate_datetime(value, tag)
         if val_dt is not None:
@@ -207,7 +338,7 @@ def _value_to_node(value: Any, tag: Optional[Tag] = None, depth: int = 0, path: 
         raise ValueError(f"{tag.type} unsupported type: datetime")
 
     elif isinstance(value, date):
-        if tag.type == ValueType(0):
+        if tag.type == ValueType.Unknown:
             tag.type = ValueType.Date
         val_d = _validate_date(value, tag)
         if val_d is not None:
@@ -216,7 +347,7 @@ def _value_to_node(value: Any, tag: Optional[Tag] = None, depth: int = 0, path: 
         raise ValueError(f"{tag.type} unsupported type: date")
 
     elif isinstance(value, dt_time):
-        if tag.type == ValueType(0):
+        if tag.type == ValueType.Unknown:
             tag.type = ValueType.Time
         val_t = _validate_time(value, tag)
         if val_t is not None:
@@ -435,11 +566,18 @@ def _any_to_node_object(obj: Any, tag: Tag, depth: int, path: str) -> NodeObject
         # Check for union type with null in Python type annotation (e.g., int|None)
         if _is_union_type_with_none(field_type):
             field_tag.nullable = True
-        
+
         # Auto-detect type from Python type annotation
-        if field_tag.type == ValueType(0):
-            auto_type = _python_type_to_value_type(field_type)
-            if auto_type != ValueType(0):
+        if field_tag.type == ValueType.Unknown:
+            # Unwrap Optional[T] (Union[T, None]) → T for type detection
+            unwrapped = field_type
+            if _is_union_type_with_none(field_type):
+                union_args = getattr(field_type, '__args__', ())
+                non_none = tuple(a for a in union_args if a is not type(None))
+                if non_none:
+                    unwrapped = non_none[0]
+            auto_type = _python_type_to_value_type(unwrapped)
+            if auto_type != ValueType.Unknown:
                 field_tag.type = auto_type
         
         # Handle list type annotations for child_type inference
@@ -448,12 +586,12 @@ def _any_to_node_object(obj: Any, tag: Tag, depth: int, path: str) -> NodeObject
         _field_origin = getattr(field_type, '__origin__', None)
         if _field_origin is list:
             # Generic list[T] annotation (e.g., list[str], list[User])
-            if field_tag.type == ValueType(0):
+            if field_tag.type == ValueType.Unknown:
                 field_tag.type = ValueType.Vec
             _args = getattr(field_type, '__args__', ())
             if _args:
                 child_py_type = _args[0]
-                if field_tag.child_type == ValueType(0):
+                if field_tag.child_type == ValueType.Unknown:
                     child_val_type = _python_type_to_value_type(child_py_type)
                     if child_val_type != ValueType.Unknown:
                         field_tag.child_type = child_val_type
@@ -462,9 +600,9 @@ def _any_to_node_object(obj: Any, tag: Tag, depth: int, path: str) -> NodeObject
                         field_tag.child_type = ValueType.Obj
         elif field_type is list:
             # Bare list without generics: must have explicit child_type
-            if field_tag.type == ValueType(0):
+            if field_tag.type == ValueType.Unknown:
                 field_tag.type = ValueType.Vec
-            if field_tag.child_type == ValueType(0):
+            if field_tag.child_type == ValueType.Unknown:
                 raise ValueError(
                     f"field '{field_name}' with bare 'list' type must specify child_type. "
                     f"Use list[T] annotation (e.g., list[str]) or set child_type via @mm."
@@ -503,7 +641,7 @@ def _any_to_node_dict(value: dict, tag: Tag, depth: int, path: str) -> NodeObjec
         # Only inherit non-child properties
         if tag.child_desc:
             tag_item.desc = tag.child_desc
-        if tag.child_type != ValueType(0):
+        if tag.child_type != ValueType.Unknown:
             tag_item.type = tag.child_type
         
         if tag.child_nullable:
@@ -573,7 +711,7 @@ def _any_to_node_list(value: list, tag: Tag, depth: int, path: str) -> NodeArray
     if depth > _MAX_DEPTH:
         raise ValueError(f"max depth: {_MAX_DEPTH}")
 
-    if tag.type in (ValueType(0), ValueType.Str, ValueType.Unknown):
+    if tag.type in (ValueType.Unknown, ValueType.Str, ValueType.Unknown):
         tag.type = ValueType.Vec
 
     if tag.type not in (ValueType.Vec, ValueType.Arr):

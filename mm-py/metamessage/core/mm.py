@@ -27,56 +27,109 @@ from ..ir.tag import Tag, ValueType, NewTag, mm_tag
 
 # ---------------------------------------------------------------------------
 # Tag fields allowed per ValueType (based on the MetaMessage type spec)
+# Each type defines its full set of allowed tags independently.
 # ---------------------------------------------------------------------------
-_BASE_FIELD_TAGS = {"is_null", "example", "deprecated", "name", "desc", "nullable", "allow_empty"}
-_NUMERIC_TAGS = _BASE_FIELD_TAGS | {"min", "max", "size"}
-_STRING_TAGS = _BASE_FIELD_TAGS | {"min", "max", "size", "pattern"}
-_CONTAINER_TAGS = _BASE_FIELD_TAGS | {"type", "min", "max", "size", "unique"}
-_VEC_ARR_TAGS = _CONTAINER_TAGS | {
-    "child_desc", "child_type", "child_nullable", "child_allow_empty",
-    "child_unique", "child_default_val", "child_min", "child_max",
-    "child_size", "child_enums", "child_pattern", "child_location",
-    "child_version", "child_mime",
-}
-_TIME_TAGS = _BASE_FIELD_TAGS | {"min", "max", "location"}
-_UUID_TAGS = _STRING_TAGS | {"version"}
-_DECIMAL_TAGS = _STRING_TAGS
-_IP_TAGS = _STRING_TAGS | {"version"}
-
 ALLOWED_TAGS: Dict[ValueType, set] = {
     # --- class-level ---
-    ValueType.Obj: _BASE_FIELD_TAGS,
-    ValueType.Map: _BASE_FIELD_TAGS | {"type"},
+    ValueType.Obj: {"is_null", "example", "deprecated", "name", "desc",
+                     "nullable", "allow_empty", "default_val"},
+    ValueType.Map: {"is_null", "example", "deprecated", "name", "desc",
+                     "nullable", "allow_empty", "default_val", "type"},
 
     # --- field-level ---
-    ValueType.Vec: _VEC_ARR_TAGS,
-    ValueType.Arr: _VEC_ARR_TAGS,
-    ValueType.Str: _STRING_TAGS,
-    ValueType.Bytes: _BASE_FIELD_TAGS | {"min", "max", "size"},
-    ValueType.Bool: _BASE_FIELD_TAGS,
-    ValueType.I: _NUMERIC_TAGS,
-    ValueType.I8: _NUMERIC_TAGS,
-    ValueType.I16: _NUMERIC_TAGS,
-    ValueType.I32: _NUMERIC_TAGS,
-    ValueType.I64: _NUMERIC_TAGS,
-    ValueType.U: _NUMERIC_TAGS,
-    ValueType.U8: _NUMERIC_TAGS,
-    ValueType.U16: _NUMERIC_TAGS,
-    ValueType.U32: _NUMERIC_TAGS,
-    ValueType.U64: _NUMERIC_TAGS,
-    ValueType.Bigint: _NUMERIC_TAGS,
-    ValueType.F32: _NUMERIC_TAGS,
-    ValueType.F64: _NUMERIC_TAGS,
-    ValueType.Datetime: _TIME_TAGS,
-    ValueType.Date: _TIME_TAGS,
-    ValueType.Time: _TIME_TAGS,
-    ValueType.Uuid: _UUID_TAGS,
-    ValueType.Decimal: _DECIMAL_TAGS,
-    ValueType.Ip: _IP_TAGS,
-    ValueType.Url: _STRING_TAGS,
-    ValueType.Email: _STRING_TAGS,
-    ValueType.Enums: _BASE_FIELD_TAGS | {"enums"},
-    ValueType.Media: _BASE_FIELD_TAGS | {"min", "max", "size", "mime"},
+    ValueType.Vec: {"is_null", "example", "deprecated", "name", "desc",
+                     "nullable", "allow_empty", "default_val",
+                     "type", "min", "max", "size", "unique",
+                     "child_desc", "child_type", "child_nullable",
+                     "child_allow_empty", "child_unique", "child_default_val",
+                     "child_min", "child_max", "child_size", "child_enums",
+                     "child_pattern", "child_location", "child_version",
+                     "child_mime"},
+    ValueType.Arr: {"is_null", "example", "deprecated", "name", "desc",
+                     "nullable", "allow_empty", "default_val",
+                     "type", "min", "max", "size", "unique",
+                     "child_desc", "child_type", "child_nullable",
+                     "child_allow_empty", "child_unique", "child_default_val",
+                     "child_min", "child_max", "child_size", "child_enums",
+                     "child_pattern", "child_location", "child_version",
+                     "child_mime"},
+    ValueType.Str: {"is_null", "example", "deprecated", "name", "desc",
+                     "nullable", "allow_empty", "default_val",
+                     "min", "max", "size", "pattern"},
+    ValueType.Bytes: {"is_null", "example", "deprecated", "name", "desc",
+                       "nullable", "allow_empty", "default_val",
+                       "min", "max", "size"},
+    ValueType.Bool: {"is_null", "example", "deprecated", "name", "desc",
+                      "nullable", "allow_empty", "default_val"},
+    ValueType.I: {"is_null", "example", "deprecated", "name", "desc",
+                   "nullable", "allow_empty", "default_val",
+                   "min", "max", "size"},
+    ValueType.I8: {"is_null", "example", "deprecated", "name", "desc",
+                    "nullable", "allow_empty", "default_val",
+                    "min", "max", "size"},
+    ValueType.I16: {"is_null", "example", "deprecated", "name", "desc",
+                     "nullable", "allow_empty", "default_val",
+                     "min", "max", "size"},
+    ValueType.I32: {"is_null", "example", "deprecated", "name", "desc",
+                     "nullable", "allow_empty", "default_val",
+                     "min", "max", "size"},
+    ValueType.I64: {"is_null", "example", "deprecated", "name", "desc",
+                     "nullable", "allow_empty", "default_val",
+                     "min", "max", "size"},
+    ValueType.U: {"is_null", "example", "deprecated", "name", "desc",
+                   "nullable", "allow_empty", "default_val",
+                   "min", "max", "size"},
+    ValueType.U8: {"is_null", "example", "deprecated", "name", "desc",
+                    "nullable", "allow_empty", "default_val",
+                    "min", "max", "size"},
+    ValueType.U16: {"is_null", "example", "deprecated", "name", "desc",
+                     "nullable", "allow_empty", "default_val",
+                     "min", "max", "size"},
+    ValueType.U32: {"is_null", "example", "deprecated", "name", "desc",
+                     "nullable", "allow_empty", "default_val",
+                     "min", "max", "size"},
+    ValueType.U64: {"is_null", "example", "deprecated", "name", "desc",
+                     "nullable", "allow_empty", "default_val",
+                     "min", "max", "size"},
+    ValueType.Bigint: {"is_null", "example", "deprecated", "name", "desc",
+                        "nullable", "allow_empty", "default_val",
+                        "min", "max", "size"},
+    ValueType.F32: {"is_null", "example", "deprecated", "name", "desc",
+                     "nullable", "allow_empty", "default_val",
+                     "min", "max", "size"},
+    ValueType.F64: {"is_null", "example", "deprecated", "name", "desc",
+                     "nullable", "allow_empty", "default_val",
+                     "min", "max", "size"},
+    ValueType.Datetime: {"is_null", "example", "deprecated", "name", "desc",
+                          "nullable", "allow_empty", "default_val",
+                          "min", "max", "location"},
+    ValueType.Date: {"is_null", "example", "deprecated", "name", "desc",
+                      "nullable", "allow_empty", "default_val",
+                      "min", "max", "location"},
+    ValueType.Time: {"is_null", "example", "deprecated", "name", "desc",
+                      "nullable", "allow_empty", "default_val",
+                      "min", "max", "location"},
+    ValueType.Uuid: {"is_null", "example", "deprecated", "name", "desc",
+                      "nullable", "allow_empty", "default_val",
+                      "min", "max", "size", "pattern", "version"},
+    ValueType.Decimal: {"is_null", "example", "deprecated", "name", "desc",
+                         "nullable", "allow_empty", "default_val",
+                         "min", "max", "size", "pattern"},
+    ValueType.Ip: {"is_null", "example", "deprecated", "name", "desc",
+                    "nullable", "allow_empty", "default_val",
+                    "min", "max", "size", "pattern", "version"},
+    ValueType.Url: {"is_null", "example", "deprecated", "name", "desc",
+                     "nullable", "allow_empty", "default_val",
+                     "min", "max", "size", "pattern"},
+    ValueType.Email: {"is_null", "example", "deprecated", "name", "desc",
+                       "nullable", "allow_empty", "default_val",
+                       "min", "max", "size", "pattern"},
+    ValueType.Enums: {"is_null", "example", "deprecated", "name", "desc",
+                       "nullable", "allow_empty", "default_val",
+                       "enums"},
+    ValueType.Media: {"is_null", "example", "deprecated", "name", "desc",
+                       "nullable", "allow_empty", "default_val",
+                       "min", "max", "size", "mime"},
 }
 
 # ValueTypes that are valid at class level
@@ -253,13 +306,14 @@ class mm:
         # so @dataclass never sees a mutable default (Python 3.11+ rejects
         # mutable defaults like list, dict, or custom dataclass instances).
         # The mm metadata is already stored in _MM_FIELD_REGISTRY above.
+        # Do NOT auto-assign default=None for Optional fields — that would
+        # break dataclass field ordering (required fields must come before
+        # fields with defaults). Let dataclass handle Optional naturally:
+        # the field is required unless the user sets default_val in the tag
+        # or provides an explicit default.
         from dataclasses import field, MISSING
         try:
-            # Use None as default for Optional[T] or nullable fields so the
-            # model can be instantiated without arguments (e.g. for OPTIONS
-            # schema discovery: ListUsersRequest() → all None defaults).
-            default = None if (self.nullable or _is_optional(annotation)) else MISSING
-            setattr(owner, name, field(default=default, compare=False, repr=False))
+            setattr(owner, name, field(default=MISSING, compare=False, repr=False))
         except (AttributeError, TypeError):
             pass
 
