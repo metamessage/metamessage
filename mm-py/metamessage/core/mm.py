@@ -226,12 +226,25 @@ class mm:
             self._validate_class_level(tag, target)
             _MM_CLASS_REGISTRY[target] = tag
             _MM_FIELD_REGISTRY.setdefault(target, {})
-            return dataclass(target)  # apply @dataclass to the user's class
+            # _build_class hook may have already applied @dataclass;
+            # skip to avoid re-processing an already-decorated class.
+            if not hasattr(target, '__dataclass_fields__'):
+                return dataclass(target)
+            return target
         return target
 
     def __set_name__(self, owner, name):
         tag = self._build_tag()
         annotation = owner.__annotations__.get(name)
+        # Resolve PEP 563 string annotations (from __future__ import annotations)
+        # so that _is_optional etc. see real type objects instead of strings.
+        if isinstance(annotation, str):
+            try:
+                import typing
+                hints = typing.get_type_hints(owner)
+                annotation = hints.get(name, annotation)
+            except Exception:
+                pass
         self._validate_field_level(tag, annotation, owner, name)
         _MM_FIELD_REGISTRY.setdefault(owner, {})
         _MM_FIELD_REGISTRY[owner][name] = tag
@@ -242,7 +255,11 @@ class mm:
         # The mm metadata is already stored in _MM_FIELD_REGISTRY above.
         from dataclasses import field, MISSING
         try:
-            setattr(owner, name, field(default=MISSING, compare=False, repr=False))
+            # Use None as default for Optional[T] or nullable fields so the
+            # model can be instantiated without arguments (e.g. for OPTIONS
+            # schema discovery: ListUsersRequest() → all None defaults).
+            default = None if (self.nullable or _is_optional(annotation)) else MISSING
+            setattr(owner, name, field(default=default, compare=False, repr=False))
         except (AttributeError, TypeError):
             pass
 
@@ -389,6 +406,15 @@ class mm:
 
     def _validate_field_level(self, tag: Tag, annotation: Any, owner: Type, name: str):
         context = f"字段 '{owner.__name__}.{name}'"
+
+        # Resolve PEP 563 string annotations (fallback: __set_name__
+        # runs before _mm_build_class can resolve them).
+        if isinstance(annotation, str):
+            try:
+                hints = typing.get_type_hints(owner)
+                annotation = hints.get(name, annotation)
+            except Exception:
+                pass
 
         vt = _find_type_in_tag(tag)
         inferred_vt = _infer_value_type(annotation) if annotation is not None else None

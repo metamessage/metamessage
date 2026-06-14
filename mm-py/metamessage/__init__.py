@@ -20,15 +20,37 @@ if _build_class is not None:
         cls = _build_class(func, name, *bases, **kwargs)
         if (isinstance(cls, type)
                 and hasattr(cls, '__annotations__')
-                and cls.__annotations__
-                and not hasattr(cls, '__dataclass_fields__')):
-            try:
-                _dataclass(cls)
-                from .core.mm import _MM_CLASS_REGISTRY, _MM_FIELD_REGISTRY
-                _MM_CLASS_REGISTRY.setdefault(cls, NewTag())
-                _MM_FIELD_REGISTRY.setdefault(cls, {})
-            except Exception:
-                pass
+                and cls.__annotations__):
+            # Skip classes from site-packages/third-party libraries to avoid
+            # interfering with their dataclass field ordering (e.g. anyio).
+            mod_file = func.__globals__.get('__file__', '') or ''
+            if 'site-packages' in mod_file.replace('\\', '/'):
+                return cls
+            # Resolve PEP 563 string annotations (from __future__ import annotations)
+            # so that downstream code (type inference, _is_optional, @dataclass)
+            # sees real type objects instead of strings.
+            if any(isinstance(v, str) for v in cls.__annotations__.values()):
+                try:
+                    import typing
+                    hints = typing.get_type_hints(cls)
+                    cls.__annotations__ = hints
+                except Exception:
+                    pass
+            if not hasattr(cls, '__dataclass_fields__'):
+                try:
+                    _dataclass(cls)
+                    from .core.mm import _MM_CLASS_REGISTRY, _MM_FIELD_REGISTRY
+                    _MM_CLASS_REGISTRY.setdefault(cls, NewTag())
+                    _MM_FIELD_REGISTRY.setdefault(cls, {})
+                except Exception:
+                    # If @dataclass fails (e.g. Python 3.13+ field ordering),
+                    # set __dataclass_fields__ to prevent the outer decorator
+                    # from re-processing and crashing with the same error.
+                    if not hasattr(cls, '__dataclass_fields__'):
+                        try:
+                            cls.__dataclass_fields__ = {}
+                        except Exception:
+                            pass
         return cls
     _builtins.__build_class__ = _mm_build_class
 
