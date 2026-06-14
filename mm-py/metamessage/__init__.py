@@ -6,6 +6,8 @@ from dataclasses import dataclass as _dataclass, field as _field, MISSING as _MI
 import typing as _typing
 import types as _types
 
+from typing import Optional
+
 from .ir.tag import Tag, TagKey, ValueType, mm_tag, def_tag, NewTag, MergeTag
 from .ir.ast import NodeObject, NodeArray, NodeScalar, Field, NodeType, Node, NodeNull
 from .core.encoder import Encoder
@@ -177,7 +179,7 @@ if _build_class is not None:
     _builtins.__build_class__ = _mm_build_class
 
 
-def encode_from_value(value, tag=None):
+def encode_from_value(value, tag:Optional[Tag]=None):
     """Convert a Python value directly to MetaMessage binary format.
 
     Python equivalent of mm-ts encodeFromValue / Go ValueToNode+Encode.

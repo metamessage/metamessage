@@ -6,9 +6,9 @@ import os
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 
 from typing import Any
-from metamessage import Encoder, Decoder, decode_to_jsonc
+from metamessage import Encoder, Decoder, decode_to_jsonc, encode_from_value
 from metamessage.core.value_to_node import (
-    value_to_node, node_to_value, encode_from_value, decode_to_value,
+    value_to_node, node_to_value, decode_to_value,
     _camel_to_snake
 )
 from metamessage.core.mm import mm, get_mm_tag_for_class, get_mm_tag_for_field
@@ -338,23 +338,41 @@ def test_mm_field_mixed_with_plain():
 
     print("  mm field mixed with plain OK")
 
+def test_mm_empty():
+    """Test mixing field-level mm with plain fields."""
+    class Order:
+        id: int = mm(desc="Order ID")
+        item: str
+        quantity: int = mm(desc="Quantity", min=1)
+
+    order = Order()
+    binary = encode_from_value(order, tag=Tag(example=True))
+    result = decode_to_value(binary)
+    assert result["id"] == 0
+    assert result["item"] == ""
+    assert result["quantity"] == 0
+
+    print("  mm field mixed with plain OK")
+
 
 if __name__ == '__main__':
-    test_value_to_node_basic()
-    test_value_to_node_dict()
-    test_value_to_node_list()
-    test_value_to_node_nested()
-    test_encode_from_value()
-    test_node_to_value()
-    test_auto_mm_class()
-    test_mm_decorator_with_tag_string()
-    test_complex_object_generic_list()
-    test_complex_object_explicit_child_type()
-    test_bare_list_without_child_type_raises()
-    test_node_to_value_class()
-    test_roundtrip_class()
-    test_mm_field_decorator()
-    test_mm_field_with_constraints()
-    test_mm_field_mixed_with_plain()
+    # test_value_to_node_basic()
+    # test_value_to_node_dict()
+    # test_value_to_node_list()
+    # test_value_to_node_nested()
+    # test_encode_from_value()
+    # test_node_to_value()
+    # test_auto_mm_class()
+    # test_mm_decorator_with_tag_string()
+    # test_complex_object_generic_list()
+    # test_complex_object_explicit_child_type()
+    # test_bare_list_without_child_type_raises()
+    # test_node_to_value_class()
+    # test_roundtrip_class()
+    # test_mm_field_decorator()
+    # test_mm_field_with_constraints()
+    # test_mm_field_mixed_with_plain()
+
+    test_mm_empty()
     # print()
     # print("All value_to_node tests passed!")
