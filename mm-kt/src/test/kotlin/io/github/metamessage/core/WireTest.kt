@@ -242,7 +242,7 @@ class WireTest {
 
     @Test
     fun encodeDecodeSimpleCodeAliases() {
-        for (code in SimpleValue.CODE..SimpleValue.VAL) {
+        for (code in SimpleValue.CODE..SimpleValue.KEY) {
             val enc = WireEncoder()
             enc.encodeSimple(code)
             val node = Decoder().decode(enc.toByteArray())

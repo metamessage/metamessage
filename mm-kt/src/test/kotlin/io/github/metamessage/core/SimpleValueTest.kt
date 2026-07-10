@@ -25,118 +25,117 @@ class SimpleValueTest {
     }
 
     @Test
+    fun nullBoolValue() {
+        assertEquals(1, SimpleValue.NULL_BOOL)
+        assertEquals("null_bool", SimpleValue.toString(SimpleValue.NULL_BOOL))
+    }
+
+    @Test
     fun nullIntValue() {
-        assertEquals(1, SimpleValue.NULL_INT)
+        assertEquals(2, SimpleValue.NULL_INT)
         assertEquals("null_int", SimpleValue.toString(SimpleValue.NULL_INT))
     }
 
     @Test
     fun nullFloatValue() {
-        assertEquals(2, SimpleValue.NULL_FLOAT)
+        assertEquals(3, SimpleValue.NULL_FLOAT)
         assertEquals("null_float", SimpleValue.toString(SimpleValue.NULL_FLOAT))
     }
 
     @Test
     fun nullStringValue() {
-        assertEquals(3, SimpleValue.NULL_STRING)
+        assertEquals(4, SimpleValue.NULL_STRING)
         assertEquals("null_string", SimpleValue.toString(SimpleValue.NULL_STRING))
     }
 
     @Test
     fun nullBytesValue() {
-        assertEquals(4, SimpleValue.NULL_BYTES)
+        assertEquals(5, SimpleValue.NULL_BYTES)
         assertEquals("null_bytes", SimpleValue.toString(SimpleValue.NULL_BYTES))
     }
 
     @Test
     fun falseValue() {
-        assertEquals(5, SimpleValue.FALSE)
+        assertEquals(6, SimpleValue.FALSE)
         assertEquals("false", SimpleValue.toString(SimpleValue.FALSE))
     }
 
     @Test
     fun trueValue() {
-        assertEquals(6, SimpleValue.TRUE)
+        assertEquals(7, SimpleValue.TRUE)
         assertEquals("true", SimpleValue.toString(SimpleValue.TRUE))
     }
 
     @Test
     fun codeAlias() {
-        assertEquals(7, SimpleValue.CODE)
+        assertEquals(8, SimpleValue.CODE)
         assertEquals("code", SimpleValue.toString(SimpleValue.CODE))
     }
 
     @Test
     fun messageAlias() {
-        assertEquals(8, SimpleValue.MESSAGE)
+        assertEquals(9, SimpleValue.MESSAGE)
         assertEquals("message", SimpleValue.toString(SimpleValue.MESSAGE))
     }
 
     @Test
     fun dataAlias() {
-        assertEquals(9, SimpleValue.DATA)
+        assertEquals(10, SimpleValue.DATA)
         assertEquals("data", SimpleValue.toString(SimpleValue.DATA))
     }
 
     @Test
     fun idAlias() {
-        assertEquals(17, SimpleValue.ID)
+        assertEquals(18, SimpleValue.ID)
         assertEquals("id", SimpleValue.toString(SimpleValue.ID))
     }
 
     @Test
     fun nameAlias() {
-        assertEquals(18, SimpleValue.NAME)
+        assertEquals(19, SimpleValue.NAME)
         assertEquals("name", SimpleValue.toString(SimpleValue.NAME))
     }
 
     @Test
     fun typeAlias() {
-        assertEquals(20, SimpleValue.TYPE)
+        assertEquals(21, SimpleValue.TYPE)
         assertEquals("type", SimpleValue.toString(SimpleValue.TYPE))
     }
 
     @Test
     fun keyAlias() {
-        assertEquals(30, SimpleValue.KEY)
+        assertEquals(31, SimpleValue.KEY)
         assertEquals("key", SimpleValue.toString(SimpleValue.KEY))
-    }
-
-    @Test
-    fun valueAlias() {
-        assertEquals(31, SimpleValue.VAL)
-        assertEquals("value", SimpleValue.toString(SimpleValue.VAL))
     }
 
     @Test
     fun allFieldNameAliasesMapCorrectly() {
         val expectedNames =
                 mapOf(
-                        7 to "code",
-                        8 to "message",
-                        9 to "data",
-                        10 to "success",
-                        11 to "error",
-                        12 to "unknown",
-                        13 to "page",
-                        14 to "limit",
-                        15 to "offset",
-                        16 to "total",
-                        17 to "id",
-                        18 to "name",
-                        19 to "description",
-                        20 to "type",
-                        21 to "version",
-                        22 to "status",
-                        23 to "url",
-                        24 to "create_time",
-                        25 to "update_time",
-                        26 to "delete_time",
-                        27 to "account",
-                        28 to "token",
-                        29 to "expire_time",
-                        30 to "key",
-                        31 to "value"
+                        8 to "code",
+                        9 to "message",
+                        10 to "data",
+                        11 to "success",
+                        12 to "error",
+                        13 to "unknown",
+                        14 to "page",
+                        15 to "limit",
+                        16 to "offset",
+                        17 to "total",
+                        18 to "id",
+                        19 to "name",
+                        20 to "description",
+                        21 to "type",
+                        22 to "version",
+                        23 to "status",
+                        24 to "url",
+                        25 to "create_time",
+                        26 to "update_time",
+                        27 to "delete_time",
+                        28 to "account",
+                        29 to "token",
+                        30 to "expire_time",
+                        31 to "key"
                 )
         for ((code, name) in expectedNames) {
             assertEquals(
@@ -159,6 +158,7 @@ class SimpleValueTest {
         val values =
                 listOf(
                         SimpleValue.SIMPLE_NULL,
+                        SimpleValue.NULL_BOOL,
                         SimpleValue.NULL_INT,
                         SimpleValue.NULL_FLOAT,
                         SimpleValue.NULL_STRING,
@@ -188,8 +188,7 @@ class SimpleValueTest {
                         SimpleValue.ACCOUNT,
                         SimpleValue.TOKEN,
                         SimpleValue.EXPIRE_TIME,
-                        SimpleValue.KEY,
-                        SimpleValue.VAL
+                        SimpleValue.KEY
                 )
         for (v in values) {
             assertTrue(seen.add(v), "Duplicate SimpleValue: $v")

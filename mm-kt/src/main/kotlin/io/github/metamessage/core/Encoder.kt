@@ -41,33 +41,18 @@ object Encoder {
     }
 
     private fun encodeObjectNode(enc: WireEncoder, obj: AstObject) {
-        val keysPacked = GrowableByteBuf()
-        val valsPacked = GrowableByteBuf()
-        val tmp = WireEncoder()
-        for (field in obj.fields) {
-            tmp.reset()
-            encodeNodeInternal(tmp, field.value)
-            valsPacked.writeAll(tmp.toByteArray())
-
-            tmp.reset()
-            tmp.encodeString(field.key)
-            keysPacked.writeAll(tmp.toByteArray())
-        }
-        tmp.reset()
-        tmp.encodeArrayPayload(keysPacked.copyRange(0, keysPacked.length()))
-        val mapBody = GrowableByteBuf()
-        mapBody.writeAll(tmp.toByteArray())
-        mapBody.writeAll(valsPacked.copyRange(0, valsPacked.length()))
-        tmp.reset()
-        tmp.encodeObjectPayload(mapBody.copyRange(0, mapBody.length()))
-        enc.encodeTaggedPayload(tmp.toByteArray(), obj.tag?.toBytes() ?: ByteArray(0))
+        encodeFieldsWithTag(enc, obj.fields, obj.tag?.toBytes() ?: ByteArray(0))
     }
 
     private fun encodeDocNode(enc: WireEncoder, doc: io.github.metamessage.ir.Doc) {
+        encodeFieldsWithTag(enc, doc.fields, doc.tag?.toBytes() ?: ByteArray(0))
+    }
+
+    private fun encodeFieldsWithTag(enc: WireEncoder, fields: List<io.github.metamessage.ir.Field>, tagBytes: ByteArray) {
         val keysPacked = GrowableByteBuf()
         val valsPacked = GrowableByteBuf()
         val tmp = WireEncoder()
-        for (field in doc.fields) {
+        for (field in fields) {
             tmp.reset()
             encodeNodeInternal(tmp, field.value)
             valsPacked.writeAll(tmp.toByteArray())
@@ -83,7 +68,7 @@ object Encoder {
         mapBody.writeAll(valsPacked.copyRange(0, valsPacked.length()))
         tmp.reset()
         tmp.encodeObjectPayload(mapBody.copyRange(0, mapBody.length()))
-        enc.encodeTaggedPayload(tmp.toByteArray(), doc.tag?.toBytes() ?: ByteArray(0))
+        enc.encodeTaggedPayload(tmp.toByteArray(), tagBytes)
     }
 
     private fun encodeArrayNode(enc: WireEncoder, arr: AstArray) {
@@ -266,7 +251,7 @@ object Encoder {
             }
             ValueType.BOOL -> {
                 if (tag.isNull) {
-                    tmp.encodeSimple(SimpleValue.SIMPLE_NULL)
+                    tmp.encodeSimple(SimpleValue.NULL_BOOL)
                 } else {
                     val boolValue = value.data as? Boolean ?: false
                     tmp.encodeBool(boolValue)

@@ -529,6 +529,23 @@ private fun convertObj(obj: Any, objTag: Tag, depth: Int, path: String): Node {
     return objNode
 }
 
+private fun copyChildPropsFromTag(dst: Tag, src: Tag) {
+    dst.childDesc = src.desc
+    dst.childType = src.type
+    dst.childNullable = src.nullable
+    dst.childAllowEmpty = src.allowEmpty
+    dst.childUnique = src.unique
+    dst.childDefaultVal = src.default_val
+    dst.childMin = src.min
+    dst.childMax = src.max
+    dst.childSize = src.size
+    dst.childEnums = src.enums
+    dst.childPattern = src.pattern
+    dst.childLocation = src.location
+    dst.childVersion = src.version
+    dst.childMime = src.mime
+}
+
 private fun convertVec(list: List<*>, tag: Tag, depth: Int, path: String): Node {
     val node = AstArray(mutableListOf(), tag, path)
     var setTag = false
@@ -542,22 +559,7 @@ private fun convertVec(list: List<*>, tag: Tag, depth: Int, path: String): Node 
 
         val resultTag = itemNode.tag
         if (!setTag && resultTag != null) {
-            node.tag?.apply {
-                childDesc = resultTag.desc
-                childType = resultTag.type
-                childNullable = resultTag.nullable
-                childAllowEmpty = resultTag.allowEmpty
-                childUnique = resultTag.unique
-                childDefaultVal = resultTag.default_val
-                childMin = resultTag.min
-                childMax = resultTag.max
-                childSize = resultTag.size
-                childEnums = resultTag.enums
-                childPattern = resultTag.pattern
-                childLocation = resultTag.location
-                childVersion = resultTag.version
-                childMime = resultTag.mime
-            }
+            node.tag?.let { copyChildPropsFromTag(it, resultTag) }
             setTag = true
         }
 
@@ -575,23 +577,7 @@ private fun convertVec(list: List<*>, tag: Tag, depth: Int, path: String): Node 
 
         val resultTag = itemNode.tag
         if (!setTag && resultTag != null) {
-            node.tag?.apply {
-                childDesc = resultTag.desc
-                childType = resultTag.type
-                childNullable = resultTag.nullable
-                childAllowEmpty = resultTag.allowEmpty
-                childUnique = resultTag.unique
-                childDefaultVal = resultTag.default_val
-                childMin = resultTag.min
-                childMax = resultTag.max
-                childSize = resultTag.size
-                childEnums = resultTag.enums
-                childPattern = resultTag.pattern
-                childLocation = resultTag.location
-                childVersion = resultTag.version
-                childMime = resultTag.mime
-            }
-            // setTag not needed beyond this point
+            node.tag?.let { copyChildPropsFromTag(it, resultTag) }
         }
 
         node.items.add(itemNode)
@@ -621,22 +607,7 @@ private fun convertMap(map: Map<*, *>, tag: Tag, depth: Int, path: String): Node
 
         val resultTag = valueNode.tag
         if (!setTag && resultTag != null) {
-            node.tag?.apply {
-                childDesc = resultTag.desc
-                childType = resultTag.type
-                childNullable = resultTag.nullable
-                childAllowEmpty = resultTag.allowEmpty
-                childUnique = resultTag.unique
-                childDefaultVal = resultTag.default_val
-                childMin = resultTag.min
-                childMax = resultTag.max
-                childSize = resultTag.size
-                childEnums = resultTag.enums
-                childPattern = resultTag.pattern
-                childLocation = resultTag.location
-                childVersion = resultTag.version
-                childMime = resultTag.mime
-            }
+            node.tag?.let { copyChildPropsFromTag(it, resultTag) }
             setTag = true
         }
 
@@ -655,22 +626,7 @@ private fun convertMap(map: Map<*, *>, tag: Tag, depth: Int, path: String): Node
 
         val resultTag = valueNode.tag
         if (!setTag && resultTag != null) {
-            node.tag?.apply {
-                childDesc = resultTag.desc
-                childType = resultTag.type
-                childNullable = resultTag.nullable
-                childAllowEmpty = resultTag.allowEmpty
-                childUnique = resultTag.unique
-                childDefaultVal = resultTag.default_val
-                childMin = resultTag.min
-                childMax = resultTag.max
-                childSize = resultTag.size
-                childEnums = resultTag.enums
-                childPattern = resultTag.pattern
-                childLocation = resultTag.location
-                childVersion = resultTag.version
-                childMime = resultTag.mime
-            }
+            node.tag?.let { copyChildPropsFromTag(it, resultTag) }
         }
 
         node.fields.add(Field("", valueNode))
