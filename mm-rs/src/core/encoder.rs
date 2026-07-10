@@ -144,16 +144,18 @@ impl Encoder {
         let is_null = tag.map_or(false, |t| t.is_null);
 
         if is_null {
+            // Align with Go: only specific types encode a null simple value.
+            // All other types write nothing (the null state is indicated by the tag's isNull flag).
             match tag.map(|t| t.value_type) {
                 Some(ValueType::Unknown) => self.encode_simple(SimpleValue::Null),
                 Some(ValueType::Bool) => self.encode_simple(SimpleValue::NullBool),
                 Some(ValueType::I) => self.encode_simple(SimpleValue::NullInt),
-                Some(ValueType::F64) | Some(ValueType::F32) => {
-                    self.encode_simple(SimpleValue::NullFloat)
-                }
+                Some(ValueType::F64) => self.encode_simple(SimpleValue::NullFloat),
                 Some(ValueType::Str) => self.encode_simple(SimpleValue::NullString),
                 Some(ValueType::Bytes) => self.encode_simple(SimpleValue::NullBytes),
-                _ => self.encode_simple(SimpleValue::NullInt),
+                // Datetime, Date, Time, I8-I64, U-U64, F32, Email, Uuid, Decimal,
+                // Url, Ip, Media, Bigint, Enum: no bytes written (skip)
+                _ => {}
             }
         } else if let Some(t) = tag {
             match t.value_type {
@@ -283,7 +285,10 @@ impl Encoder {
                                 self.encode_string(&val.text);
                             }
                         } else if v == 6 {
-                            if let Ok(ip) = val.text.parse::<std::net::Ipv6Addr>() {
+                            // Align with Go: if text is short (< 16 chars), encode as string
+                            if val.text.len() < 16 {
+                                self.encode_string(&val.text);
+                            } else if let Ok(ip) = val.text.parse::<std::net::Ipv6Addr>() {
                                 self.encode_bytes(&ip.octets());
                             } else {
                                 self.encode_string(&val.text);

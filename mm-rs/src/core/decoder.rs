@@ -111,17 +111,145 @@ impl Decoder {
         }
 
         if tag.is_null {
-            let inner = self.decode_node(&Tag::new(), "")?;
-            let (data, text) = match &inner {
-                Node::Value(v) => (v.data.clone(), v.text.clone()),
-                _ => (ValueData::Null, String::new()),
-            };
-            Ok(Node::Value(NodeScalar {
-                data,
-                text,
-                path: String::new(),
-                tag: Some(tag),
-            }))
+            // Align with Go: for types that don't encode a null simple value,
+            // return default values without reading more data.
+            // For types that do encode a null simple value (Unknown, I, F64, Str, Bytes, Bool),
+            // decode the inner node which will read the simple value.
+            match tag.value_type {
+                ValueType::Datetime => {
+                    let naive = chrono::DateTime::from_timestamp(0, 0)
+                        .map(|dt| dt.naive_utc())
+                        .unwrap_or_default();
+                    let offset = if let Some(offset_hours) = tag.location {
+                        chrono::FixedOffset::east_opt(offset_hours * 3600)
+                            .unwrap_or_else(|| chrono::FixedOffset::east_opt(0).unwrap())
+                    } else {
+                        chrono::FixedOffset::east_opt(0).unwrap()
+                    };
+                    let dt = offset.from_utc_datetime(&naive);
+                    let text = dt.format("%Y-%m-%d %H:%M:%S").to_string();
+                    Ok(Node::Value(NodeScalar {
+                        data: ValueData::Int(0),
+                        text,
+                        path: String::new(),
+                        tag: Some(tag),
+                    }))
+                }
+                ValueType::Date => {
+                    let epoch = chrono::NaiveDate::from_ymd_opt(1970, 1, 1).unwrap();
+                    let text = if let Some(offset_hours) = tag.location {
+                        let dt = epoch.and_hms_opt(0, 0, 0).unwrap();
+                        let offset = chrono::FixedOffset::east_opt(offset_hours * 3600)
+                            .unwrap_or_else(|| chrono::FixedOffset::east_opt(0).unwrap());
+                        let localized = offset.from_utc_datetime(&dt);
+                        localized.format("%Y-%m-%d").to_string()
+                    } else {
+                        epoch.format("%Y-%m-%d").to_string()
+                    };
+                    Ok(Node::Value(NodeScalar {
+                        data: ValueData::Int(0),
+                        text,
+                        path: String::new(),
+                        tag: Some(tag),
+                    }))
+                }
+                ValueType::Time => {
+                    let text = if let Some(offset_hours) = tag.location {
+                        let dt = chrono::NaiveDate::from_ymd_opt(1970, 1, 1)
+                            .unwrap()
+                            .and_hms_opt(0, 0, 0)
+                            .unwrap();
+                        let offset = chrono::FixedOffset::east_opt(offset_hours * 3600)
+                            .unwrap_or_else(|| chrono::FixedOffset::east_opt(0).unwrap());
+                        let localized = offset.from_utc_datetime(&dt);
+                        localized.format("%H:%M:%S").to_string()
+                    } else {
+                        "00:00:00".to_string()
+                    };
+                    Ok(Node::Value(NodeScalar {
+                        data: ValueData::Int(0),
+                        text,
+                        path: String::new(),
+                        tag: Some(tag),
+                    }))
+                }
+                ValueType::I8
+                | ValueType::I16
+                | ValueType::I32
+                | ValueType::I64
+                | ValueType::U
+                | ValueType::U8
+                | ValueType::U16
+                | ValueType::U32
+                | ValueType::U64 => {
+                    Ok(Node::Value(NodeScalar {
+                        data: ValueData::Int(0),
+                        text: "0".to_string(),
+                        path: String::new(),
+                        tag: Some(tag),
+                    }))
+                }
+                ValueType::F32 => {
+                    Ok(Node::Value(NodeScalar {
+                        data: ValueData::Float(0.0),
+                        text: "0.0".to_string(),
+                        path: String::new(),
+                        tag: Some(tag),
+                    }))
+                }
+                ValueType::Email | ValueType::Uuid | ValueType::Decimal => {
+                    Ok(Node::Value(NodeScalar {
+                        data: ValueData::String(String::new()),
+                        text: String::new(),
+                        path: String::new(),
+                        tag: Some(tag),
+                    }))
+                }
+                ValueType::Bigint => {
+                    Ok(Node::Value(NodeScalar {
+                        data: ValueData::Bytes(vec![]),
+                        text: "0".to_string(),
+                        path: String::new(),
+                        tag: Some(tag),
+                    }))
+                }
+                ValueType::Url => {
+                    Ok(Node::Value(NodeScalar {
+                        data: ValueData::String(String::new()),
+                        text: String::new(),
+                        path: String::new(),
+                        tag: Some(tag),
+                    }))
+                }
+                ValueType::Ip => {
+                    let text = match tag.version {
+                        Some(4) => "0.0.0.0".to_string(),
+                        Some(6) => "::".to_string(),
+                        _ => String::new(),
+                    };
+                    Ok(Node::Value(NodeScalar {
+                        data: ValueData::String(text.clone()),
+                        text,
+                        path: String::new(),
+                        tag: Some(tag),
+                    }))
+                }
+                // For Unknown, I, F64, Str, Bytes, Bool, Media, Enum, and others:
+                // decode the inner node (which will read the null simple value if present)
+                _ => {
+                    let inner = self.decode_node(&Tag::new(), "")?;
+                    let (data, text) = match &inner {
+                        Node::Value(v) => (v.data.clone(), v.text.clone()),
+                        _ => (ValueData::Null, String::new()),
+                    };
+                    Ok(Node::Value(NodeScalar {
+                        data,
+                        text,
+                        path: String::new(),
+                        tag: Some(tag),
+                    }))
+                }
+            }
         } else {
             self.decode_node(&tag, "")
         }
@@ -410,6 +538,7 @@ impl Decoder {
             std::io::Error::new(std::io::ErrorKind::InvalidData, "invalid simple value")
         })?;
 
+        // Align with Go: named simple values produce their string representation
         let (data, text) = match value {
             SimpleValue::Null => {
                 return Ok(Node::Value(NodeScalar {
@@ -426,7 +555,30 @@ impl Decoder {
             SimpleValue::NullInt => (ValueData::Int(0), "0".to_string()),
             SimpleValue::NullString => (ValueData::String(String::new()), String::new()),
             SimpleValue::NullBytes => (ValueData::Bytes(vec![]), String::new()),
-            _ => (ValueData::String(String::new()), String::new()),
+            SimpleValue::Code => (ValueData::String("code".to_string()), "code".to_string()),
+            SimpleValue::Message => (ValueData::String("message".to_string()), "message".to_string()),
+            SimpleValue::Data => (ValueData::String("data".to_string()), "data".to_string()),
+            SimpleValue::Success => (ValueData::String("success".to_string()), "success".to_string()),
+            SimpleValue::Error => (ValueData::String("error".to_string()), "error".to_string()),
+            SimpleValue::Unknown => (ValueData::String("unknown".to_string()), "unknown".to_string()),
+            SimpleValue::Page => (ValueData::String("page".to_string()), "page".to_string()),
+            SimpleValue::Limit => (ValueData::String("limit".to_string()), "limit".to_string()),
+            SimpleValue::Offset => (ValueData::String("offset".to_string()), "offset".to_string()),
+            SimpleValue::Total => (ValueData::String("total".to_string()), "total".to_string()),
+            SimpleValue::Id => (ValueData::String("id".to_string()), "id".to_string()),
+            SimpleValue::Name => (ValueData::String("name".to_string()), "name".to_string()),
+            SimpleValue::Description => (ValueData::String("description".to_string()), "description".to_string()),
+            SimpleValue::Type => (ValueData::String("type".to_string()), "type".to_string()),
+            SimpleValue::Version => (ValueData::String("version".to_string()), "version".to_string()),
+            SimpleValue::Status => (ValueData::String("status".to_string()), "status".to_string()),
+            SimpleValue::Url => (ValueData::String("url".to_string()), "url".to_string()),
+            SimpleValue::CreateTime => (ValueData::String("create_time".to_string()), "create_time".to_string()),
+            SimpleValue::UpdateTime => (ValueData::String("update_time".to_string()), "update_time".to_string()),
+            SimpleValue::DeleteTime => (ValueData::String("delete_time".to_string()), "delete_time".to_string()),
+            SimpleValue::Account => (ValueData::String("account".to_string()), "account".to_string()),
+            SimpleValue::Token => (ValueData::String("token".to_string()), "token".to_string()),
+            SimpleValue::ExpireTime => (ValueData::String("expire_time".to_string()), "expire_time".to_string()),
+            SimpleValue::Key => (ValueData::String("key".to_string()), "key".to_string()),
         };
 
         Ok(Node::Value(NodeScalar {
@@ -549,8 +701,41 @@ impl Decoder {
             v
         };
 
-        let data = ValueData::Int(-(v as i64));
-        let text = format!("-{}", v);
+        let (data, text): (ValueData, String) = match tag.value_type {
+            ValueType::Datetime => {
+                let d = chrono::DateTime::from_timestamp(-(v as i64), 0)
+                    .map(|dt| dt.naive_utc())
+                    .unwrap_or_default();
+                let offset = if let Some(offset_hours) = tag.location {
+                    chrono::FixedOffset::east_opt(offset_hours * 3600)
+                        .unwrap_or_else(|| chrono::FixedOffset::east_opt(0).unwrap())
+                } else {
+                    chrono::FixedOffset::east_opt(0).unwrap()
+                };
+                let dt = offset.from_utc_datetime(&d);
+                let text = dt.format("%Y-%m-%d %H:%M:%S").to_string();
+                (ValueData::Int(-(v as i64)), text)
+            }
+            ValueType::Date => {
+                let epoch = chrono::NaiveDate::from_ymd_opt(1970, 1, 1).unwrap();
+                let date = epoch - chrono::Duration::days(v as i64);
+                let text = if let Some(offset_hours) = tag.location {
+                    let dt = date.and_hms_opt(0, 0, 0).unwrap();
+                    let offset = chrono::FixedOffset::east_opt(offset_hours * 3600)
+                        .unwrap_or_else(|| chrono::FixedOffset::east_opt(0).unwrap());
+                    let localized = offset.from_utc_datetime(&dt);
+                    localized.format("%Y-%m-%d").to_string()
+                } else {
+                    date.format("%Y-%m-%d").to_string()
+                };
+                (ValueData::Int(-(v as i64)), text)
+            }
+            _ => {
+                let data = ValueData::Int(-(v as i64));
+                let text = format!("-{}", v);
+                (data, text)
+            }
+        };
 
         Ok(Node::Value(NodeScalar {
             data,
@@ -591,9 +776,26 @@ impl Decoder {
             v
         };
 
+        // Align with Go: differentiate F32/F64/Decimal for text formatting
+        let (data, text) = match tag.value_type {
+            ValueType::F32 => {
+                let f = v as f32;
+                let text = crate::core::utils::format_float32(f);
+                (ValueData::Float(f as f64), text)
+            }
+            ValueType::Decimal => {
+                let text = crate::core::utils::format_float64(v);
+                (ValueData::String(text.clone()), text)
+            }
+            _ => {
+                let text = crate::core::utils::format_float64(v);
+                (ValueData::Float(v), text)
+            }
+        };
+
         Ok(Node::Value(NodeScalar {
-            data: ValueData::Float(v),
-            text: ryu::Buffer::new().format_finite(v).to_string(),
+            data,
+            text,
             path: String::new(),
             tag: Some(tag.clone()),
         }))
@@ -616,9 +818,29 @@ impl Decoder {
             String::new()
         };
 
+        // Align with Go: handle URL and IP types specially
+        let (data, text) = match tag.value_type {
+            ValueType::Url => {
+                // Go parses the URL; we just store the string
+                (ValueData::String(s.clone()), s)
+            }
+            ValueType::Ip => {
+                // Go normalizes IP using net.ParseIP and .String()
+                if let Ok(ip) = s.parse::<std::net::IpAddr>() {
+                    let normalized = ip.to_string();
+                    (ValueData::String(normalized.clone()), normalized)
+                } else {
+                    (ValueData::String(s.clone()), s)
+                }
+            }
+            _ => {
+                (ValueData::String(s.clone()), s)
+            }
+        };
+
         Ok(Node::Value(NodeScalar {
-            data: ValueData::String(s.clone()),
-            text: s,
+            data,
+            text,
             path: String::new(),
             tag: Some(tag.clone()),
         }))
@@ -656,6 +878,21 @@ impl Decoder {
                 let decoded =
                     crate::core::utils::decode_big_int(&bytes).unwrap_or_else(|_| "0".to_string());
                 decoded
+            }
+            ValueType::Ip => {
+                // Align with Go: net.IP(bs).String() for IP address bytes
+                if bytes.len() == 4 {
+                    let mut octets = [0u8; 4];
+                    octets.copy_from_slice(&bytes);
+                    std::net::Ipv4Addr::from(octets).to_string()
+                } else if bytes.len() == 16 {
+                    let mut octets = [0u8; 16];
+                    octets.copy_from_slice(&bytes);
+                    std::net::Ipv6Addr::from(octets).to_string()
+                } else {
+                    use base64::{engine::general_purpose, Engine as _};
+                    general_purpose::STANDARD.encode(&bytes)
+                }
             }
             _ => {
                 use base64::{engine::general_purpose, Engine as _};

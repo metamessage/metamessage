@@ -38,7 +38,6 @@ class SimpleValue
     public const TOKEN = 29;
     public const EXPIRE_TIME = 30;
     public const KEY = 31;
-    public const VAL = 32;
 
     public static function nameOf(int $sv): string
     {
@@ -75,7 +74,6 @@ class SimpleValue
             self::TOKEN => 'token',
             self::EXPIRE_TIME => 'expire_time',
             self::KEY => 'key',
-            self::VAL => 'value',
             default => 'unknown_simple_' . $sv,
         };
     }

@@ -651,9 +651,17 @@ class WireDecoder
                 $data = $text;
                 break;
             case ValueType::URL:
+                $parsed = parse_url($text);
+                if ($parsed === false) {
+                    throw new MmDecodeException('invalid URL: ' . $text);
+                }
                 $data = $text;
                 break;
             case ValueType::IP:
+                $packed = @inet_pton($text);
+                if ($packed !== false) {
+                    $text = inet_ntop($packed);
+                }
                 $data = $text;
                 break;
             case ValueType::STR:
@@ -883,7 +891,9 @@ class WireDecoder
                     $data = null;
                     $text = '';
                 } else {
-                    $dt = new \DateTime('@-' . $v, new \DateTimeZone('UTC'));
+                    $locHours = $tag->location ?? 0;
+                    $adjustedV = -((int)$v) + $locHours * 3600;
+                    $dt = new \DateTime('@' . $adjustedV, new \DateTimeZone('UTC'));
                     $data = $dt;
                     $text = $dt->format('Y-m-d H:i:s');
                 }
@@ -949,15 +959,15 @@ class WireDecoder
         switch ($tag->type) {
             case ValueType::F32:
                 $data = (float)$v;
-                $text = (string)$v;
+                $text = FloatCodec::formatFloat32($v);
                 break;
             case ValueType::F64:
                 $data = $v;
-                $text = (string)$v;
+                $text = FloatCodec::formatFloat64($v);
                 break;
             case ValueType::DECIMAL:
-                $data = (string)$v;
-                $text = (string)$v;
+                $text = FloatCodec::formatFloat64($v);
+                $data = $text;
                 break;
             default:
                 throw new MmDecodeException('unsupported value types: ' . $tag->type->name);
@@ -1127,10 +1137,6 @@ class WireDecoder
             case SimpleValue::KEY:
                 $tag->type = ValueType::STR;
                 $node = new NodeScalar(null, Constants::SIMPLE_KEY_STR, $tag, $path);
-                break;
-            case SimpleValue::VAL:
-                $tag->type = ValueType::STR;
-                $node = new NodeScalar(null, Constants::SIMPLE_VAL_STR, $tag, $path);
                 break;
             default:
                 throw new MmDecodeException('unsupported value: ' . $prefix);
@@ -1384,16 +1390,12 @@ class WireDecoder
 
     private function bytesToIPString(array $bs): string
     {
-        if (count($bs) === 4) {
-            return implode('.', $bs);
-        } elseif (count($bs) === 16) {
-            $parts = [];
-            for ($i = 0; $i < 16; $i += 2) {
-                $parts[] = sprintf('%x', ($bs[$i] << 8) | $bs[$i + 1]);
-            }
-            return implode(':', $parts);
+        $packed = pack('C*', ...$bs);
+        $result = @inet_ntop($packed);
+        if ($result === false) {
+            return '';
         }
-        return '';
+        return $result;
     }
 
     private function bigintBits(array $data): array

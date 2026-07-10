@@ -34,7 +34,6 @@ class Constants
     const SIMPLE_TOKEN_STR = 'token';
     const SIMPLE_EXPIRE_TIME_STR = 'expire_time';
     const SIMPLE_KEY_STR = 'key';
-    const SIMPLE_VAL_STR = 'value';
 
     const BIT_SIZE = PHP_INT_SIZE * 8;
 }
