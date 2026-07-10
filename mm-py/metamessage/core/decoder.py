@@ -494,7 +494,9 @@ class Decoder:
             tag.child_version = self._read_varint(l)
             return 2 + l
         elif p == TagKey.ChildMime:
-            tag.child_mime = str(self._read_varint(l))
+            mime_id = self._read_varint(l)
+            tag.child_mime = str(MIME(mime_id))
+            tag.child_type = ValueType.Media
             return 2 + l
         else:
             raise ValueError("invalid data")
@@ -555,15 +557,19 @@ class Decoder:
             return NodeScalar(data=None, text='null', tag=tag, path=path), 1
         elif suffix == SimpleNullInt:
             tag.type = ValueType.I
+            tag.is_null = True
             return NodeScalar(data=0, text='0', tag=tag, path=path), 1
         elif suffix == SimpleNullFloat:
             tag.type = ValueType.F64
+            tag.is_null = True
             return NodeScalar(data=0.0, text='0.0', tag=tag, path=path), 1
         elif suffix == SimpleNullString:
             tag.type = ValueType.Str
+            tag.is_null = True
             return NodeScalar(data='', text='', tag=tag, path=path), 1
         elif suffix == SimpleNullBytes:
             tag.type = ValueType.Bytes
+            tag.is_null = True
             return NodeScalar(data=b'', text='', tag=tag, path=path), 1
         elif suffix == SimpleCode:
             tag.type = ValueType.Str
@@ -763,6 +769,7 @@ class Decoder:
 
         v = 0.0
         length = 0
+        mantissa = None
 
         if PrefixFloat <= b <= PrefixFloat + 7:
             v = (b & 0xF) / 10.0
@@ -797,9 +804,8 @@ class Decoder:
         elif tag.type == ValueType.F64:
             data = v
         elif tag.type == ValueType.Decimal:
-            data = _mantissa_to_decimal(mantissa, exp) if 'mantissa' in dir() else str(v)
-            if b & FloatPositiveNegativeMask:
-                data = '-' + data
+            # Align with Go: use formatted float value (v already has correct sign)
+            data = str(v)
         else:
             raise ValueError(f"unsupported float value type: {tag.type}")
 
