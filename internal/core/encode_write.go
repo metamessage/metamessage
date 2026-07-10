@@ -4,6 +4,27 @@ import (
 	"errors"
 )
 
+// ensureCap ensures the internal buffer has enough capacity for required bytes
+// starting from the current offset. Returns ErrMaxSizeExceeded if the required
+// size exceeds maxCap.
+func (e *encoder) ensureCap(required int) error {
+	if required > maxCap {
+		return ErrMaxSizeExceeded
+	}
+
+	if required > cap(e.buf) {
+		newCap := cap(e.buf) * 2
+		if newCap > maxCap || newCap < required {
+			newCap = required
+		}
+		newBuf := make([]byte, newCap)
+		copy(newBuf, e.buf[:e.offset])
+		e.buf = newBuf
+	}
+
+	return nil
+}
+
 // for io.ByteWriter
 func (e *encoder) WriteByte(c byte) error {
 	_, err := e.writeByte(c)
@@ -24,19 +45,8 @@ func (e *encoder) writeBytes(bs []byte) (n uint32, err error) {
 	}
 
 	required := int(e.offset) + l
-	if required > maxCap {
-		err = ErrMaxSizeExceeded
+	if err = e.ensureCap(required); err != nil {
 		return
-	}
-
-	if required > cap(e.buf) {
-		newCap := cap(e.buf) * 2
-		if newCap > maxCap || newCap < required {
-			newCap = required
-		}
-		newBuf := make([]byte, newCap)
-		copy(newBuf, e.buf[:e.offset])
-		e.buf = newBuf
 	}
 
 	copy(e.buf[e.offset:], bs)
@@ -50,19 +60,8 @@ var ErrMaxSizeExceeded = errors.New("maximum size exceeded")
 func (e *encoder) writeByte(bs ...byte) (n uint32, err error) {
 	l := len(bs)
 	required := int(e.offset) + l
-	if required > maxCap {
-		err = ErrMaxSizeExceeded
+	if err = e.ensureCap(required); err != nil {
 		return
-	}
-
-	if required > cap(e.buf) {
-		newCap := cap(e.buf) * 2
-		if newCap > maxCap || newCap < required {
-			newCap = required
-		}
-		newBuf := make([]byte, newCap)
-		copy(newBuf, e.buf[:e.offset])
-		e.buf = newBuf
 	}
 
 	copy(e.buf[e.offset:], bs)
@@ -74,19 +73,8 @@ func (e *encoder) writeByte(bs ...byte) (n uint32, err error) {
 func (e *encoder) writeString(s string) (n uint32, err error) {
 	l := len(s)
 	required := int(e.offset) + l
-	if required > maxCap {
-		err = ErrMaxSizeExceeded
+	if err = e.ensureCap(required); err != nil {
 		return
-	}
-
-	if required > cap(e.buf) {
-		newCap := cap(e.buf) * 2
-		if newCap > maxCap || newCap < required {
-			newCap = required
-		}
-		newBuf := make([]byte, newCap)
-		copy(newBuf, e.buf[:e.offset])
-		e.buf = newBuf
 	}
 
 	copy(e.buf[e.offset:], s)
@@ -99,19 +87,8 @@ func (e *encoder) writeBytesWithPrefix(bs []byte, prefix ...byte) (n uint32, err
 	lp := len(prefix)
 	l := lp + len(bs)
 	required := int(e.offset) + l
-	if required > maxCap {
-		err = ErrMaxSizeExceeded
+	if err = e.ensureCap(required); err != nil {
 		return
-	}
-
-	if required > cap(e.buf) {
-		newCap := cap(e.buf) * 2
-		if newCap > maxCap || newCap < required {
-			newCap = required
-		}
-		newBuf := make([]byte, newCap)
-		copy(newBuf, e.buf[:e.offset])
-		e.buf = newBuf
 	}
 
 	copy(e.buf[e.offset:], prefix)
@@ -125,19 +102,8 @@ func (e *encoder) writeStringWithPrefix(s string, prefix ...byte) (n uint32, err
 	lp := len(prefix)
 	l := lp + len(s)
 	required := int(e.offset) + l
-	if required > maxCap {
-		err = ErrMaxSizeExceeded
+	if err = e.ensureCap(required); err != nil {
 		return
-	}
-
-	if required > cap(e.buf) {
-		newCap := cap(e.buf) * 2
-		if newCap > maxCap || newCap < required {
-			newCap = required
-		}
-		newBuf := make([]byte, newCap)
-		copy(newBuf, e.buf[:e.offset])
-		e.buf = newBuf
 	}
 
 	copy(e.buf[e.offset:], prefix)

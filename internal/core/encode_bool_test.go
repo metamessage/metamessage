@@ -65,7 +65,7 @@ func TestEncodeBool(t *testing.T) {
 		{
 			name:       "nil input",
 			input:      nil,
-			wantErr:    true,
+			wantErr:    false,
 			wantDecode: nil,
 		},
 	}
@@ -85,10 +85,15 @@ func TestEncodeBool(t *testing.T) {
 					t.Fatalf("decode failed: %v", decodeErr)
 				}
 
-				// fmt.Println("decoded:", Dump(gotVal), jsonc.ToJSONC(gotVal))
-				if !reflect.DeepEqual(gotVal.(*ir.NodeScalar).Data, tc.wantDecode) {
-					t.Errorf("value mismatch: expected %v (%T), got %v (%T)",
-						tc.wantDecode, tc.wantDecode, gotVal, gotVal)
+				if tc.wantDecode == nil {
+					if _, ok := gotVal.(*ir.NodeNull); !ok {
+						t.Errorf("expected NodeNull, got %T", gotVal)
+					}
+				} else {
+					if !reflect.DeepEqual(gotVal.(*ir.NodeScalar).Data, tc.wantDecode) {
+						t.Errorf("value mismatch: expected %v (%T), got %v (%T)",
+							tc.wantDecode, tc.wantDecode, gotVal, gotVal)
+					}
 				}
 			}
 		})

@@ -88,6 +88,7 @@ func (d *decoder) Read(p []byte) (int, error) {
 }
 
 func (d *decoder) readAllWithDynamicBuf() (int, error) {
+	d.data = d.data[:0]
 	all := 0
 	for {
 		n, err := d.r.Read(d.buf)
@@ -554,6 +555,10 @@ func (d *decoder) decodeBytes(prefix byte, tag *ir.Tag, path string) (node ir.No
 		text = base64.StdEncoding.EncodeToString(bs)
 
 	case ir.ValueTypeUuid:
+		if len(bs) != 16 {
+			err = fmt.Errorf("invalid UUID length: expected 16 bytes, got %d", len(bs))
+			return
+		}
 		d := [16]byte(bs)
 		data = d
 		text = utils.BytesToUUIDString(d)
@@ -823,70 +828,64 @@ func (d *decoder) decodeNegativeInt(prefix byte, tag *ir.Tag, path string) (node
 		tag.Type = ir.ValueTypeI
 	}
 
-	if tag != nil {
-		switch tag.Type {
-		case ir.ValueTypeI:
-			data = -int(v)
-		case ir.ValueTypeI8:
-			data = -int8(v)
-		case ir.ValueTypeI16:
-			data = -int16(v)
-		case ir.ValueTypeI32:
-			data = -int32(v)
-		case ir.ValueTypeI64:
-			data = -int64(v)
-		case ir.ValueTypeDatetime:
-			if tag.IsNull {
-				data = nil
-				text = ""
+	switch tag.Type {
+	case ir.ValueTypeI:
+		data = -int(v)
+	case ir.ValueTypeI8:
+		data = -int8(v)
+	case ir.ValueTypeI16:
+		data = -int16(v)
+	case ir.ValueTypeI32:
+		data = -int32(v)
+	case ir.ValueTypeI64:
+		data = -int64(v)
+	case ir.ValueTypeDatetime:
+		if tag.IsNull {
+			data = nil
+			text = ""
+		} else {
+			// TODO
+			// if v < math.MinInt64 {
+			// 	err = errors.New("decodeDateTime: time value out of math.MinInt64")
+			// 	return
+			// }
+			d := time.Unix(-int64(v), 0)
+			if tag.Location != nil {
+				d = d.In(tag.Location)
 			} else {
-				// TODO
-				// if v < math.MinInt64 {
-				// 	err = errors.New("decodeDateTime: time value out of math.MinInt64")
-				// 	return
-				// }
-				d := time.Unix(-int64(v), 0)
-				if tag.Location != nil {
-					d = d.In(tag.Location)
-				} else {
-					d = d.UTC()
-				}
-				if tag.Nullable {
-					data = &d
-				} else {
-					data = d
-				}
-				text = d.Format(time.DateTime)
+				d = d.UTC()
 			}
-
-		case ir.ValueTypeDate:
-			if tag.IsNull {
-				data = nil
-				text = ""
+			if tag.Nullable {
+				data = &d
 			} else {
-				// TODO
-				// if v < math.MinInt {
-				// 	err = errors.New("decodeDate: time value out of math.MinInt")
-				// 	return
-				// }
-				d := utils.DefaultTime.AddDate(0, 0, -int(v)).Truncate(24 * time.Hour)
-				if tag.Location != nil {
-					d = d.In(tag.Location)
-				} else {
-					d = d.UTC()
-				}
-				if tag.Nullable {
-					data = &d
-				} else {
-					data = d
-				}
-				text = d.Format(time.DateOnly)
+				data = d
 			}
-
-		default:
-			err = fmt.Errorf("unsupported value types: %v", tag.Type)
-			return
+			text = d.Format(time.DateTime)
 		}
+
+	case ir.ValueTypeDate:
+		if tag.IsNull {
+			data = nil
+			text = ""
+		} else {
+			// TODO
+			// if v < math.MinInt {
+			// 	err = errors.New("decodeDate: time value out of math.MinInt")
+			// 	return
+			// }
+			d := utils.DefaultTime.AddDate(0, 0, -int(v)).Truncate(24 * time.Hour)
+			if tag.Location != nil {
+				d = d.In(tag.Location)
+			} else {
+				d = d.UTC()
+			}
+			data = d
+			text = d.Format(time.DateOnly)
+		}
+
+	default:
+		err = fmt.Errorf("unsupported value types: %v", tag.Type)
+		return
 	}
 
 	node = &ir.NodeScalar{
@@ -918,6 +917,7 @@ func mantissaToDecimal(mantissa uint64, exp int8) string {
 		result = numStr + strings.Repeat("0", trailingZeros)
 	}
 
+	// 暫時不清除尾0，是有實際意義的
 	// result = cleanTrailingZeros(result)
 
 	return result
@@ -1436,7 +1436,7 @@ func (d *decoder) decodeArr(prefix byte, tag *ir.Tag, path string) (node *ir.Nod
 	switch l1 {
 	case 0:
 	case 1:
-		if len(d.data) < 2 {
+		if int(d.offset)+1 > len(d.data) {
 			err = fmt.Errorf("%s: invalid arr", path)
 			return
 		}
@@ -1447,7 +1447,7 @@ func (d *decoder) decodeArr(prefix byte, tag *ir.Tag, path string) (node *ir.Nod
 		}
 		l2 = int(l)
 	case 2:
-		if len(d.data) < 3 {
+		if int(d.offset)+2 > len(d.data) {
 			err = fmt.Errorf("%s: invalid arr", path)
 			return
 		}
@@ -1500,7 +1500,7 @@ func (d *decoder) decodeObj(prefix byte, tag *ir.Tag, path string) (node *ir.Nod
 	switch l1 {
 	case 0:
 	case 1:
-		if len(d.data) < 2 {
+		if int(d.offset)+1 > len(d.data) {
 			err = fmt.Errorf("%s: invalid obj", path)
 			return
 		}
@@ -1511,7 +1511,7 @@ func (d *decoder) decodeObj(prefix byte, tag *ir.Tag, path string) (node *ir.Nod
 		}
 		l2 = int(l)
 	case 2:
-		if len(d.data) < 3 {
+		if int(d.offset)+2 > len(d.data) {
 			err = fmt.Errorf("%s: invalid obj", path)
 			return
 		}

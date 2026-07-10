@@ -8,6 +8,7 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/metamessage/metamessage/internal/utils"
@@ -113,6 +114,11 @@ type Tag struct {
 	Mime       int            // mime=...
 	More       int            // more
 
+	// compiled pattern cache
+	patternOnce  sync.Once
+	patternRe    *regexp.Regexp
+	patternError error
+
 	ChildDesc       string         // child_desc=...
 	ChildType       ValueType      // child_type=...
 	ChildNullable   bool           // child_nullable
@@ -193,6 +199,9 @@ func (t *Tag) Inherit(tag *Tag) {
 
 	if tag.ChildPattern != "" {
 		t.Pattern = tag.ChildPattern
+		t.patternOnce = sync.Once{}
+		t.patternRe = nil
+		t.patternError = nil
 	}
 
 	if utils.GetLocationOffsetHour(tag.ChildLocation) != 0 {
@@ -213,7 +222,10 @@ func (t *Tag) GetPattern() (*regexp.Regexp, error) {
 	if t.Pattern == "" {
 		return nil, nil
 	}
-	return regexp.Compile(t.Pattern)
+	t.patternOnce.Do(func() {
+		t.patternRe, t.patternError = regexp.Compile(t.Pattern)
+	})
+	return t.patternRe, t.patternError
 }
 
 func (t *Tag) Json() string {
@@ -846,6 +858,9 @@ func MergeTag(dst *Tag, src *Tag) *Tag {
 
 	if src.Pattern != "" {
 		dst.Pattern = src.Pattern
+		dst.patternOnce = sync.Once{}
+		dst.patternRe = nil
+		dst.patternError = nil
 	}
 
 	if utils.GetLocationOffsetHour(src.Location) != 0 {

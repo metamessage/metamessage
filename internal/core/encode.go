@@ -40,10 +40,13 @@ func NewEncoder(w io.Writer) *encoder {
 
 func (e *encoder) Reset(w io.Writer) {
 	if w == nil {
+		e.w = nil
+		e.offset = 0
 		return
 	}
 
 	e.w = w
+	e.offset = 0
 }
 
 func (e *encoder) encodeNodeObject(obj *ir.NodeObject) (n uint32, err error) {
@@ -500,7 +503,10 @@ func (e *encoder) encodeInt64(v int64) (n uint32, err error) {
 }
 
 func (e *encoder) encodeBigInt(s string) (n uint32, err error) {
-	e.writeByte(byte(len(s)))
+	_, err = e.writeByte(byte(len(s)))
+	if err != nil {
+		return
+	}
 	n = utils.EncodeBigInt(e, s)
 	return e.encodeBytes(e.buf[e.offset-n-1 : e.offset])
 }
