@@ -23,8 +23,7 @@ object Binder {
     fun <T> bind(node: Node, clazz: Class<T>, elementClass: Class<*>? = null): T {
         when (node) {
             is NodeNull -> {
-                @Suppress("UNCHECKED_CAST")
-                return null as T
+                @Suppress("UNCHECKED_CAST") return null as T
             }
             is NodeObject -> {
                 val tag = node.tag
@@ -44,11 +43,9 @@ object Binder {
                     @Suppress("UNCHECKED_CAST") return convertArr(node, elementClass ?: clazz) as T
                 } else {
                     if (elementClass != null) {
-                        @Suppress("UNCHECKED_CAST")
-                        return convertVec(node, elementClass) as T
+                        @Suppress("UNCHECKED_CAST") return convertVec(node, elementClass) as T
                     }
-                    @Suppress("UNCHECKED_CAST")
-                    return convertVecDynamic(node) as T
+                    @Suppress("UNCHECKED_CAST") return convertVecDynamic(node) as T
                 }
             }
             is NodeScalar -> {
@@ -186,8 +183,7 @@ object Binder {
         val text = value.text
 
         if (tag.isNull) {
-            @Suppress("UNCHECKED_CAST")
-            return null as T
+            @Suppress("UNCHECKED_CAST") return null as T
         }
 
         return when (tag.type) {
@@ -197,14 +193,16 @@ object Binder {
             ValueType.DATE -> {
                 when (data) {
                     is LocalDate -> data as T
-                    is LocalDateTime -> (if (clazz == LocalDate::class.java) data.toLocalDate() else data) as T
+                    is LocalDateTime ->
+                            (if (clazz == LocalDate::class.java) data.toLocalDate() else data) as T
                     else -> LocalDate.of(1970, 1, 1) as T
                 }
             }
             ValueType.TIME -> {
                 when (data) {
                     is LocalTime -> data as T
-                    is LocalDateTime -> (if (clazz == LocalTime::class.java) data.toLocalTime() else data) as T
+                    is LocalDateTime ->
+                            (if (clazz == LocalTime::class.java) data.toLocalTime() else data) as T
                     else -> LocalTime.of(0, 0, 0) as T
                 }
             }
@@ -218,49 +216,68 @@ object Binder {
                 (data as? String ?: text) as T
             }
             ValueType.IP -> {
-                (data as? java.net.InetAddress) as T
+                when (clazz) {
+                    String::class.java ->
+                            ((data as? java.net.InetAddress)?.hostAddress ?: text) as T
+                    else -> (data as? java.net.InetAddress) as T
+                }
             }
             ValueType.URL -> {
-                (data as? java.net.URI) as T
+                when (clazz) {
+                    String::class.java -> ((data as? java.net.URI)?.toString() ?: text) as T
+                    else -> (data as? java.net.URI) as T
+                }
             }
             ValueType.ENUMS -> {
                 text as T
             }
             ValueType.I -> {
-                ((data as? Number)?.toInt() ?: text.toInt()) as T
+                val num = (data as? Number) ?: text.toInt()
+                convertNumberToType(num, clazz) as T
             }
             ValueType.I8 -> {
-                ((data as? Number)?.toByte() ?: text.toByte()) as T
+                val num = (data as? Number) ?: text.toByte()
+                convertNumberToType(num, clazz) as T
             }
             ValueType.I16 -> {
-                ((data as? Number)?.toShort() ?: text.toShort()) as T
+                val num = (data as? Number) ?: text.toShort()
+                convertNumberToType(num, clazz) as T
             }
             ValueType.I32 -> {
-                ((data as? Number)?.toInt() ?: text.toInt()) as T
+                val num = (data as? Number) ?: text.toInt()
+                convertNumberToType(num, clazz) as T
             }
             ValueType.I64 -> {
-                ((data as? Number)?.toLong() ?: text.toLong()) as T
+                val num = (data as? Number) ?: text.toLong()
+                convertNumberToType(num, clazz) as T
             }
             ValueType.U -> {
-                ((data as? Number)?.toInt() ?: text.toInt()) as T
+                val num = (data as? Number) ?: text.toInt()
+                convertNumberToType(num, clazz) as T
             }
             ValueType.U8 -> {
-                ((data as? Number)?.toShort() ?: text.toShort()) as T
+                val num = (data as? Number) ?: text.toShort()
+                convertNumberToType(num, clazz) as T
             }
             ValueType.U16 -> {
-                ((data as? Number)?.toInt() ?: text.toInt()) as T
+                val num = (data as? Number) ?: text.toInt()
+                convertNumberToType(num, clazz) as T
             }
             ValueType.U32 -> {
-                ((data as? Number)?.toInt() ?: text.toInt()) as T
+                val num = (data as? Number) ?: text.toInt()
+                convertNumberToType(num, clazz) as T
             }
             ValueType.U64 -> {
-                ((data as? Number)?.toLong() ?: text.toLong()) as T
+                val num = (data as? Number) ?: text.toLong()
+                convertNumberToType(num, clazz) as T
             }
             ValueType.F32 -> {
-                ((data as? Number)?.toFloat() ?: text.toFloat()) as T
+                val num = (data as? Number) ?: text.toFloat()
+                convertNumberToType(num, clazz) as T
             }
             ValueType.F64 -> {
-                ((data as? Number)?.toDouble() ?: text.toDouble()) as T
+                val num = (data as? Number) ?: text.toDouble()
+                convertNumberToType(num, clazz) as T
             }
             ValueType.STR -> {
                 (data as? String ?: text) as T
@@ -277,6 +294,21 @@ object Binder {
 
     private fun convertScalarToAny(value: NodeScalar): Any? {
         return convertScalar(value, Any::class.java)
+    }
+
+    @Suppress("UNCHECKED_CAST")
+    private fun <T> convertNumberToType(num: Number, clazz: Class<T>): Any {
+        return when (clazz) {
+            Byte::class.java, java.lang.Byte.TYPE -> num.toByte()
+            Short::class.java, java.lang.Short.TYPE -> num.toShort()
+            Int::class.java, java.lang.Integer.TYPE -> num.toInt()
+            Long::class.java, java.lang.Long.TYPE -> num.toLong()
+            Float::class.java, java.lang.Float.TYPE -> num.toFloat()
+            Double::class.java, java.lang.Double.TYPE -> num.toDouble()
+            BigInteger::class.java -> BigInteger.valueOf(num.toLong())
+            else -> num
+        } as
+                Any
     }
 
     private fun materialize(f: java.lang.reflect.Field, node: Node): Any? {

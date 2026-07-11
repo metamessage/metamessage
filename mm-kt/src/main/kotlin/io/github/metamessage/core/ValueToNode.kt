@@ -22,6 +22,7 @@ import kotlin.reflect.KMutableProperty
 import kotlin.reflect.KVisibility
 import kotlin.reflect.full.declaredMemberProperties
 import kotlin.reflect.full.findAnnotation
+import kotlin.reflect.jvm.javaField
 
 private const val maxDepth = 32
 
@@ -115,6 +116,12 @@ private fun valueToNode(v: Any?, tag: Tag?, depth: Int, path: String): Node {
                     data = result.data
                     text = result.text ?: Null
                 }
+                ValueType.U8 -> {
+                    val result = workTag.validateU8(v.toShort(), workTag.example)
+                    if (!result.valid) throw IllegalArgumentException("$path: ${result.error}")
+                    data = result.data
+                    text = result.text ?: Null
+                }
                 else ->
                         throw IllegalArgumentException(
                                 "${workTag.type} unsupported type: ${v.javaClass.name}"
@@ -132,6 +139,12 @@ private fun valueToNode(v: Any?, tag: Tag?, depth: Int, path: String): Node {
                     data = result.data
                     text = result.text ?: Null
                 }
+                ValueType.U16 -> {
+                    val result = workTag.validateU16(v.toInt(), workTag.example)
+                    if (!result.valid) throw IllegalArgumentException("$path: ${result.error}")
+                    data = result.data
+                    text = result.text ?: Null
+                }
                 else ->
                         throw IllegalArgumentException(
                                 "${workTag.type} unsupported type: ${v.javaClass.name}"
@@ -145,6 +158,12 @@ private fun valueToNode(v: Any?, tag: Tag?, depth: Int, path: String): Node {
             when (workTag.type) {
                 ValueType.I, ValueType.I32 -> {
                     val result = workTag.validateI32(v, workTag.example)
+                    if (!result.valid) throw IllegalArgumentException("$path: ${result.error}")
+                    data = result.data
+                    text = result.text ?: Null
+                }
+                ValueType.U32 -> {
+                    val result = workTag.validateU32(v.toLong(), workTag.example)
                     if (!result.valid) throw IllegalArgumentException("$path: ${result.error}")
                     data = result.data
                     text = result.text ?: Null
@@ -519,7 +538,8 @@ private fun convertObj(obj: Any, objTag: Tag, depth: Int, path: String): Node {
 
         val fieldKey = CamelToSnake.convert(prop.name)
 
-        val mmAnnotation = prop.findAnnotation<MM>()
+        val mmAnnotation =
+                prop.findAnnotation<MM>() ?: prop.javaField?.getAnnotation(MM::class.java)
         var fieldTag: Tag? = null
         if (mmAnnotation != null) {
             fieldTag = Tag.fromAnnotation(mmAnnotation)
@@ -814,30 +834,32 @@ private fun resolveDefaultValue(tag: Tag): Pair<Any?, String>? {
         return null
     }
     val text = tag.default_val
-    val data: Any? = when (tag.type) {
-        ValueType.BOOL -> text == "true" || text == "1"
-        ValueType.I -> text.toIntOrNull()
-        ValueType.I8 -> text.toByteOrNull()
-        ValueType.I16 -> text.toShortOrNull()
-        ValueType.I32 -> text.toIntOrNull()
-        ValueType.I64 -> text.toLongOrNull()
-        ValueType.U -> text.toUIntOrNull()?.toInt()
-        ValueType.U8 -> text.toUByteOrNull()?.toByte()
-        ValueType.U16 -> text.toUShortOrNull()?.toShort()
-        ValueType.U32 -> text.toUIntOrNull()?.toInt()
-        ValueType.U64 -> text.toULongOrNull()?.toLong()
-        ValueType.F32 -> text.toFloatOrNull()
-        ValueType.F64 -> text.toDoubleOrNull()
-        ValueType.STR, ValueType.DECIMAL, ValueType.EMAIL, ValueType.URL, ValueType.IP -> text
-        ValueType.ENUMS -> -1
-        ValueType.UUID -> UUID(0, 0)
-        ValueType.BIGINT -> BigInteger(text)
-        ValueType.BYTES, ValueType.MEDIA -> ByteArray(0)
-        ValueType.DATETIME -> LocalDateTime.parse(text)
-        ValueType.DATE -> LocalDate.parse(text)
-        ValueType.TIME -> LocalTime.parse(text)
-        else -> text
-    }
+    val data: Any? =
+            when (tag.type) {
+                ValueType.BOOL -> text == "true" || text == "1"
+                ValueType.I -> text.toIntOrNull()
+                ValueType.I8 -> text.toByteOrNull()
+                ValueType.I16 -> text.toShortOrNull()
+                ValueType.I32 -> text.toIntOrNull()
+                ValueType.I64 -> text.toLongOrNull()
+                ValueType.U -> text.toUIntOrNull()?.toInt()
+                ValueType.U8 -> text.toUByteOrNull()?.toByte()
+                ValueType.U16 -> text.toUShortOrNull()?.toShort()
+                ValueType.U32 -> text.toUIntOrNull()?.toInt()
+                ValueType.U64 -> text.toULongOrNull()?.toLong()
+                ValueType.F32 -> text.toFloatOrNull()
+                ValueType.F64 -> text.toDoubleOrNull()
+                ValueType.STR, ValueType.DECIMAL, ValueType.EMAIL, ValueType.URL, ValueType.IP ->
+                        text
+                ValueType.ENUMS -> -1
+                ValueType.UUID -> UUID(0, 0)
+                ValueType.BIGINT -> BigInteger(text)
+                ValueType.BYTES, ValueType.MEDIA -> ByteArray(0)
+                ValueType.DATETIME -> LocalDateTime.parse(text)
+                ValueType.DATE -> LocalDate.parse(text)
+                ValueType.TIME -> LocalTime.parse(text)
+                else -> text
+            }
     return Pair(data, text)
 }
 
