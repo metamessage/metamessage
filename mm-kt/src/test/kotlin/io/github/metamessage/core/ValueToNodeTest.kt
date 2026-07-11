@@ -35,7 +35,16 @@ class ValueToNodeTest {
     fun nullToNode() {
         val node = valueToNode(null, Tag.empty().apply { type = ValueType.I }, "")
         assertTrue(node is NodeScalar)
-        assertNull((node as NodeScalar).data)
+        val scalar = node as NodeScalar
+        assertTrue(scalar.tag!!.isNull)
+        assertTrue(scalar.tag!!.nullable)
+        assertEquals(0, (scalar.data as Number).toInt())
+    }
+
+    @Test
+    fun untypedNullToNode() {
+        val node = valueToNode(null, Tag.empty(), "")
+        assertTrue(node is NodeNull)
     }
 
     @Test

@@ -535,6 +535,89 @@ void testEncodingConstants() {
        core::isArrayContainer(0b11000000) == false);
 }
 
+void testNullRejection() {
+  std::cout << "\n=== Null Rejection Tests ===\n";
+
+  // Test: bare null should throw
+  {
+    std::string input = "null";
+    auto scanner = jsonc::Scanner(input);
+    auto tokens = scanner.scanAll();
+    auto parser = jsonc::Parser(tokens);
+    bool threw = false;
+    try {
+      auto node = parser.parse();
+      (void)node;
+    } catch (const std::runtime_error &e) {
+      threw = true;
+      TEST("Bare null throws", std::string(e.what()).find("null is not supported") != std::string::npos);
+    }
+    if (!threw) {
+      TEST("Bare null throws", false);
+    }
+  }
+
+  // Test: null in object should throw
+  {
+    std::string input = R"({"name": null})";
+    auto scanner = jsonc::Scanner(input);
+    auto tokens = scanner.scanAll();
+    auto parser = jsonc::Parser(tokens);
+    bool threw = false;
+    try {
+      auto node = parser.parse();
+      (void)node;
+    } catch (const std::runtime_error &e) {
+      threw = true;
+      TEST("Null in object throws", std::string(e.what()).find("null is not supported") != std::string::npos);
+    }
+    if (!threw) {
+      TEST("Null in object throws", false);
+    }
+  }
+
+  // Test: null with typed tag should throw with type info
+  {
+    std::string input = R"({
+      // mm: type=str
+      "name": null
+    })";
+    auto scanner = jsonc::Scanner(input);
+    auto tokens = scanner.scanAll();
+    auto parser = jsonc::Parser(tokens);
+    bool threw = false;
+    try {
+      auto node = parser.parse();
+      (void)node;
+    } catch (const std::runtime_error &e) {
+      threw = true;
+      TEST("Null with typed tag throws", std::string(e.what()).find("null is not supported for type") != std::string::npos);
+    }
+    if (!threw) {
+      TEST("Null with typed tag throws", false);
+    }
+  }
+
+  // Test: null in array should throw
+  {
+    std::string input = R"([1, null, 3])";
+    auto scanner = jsonc::Scanner(input);
+    auto tokens = scanner.scanAll();
+    auto parser = jsonc::Parser(tokens);
+    bool threw = false;
+    try {
+      auto node = parser.parse();
+      (void)node;
+    } catch (const std::runtime_error &e) {
+      threw = true;
+      TEST("Null in array throws", std::string(e.what()).find("null is not supported") != std::string::npos);
+    }
+    if (!threw) {
+      TEST("Null in array throws", false);
+    }
+  }
+}
+
 int main() {
   std::cout << "MM-C++ Comprehensive Tests\n";
   std::cout << "==========================\n";
@@ -551,6 +634,7 @@ int main() {
   testFullRoundTrip();
   testValueTypeEncodeDecode();
   testNestedObject();
+  testNullRejection();
 
   std::cout << "\n==========================\n";
   std::cout << "Tests passed: " << testsPassed << std::endl;

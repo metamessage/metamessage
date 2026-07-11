@@ -653,6 +653,55 @@ extension Encoder {
             encodeNullForTagType(tag.type)
         } else {
             switch tag.type {
+            case .str:
+                if let strVal = node.data as? String {
+                    encode(strVal)
+                } else {
+                    encode(node.text)
+                }
+            case .email:
+                if let strVal = node.data as? String {
+                    encode(strVal)
+                } else {
+                    encode(node.text)
+                }
+            case .url:
+                if let strVal = node.data as? String {
+                    encode(strVal)
+                } else {
+                    encode(node.text)
+                }
+            case .f32:
+                encodeFloatFromText(node.text)
+            case .f64:
+                encodeFloatFromText(node.text)
+            case .decimal:
+                encodeFloatFromText(node.text)
+            case .ip:
+                if let strVal = node.data as? String {
+                    switch tag.version {
+                    case 0:
+                        encode(strVal)
+                    case 4:
+                        encode(Data(strVal.split(separator: ".").compactMap { UInt8($0) }))
+                    case 6:
+                        if strVal.count < 16 {
+                            encode(strVal)
+                        } else {
+                            if let dataVal = node.data as? Data {
+                                encode(dataVal)
+                            } else {
+                                encode(strVal)
+                            }
+                        }
+                    default:
+                        encode(strVal)
+                    }
+                } else if let dataVal = node.data as? Data {
+                    encode(dataVal)
+                } else {
+                    encodeRawValue(node)
+                }
             case .datetime:
                 if let date = node.data as? Date {
                     var adjustedDate = date
@@ -724,16 +773,6 @@ extension Encoder {
                 } else {
                     encodeRawValue(node)
                 }
-            case .decimal:
-                if let strVal = node.data as? String {
-                    if let doubleVal = Double(strVal) {
-                        encodeFloat64(doubleVal)
-                    } else {
-                        encodeRawValue(node)
-                    }
-                } else {
-                    encodeRawValue(node)
-                }
 
             default:
                 encodeRawValue(node)
@@ -756,13 +795,13 @@ extension Encoder {
 
     private func encodeNullForTagType(_ type: ValueType) {
         switch type {
-        case .i, .i8, .i16, .i32, .i64, .u, .u8, .u16, .u32, .u64, .enums:
+        case .i:
             buffer.write(MMSimpleValue.nullInt.rawValue)
-        case .f64, .f32, .decimal:
+        case .f64:
             buffer.write(MMSimpleValue.nullFloat.rawValue)
         case .str:
             buffer.write(MMSimpleValue.nullString.rawValue)
-        case .bytes, .media:
+        case .bytes:
             buffer.write(MMSimpleValue.nullBytes.rawValue)
         case .bool:
             buffer.write(MMSimpleValue.nullBool.rawValue)
@@ -771,6 +810,18 @@ extension Encoder {
         default:
             break
         }
+    }
+
+    private func encodeFloatFromText(_ text: String) {
+        var s = text.lowercased()
+        if s.contains("e") {
+            s = scientificToDecimal(s)
+        }
+        if !s.contains(".") {
+            s += ".0"
+        }
+        let (isNegative, exponent, mantissa) = parseFloatDecimalString(s)
+        writeFloatComponents(isNegative: isNegative, exponent: exponent, mantissa: mantissa)
     }
 
     private func encodeDateTime(_ date: Date) {
@@ -1038,8 +1089,6 @@ extension Encoder {
         switch type {
         case .str, .bytes, .i, .f64, .bool, .obj, .vec:
             return false
-        case .arr:
-            return size == 0
         case .enums:
             return enums.isEmpty
         case .media:
@@ -1053,8 +1102,6 @@ extension Encoder {
         switch childType {
         case .str, .i, .f64, .bool, .obj, .vec:
             return false
-        case .arr:
-            return childSize == 0
         case .enums:
             return childEnums.isEmpty
         case .media:
@@ -1067,12 +1114,12 @@ extension Encoder {
     private func encodeTagToBytes(_ tag: Tag) -> [UInt8] {
         var bytes: [UInt8] = []
 
-        if tag.isNull {
-            bytes.append(TagKey.isNull | 1)
-        }
-
         if tag.example {
             bytes.append(TagKey.example | 1)
+        }
+
+        if tag.isNull {
+            bytes.append(TagKey.isNull | 1)
         }
 
         if tag.nullable && !tag.isInherit && !tag.isNull {
@@ -1245,16 +1292,40 @@ extension Encoder {
             bytes.append(UInt8((value >> 16) & 0xFF))
             bytes.append(UInt8((value >> 8) & 0xFF))
             bytes.append(UInt8(value & 0xFF))
+        case 4294967296...1099511627775:
+            bytes.append(key | 4)
+            bytes.append(UInt8((value >> 32) & 0xFF))
+            bytes.append(UInt8((value >> 24) & 0xFF))
+            bytes.append(UInt8((value >> 16) & 0xFF))
+            bytes.append(UInt8((value >> 8) & 0xFF))
+            bytes.append(UInt8(value & 0xFF))
+        case 1099511627776...281474976710655:
+            bytes.append(key | 5)
+            bytes.append(UInt8((value >> 40) & 0xFF))
+            bytes.append(UInt8((value >> 32) & 0xFF))
+            bytes.append(UInt8((value >> 24) & 0xFF))
+            bytes.append(UInt8((value >> 16) & 0xFF))
+            bytes.append(UInt8((value >> 8) & 0xFF))
+            bytes.append(UInt8(value & 0xFF))
+        case 281474976710656...72057594037927935:
+            bytes.append(key | 6)
+            bytes.append(UInt8((value >> 48) & 0xFF))
+            bytes.append(UInt8((value >> 40) & 0xFF))
+            bytes.append(UInt8((value >> 32) & 0xFF))
+            bytes.append(UInt8((value >> 24) & 0xFF))
+            bytes.append(UInt8((value >> 16) & 0xFF))
+            bytes.append(UInt8((value >> 8) & 0xFF))
+            bytes.append(UInt8(value & 0xFF))
         default:
-            let n: UInt8 = 4
-            bytes.append(key | n)
-            var v = value
-            var valBytes: [UInt8] = []
-            for _ in 0..<Int(n) + 1 {
-                valBytes.insert(UInt8(v & 0xFF), at: 0)
-                v >>= 8
-            }
-            bytes.append(contentsOf: valBytes)
+            bytes.append(key | 7)
+            bytes.append(UInt8((value >> 56) & 0xFF))
+            bytes.append(UInt8((value >> 48) & 0xFF))
+            bytes.append(UInt8((value >> 40) & 0xFF))
+            bytes.append(UInt8((value >> 32) & 0xFF))
+            bytes.append(UInt8((value >> 24) & 0xFF))
+            bytes.append(UInt8((value >> 16) & 0xFF))
+            bytes.append(UInt8((value >> 8) & 0xFF))
+            bytes.append(UInt8(value & 0xFF))
         }
         return bytes
     }

@@ -233,6 +233,10 @@ static node_t *parse_object(parse_ctx_t *ctx) {
     consume_comments(ctx);
 
     node_t *val = parse_value(ctx);
+    if (ctx->error) {
+      free(key);
+      break;
+    }
     if (val) {
       if (ctx->has_pending_tag) {
         mm_tag_t tag = mm_tag_parse(ctx->pending_tag);
@@ -306,6 +310,9 @@ static node_t *parse_array(parse_ctx_t *ctx) {
     }
 
     node_t *item = parse_value(ctx);
+    if (ctx->error) {
+      break;
+    }
     if (item) {
       node_array_add_item(arr, item);
     } else {
@@ -365,16 +372,15 @@ static node_t *parse_value(parse_ctx_t *ctx) {
     char *raw = parse_raw_string(ctx);
     if (raw) {
       if (strcmp(raw, "null") == 0) {
-        node_free(node);
-        node = node_new_null();
         free(raw);
         if (ctx->has_pending_tag) {
           mm_tag_t tag = mm_tag_parse(ctx->pending_tag);
-          mm_tag_merge(&node->tag, &tag);
           mm_tag_cleanup(&tag);
           ctx->has_pending_tag = 0;
         }
-        return node;
+        ctx->error = 1;
+        node_free(node);
+        return NULL;
       }
       node->data.value.text = raw;
       if (strcmp(raw, "true") == 0 || strcmp(raw, "false") == 0) {

@@ -39,8 +39,7 @@ public static class ReflectMmEncoder
                 return new NodeScalar(null, "null", tag.Copy());
             }
 
-            // Try to infer from property context (will be handled by AnyToNode)
-            throw new Exception("invalid input: v is null with unknown type");
+            return new NodeNull(tag);
         }
 
         object? data = null;

@@ -1,4 +1,4 @@
-import { Node, NodeScalar, NodeObject, NodeArray } from '../ir/ast';
+import { Node, NodeScalar, NodeObject, NodeArray, NodeNull } from '../ir/ast';
 import { Tag } from '../ir/tag';
 import { typeToString, ValueType } from '../ir/value-type';
 import { META_KEY } from './mm';
@@ -45,9 +45,7 @@ function valueToNode(v: any, tag: Tag, depth: number, path: string): Node {
 
   if (v === null || v === undefined) {
     if (tag.type === ValueType.Unknown) {
-      throw new Error(
-        `invalid input: v is untyped nil (no concrete type/value)`,
-      );
+      return new NodeNull(tag);
     }
     tag.isNull = true;
     return createValueNode(data, text, tag, path);

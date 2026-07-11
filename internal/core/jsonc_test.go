@@ -108,7 +108,7 @@ func TestStrToJsonc(t *testing.T) {
 		{
 			name:    "nil input",
 			input:   "null",
-			wantErr: false,
+			wantErr: true,
 		},
 		{
 			name: "vec with empty values",

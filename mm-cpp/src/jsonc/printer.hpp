@@ -184,6 +184,9 @@ inline void printArray(std::ostringstream &os,
       printValue(os, std::static_pointer_cast<ir::NodeScalar>(arr->items[i]),
                  indent + 1);
       break;
+    case ir::NodeType::NodeNull:
+      os << "null";
+      break;
     default:
       os << "null";
       break;
@@ -239,6 +242,9 @@ inline void printObject(std::ostringstream &os,
       printValue(os, std::static_pointer_cast<ir::NodeScalar>(field.value),
                  indent + 1);
       break;
+    case ir::NodeType::NodeNull:
+      os << "null";
+      break;
     default:
       os << "null";
       break;
@@ -263,6 +269,9 @@ inline std::string toJSONC(std::shared_ptr<ir::Node> node) {
     break;
   case ir::NodeType::Value:
     printValue(os, std::static_pointer_cast<ir::NodeScalar>(node), 0);
+    break;
+  case ir::NodeType::NodeNull:
+    os << "null";
     break;
   default:
     os << "null";

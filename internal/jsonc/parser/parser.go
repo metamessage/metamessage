@@ -776,13 +776,10 @@ func (p *Parser) parse(path string, example bool, tag *ir.Tag) (val ir.Node, err
 			}, nil
 
 		case token.Null:
-			if tag.Type != ir.ValueTypeUnknown {
-				return nil, fmt.Errorf("null is not supported for type %v", tag.Type)
+			if tag.Type == ir.ValueTypeUnknown {
+				return nil, fmt.Errorf("null is not supported")
 			}
-
-			return &ir.NodeNull{
-				Tag: tag,
-			}, nil
+			return nil, fmt.Errorf("null is not supported for type %v", tag.Type)
 
 		default:
 			return nil, fmt.Errorf("unexpected token %s", tok.Type)

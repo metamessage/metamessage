@@ -235,6 +235,9 @@ static void print_node(strbuf_t *sb, node_t *node, int depth) {
   case MM_NODE_DOC:
     print_doc(sb, &node->data.doc, depth);
     break;
+  case MM_NODE_NULL:
+    sb_puts(sb, "null");
+    break;
   default:
     sb_puts(sb, "null");
     break;

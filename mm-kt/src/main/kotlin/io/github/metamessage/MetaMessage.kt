@@ -30,6 +30,13 @@ object MetaMessage {
     }
 
     @JvmStatic
+    fun <E> decodeToValueList(wire: ByteArray, elementClass: Class<E>): List<E> {
+        val node = Decoder().decode(wire)
+        @Suppress("UNCHECKED_CAST")
+        return Binder.bind(node, List::class.java, elementClass) as List<E>
+    }
+
+    @JvmStatic
     fun decodeToJsonc(wire: ByteArray): String {
         val node = Decoder().decode(wire)
         return toJsonc(node)
@@ -39,6 +46,13 @@ object MetaMessage {
     fun <T> jsoncToValue(jsonc: String, clazz: Class<T>): T {
         val node = parseFromJsonc(jsonc)
         return Binder.bind(node, clazz)
+    }
+
+    @JvmStatic
+    fun <E> jsoncToValueList(jsonc: String, elementClass: Class<E>): List<E> {
+        val node = parseFromJsonc(jsonc)
+        @Suppress("UNCHECKED_CAST")
+        return Binder.bind(node, List::class.java, elementClass) as List<E>
     }
 
     @JvmStatic

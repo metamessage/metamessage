@@ -21,6 +21,41 @@ public static class ReflectMmBinder
         {
             // 处理标量类型
         }
+        else if (tree is NodeNull)
+        {
+            // NodeNull - nothing to bind
+        }
+    }
+
+    public static object? BindDynamic(INode tree)
+    {
+        if (tree is NodeNull)
+            return null;
+
+        if (tree is NodeScalar scalar)
+            return scalar.Data;
+
+        if (tree is NodeArray array)
+        {
+            var list = new List<object?>();
+            foreach (var child in array.Children)
+            {
+                list.Add(BindDynamic(child));
+            }
+            return list;
+        }
+
+        if (tree is NodeObject map)
+        {
+            var dict = new Dictionary<string, object?>();
+            foreach (var entry in map.Entries)
+            {
+                dict[entry.Key.Text] = BindDynamic(entry.Value);
+            }
+            return dict;
+        }
+
+        return null;
     }
 
     private static void BindMap(NodeObject map, object target)
@@ -75,6 +110,17 @@ public static class ReflectMmBinder
 
     private static object? ConvertValue(INode tree, Type targetType)
     {
+        // Handle object type dynamically (like Go's interface{})
+        if (targetType == typeof(object))
+        {
+            return BindDynamic(tree);
+        }
+
+        if (tree is NodeNull)
+        {
+            return null;
+        }
+
         if (tree is NodeScalar scalar)
         {
             return ConvertScalar(scalar, targetType);

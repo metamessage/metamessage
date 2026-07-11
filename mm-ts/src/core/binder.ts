@@ -1,4 +1,4 @@
-import { NodeScalar, NodeObject, NodeArray } from '../ir/ast';
+import { NodeScalar, NodeObject, NodeArray, NodeNull } from '../ir/ast';
 import { Tag } from '../ir/tag';
 import { Node } from '../ir/ast';
 import { ValueType } from '../ir/value-type';
@@ -9,16 +9,58 @@ export class Binder {
   bind<T>(node: Node, type: Constructor<T> | T): T {
     const result =
       typeof type === 'function' ? new (type as Constructor<T>)() : type;
-    const { error } = this.bindNode(node, result);
+    const { value, error } = this.bindNode(node, result);
     if (error) {
       throw new Error(error);
     }
-    return result;
+    return value;
   }
 
   bindNode(node: Node, target: any): { value: any; error: string | null } {
+    // Handle NodeNull - return null value
+    if (node instanceof NodeNull) {
+      return { value: null, error: null };
+    }
+
     if (node instanceof NodeScalar) {
       return { value: node.getValue(), error: null };
+    }
+
+    // When target is null/undefined, create dynamic containers
+    // This mirrors Go's interface{} handling in Bind
+    if (target === null || target === undefined) {
+      if (node instanceof NodeObject) {
+        const properties = node.getProperties();
+        const result: Record<string, any> = {};
+        for (const [key, valueNode] of Object.entries(properties)) {
+          const { value, error } = this.bindNode(valueNode, undefined);
+          if (error) {
+            return {
+              value: result,
+              error: `failed to bind field ${key}: ${error}`,
+            };
+          }
+          result[key] = value;
+        }
+        return { value: result, error: null };
+      }
+
+      if (node instanceof NodeArray) {
+        const elements = node.getElements();
+        const result: any[] = [];
+        for (let i = 0; i < elements.length; i++) {
+          const el = elements[i]!;
+          const { value, error } = this.bindNode(el, undefined);
+          if (error) {
+            return {
+              value: result,
+              error: `failed to bind array item ${i}: ${error}`,
+            };
+          }
+          result.push(value);
+        }
+        return { value: result, error: null };
+      }
     }
 
     if (node instanceof NodeObject) {
@@ -64,6 +106,22 @@ export class Binder {
     for (const [key, valueNode] of Object.entries(properties)) {
       const camelKey = key.replace(/_([a-z])/g, (_, c) => c.toUpperCase());
       if (!(camelKey in target)) {
+        // For plain objects (not class instances), create fields dynamically
+        // This mirrors Go's interface{} handling in Bind
+        if (
+          target.constructor === Object ||
+          target.constructor === undefined
+        ) {
+          const { value, error } = this.bindNode(valueNode, undefined);
+          if (error) {
+            return {
+              value: target,
+              error: `failed to bind field ${camelKey}: ${error}`,
+            };
+          }
+          target[camelKey] = value;
+          continue;
+        }
         return { value: target, error: `struct has no field '${camelKey}'` };
       }
 
@@ -138,10 +196,11 @@ export class Binder {
 
   private convertVec(
     arr: NodeArray,
-    target: any[],
+    target: any,
   ): { value: any; error: string | null } {
     if (!Array.isArray(target)) {
-      return { value: target, error: `convertVec requires array` };
+      // Create a new array for dynamic binding
+      target = [];
     }
 
     const elements = arr.getElements();

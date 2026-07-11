@@ -2,18 +2,30 @@ package io.github.metamessage.core
 
 import io.github.metamessage.ir.Node
 import io.github.metamessage.ir.NodeArray
+import io.github.metamessage.ir.NodeNull
 import io.github.metamessage.ir.NodeObject
 import io.github.metamessage.ir.NodeScalar
 import io.github.metamessage.ir.Tag
 import io.github.metamessage.ir.ValueType
 import java.math.BigInteger
+import java.time.LocalDate
 import java.time.LocalDateTime
+import java.time.LocalTime
 import java.util.UUID
 
 object Binder {
     @Suppress("UNCHECKED_CAST")
     fun <T> bind(node: Node, clazz: Class<T>): T {
+        return bind(node, clazz, null)
+    }
+
+    @Suppress("UNCHECKED_CAST")
+    fun <T> bind(node: Node, clazz: Class<T>, elementClass: Class<*>? = null): T {
         when (node) {
+            is NodeNull -> {
+                @Suppress("UNCHECKED_CAST")
+                return null as T
+            }
             is NodeObject -> {
                 val tag = node.tag
                 if (tag != null && tag.type == ValueType.OBJ) {
@@ -29,9 +41,14 @@ object Binder {
             is NodeArray -> {
                 val tag = node.tag
                 if (tag != null && tag.size > 0 && tag.type == ValueType.ARR) {
-                    @Suppress("UNCHECKED_CAST") return convertArr(node, clazz) as T
+                    @Suppress("UNCHECKED_CAST") return convertArr(node, elementClass ?: clazz) as T
                 } else {
-                    return convertVec(node, clazz)
+                    if (elementClass != null) {
+                        @Suppress("UNCHECKED_CAST")
+                        return convertVec(node, elementClass) as T
+                    }
+                    @Suppress("UNCHECKED_CAST")
+                    return convertVecDynamic(node) as T
                 }
             }
             is NodeScalar -> {
@@ -54,12 +71,8 @@ object Binder {
 
         for (field in obj.fields) {
             val fieldKey = field.key
-            val runes = fieldKey.toCharArray()
-            if (runes.isNotEmpty()) {
-                runes[0] = runes[0].uppercaseChar()
-            }
-            val name = String(runes)
-            val structField = nameToField[name] ?: continue
+            val camelName = SnakeToCamel.convert(fieldKey)
+            val structField = nameToField[camelName] ?: continue
             structField.isAccessible = true
             try {
                 val fieldVal = materialize(structField, field.value)
@@ -75,6 +88,7 @@ object Binder {
             val key = field.key
             val value =
                     when (val v = field.value) {
+                        is NodeNull -> null
                         is NodeScalar -> convertScalarToAny(v)
                         is NodeObject -> {
                             val map = mutableMapOf<String, Any?>()
@@ -82,7 +96,7 @@ object Binder {
                             map
                         }
                         is NodeArray -> {
-                            convertVec(v, List::class.java).toList()
+                            convertVecDynamic(v)
                         }
                         else -> null
                     }
@@ -90,13 +104,13 @@ object Binder {
         }
     }
 
-    private fun convertArr(arr: NodeArray, clazz: Class<*>): Any {
+    private fun convertArr(arr: NodeArray, elementClass: Class<*>): Any {
         val list = mutableListOf<Any?>()
         for (item in arr.items) {
             when (item) {
                 is NodeScalar -> list.add(convertScalarToAny(item))
                 is NodeObject -> {
-                    val inst = clazz.getDeclaredConstructor().newInstance()
+                    val inst = elementClass.getDeclaredConstructor().newInstance()
                     convertObj(item, inst as Any)
                     list.add(inst)
                 }
@@ -107,20 +121,62 @@ object Binder {
     }
 
     @Suppress("UNCHECKED_CAST")
-    private fun <T> convertVec(arr: NodeArray, clazz: Class<T>): T {
+    private fun convertVec(arr: NodeArray, field: java.lang.reflect.Field): Any {
+        val elementClass = extractElementType(field)
+        return convertVec(arr, elementClass)
+    }
+
+    @Suppress("UNCHECKED_CAST")
+    private fun convertVec(arr: NodeArray, elementClass: Class<*>): Any {
         val list = mutableListOf<Any?>()
         for (item in arr.items) {
             when (item) {
                 is NodeScalar -> list.add(convertScalarToAny(item))
                 is NodeObject -> {
-                    val inst = clazz.getDeclaredConstructor().newInstance()
+                    val inst = elementClass.getDeclaredConstructor().newInstance()
                     convertObj(item, inst as Any)
                     list.add(inst)
                 }
                 else -> list.add(null)
             }
         }
-        return list as T
+        return list
+    }
+
+    private fun extractElementType(field: java.lang.reflect.Field): Class<*> {
+        val genericType = field.genericType
+        if (genericType is java.lang.reflect.ParameterizedType) {
+            val typeArgs = genericType.actualTypeArguments
+            if (typeArgs.isNotEmpty()) {
+                val arg = typeArgs[typeArgs.size - 1]
+                if (arg is Class<*>) {
+                    return arg
+                }
+                if (arg is java.lang.reflect.ParameterizedType) {
+                    val rawType = arg.rawType
+                    if (rawType is Class<*>) {
+                        return rawType
+                    }
+                }
+            }
+        }
+        return Any::class.java
+    }
+
+    private fun convertVecDynamic(arr: NodeArray): List<Any?> {
+        val list = mutableListOf<Any?>()
+        for (item in arr.items) {
+            when (item) {
+                is NodeScalar -> list.add(convertScalarToAny(item))
+                is NodeObject -> {
+                    val map = mutableMapOf<String, Any?>()
+                    convertMap(item, map)
+                    list.add(map)
+                }
+                else -> list.add(null)
+            }
+        }
+        return list
     }
 
     @Suppress("UNCHECKED_CAST", "UNUSED_PARAMETER")
@@ -129,9 +185,28 @@ object Binder {
         val data = value.data
         val text = value.text
 
+        if (tag.isNull) {
+            @Suppress("UNCHECKED_CAST")
+            return null as T
+        }
+
         return when (tag.type) {
-            ValueType.DATETIME, ValueType.DATE, ValueType.TIME -> {
+            ValueType.DATETIME -> {
                 (data as? LocalDateTime ?: LocalDateTime.of(1970, 1, 1, 0, 0, 0)) as T
+            }
+            ValueType.DATE -> {
+                when (data) {
+                    is LocalDate -> data as T
+                    is LocalDateTime -> (if (clazz == LocalDate::class.java) data.toLocalDate() else data) as T
+                    else -> LocalDate.of(1970, 1, 1) as T
+                }
+            }
+            ValueType.TIME -> {
+                when (data) {
+                    is LocalTime -> data as T
+                    is LocalDateTime -> (if (clazz == LocalTime::class.java) data.toLocalTime() else data) as T
+                    else -> LocalTime.of(0, 0, 0) as T
+                }
             }
             ValueType.BIGINT -> {
                 (data as? BigInteger ?: BigInteger.ZERO) as T
@@ -206,15 +281,22 @@ object Binder {
 
     private fun materialize(f: java.lang.reflect.Field, node: Node): Any? {
         return when (node) {
+            is NodeNull -> null
             is NodeScalar -> convertScalar(node, f.type)
             is NodeObject -> {
-                val inst = f.type.getDeclaredConstructor().newInstance()
-                convertObj(node, inst)
-                inst
+                val tag = node.tag
+                if (tag != null && tag.type == ValueType.MAP) {
+                    val map = mutableMapOf<String, Any?>()
+                    convertMap(node, map)
+                    map
+                } else {
+                    val inst = f.type.getDeclaredConstructor().newInstance()
+                    convertObj(node, inst)
+                    inst
+                }
             }
             is NodeArray -> {
-                val list = convertVec(node, f.type)
-                list
+                convertVec(node, f)
             }
             else -> null
         }

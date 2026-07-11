@@ -689,6 +689,8 @@ public static class MetaMessage
     {
         switch (tree)
         {
+            case NodeNull:
+                return null;
             case NodeScalar scalar:
                 return scalar.Data;
             case NodeArray array:

@@ -31,7 +31,7 @@ type encodeDecodeTestCase struct {
 
 func TestEncodeDecode(t *testing.T) {
 	type Datetime struct {
-		Datetime  []*time.Time `mm:"child_type=datetime; child_location=8; child_allow_empty"`
+		Datetime  []*time.Time `mm:"child_type=datetime; child_location=8; child_allow_empty; allow_empty"`
 		Datetime2 time.Time
 		// Datetime3       string    `mm:"type=datetime"`
 		// Datetime4       time.Time `mm:"type=str"`
@@ -151,8 +151,8 @@ func TestJsonc(t *testing.T) {
 }
 
 func TestValue(t *testing.T) {
-	var v *any = nil
-	jsonc, e := ValueToJsonc(*v, "")
+	var v any = nil
+	jsonc, e := ValueToJsonc(v, "")
 	fmt.Println("1111", e, jsonc)
 }
 

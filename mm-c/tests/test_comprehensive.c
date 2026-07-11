@@ -739,6 +739,50 @@ static void test_byte_compatibility(void) {
   }
 }
 
+static void test_null_rejection(void) {
+  printf("\n=== Null Rejection Tests ===\n");
+
+  printf("  bare null: ");
+  {
+    node_t *node = mm_from_jsonc("null");
+    TEST("bare null returns NULL", node == NULL);
+    if (node)
+      node_free(node);
+  }
+
+  printf("  null in object: ");
+  {
+    node_t *node = mm_from_jsonc("{\"name\": null}");
+    TEST("null in object returns NULL", node == NULL);
+    if (node)
+      node_free(node);
+  }
+
+  printf("  null with typed tag: ");
+  {
+    node_t *node = mm_from_jsonc("{\n  // mm: type=str\n  \"name\": null\n}");
+    TEST("null with typed tag returns NULL", node == NULL);
+    if (node)
+      node_free(node);
+  }
+
+  printf("  null in array: ");
+  {
+    node_t *node = mm_from_jsonc("[1, null, 3]");
+    TEST("null in array returns NULL", node == NULL);
+    if (node)
+      node_free(node);
+  }
+
+  printf("  valid jsonc still works: ");
+  {
+    node_t *node = mm_from_jsonc("{\"name\": \"alice\", \"age\": 30}");
+    TEST("valid jsonc parses OK", node != NULL);
+    if (node)
+      node_free(node);
+  }
+}
+
 int main(void) {
   printf("=== MMC Comprehensive Tests ===\n");
 
@@ -751,6 +795,7 @@ int main(void) {
   test_array_roundtrip();
   test_tag_attributes_roundtrip();
   test_negative_int_roundtrip();
+  test_null_rejection();
 
   printf("\n=== Summary ===\n");
   printf("Tests passed: %d\n", tests_passed);
