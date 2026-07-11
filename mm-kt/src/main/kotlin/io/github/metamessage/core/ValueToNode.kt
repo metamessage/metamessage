@@ -67,13 +67,13 @@ private fun valueToNode(v: Any?, tag: Tag?, depth: Int, path: String): Node {
             }
             when (workTag.type) {
                 ValueType.BYTES -> {
-                    val result = workTag.validateBytes(v)
+                    val result = workTag.validateBytes(v, workTag.example)
                     if (!result.valid) throw IllegalArgumentException("$path: ${result.error}")
                     data = result.data
                     text = result.text ?: Null
                 }
                 ValueType.MEDIA -> {
-                    val result = workTag.validateMedia(v)
+                    val result = workTag.validateMedia(v, workTag.example)
                     if (!result.valid) throw IllegalArgumentException("$path: ${result.error}")
                     data = result.data
                     text = result.text ?: Null
@@ -93,7 +93,7 @@ private fun valueToNode(v: Any?, tag: Tag?, depth: Int, path: String): Node {
             }
             when (workTag.type) {
                 ValueType.BOOL -> {
-                    val result = workTag.validateBool(v)
+                    val result = workTag.validateBool(v, workTag.example)
                     if (!result.valid) throw IllegalArgumentException("$path: ${result.error}")
                     data = result.data
                     text = result.text ?: Null
@@ -110,7 +110,7 @@ private fun valueToNode(v: Any?, tag: Tag?, depth: Int, path: String): Node {
             }
             when (workTag.type) {
                 ValueType.I8 -> {
-                    val result = workTag.validateI8(v)
+                    val result = workTag.validateI8(v, workTag.example)
                     if (!result.valid) throw IllegalArgumentException("$path: ${result.error}")
                     data = result.data
                     text = result.text ?: Null
@@ -127,7 +127,7 @@ private fun valueToNode(v: Any?, tag: Tag?, depth: Int, path: String): Node {
             }
             when (workTag.type) {
                 ValueType.I16 -> {
-                    val result = workTag.validateI16(v)
+                    val result = workTag.validateI16(v, workTag.example)
                     if (!result.valid) throw IllegalArgumentException("$path: ${result.error}")
                     data = result.data
                     text = result.text ?: Null
@@ -144,7 +144,7 @@ private fun valueToNode(v: Any?, tag: Tag?, depth: Int, path: String): Node {
             }
             when (workTag.type) {
                 ValueType.I, ValueType.I32 -> {
-                    val result = workTag.validateI32(v)
+                    val result = workTag.validateI32(v, workTag.example)
                     if (!result.valid) throw IllegalArgumentException("$path: ${result.error}")
                     data = result.data
                     text = result.text ?: Null
@@ -161,13 +161,13 @@ private fun valueToNode(v: Any?, tag: Tag?, depth: Int, path: String): Node {
             }
             when (workTag.type) {
                 ValueType.I64 -> {
-                    val result = workTag.validateI64(v)
+                    val result = workTag.validateI64(v, workTag.example)
                     if (!result.valid) throw IllegalArgumentException("$path: ${result.error}")
                     data = result.data
                     text = result.text ?: Null
                 }
                 ValueType.U64 -> {
-                    val result = workTag.validateU64(BigInteger.valueOf(v))
+                    val result = workTag.validateU64(BigInteger.valueOf(v), workTag.example)
                     if (!result.valid) throw IllegalArgumentException("$path: ${result.error}")
                     data = result.data
                     text = result.text ?: Null
@@ -193,7 +193,7 @@ private fun valueToNode(v: Any?, tag: Tag?, depth: Int, path: String): Node {
                                 }
                         throw IllegalArgumentException("${workTag.type} unsupported value: $desc")
                     }
-                    val result = workTag.validateF32(v)
+                    val result = workTag.validateF32(v, workTag.example)
                     if (!result.valid) throw IllegalArgumentException("$path: ${result.error}")
                     data = result.data
                     text = result.text ?: Null
@@ -219,13 +219,13 @@ private fun valueToNode(v: Any?, tag: Tag?, depth: Int, path: String): Node {
                                 }
                         throw IllegalArgumentException("${workTag.type} unsupported value: $desc")
                     }
-                    val result = workTag.validateF64(v)
+                    val result = workTag.validateF64(v, workTag.example)
                     if (!result.valid) throw IllegalArgumentException("$path: ${result.error}")
                     data = result.data
                     text = result.text ?: Null
                 }
                 ValueType.DECIMAL -> {
-                    val result = workTag.validateDecimal(v.toString())
+                    val result = workTag.validateDecimal(v.toString(), workTag.example)
                     if (!result.valid) throw IllegalArgumentException("$path: ${result.error}")
                     data = result.data
                     text = result.text ?: Null
@@ -242,43 +242,43 @@ private fun valueToNode(v: Any?, tag: Tag?, depth: Int, path: String): Node {
             }
             when (workTag.type) {
                 ValueType.STR -> {
-                    val result = workTag.validateStr(v)
+                    val result = workTag.validateStr(v, workTag.example)
                     if (!result.valid) throw IllegalArgumentException("$path: ${result.error}")
                     data = result.data
                     text = result.text ?: Null
                 }
                 ValueType.DECIMAL -> {
-                    val result = workTag.validateDecimal(v)
+                    val result = workTag.validateDecimal(v, workTag.example)
                     if (!result.valid) throw IllegalArgumentException("$path: ${result.error}")
                     data = result.data
                     text = result.text ?: Null
                 }
                 ValueType.EMAIL -> {
-                    val result = workTag.validateEmail(v)
+                    val result = workTag.validateEmail(v, workTag.example)
                     if (!result.valid) throw IllegalArgumentException("$path: ${result.error}")
                     data = result.data
                     text = result.text ?: Null
                 }
                 ValueType.ENUMS -> {
-                    val result = workTag.validateEnum(v)
+                    val result = workTag.validateEnum(v, workTag.example)
                     if (!result.valid) throw IllegalArgumentException("$path: ${result.error}")
                     data = result.data
                     text = result.text ?: Null
                 }
                 ValueType.UUID -> {
-                    val result = workTag.validateUUID(v)
+                    val result = workTag.validateUUID(v, workTag.example)
                     if (!result.valid) throw IllegalArgumentException("$path: ${result.error}")
                     data = result.data
                     text = result.text ?: Null
                 }
                 ValueType.URL -> {
-                    val result = workTag.validateURL(v)
+                    val result = workTag.validateURL(v, workTag.example)
                     if (!result.valid) throw IllegalArgumentException("$path: ${result.error}")
                     data = result.data
                     text = result.text ?: Null
                 }
                 ValueType.IP -> {
-                    val result = workTag.validateIP(v)
+                    val result = workTag.validateIP(v, workTag.example)
                     if (!result.valid) throw IllegalArgumentException("$path: ${result.error}")
                     data = result.data
                     text = result.text ?: Null
@@ -295,7 +295,7 @@ private fun valueToNode(v: Any?, tag: Tag?, depth: Int, path: String): Node {
             }
             when (workTag.type) {
                 ValueType.BIGINT -> {
-                    val result = workTag.validateBigint(v)
+                    val result = workTag.validateBigint(v, workTag.example)
                     if (!result.valid) throw IllegalArgumentException("$path: ${result.error}")
                     data = result.data
                     text = result.text ?: Null
@@ -312,7 +312,7 @@ private fun valueToNode(v: Any?, tag: Tag?, depth: Int, path: String): Node {
             }
             when (workTag.type) {
                 ValueType.UUID -> {
-                    val result = workTag.validateUUID(v.toString())
+                    val result = workTag.validateUUID(v.toString(), workTag.example)
                     if (!result.valid) throw IllegalArgumentException("$path: ${result.error}")
                     data = result.data
                     text = result.text ?: Null
@@ -329,7 +329,7 @@ private fun valueToNode(v: Any?, tag: Tag?, depth: Int, path: String): Node {
             }
             when (workTag.type) {
                 ValueType.IP -> {
-                    val result = workTag.validateIP(v.hostAddress ?: "")
+                    val result = workTag.validateIP(v.hostAddress ?: "", workTag.example)
                     if (!result.valid) throw IllegalArgumentException("$path: ${result.error}")
                     data = result.data
                     text = result.text ?: Null
@@ -346,7 +346,7 @@ private fun valueToNode(v: Any?, tag: Tag?, depth: Int, path: String): Node {
             }
             when (workTag.type) {
                 ValueType.URL -> {
-                    val result = workTag.validateURL(v.toString())
+                    val result = workTag.validateURL(v.toString(), workTag.example)
                     if (!result.valid) throw IllegalArgumentException("$path: ${result.error}")
                     data = result.data
                     text = result.text ?: Null
@@ -363,19 +363,19 @@ private fun valueToNode(v: Any?, tag: Tag?, depth: Int, path: String): Node {
             }
             when (workTag.type) {
                 ValueType.DATETIME -> {
-                    val result = workTag.validateDatetime(v)
+                    val result = workTag.validateDatetime(v, workTag.example)
                     if (!result.valid) throw IllegalArgumentException("$path: ${result.error}")
                     data = result.data
                     text = result.text ?: Null
                 }
                 ValueType.DATE -> {
-                    val result = workTag.validateDate(v.toLocalDate())
+                    val result = workTag.validateDate(v.toLocalDate(), workTag.example)
                     if (!result.valid) throw IllegalArgumentException("$path: ${result.error}")
                     data = result.data
                     text = result.text ?: Null
                 }
                 ValueType.TIME -> {
-                    val result = workTag.validateTime(v.toLocalTime())
+                    val result = workTag.validateTime(v.toLocalTime(), workTag.example)
                     if (!result.valid) throw IllegalArgumentException("$path: ${result.error}")
                     data = result.data
                     text = result.text ?: Null
@@ -392,7 +392,7 @@ private fun valueToNode(v: Any?, tag: Tag?, depth: Int, path: String): Node {
             }
             when (workTag.type) {
                 ValueType.DATE -> {
-                    val result = workTag.validateDate(v)
+                    val result = workTag.validateDate(v, workTag.example)
                     if (!result.valid) throw IllegalArgumentException("$path: ${result.error}")
                     data = result.data
                     text = result.text ?: Null
@@ -409,7 +409,7 @@ private fun valueToNode(v: Any?, tag: Tag?, depth: Int, path: String): Node {
             }
             when (workTag.type) {
                 ValueType.TIME -> {
-                    val result = workTag.validateTime(v)
+                    val result = workTag.validateTime(v, workTag.example)
                     if (!result.valid) throw IllegalArgumentException("$path: ${result.error}")
                     data = result.data
                     text = result.text ?: Null
@@ -427,19 +427,19 @@ private fun valueToNode(v: Any?, tag: Tag?, depth: Int, path: String): Node {
             val localDateTime = LocalDateTime.ofInstant(v, ZoneOffset.UTC)
             when (workTag.type) {
                 ValueType.DATETIME -> {
-                    val result = workTag.validateDatetime(localDateTime)
+                    val result = workTag.validateDatetime(localDateTime, workTag.example)
                     if (!result.valid) throw IllegalArgumentException("$path: ${result.error}")
                     data = result.data
                     text = result.text ?: Null
                 }
                 ValueType.DATE -> {
-                    val result = workTag.validateDate(localDateTime.toLocalDate())
+                    val result = workTag.validateDate(localDateTime.toLocalDate(), workTag.example)
                     if (!result.valid) throw IllegalArgumentException("$path: ${result.error}")
                     data = result.data
                     text = result.text ?: Null
                 }
                 ValueType.TIME -> {
-                    val result = workTag.validateTime(localDateTime.toLocalTime())
+                    val result = workTag.validateTime(localDateTime.toLocalTime(), workTag.example)
                     if (!result.valid) throw IllegalArgumentException("$path: ${result.error}")
                     data = result.data
                     text = result.text ?: Null
