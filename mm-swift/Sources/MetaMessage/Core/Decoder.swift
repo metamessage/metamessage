@@ -421,17 +421,61 @@ public class NodeDecoder {
 
     private func tagNullNode(_ tag: Tag, path: String) -> Node {
         switch tag.type {
-        case .i, .i8, .i16, .i32, .i64:
-            return NodeScalar(data: 0, text: "0", tag: tag, path: path)
-        case .u, .u8, .u16, .u32, .u64:
+        case .datetime:
+            let date = Date(timeIntervalSince1970: 0)
+            let formatter = DateFormatter()
+            formatter.dateFormat = "yyyy-MM-dd HH:mm:ss"
+            formatter.timeZone = TimeZone(abbreviation: "UTC")
+            let text = formatter.string(from: date)
+            return NodeScalar(data: date, text: text, tag: tag, path: path)
+        case .date:
+            let date = Date(timeIntervalSince1970: 0)
+            let formatter = DateFormatter()
+            formatter.dateFormat = "yyyy-MM-dd"
+            formatter.timeZone = TimeZone(abbreviation: "UTC")
+            let text = formatter.string(from: date)
+            return NodeScalar(data: date, text: text, tag: tag, path: path)
+        case .time:
+            let text = "00:00:00"
+            return NodeScalar(data: text, text: text, tag: tag, path: path)
+        case .i8:
+            return NodeScalar(data: Int8(0), text: "0", tag: tag, path: path)
+        case .i16:
+            return NodeScalar(data: Int16(0), text: "0", tag: tag, path: path)
+        case .i32:
+            return NodeScalar(data: Int32(0), text: "0", tag: tag, path: path)
+        case .i64:
+            return NodeScalar(data: Int64(0), text: "0", tag: tag, path: path)
+        case .u:
             return NodeScalar(data: UInt(0), text: "0", tag: tag, path: path)
-        case .f32, .f64:
-            return NodeScalar(data: 0.0, text: "0.0", tag: tag, path: path)
-        case .bool:
-            return NodeScalar(data: false, text: "false", tag: tag, path: path)
-        case .str, .email, .url, .datetime, .date, .time, .enums, .media:
+        case .u8:
+            return NodeScalar(data: UInt8(0), text: "0", tag: tag, path: path)
+        case .u16:
+            return NodeScalar(data: UInt16(0), text: "0", tag: tag, path: path)
+        case .u32:
+            return NodeScalar(data: UInt32(0), text: "0", tag: tag, path: path)
+        case .u64:
+            return NodeScalar(data: UInt64(0), text: "0", tag: tag, path: path)
+        case .f32:
+            return NodeScalar(data: Float(0.0), text: "0.0", tag: tag, path: path)
+        case .email, .uuid, .decimal:
             return NodeScalar(data: "", text: "", tag: tag, path: path)
-        case .bytes, .uuid, .ip:
+        case .bigint:
+            return NodeScalar(data: "0", text: "0", tag: tag, path: path)
+        case .url:
+            return NodeScalar(data: "", text: "", tag: tag, path: path)
+        case .ip:
+            let text: String
+            switch tag.version {
+            case 0: text = ""
+            case 4: text = "0.0.0.0"
+            case 6: text = "::"
+            default: text = ""
+            }
+            return NodeScalar(data: Data(), text: text, tag: tag, path: path)
+        case .enums:
+            return NodeScalar(data: -1, text: "", tag: tag, path: path)
+        case .media:
             return NodeScalar(data: Data(), text: "", tag: tag, path: path)
         default:
             return NodeScalar(data: nil, text: "null", tag: tag, path: path)
@@ -451,43 +495,66 @@ public class NodeDecoder {
             throw MMError.invalidData
         }
 
-        // Handle null before modifying tag type — null must keep .unknown type
-        if simpleValue == .null {
+        switch simpleValue {
+        case .null:
             if resolvedTag.type != .unknown {
                 throw MMError.invalidData
             }
             return NodeNull(tag: resolvedTag, path: path)
-        }
 
-        if resolvedTag.type == .unknown {
-            resolvedTag.type = .bool
-        }
-
-        switch simpleValue {
-        case .null:
-            // Unreachable — handled above
-            throw MMError.invalidData
         case .trueValue:
+            resolvedTag.type = .bool
             return NodeScalar(data: true, text: "true", tag: resolvedTag, path: path)
+
         case .falseValue:
+            resolvedTag.type = .bool
             return NodeScalar(data: false, text: "false", tag: resolvedTag, path: path)
+
         case .nullBool:
-            return NodeScalar(data: false, text: "false", tag: resolvedTag, path: path)
-        case .nullInt:
-            return NodeScalar(data: 0, text: "0", tag: resolvedTag, path: path)
-        case .nullFloat:
-            return NodeScalar(data: 0.0, text: "0.0", tag: resolvedTag, path: path)
-        case .nullString:
-            return NodeScalar(data: "", text: "", tag: resolvedTag, path: path)
-        case .nullBytes:
-            return NodeScalar(data: Data(), text: "", tag: resolvedTag, path: path)
-        default:
-            // Handle null-like values via the tag
-            if let tag = tag, tag.isNull {
-                return NodeScalar(data: nil, text: "null", tag: resolvedTag, path: path)
+            if resolvedTag.type == .unknown {
+                resolvedTag.type = .bool
+            } else if resolvedTag.type != .bool {
+                throw MMError.invalidData
             }
-            // Fall through to simple string codes
-            // Simple string codes (code, message, data, success, error, etc.)
+            return NodeScalar(data: false, text: "false", tag: resolvedTag, path: path)
+
+        case .nullInt:
+            if resolvedTag.type == .unknown {
+                resolvedTag.type = .i
+            } else if resolvedTag.type != .i {
+                throw MMError.invalidData
+            }
+            return NodeScalar(data: 0, text: "0", tag: resolvedTag, path: path)
+
+        case .nullFloat:
+            if resolvedTag.type == .unknown {
+                resolvedTag.type = .f64
+            } else if resolvedTag.type != .f64 && resolvedTag.type != .f32 {
+                throw MMError.invalidData
+            }
+            if resolvedTag.type == .f32 {
+                return NodeScalar(data: Float(0.0), text: "0.0", tag: resolvedTag, path: path)
+            }
+            return NodeScalar(data: 0.0, text: "0.0", tag: resolvedTag, path: path)
+
+        case .nullString:
+            if resolvedTag.type == .unknown {
+                resolvedTag.type = .str
+            } else if resolvedTag.type != .str {
+                throw MMError.invalidData
+            }
+            return NodeScalar(data: "", text: "", tag: resolvedTag, path: path)
+
+        case .nullBytes:
+            if resolvedTag.type == .unknown {
+                resolvedTag.type = .bytes
+            } else if resolvedTag.type != .bytes {
+                throw MMError.invalidData
+            }
+            return NodeScalar(data: Data(), text: "", tag: resolvedTag, path: path)
+
+        default:
+            // Named simple string values (code, message, data, etc.)
             let text: String
             switch simpleValue {
             case .code: text = "code"
@@ -517,7 +584,7 @@ public class NodeDecoder {
             default: text = "null"
             }
             resolvedTag.type = .str
-            return NodeScalar(data: text, text: text, tag: resolvedTag, path: path)
+            return NodeScalar(data: nil, text: text, tag: resolvedTag, path: path)
         }
     }
 
@@ -756,7 +823,8 @@ public class NodeDecoder {
         case .f64:
             return NodeScalar(data: v, text: formatDouble(v), tag: resolvedTag, path: path)
         case .decimal:
-            return NodeScalar(data: v, text: formatDouble(v), tag: resolvedTag, path: path)
+            let text = formatDouble(v)
+            return NodeScalar(data: text, text: text, tag: resolvedTag, path: path)
         default:
             return NodeScalar(data: v, text: formatDouble(v), tag: resolvedTag, path: path)
         }
@@ -1152,6 +1220,7 @@ public class Decoder {
         }
 
         switch simpleValue {
+        case .null: return .null
         case .trueValue: return .bool(true)
         case .falseValue: return .bool(false)
         case .nullBool: return .bool(false)
@@ -1159,7 +1228,37 @@ public class Decoder {
         case .nullFloat: return .float(0.0)
         case .nullString: return .string("")
         case .nullBytes: return .data(Data())
-        default: return .null
+        default:
+            // Named simple string values
+            let text: String
+            switch simpleValue {
+            case .code: text = "code"
+            case .message: text = "message"
+            case .data: text = "data"
+            case .success: text = "success"
+            case .error: text = "error"
+            case .unknown: text = "unknown"
+            case .page: text = "page"
+            case .limit: text = "limit"
+            case .offset: text = "offset"
+            case .total: text = "total"
+            case .id: text = "id"
+            case .name: text = "name"
+            case .description: text = "description"
+            case .typeValue: text = "type"
+            case .version: text = "version"
+            case .status: text = "status"
+            case .url: text = "url"
+            case .createTime: text = "create_time"
+            case .updateTime: text = "update_time"
+            case .deleteTime: text = "delete_time"
+            case .account: text = "account"
+            case .token: text = "token"
+            case .expireTime: text = "expire_time"
+            case .key: text = "key"
+            default: return .null
+            }
+            return .string(text)
         }
     }
 
@@ -1778,24 +1877,34 @@ public class Decoder {
         return value
     }
 
-    private func tagNullValue(_ type: ValueType) -> DecodedValue {
-        switch type {
-        case .i, .i8, .i16, .i32, .i64:
-            return .int(0)
-        case .u, .u8, .u16, .u32, .u64:
-            return .uint(0)
-        case .f32, .f64:
-            return .float(0.0)
-        case .bool:
-            return .bool(false)
-        case .str, .email, .url, .datetime, .date, .time, .enums, .media:
-            return .string("")
-        case .bytes, .uuid, .ip:
-            return .data(Data())
-        default:
-            return .null
-        }
-    }
+ private func tagNullValue(_ type: ValueType) -> DecodedValue {
+     switch type {
+     case .datetime, .date, .time:
+         return .string("")
+     case .i, .i8, .i16, .i32, .i64:
+         return .int(0)
+     case .u, .u8, .u16, .u32, .u64:
+         return .uint(0)
+     case .f32, .f64:
+         return .float(0.0)
+     case .bool:
+         return .bool(false)
+     case .str, .email, .url:
+         return .string("")
+     case .bytes, .uuid, .ip:
+         return .data(Data())
+     case .decimal:
+         return .string("")
+     case .bigint:
+         return .bigint("0")
+     case .enums:
+         return .int(-1)
+     case .media:
+         return .data(Data())
+     default:
+         return .null
+     }
+ }
 }
 
 // MARK: - Tag field U64 decoder

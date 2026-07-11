@@ -46,6 +46,8 @@ public static class Jsonc
     {
         switch (node)
         {
+            case NodeNull:
+                return null;
             case NodeScalar scalar:
                 return scalar.Data;
             case NodeArray array:

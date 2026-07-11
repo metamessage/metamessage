@@ -1001,6 +1001,13 @@ class Tag(
     }
 
     fun validateStr(value: String): ValidationResult {
+        return validateStr(value, example)
+    }
+
+    internal fun validateStr(value: String, example: Boolean): ValidationResult {
+        if (example) {
+            return ValidationResult(true, data = value, text = value)
+        }
         if (value.isEmpty()) {
             if (allowEmpty) {
                 return ValidationResult(true, data = value, text = value)
@@ -1066,6 +1073,13 @@ class Tag(
     }
 
     fun validateBytes(value: ByteArray): ValidationResult {
+        return validateBytes(value, example)
+    }
+
+    internal fun validateBytes(value: ByteArray, example: Boolean): ValidationResult {
+        if (example) {
+            return ValidationResult(true, data = value, text = Base64.getEncoder().encodeToString(value))
+        }
         val length = value.size
 
         if (length == 0) {
@@ -1119,6 +1133,13 @@ class Tag(
     }
 
     fun validateBool(value: Boolean): ValidationResult {
+        return validateBool(value, example)
+    }
+
+    internal fun validateBool(value: Boolean, example: Boolean): ValidationResult {
+        if (example) {
+            return ValidationResult(true, data = value, text = value.toString())
+        }
         if (desc.length > 65535) {
             return ValidationResult(false, "desc length exceeds 65535 bytes")
         }
@@ -1171,6 +1192,13 @@ class Tag(
     }
 
     fun validateI(value: Int): ValidationResult {
+        return validateI(value, example)
+    }
+
+    internal fun validateI(value: Int, example: Boolean): ValidationResult {
+        if (example) {
+            return ValidationResult(true, data = value, text = value.toString())
+        }
         if (value == 0) {
             if (allowEmpty) {
                 return ValidationResult(true, data = value, text = "0")
@@ -1212,6 +1240,13 @@ class Tag(
     }
 
     fun validateI8(value: Byte): ValidationResult {
+        return validateI8(value, example)
+    }
+
+    internal fun validateI8(value: Byte, example: Boolean): ValidationResult {
+        if (example) {
+            return ValidationResult(true, data = value, text = value.toString())
+        }
         if (value == 0.toByte()) {
             if (allowEmpty) {
                 return ValidationResult(true, data = value, text = "0")
@@ -1265,6 +1300,13 @@ class Tag(
     }
 
     fun validateI16(value: Short): ValidationResult {
+        return validateI16(value, example)
+    }
+
+    internal fun validateI16(value: Short, example: Boolean): ValidationResult {
+        if (example) {
+            return ValidationResult(true, data = value, text = value.toString())
+        }
         if (value == 0.toShort()) {
             if (allowEmpty) {
                 return ValidationResult(true, data = value, text = "0")
@@ -1306,6 +1348,13 @@ class Tag(
     }
 
     fun validateI32(value: Int): ValidationResult {
+        return validateI32(value, example)
+    }
+
+    internal fun validateI32(value: Int, example: Boolean): ValidationResult {
+        if (example) {
+            return ValidationResult(true, data = value, text = value.toString())
+        }
         if (value == 0) {
             if (allowEmpty) {
                 return ValidationResult(true, data = value, text = "0")
@@ -1347,6 +1396,13 @@ class Tag(
     }
 
     fun validateI64(value: Long): ValidationResult {
+        return validateI64(value, example)
+    }
+
+    internal fun validateI64(value: Long, example: Boolean): ValidationResult {
+        if (example) {
+            return ValidationResult(true, data = value, text = value.toString())
+        }
         if (value == 0L) {
             if (allowEmpty) {
                 return ValidationResult(true, data = value, text = "0")
@@ -1386,6 +1442,13 @@ class Tag(
     }
 
     fun validateU(value: Long): ValidationResult {
+        return validateU(value, example)
+    }
+
+    internal fun validateU(value: Long, example: Boolean): ValidationResult {
+        if (example) {
+            return ValidationResult(true, data = value, text = value.toString())
+        }
         if (value == 0L) {
             if (allowEmpty) {
                 return ValidationResult(true, data = value, text = "0")
@@ -1433,6 +1496,13 @@ class Tag(
     }
 
     fun validateU8(value: Short): ValidationResult {
+        return validateU8(value, example)
+    }
+
+    internal fun validateU8(value: Short, example: Boolean): ValidationResult {
+        if (example) {
+            return ValidationResult(true, data = value, text = value.toString())
+        }
         if (value == 0.toShort()) {
             if (allowEmpty) {
                 return ValidationResult(true, data = value, text = "0")
@@ -1480,6 +1550,13 @@ class Tag(
     }
 
     fun validateU16(value: Int): ValidationResult {
+        return validateU16(value, example)
+    }
+
+    internal fun validateU16(value: Int, example: Boolean): ValidationResult {
+        if (example) {
+            return ValidationResult(true, data = value, text = value.toString())
+        }
         if (value == 0) {
             if (allowEmpty) {
                 return ValidationResult(true, data = value, text = "0")
@@ -1527,6 +1604,13 @@ class Tag(
     }
 
     fun validateU32(value: Long): ValidationResult {
+        return validateU32(value, example)
+    }
+
+    internal fun validateU32(value: Long, example: Boolean): ValidationResult {
+        if (example) {
+            return ValidationResult(true, data = value, text = value.toString())
+        }
         if (value == 0L) {
             if (allowEmpty) {
                 return ValidationResult(true, data = value, text = "0")
@@ -1574,6 +1658,13 @@ class Tag(
     }
 
     fun validateU64(value: BigInteger): ValidationResult {
+        return validateU64(value, example)
+    }
+
+    internal fun validateU64(value: BigInteger, example: Boolean): ValidationResult {
+        if (example) {
+            return ValidationResult(true, data = value, text = value.toString())
+        }
         val zero = BigInteger.ZERO
 
         if (value == zero) {
@@ -1619,6 +1710,13 @@ class Tag(
     }
 
     fun validateF32(value: Float): ValidationResult {
+        return validateF32(value, example)
+    }
+
+    internal fun validateF32(value: Float, example: Boolean): ValidationResult {
+        if (example) {
+            return ValidationResult(true, data = value, text = value.toString())
+        }
         if (value == 0.0f) {
             if (allowEmpty) {
                 return ValidationResult(true, data = value, text = "0.0")
@@ -1660,6 +1758,13 @@ class Tag(
     }
 
     fun validateF64(value: Double): ValidationResult {
+        return validateF64(value, example)
+    }
+
+    internal fun validateF64(value: Double, example: Boolean): ValidationResult {
+        if (example) {
+            return ValidationResult(true, data = value, text = value.toString())
+        }
         if (value == 0.0) {
             if (allowEmpty) {
                 return ValidationResult(true, data = value, text = "0.0")
@@ -1699,6 +1804,13 @@ class Tag(
     }
 
     fun validateBigint(value: BigInteger): ValidationResult {
+        return validateBigint(value, example)
+    }
+
+    internal fun validateBigint(value: BigInteger, example: Boolean): ValidationResult {
+        if (example) {
+            return ValidationResult(true, data = value, text = value.toString())
+        }
         val zero = BigInteger.ZERO
 
         if (value == zero) {
@@ -1744,6 +1856,13 @@ class Tag(
     }
 
     fun validateDatetime(value: LocalDateTime): ValidationResult {
+        return validateDatetime(value, example)
+    }
+
+    internal fun validateDatetime(value: LocalDateTime, example: Boolean): ValidationResult {
+        if (example) {
+            return ValidationResult(true, data = value, text = value.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")))
+        }
         val epoch = LocalDateTime.of(1970, 1, 1, 0, 0, 0)
 
         val format = value.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))
@@ -1765,6 +1884,13 @@ class Tag(
     }
 
     fun validateDate(value: LocalDate): ValidationResult {
+        return validateDate(value, example)
+    }
+
+    internal fun validateDate(value: LocalDate, example: Boolean): ValidationResult {
+        if (example) {
+            return ValidationResult(true, data = value, text = value.toString())
+        }
         val epoch = LocalDate.of(1970, 1, 1)
 
         val format = value.toString()
@@ -1786,6 +1912,13 @@ class Tag(
     }
 
     fun validateTime(value: LocalTime): ValidationResult {
+        return validateTime(value, example)
+    }
+
+    internal fun validateTime(value: LocalTime, example: Boolean): ValidationResult {
+        if (example) {
+            return ValidationResult(true, data = value, text = value.format(DateTimeFormatter.ofPattern("HH:mm:ss")))
+        }
         val zero = LocalTime.of(0, 0, 0)
 
         val format = value.format(DateTimeFormatter.ofPattern("HH:mm:ss"))
@@ -1807,6 +1940,22 @@ class Tag(
     }
 
     fun validateUUID(value: String): ValidationResult {
+        return validateUUID(value, example)
+    }
+
+    internal fun validateUUID(value: String, example: Boolean): ValidationResult {
+        if (example) {
+            val uuidBytes = ByteArray(16)
+            val cleanValue = value.replace("-", "")
+            for (i in 0 until 16) {
+                val start = i * 2
+                val end = start + 2
+                if (end <= cleanValue.length) {
+                    uuidBytes[i] = cleanValue.substring(start, end).toInt(16).toByte()
+                }
+            }
+            return ValidationResult(true, data = uuidBytes, text = value)
+        }
         if (value.isEmpty()) {
             if (allowEmpty) {
                 return ValidationResult(true, data = ByteArray(16), text = value)
@@ -1848,6 +1997,13 @@ class Tag(
     }
 
     fun validateDecimal(value: String): ValidationResult {
+        return validateDecimal(value, example)
+    }
+
+    internal fun validateDecimal(value: String, example: Boolean): ValidationResult {
+        if (example) {
+            return ValidationResult(true, data = value, text = value)
+        }
         if (value.isEmpty()) {
             if (allowEmpty) {
                 return ValidationResult(true, data = value, text = value)
@@ -1871,6 +2027,22 @@ class Tag(
     }
 
     fun validateIP(value: String): ValidationResult {
+        return validateIP(value, example)
+    }
+
+    internal fun validateIP(value: String, example: Boolean): ValidationResult {
+        if (example) {
+            return if (value.isEmpty()) {
+                ValidationResult(true, data = ByteArray(0), text = value)
+            } else {
+                try {
+                    val addr = java.net.InetAddress.getByName(value)
+                    ValidationResult(true, data = addr, text = value)
+                } catch (e: Exception) {
+                    ValidationResult(true, data = ByteArray(0), text = value)
+                }
+            }
+        }
         if (value.isEmpty()) {
             if (allowEmpty) {
                 return ValidationResult(true, data = ByteArray(0), text = "")
@@ -1906,6 +2078,13 @@ class Tag(
     }
 
     fun validateURL(value: String): ValidationResult {
+        return validateURL(value, example)
+    }
+
+    internal fun validateURL(value: String, example: Boolean): ValidationResult {
+        if (example) {
+            return ValidationResult(true, data = value, text = value)
+        }
         if (value.isEmpty()) {
             if (allowEmpty) {
                 return ValidationResult(true, data = value, text = "")
@@ -1937,6 +2116,13 @@ class Tag(
     }
 
     fun validateEmail(value: String): ValidationResult {
+        return validateEmail(value, example)
+    }
+
+    internal fun validateEmail(value: String, example: Boolean): ValidationResult {
+        if (example) {
+            return ValidationResult(true, data = value, text = value)
+        }
         if (value.isEmpty()) {
             if (allowEmpty) {
                 return ValidationResult(true, data = value, text = value)
@@ -1960,6 +2146,13 @@ class Tag(
     }
 
     fun validateEnum(value: String): ValidationResult {
+        return validateEnum(value, example)
+    }
+
+    internal fun validateEnum(value: String, example: Boolean): ValidationResult {
+        if (example) {
+            return ValidationResult(true, data = -1, text = value)
+        }
         if (value.isEmpty()) {
             if (allowEmpty) {
                 return ValidationResult(true, data = -1, text = value)
@@ -1992,6 +2185,13 @@ class Tag(
     }
 
     fun validateMedia(value: ByteArray): ValidationResult {
+        return validateMedia(value, example)
+    }
+
+    internal fun validateMedia(value: ByteArray, example: Boolean): ValidationResult {
+        if (example) {
+            return ValidationResult(true, data = value, text = Base64.getEncoder().encodeToString(value))
+        }
         val length = value.size
 
         if (length == 0) {

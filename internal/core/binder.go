@@ -28,6 +28,47 @@ func Bind(node ir.Node, out any) error {
 
 	outVal = outVal.Elem()
 
+	// When the target is an interface{}, create concrete values dynamically
+	if outVal.Kind() == reflect.Interface {
+		switch n := node.(type) {
+		case *ir.NodeObject:
+			m := make(map[string]any)
+			for _, field := range n.Fields {
+				var v any
+				if err := Bind(field.Value, &v); err != nil {
+					return fmt.Errorf("failed to bind field %s: %w", field.Key, err)
+				}
+				m[field.Key] = v
+			}
+			outVal.Set(reflect.ValueOf(m))
+			return nil
+
+		case *ir.NodeArray:
+			s := make([]any, len(n.Items))
+			for i, item := range n.Items {
+				var v any
+				if err := Bind(item, &v); err != nil {
+					return fmt.Errorf("failed to bind array item %d: %w", i, err)
+				}
+				s[i] = v
+			}
+			outVal.Set(reflect.ValueOf(s))
+			return nil
+
+		case *ir.NodeScalar:
+			if n.Data != nil {
+				outVal.Set(reflect.ValueOf(n.Data))
+			}
+			return nil
+
+		case *ir.NodeNull:
+			return nil
+
+		default:
+			return fmt.Errorf("unsupported node type: %T", node)
+		}
+	}
+
 	switch n := node.(type) {
 	case *ir.NodeObject:
 		if n.Tag.Type == ir.ValueTypeObj {

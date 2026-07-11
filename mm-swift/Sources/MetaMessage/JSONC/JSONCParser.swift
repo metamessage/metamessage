@@ -331,7 +331,7 @@ public class JSONCParser {
             if let tag = tag, tag.type != .unknown {
                 throw JSONCParserError.invalidData("null is not supported for type \(tag.type)")
             }
-            return NodeNull(tag: tag == nil ? nil : tag, path: path)
+            throw JSONCParserError.invalidData("null is not supported")
 
         default:
             throw JSONCParserError.unexpectedToken("Unexpected token: \(tok.type)")

@@ -122,7 +122,7 @@ func TestStrToJsonc(t *testing.T) {
 		{
 			name:    "unsupported type (channel)",
 			input:   "",
-			wantErr: false,
+			wantErr: true,
 		},
 		{
 			name: "user",

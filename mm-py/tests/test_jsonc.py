@@ -3,9 +3,11 @@ Tests for metamessage JSONC parser/generator.
 """
 import sys
 import os
+from typing import Optional
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 
-from metamessage import Encoder, Decoder, parse_jsonc, to_jsonc
+from metamessage import Encoder, Decoder, parse_jsonc, to_jsonc, value_to_jsonc
+from metamessage import value_to_node, mm, ValueType
 
 
 def test_parse_basic_json():
@@ -180,15 +182,33 @@ def test_null_output_has_default():
     assert '"b": false' in jsonc_out or '"b":false' in jsonc_out  # bool default
 
 
+def test_null():
+    # v = {'page': 1, 'page_size': 1, 'name': 'abc'}
+    # n = value_to_node(v)
+    # print(n)
+    # jc = value_to_jsonc(v)
+    # print(jc)
+
+    @mm(desc="User")
+    class User:
+        # name: Optional[str] = mm(default_val='aaa')
+        age: Optional[int]
+        age1: Optional[int] = mm(default_val=2)
+        # tags: list = mm(child_type=ValueType.I)
+
+    n = value_to_node(User())
+    print(n)
+
 if __name__ == '__main__':
-    test_parse_basic_json()
-    test_parse_null_with_tag()
-    test_parse_empty_structures()
-    test_parse_with_mm_tag()
-    test_parse_nested()
-    test_roundtrip_keeps_structure()
-    test_to_jsonc()
-    test_parse_complex_jsonc()
-    test_parse_with_inferred_types()
-    test_null_output_has_default()
+    # test_parse_basic_json()
+    # test_parse_null_with_tag()
+    # test_parse_empty_structures()
+    # test_parse_with_mm_tag()
+    # test_parse_nested()
+    # test_roundtrip_keeps_structure()
+    # test_to_jsonc()
+    # test_parse_complex_jsonc()
+    # test_parse_with_inferred_types()
+    # test_null_output_has_default()
+    test_null()
     print("All JSONC tests passed!")

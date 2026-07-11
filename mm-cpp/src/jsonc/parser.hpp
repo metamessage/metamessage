@@ -189,17 +189,18 @@ private:
     auto &tok = tokens_[pos_];
     ++pos_;
 
-    // Handle null early - return NodeNull without creating a scalar
+    // Handle null early - always reject null literals in JSONC
     if (tok.type == TokenType::Null) {
-      auto nullVal = ir::makeNodeNull();
-      applyTagToNode(nullVal);
-      // Check that the applied tag doesn't conflict with null
-      if (nullVal->getTag()->type != ir::ValueType::Unknown) {
-        throw std::runtime_error(
-            "null is not supported for type " +
-            std::to_string(static_cast<int>(nullVal->getTag()->type)));
+      // Build tag from pending comments to check type
+      ir::Tag tag = ir::Tag::create();
+      if (pendingTag_.has_value()) {
+        tag = ir::mergeTag(&tag, &pendingTag_.value());
       }
-      return nullVal;
+      if (tag.type == ir::ValueType::Unknown) {
+        throw std::runtime_error("null is not supported");
+      }
+      throw std::runtime_error("null is not supported for type " +
+                               ir::valueTypeToString(tag.type));
     }
 
     auto val = ir::makeNodeScalar();

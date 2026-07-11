@@ -529,9 +529,7 @@ export class JSONCParser {
           if (nullTag.type !== ValueType.Unknown) {
             throw new Error(`null is not supported for type ${nullTag.type}`);
           }
-          const nullNode = new NodeNull(nullTag);
-          nullNode.setPath(path);
-          return nullNode;
+          throw new Error('null is not supported');
 
         default:
           throw new Error(`unexpected token ${tok.type}`);

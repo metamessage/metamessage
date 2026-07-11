@@ -71,4 +71,47 @@ class FloatCodec
             return $numStr . str_repeat('0', max(0, $decimalPos - strlen($numStr)));
         }
     }
+
+    public static function formatFloat32(float $val): string
+    {
+        return self::formatFloat($val);
+    }
+
+    public static function formatFloat64(float $val): string
+    {
+        return self::formatFloat($val);
+    }
+
+    private static function formatFloat(float $val): string
+    {
+        if (is_infinite($val) || is_nan($val)) {
+            throw new \InvalidArgumentException('Cannot format INF or NAN');
+        }
+
+        $s = (string)$val;
+
+        if (preg_match('/^(-?)(\d+)(?:\.(\d+))?([eE])([+-]?\d+)$/', $s, $m)) {
+            $neg = $m[1];
+            $intPart = $m[2];
+            $fracPart = $m[3] ?? '';
+            $exp = (int)$m[5];
+
+            $digits = $intPart . $fracPart;
+            $decimalPos = strlen($intPart) + $exp;
+
+            if ($decimalPos <= 0) {
+                $s = $neg . '0.' . str_repeat('0', -$decimalPos) . $digits;
+            } elseif ($decimalPos >= strlen($digits)) {
+                $s = $neg . $digits . str_repeat('0', $decimalPos - strlen($digits));
+            } else {
+                $s = $neg . substr($digits, 0, $decimalPos) . '.' . substr($digits, $decimalPos);
+            }
+        }
+
+        if (!str_contains($s, '.')) {
+            $s .= '.0';
+        }
+
+        return $s;
+    }
 }

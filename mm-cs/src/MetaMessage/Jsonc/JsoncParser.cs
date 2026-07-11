@@ -151,7 +151,7 @@ public class JsoncParser
                 case JsoncTokenType.Null:
                     if (tag.Type != ValueType.Unknown)
                         throw new Exception($"null is not supported for type {tag.Type}");
-                    return new NodeNull(tag);
+                    throw new Exception("null is not supported");
 
                 default:
                     throw new Exception($"unexpected token {tok.Type} at line {tok.Line}");

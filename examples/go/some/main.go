@@ -61,7 +61,6 @@ func main() {
 
 	jc, _ := mm.DecodeToJsonc(encodedReq)
 	fmt.Println("jc", jc)
-	return
 
 	data := APIResponse{Code: 0, Message: "success", Data: &users[0]}
 

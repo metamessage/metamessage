@@ -1,8 +1,20 @@
 package io.github.metamessage.core
 
+import java.math.BigDecimal
 import java.math.BigInteger
 
 object FloatCodec {
+
+    fun formatFloat32(value: Float): String {
+        val s = BigDecimal(value.toString()).toPlainString()
+        return if ('.' !in s) "$s.0" else s
+    }
+
+    fun formatFloat64(value: Double): String {
+        val s = BigDecimal(value.toString()).toPlainString()
+        return if ('.' !in s) "$s.0" else s
+    }
+
     fun parseDecimalString(s: String): FloatParts {
         require(s.isNotEmpty()) { "empty numeric string" }
         var str = s

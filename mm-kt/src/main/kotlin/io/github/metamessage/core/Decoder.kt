@@ -174,7 +174,20 @@ class Decoder() {
         val tag = inherited?.copy() ?: Tag.empty()
         val sv = first and Prefix.SUFFIX_MASK
         return when (sv) {
-            SimpleValue.SIMPLE_NULL -> NodeNull(tag)
+            SimpleValue.SIMPLE_NULL -> {
+                if (tag.type != ValueType.UNKNOWN) {
+                    throw MmDecodeException("unsupported value types: ${tag.type}")
+                }
+                NodeNull(tag)
+            }
+            SimpleValue.NULL_BOOL -> {
+                if (tag.type == ValueType.UNKNOWN) {
+                    tag.type = ValueType.BOOL
+                } else if (tag.type != ValueType.BOOL) {
+                    throw MmDecodeException("unsupported value types: ${tag.type}")
+                }
+                NodeScalar(false, "false", tag)
+            }
             SimpleValue.FALSE -> {
                 tag.type = ValueType.BOOL
                 NodeScalar(false, "false", tag)
@@ -187,8 +200,10 @@ class Decoder() {
             SimpleValue.NULL_FLOAT -> nullFloat(tag)
             SimpleValue.NULL_STRING -> nullString(tag)
             SimpleValue.NULL_BYTES -> nullBytes(tag)
-            in SimpleValue.CODE..SimpleValue.VAL ->
-                    NodeScalar(SimpleValue.toString(sv), SimpleValue.toString(sv), tag)
+            in SimpleValue.CODE..SimpleValue.KEY -> {
+                tag.type = ValueType.STR
+                NodeScalar(null, SimpleValue.toString(sv), tag)
+            }
             else -> throw MmDecodeException("unsupported simple: $sv")
         }
     }
@@ -349,8 +364,15 @@ class Decoder() {
                 }
         val node =
                 when (tag.type) {
-                    ValueType.F32 -> NodeScalar(`val`.toFloat(), `val`.toString(), tag)
-                    ValueType.F64, ValueType.DECIMAL -> NodeScalar(`val`, `val`.toString(), tag)
+                    ValueType.F32 -> {
+                        val f = `val`.toFloat()
+                        NodeScalar(f, FloatCodec.formatFloat32(f), tag)
+                    }
+                    ValueType.F64 -> NodeScalar(`val`, FloatCodec.formatFloat64(`val`), tag)
+                    ValueType.DECIMAL -> {
+                        val text = FloatCodec.formatFloat64(`val`)
+                        NodeScalar(text, text, tag)
+                    }
                     else -> throw MmDecodeException("bad float tag ${tag.type}")
                 }
         return Decoded(node, offset - start)
@@ -380,8 +402,22 @@ class Decoder() {
         val node =
                 when (tag.type) {
                     ValueType.STR, ValueType.EMAIL -> NodeScalar(text, text, tag)
-                    ValueType.URL -> NodeScalar(text, text, tag)
-                    ValueType.IP -> NodeScalar(text, text, tag)
+                    ValueType.URL -> {
+                        try {
+                            val uri = java.net.URI(text)
+                            NodeScalar(uri, text, tag)
+                        } catch (e: Exception) {
+                            throw MmDecodeException("invalid url: $text")
+                        }
+                    }
+                    ValueType.IP -> {
+                        try {
+                            val addr = java.net.InetAddress.getByName(text)
+                            NodeScalar(addr, addr.hostAddress ?: text, tag)
+                        } catch (e: Exception) {
+                            throw MmDecodeException("invalid ip: $text")
+                        }
+                    }
                     else -> throw MmDecodeException("unsupported string type: ${tag.type}")
                 }
         return Decoded(node, offset - start)
@@ -417,7 +453,14 @@ class Decoder() {
                         val u = uuidFromBytes(bs)
                         NodeScalar(u, u.toString(), tag)
                     }
-                    ValueType.IP -> NodeScalar(bs, "", tag)
+                    ValueType.IP -> {
+                        try {
+                            val addr = java.net.InetAddress.getByAddress(bs)
+                            NodeScalar(addr, addr.hostAddress ?: "", tag)
+                        } catch (e: Exception) {
+                            NodeScalar(bs, "", tag)
+                        }
+                    }
                     else -> throw MmDecodeException("unsupported bytes type: ${tag.type}")
                 }
         return Decoded(node, offset - start)
@@ -462,11 +505,8 @@ class Decoder() {
 
     private fun decodeContainer(first: Int, inherited: Tag?, start: Int): Decoded {
         val isArray = (first and WireConstants.CONTAINER_MASK) == WireConstants.CONTAINER_ARRAY
-        val isMap = (first and WireConstants.CONTAINER_MASK) == WireConstants.CONTAINER_MAP
         return if (isArray) {
             decodeArr(first, inherited, start)
-        } else if (isMap) {
-            decodeObj(first, inherited, start)
         } else {
             decodeObj(first, inherited, start)
         }

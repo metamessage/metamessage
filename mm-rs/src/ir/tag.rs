@@ -792,6 +792,10 @@ impl Tag {
             }
         }
 
+        if self.deprecated && !self.is_inherit {
+            bs.push(TagKey::Deprecated as u8 | 1);
+        }
+
         if self.allow_empty && !self.is_inherit {
             bs.push(TagKey::AllowEmpty as u8 | 1);
         }

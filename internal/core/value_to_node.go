@@ -16,6 +16,24 @@ import (
 
 const maxDepth = 32
 
+// copyChildTag copies child-relevant attributes from child tag to parent tag's Child* fields.
+func copyChildTag(parent *ir.Tag, child *ir.Tag) {
+	parent.ChildDesc = child.Desc
+	parent.ChildType = child.Type
+	parent.ChildNullable = child.Nullable
+	parent.ChildAllowEmpty = child.AllowEmpty
+	parent.ChildUnique = child.Unique
+	parent.ChildDefaultVal = child.DefaultVal
+	parent.ChildMin = child.Min
+	parent.ChildMax = child.Max
+	parent.ChildSize = child.Size
+	parent.ChildEnums = child.Enums
+	parent.ChildPattern = child.Pattern
+	parent.ChildLocation = child.Location
+	parent.ChildVersion = child.Version
+	parent.ChildMime = child.Mime
+}
+
 func NilToNode(valueType ir.ValueType) (*ir.NodeScalar, error) {
 	tag := ir.NewTag()
 	tag.Type = valueType
@@ -1180,7 +1198,7 @@ func valueToNode(v any, tag *ir.Tag, depth int, path string, example bool) (node
 					text = utils.DefaultTime.In(location).Format(time.DateTime)
 				}
 			} else {
-				data, text, err = tag.ValidateTime(*val, example)
+				data, text, err = tag.ValidateDatetime(*val, example)
 			}
 
 		case ir.ValueTypeDate:
@@ -1207,7 +1225,7 @@ func valueToNode(v any, tag *ir.Tag, depth int, path string, example bool) (node
 					text = utils.DefaultTime.In(location).Format(time.DateOnly)
 				}
 			} else {
-				data, text, err = tag.ValidateTime(*val, example)
+				data, text, err = tag.ValidateDate(*val, example)
 			}
 
 		case ir.ValueTypeTime:
@@ -1534,20 +1552,7 @@ func anyToJSONC(obj any, tag *ir.Tag, depth int, path string, example bool) (ir.
 			tagItem = valNode.GetTag()
 
 			if !setTag {
-				node.Tag.ChildDesc = tagItem.Desc
-				node.Tag.ChildType = tagItem.Type
-				node.Tag.ChildNullable = tagItem.Nullable
-				node.Tag.ChildAllowEmpty = tagItem.AllowEmpty
-				node.Tag.ChildUnique = tagItem.Unique
-				node.Tag.ChildDefaultVal = tagItem.DefaultVal
-				node.Tag.ChildMin = tagItem.Min
-				node.Tag.ChildMax = tagItem.Max
-				node.Tag.ChildSize = tagItem.Size
-				node.Tag.ChildEnums = tagItem.Enums
-				node.Tag.ChildPattern = tagItem.Pattern
-				node.Tag.ChildLocation = tagItem.Location
-				node.Tag.ChildVersion = tagItem.Version
-				node.Tag.ChildMime = tagItem.Mime
+				copyChildTag(node.Tag, tagItem)
 				setTag = true
 			}
 
@@ -1589,20 +1594,7 @@ func anyToJSONC(obj any, tag *ir.Tag, depth int, path string, example bool) (ir.
 			tagItem = valNode.GetTag()
 
 			if !setTag {
-				node.Tag.ChildDesc = tagItem.Desc
-				node.Tag.ChildType = tagItem.Type
-				node.Tag.ChildNullable = tagItem.Nullable
-				node.Tag.ChildAllowEmpty = tagItem.AllowEmpty
-				node.Tag.ChildUnique = tagItem.Unique
-				node.Tag.ChildDefaultVal = tagItem.DefaultVal
-				node.Tag.ChildMin = tagItem.Min
-				node.Tag.ChildMax = tagItem.Max
-				node.Tag.ChildSize = tagItem.Size
-				node.Tag.ChildEnums = tagItem.Enums
-				node.Tag.ChildPattern = tagItem.Pattern
-				node.Tag.ChildLocation = tagItem.Location
-				node.Tag.ChildVersion = tagItem.Version
-				node.Tag.ChildMime = tagItem.Mime
+				copyChildTag(node.Tag, tagItem)
 				setTag = true
 			}
 
@@ -1645,20 +1637,7 @@ func anyToJSONC(obj any, tag *ir.Tag, depth int, path string, example bool) (ir.
 			tagItem = itemNode.GetTag()
 
 			if !setTag {
-				node.Tag.ChildDesc = tagItem.Desc
-				node.Tag.ChildType = tagItem.Type
-				node.Tag.ChildNullable = tagItem.Nullable
-				node.Tag.ChildAllowEmpty = tagItem.AllowEmpty
-				node.Tag.ChildUnique = tagItem.Unique
-				node.Tag.ChildDefaultVal = tagItem.DefaultVal
-				node.Tag.ChildMin = tagItem.Min
-				node.Tag.ChildMax = tagItem.Max
-				node.Tag.ChildSize = tagItem.Size
-				node.Tag.ChildEnums = tagItem.Enums
-				node.Tag.ChildPattern = tagItem.Pattern
-				node.Tag.ChildLocation = tagItem.Location
-				node.Tag.ChildVersion = tagItem.Version
-				node.Tag.ChildMime = tagItem.Mime
+				copyChildTag(node.Tag, tagItem)
 				setTag = true
 			}
 
@@ -1687,20 +1666,7 @@ func anyToJSONC(obj any, tag *ir.Tag, depth int, path string, example bool) (ir.
 			tagItem = itemNode.GetTag()
 
 			if !setTag {
-				node.Tag.ChildDesc = tagItem.Desc
-				node.Tag.ChildType = tagItem.Type
-				node.Tag.ChildNullable = tagItem.Nullable
-				node.Tag.ChildAllowEmpty = tagItem.AllowEmpty
-				node.Tag.ChildUnique = tagItem.Unique
-				node.Tag.ChildDefaultVal = tagItem.DefaultVal
-				node.Tag.ChildMin = tagItem.Min
-				node.Tag.ChildMax = tagItem.Max
-				node.Tag.ChildSize = tagItem.Size
-				node.Tag.ChildEnums = tagItem.Enums
-				node.Tag.ChildPattern = tagItem.Pattern
-				node.Tag.ChildLocation = tagItem.Location
-				node.Tag.ChildVersion = tagItem.Version
-				node.Tag.ChildMime = tagItem.Mime
+				copyChildTag(node.Tag, tagItem)
 				setTag = true
 			}
 
@@ -1740,20 +1706,7 @@ func anyToJSONC(obj any, tag *ir.Tag, depth int, path string, example bool) (ir.
 			tagItem = itemNode.GetTag()
 
 			if !setTag {
-				node.Tag.ChildDesc = tagItem.Desc
-				node.Tag.ChildType = tagItem.Type
-				node.Tag.ChildNullable = tagItem.Nullable
-				node.Tag.ChildAllowEmpty = tagItem.AllowEmpty
-				node.Tag.ChildUnique = tagItem.Unique
-				node.Tag.ChildDefaultVal = tagItem.DefaultVal
-				node.Tag.ChildMin = tagItem.Min
-				node.Tag.ChildMax = tagItem.Max
-				node.Tag.ChildSize = tagItem.Size
-				node.Tag.ChildEnums = tagItem.Enums
-				node.Tag.ChildPattern = tagItem.Pattern
-				node.Tag.ChildLocation = tagItem.Location
-				node.Tag.ChildVersion = tagItem.Version
-				node.Tag.ChildMime = tagItem.Mime
+				copyChildTag(node.Tag, tagItem)
 				setTag = true
 			}
 

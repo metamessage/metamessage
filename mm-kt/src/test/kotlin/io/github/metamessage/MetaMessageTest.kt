@@ -262,4 +262,50 @@ class MetaMessageTest {
         assertEquals(42, out.nullableInt)
         assertTrue(out.nullableBool ?: false)
     }
+
+    @MM class Item(var name: String = "widget", var price: Int = 100)
+
+    @MM
+    class Order(
+            var orderId: String = "ORD-001",
+            @MM(type = ValueType.VEC, childType = ValueType.OBJ)
+            var items: List<Item> = listOf(Item("widget", 100), Item("gadget", 200))
+    )
+
+    @Test
+    fun roundtripObjectListField() {
+        val obj = Order()
+        val wire = MetaMessage.encodeFromValue(obj)
+        val out = MetaMessage.decodeToValue(wire, Order::class.java)
+        assertEquals(obj.orderId, out.orderId)
+        assertEquals(2, out.items.size)
+        assertEquals("widget", out.items[0].name)
+        assertEquals(100, out.items[0].price)
+        assertEquals("gadget", out.items[1].name)
+        assertEquals(200, out.items[1].price)
+    }
+
+    @Test
+    fun decodeTopLevelObjectList() {
+        val people = listOf(Person("Alice", 30), Person("Bob", 25))
+        val wire = MetaMessage.encodeFromValue(people)
+        val out = MetaMessage.decodeToValueList(wire, Person::class.java)
+        assertEquals(2, out.size)
+        assertEquals("Alice", out[0].name)
+        assertEquals(30, out[0].age)
+        assertEquals("Bob", out[1].name)
+        assertEquals(25, out[1].age)
+    }
+
+    @Test
+    fun jsoncToValueListObjectArray() {
+        val people = listOf(Person("Charlie", 35), Person("Diana", 28))
+        val jsonc = MetaMessage.valueToJsonc(people)
+        val out = MetaMessage.jsoncToValueList(jsonc, Person::class.java)
+        assertEquals(2, out.size)
+        assertEquals("Charlie", out[0].name)
+        assertEquals(35, out[0].age)
+        assertEquals("Diana", out[1].name)
+        assertEquals(28, out[1].age)
+    }
 }

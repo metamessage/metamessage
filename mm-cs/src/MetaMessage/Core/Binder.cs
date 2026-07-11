@@ -13,6 +13,12 @@ public class Binder
 
     public void Bind(INode node, object target)
     {
+        if (node is NodeNull)
+        {
+            // NodeNull - nothing to bind
+            return;
+        }
+
         if (node is NodeObject map && target != null)
         {
             BindObject(map, target);
@@ -25,6 +31,37 @@ public class Binder
         {
             BindValue(scalar, target);
         }
+    }
+
+    public object? BindDynamic(INode node)
+    {
+        if (node is NodeNull)
+            return null;
+
+        if (node is NodeScalar scalar)
+            return scalar.Data;
+
+        if (node is NodeObject map)
+        {
+            var dict = new Dictionary<string, object?>();
+            foreach (var entry in map.Entries)
+            {
+                dict[entry.Key.Text] = BindDynamic(entry.Value);
+            }
+            return dict;
+        }
+
+        if (node is NodeArray array)
+        {
+            var list = new List<object?>();
+            foreach (var child in array.Children)
+            {
+                list.Add(BindDynamic(child));
+            }
+            return list;
+        }
+
+        return null;
     }
 
     public INode StructToNode(object value)
@@ -152,6 +189,23 @@ public class Binder
     {
         var propType = prop.PropertyType;
 
+        // Handle object type dynamically (like Go's interface{})
+        if (propType == typeof(object))
+        {
+            prop.SetValue(target, BindDynamic(node));
+            return;
+        }
+
+        // Handle NodeNull
+        if (node is NodeNull)
+        {
+            if (IsNullable(propType))
+            {
+                prop.SetValue(target, null);
+            }
+            return;
+        }
+
         if (propType.IsArray)
         {
             if (node is NodeArray array)
@@ -202,6 +256,18 @@ public class Binder
 
     private object? ConvertMmTreeValue(INode node, Type targetType)
     {
+        // Handle object type dynamically (like Go's interface{})
+        if (targetType == typeof(object))
+        {
+            return BindDynamic(node);
+        }
+
+        // Handle NodeNull
+        if (node is NodeNull)
+        {
+            return null;
+        }
+
         if (node is NodeScalar scalar)
         {
             if (targetType == typeof(string))

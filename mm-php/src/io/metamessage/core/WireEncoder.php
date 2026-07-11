@@ -137,28 +137,23 @@ class WireEncoder
     private function encodeNodeValue(NodeScalar $val): int
     {
         $tag = $val->getTag();
+        $n = 0;
 
         switch ($tag->type) {
             case ValueType::DATETIME:
-                if ($tag->isNull) {
-                    $n = $this->encodeSimple(SimpleValue::NULL_STRING);
-                } else {
+                if (!$tag->isNull) {
                     $n = $this->encodeDateTime($val->Data);
                 }
                 break;
 
             case ValueType::DATE:
-                if ($tag->isNull) {
-                    $n = $this->encodeSimple(SimpleValue::NULL_STRING);
-                } else {
+                if (!$tag->isNull) {
                     $n = $this->encodeDate($val->Data);
                 }
                 break;
 
             case ValueType::TIME:
-                if ($tag->isNull) {
-                    $n = $this->encodeSimple(SimpleValue::NULL_STRING);
-                } else {
+                if (!$tag->isNull) {
                     $n = $this->encodeTime($val->Data);
                 }
                 break;
@@ -172,81 +167,61 @@ class WireEncoder
                 break;
 
             case ValueType::I8:
-                if ($tag->isNull) {
-                    $n = $this->encodeSimple(SimpleValue::NULL_STRING);
-                } else {
+                if (!$tag->isNull) {
                     $n = $this->encodeInt64($val->Data);
                 }
                 break;
 
             case ValueType::I16:
-                if ($tag->isNull) {
-                    $n = $this->encodeSimple(SimpleValue::NULL_STRING);
-                } else {
+                if (!$tag->isNull) {
                     $n = $this->encodeInt64($val->Data);
                 }
                 break;
 
             case ValueType::I32:
-                if ($tag->isNull) {
-                    $n = $this->encodeSimple(SimpleValue::NULL_STRING);
-                } else {
+                if (!$tag->isNull) {
                     $n = $this->encodeInt64($val->Data);
                 }
                 break;
 
             case ValueType::I64:
-                if ($tag->isNull) {
-                    $n = $this->encodeSimple(SimpleValue::NULL_STRING);
-                } else {
+                if (!$tag->isNull) {
                     $n = $this->encodeInt64($val->Data);
                 }
                 break;
 
             case ValueType::U:
-                if ($tag->isNull) {
-                    $n = $this->encodeSimple(SimpleValue::NULL_STRING);
-                } else {
+                if (!$tag->isNull) {
                     $n = $this->encodeU64($val->Data);
                 }
                 break;
 
             case ValueType::U8:
-                if ($tag->isNull) {
-                    $n = $this->encodeSimple(SimpleValue::NULL_STRING);
-                } else {
+                if (!$tag->isNull) {
                     $n = $this->encodeU64($val->Data);
                 }
                 break;
 
             case ValueType::U16:
-                if ($tag->isNull) {
-                    $n = $this->encodeSimple(SimpleValue::NULL_STRING);
-                } else {
+                if (!$tag->isNull) {
                     $n = $this->encodeU64($val->Data);
                 }
                 break;
 
             case ValueType::U32:
-                if ($tag->isNull) {
-                    $n = $this->encodeSimple(SimpleValue::NULL_STRING);
-                } else {
+                if (!$tag->isNull) {
                     $n = $this->encodeU64($val->Data);
                 }
                 break;
 
             case ValueType::U64:
-                if ($tag->isNull) {
-                    $n = $this->encodeSimple(SimpleValue::NULL_STRING);
-                } else {
+                if (!$tag->isNull) {
                     $n = $this->encodeU64($val->Data);
                 }
                 break;
 
             case ValueType::F32:
-                if ($tag->isNull) {
-                    $n = $this->encodeSimple(SimpleValue::NULL_STRING);
-                } else {
+                if (!$tag->isNull) {
                     $n = $this->encodeFloat($val->Text);
                 }
                 break;
@@ -268,17 +243,13 @@ class WireEncoder
                 break;
 
             case ValueType::EMAIL:
-                if ($tag->isNull) {
-                    $n = $this->encodeSimple(SimpleValue::NULL_STRING);
-                } else {
+                if (!$tag->isNull) {
                     $n = $this->encodeString($val->Text);
                 }
                 break;
 
             case ValueType::UUID:
-                if ($tag->isNull) {
-                    $n = $this->encodeSimple(SimpleValue::NULL_STRING);
-                } else {
+                if (!$tag->isNull) {
                     $data = $val->Data;
                     if (is_string($data)) {
                         $data = array_map('ord', str_split($data));
@@ -288,25 +259,19 @@ class WireEncoder
                 break;
 
             case ValueType::DECIMAL:
-                if ($tag->isNull) {
-                    $n = $this->encodeSimple(SimpleValue::NULL_STRING);
-                } else {
+                if (!$tag->isNull) {
                     $n = $this->encodeFloat($val->Text);
                 }
                 break;
 
             case ValueType::URL:
-                if ($tag->isNull) {
-                    $n = $this->encodeSimple(SimpleValue::NULL_STRING);
-                } else {
+                if (!$tag->isNull) {
                     $n = $this->encodeString($val->Text);
                 }
                 break;
 
             case ValueType::IP:
-                if ($tag->isNull) {
-                    $n = $this->encodeSimple(SimpleValue::NULL_STRING);
-                } else {
+                if (!$tag->isNull) {
                     $text = $val->Text;
                     switch ($tag->version) {
                         case 0:
@@ -349,9 +314,7 @@ class WireEncoder
                 break;
 
             case ValueType::BIGINT:
-                if ($tag->isNull) {
-                    $n = $this->encodeSimple(SimpleValue::NULL_STRING);
-                } else {
+                if (!$tag->isNull) {
                     $n = $this->encodeBigInt($val->Text);
                 }
                 break;
@@ -365,17 +328,13 @@ class WireEncoder
                 break;
 
             case ValueType::ENUMS:
-                if ($tag->isNull) {
-                    $n = $this->encodeSimple(SimpleValue::NULL_STRING);
-                } else {
+                if (!$tag->isNull) {
                     $n = $this->encodeInt64($val->Data);
                 }
                 break;
 
             case ValueType::MEDIA:
-                if ($tag->isNull) {
-                    $n = $this->encodeSimple(SimpleValue::NULL_BYTES);
-                } else {
+                if (!$tag->isNull) {
                     $data = $val->Data;
                     if (is_string($data)) {
                         $data = array_map('ord', str_split($data));

@@ -236,7 +236,7 @@ func TestEncodeInt(t *testing.T) {
 		{
 			name:       "nil input",
 			input:      nil,
-			wantErr:    true,
+			wantErr:    false,
 			wantDecode: nil,
 		},
 		{
@@ -261,20 +261,26 @@ func TestEncodeInt(t *testing.T) {
 					t.Fatalf("decode failed: %v", decodeErr)
 				}
 
-				gotData := gotVal.(*ir.NodeScalar).Data
-				if gotBig, ok := gotData.(big.Int); ok {
-					wantBig := tc.wantDecode.(big.Int)
-					if gotBig.Cmp(&wantBig) != 0 {
-						t.Errorf("value mismatch: expected %v, got %v", tc.wantDecode, gotBig)
+				if tc.wantDecode == nil {
+					if _, ok := gotVal.(*ir.NodeNull); !ok {
+						t.Errorf("expected NodeNull, got %T", gotVal)
 					}
-				} else if gotBigPtr, ok := gotData.(*big.Int); ok {
-					wantBig := tc.wantDecode.(big.Int)
-					if gotBigPtr.Cmp(&wantBig) != 0 {
-						t.Errorf("value mismatch: expected %v, got %v", tc.wantDecode, gotBigPtr)
+				} else {
+					gotData := gotVal.(*ir.NodeScalar).Data
+					if gotBig, ok := gotData.(big.Int); ok {
+						wantBig := tc.wantDecode.(big.Int)
+						if gotBig.Cmp(&wantBig) != 0 {
+							t.Errorf("value mismatch: expected %v, got %v", tc.wantDecode, gotBig)
+						}
+					} else if gotBigPtr, ok := gotData.(*big.Int); ok {
+						wantBig := tc.wantDecode.(big.Int)
+						if gotBigPtr.Cmp(&wantBig) != 0 {
+							t.Errorf("value mismatch: expected %v, got %v", tc.wantDecode, gotBigPtr)
+						}
+					} else if !reflect.DeepEqual(gotData, tc.wantDecode) {
+						t.Errorf("value mismatch: expected %v (%T), got %v (%T)",
+							tc.wantDecode, tc.wantDecode, gotData, gotData)
 					}
-				} else if !reflect.DeepEqual(gotData, tc.wantDecode) {
-					t.Errorf("value mismatch: expected %v (%T), got %v (%T)",
-						tc.wantDecode, tc.wantDecode, gotData, gotData)
 				}
 			}
 		})

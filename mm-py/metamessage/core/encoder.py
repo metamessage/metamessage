@@ -5,6 +5,7 @@ Based on Go implementation in internal/core/encode*.go
 
 import io
 import math
+import re
 import struct
 from datetime import datetime, date, time as dt_time, timezone
 from typing import Any, Optional, Union
@@ -117,6 +118,8 @@ TagLen2Byte = TagLenMask      # 31 (for length >= 256 and < 65536)
 DEFAULT_BUF_SIZE = 1024
 MAX_CAP = 1024 * 1024 * 1024  # 1GB
 
+_RE_SCI_FLOAT = re.compile(r'^([\d.]+)[eE]([+-]?\d+)$')
+
 
 def get_prefix(b: int) -> int:
     return b & 0b11100000
@@ -148,15 +151,15 @@ def _write_bits(write_byte_fn, bits) -> int:
     return n
 
 
-def _encode_big_int(write_byte_fn, s: str) -> int:
+def _encode_big_int_to_buf(buf: bytearray, s: str):
+    """Encode big int string into bits and write to buf. Shared by module function and method."""
     if not s:
-        return 0
+        return
     neg = s.startswith('-')
     if neg:
         s = s[1:]
 
     bits = [1 if neg else 0]
-
     n = len(s)
     i = 0
     while i < n:
@@ -174,7 +177,15 @@ def _encode_big_int(write_byte_fn, s: str) -> int:
             bits.extend(_to_bits(num, 4))
             i += 1
 
-    return _write_bits(write_byte_fn, bits)
+    _write_bits(lambda b: buf.append(b), bits)
+
+
+def _encode_big_int(write_byte_fn, s: str) -> int:
+    buf = bytearray()
+    _encode_big_int_to_buf(buf, s)
+    for b in buf:
+        write_byte_fn(b)
+    return len(buf)
 
 
 class Encoder:
@@ -191,6 +202,7 @@ class Encoder:
     def reset(self, w: Optional[io.IOBase] = None):
         if w is not None:
             self.w = w
+        self.offset = 0
 
     def _ensure_capacity(self, needed: int):
         required = self.offset + needed
@@ -220,11 +232,11 @@ class Encoder:
         return l
 
     def _write_string(self, s: str) -> int:
-        l = len(s)
+        encoded = s.encode('utf-8')
+        l = len(encoded)
         if l == 0:
             return 0
         self._ensure_capacity(l)
-        encoded = s.encode('utf-8')
         self.buf[self.offset:self.offset + l] = encoded
         self.offset += l
         return l
@@ -317,29 +329,11 @@ class Encoder:
         if not s:
             return 0
         neg = s.startswith('-')
-        if neg:
-            s = s[1:]
-
-        bits = [1 if neg else 0]
-        n = len(s)
-        i = 0
-        while i < n:
-            rem = n - i
-            if rem >= 3:
-                num = int(s[i:i + 3])
-                bits.extend(_to_bits(num, 10))
-                i += 3
-            elif rem == 2:
-                num = int(s[i:i + 2])
-                bits.extend(_to_bits(num, 7))
-                i += 2
-            else:
-                num = int(s[i:i + 1])
-                bits.extend(_to_bits(num, 4))
-                i += 1
+        digits = s[1:] if neg else s
+        n = len(digits)
 
         payload = bytearray()
-        _write_bits(lambda b: payload.append(b), bits)
+        _encode_big_int_to_buf(payload, s)
 
         full_payload = bytearray(1 + len(payload))
         full_payload[0] = n
@@ -356,8 +350,7 @@ class Encoder:
         s = s.lstrip('-')
 
         if 'e' in s or 'E' in s:
-            import re
-            m = re.match(r'^([\d.]+)[eE]([+-]?\d+)$', s)
+            m = _RE_SCI_FLOAT.match(s)
             if not m:
                 raise ValueError(f"invalid float scientific notation: {s}")
             num_part = m.group(1)
@@ -447,12 +440,12 @@ class Encoder:
     # ===== Strings =====
 
     def _encode_string(self, s: str) -> int:
-        length = len(s)
+        encoded = s.encode('utf-8')
+        length = len(encoded)
         if length > Max2Byte:
             raise ValueError(f"string too long: {length}")
 
         sign = PrefixString
-        encoded = s.encode('utf-8')
         if length < StringLen1Byte:  # length < 30
             n = self._write_byte(sign | length)
             n += self._write_bytes(encoded)
@@ -866,7 +859,8 @@ class Encoder:
         if self.w is None:
             raise ValueError("writer cannot be None")
 
-        node = self._struct_to_mm(data)
+        from .value_to_node import value_to_node
+        node = value_to_node(data)
         encoded = self.encode(node)
         n = self.w.write(encoded)
         if n != len(encoded):
