@@ -788,7 +788,13 @@ func (p *Parser) parse(path string, example bool, tag *ir.Tag) (val ir.Node, err
 }
 
 func (p *Parser) parseObject(openLine int, path string, tag *ir.Tag) (*ir.NodeObject, error) {
+	// depth 的含义是「当前嵌套深度」，不是「至今累计见过多少层」：返回时必须回退。
+	// 少了这一步，同级的兄弟元素会把前面所有元素累计下来的深度继承过去——例如
+	// `[{"a":1},{"a":2},...]` 放到第 32 个元素就假报 max depth，与真实嵌套层数无关
+	// （真实深度只有 2）。defer 紧跟 ++ 注册，保证每条 return 路径（含下面超深
+	// 提前返回的那条）都成对回退。
 	p.depth++
+	defer func() { p.depth-- }()
 	if p.depth > maxDepth {
 		return nil, fmt.Errorf("max depth: %d", maxDepth)
 	}
@@ -905,7 +911,11 @@ func (p *Parser) parseObject(openLine int, path string, tag *ir.Tag) (*ir.NodeOb
 }
 
 func (p *Parser) parseArray(openLine int, path string, tag *ir.Tag) (*ir.NodeArray, error) {
+	// 同 parseObject：depth 是当前嵌套深度，返回时必须回退，否则兄弟元素继承
+	// 前面所有元素累计的深度，把「元素多」误判成「嵌套深」。defer 紧跟 ++ 注册，
+	// 连超深提前返回的那条路也成对。
 	p.depth++
+	defer func() { p.depth-- }()
 	if p.depth > maxDepth {
 		return nil, fmt.Errorf("max depth: %d", maxDepth)
 	}
