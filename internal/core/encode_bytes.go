@@ -16,7 +16,8 @@ func (e *encoder) encodeBytes(bs []byte) (n uint32, err error) {
 	} else if length < Max1Byte {
 		sign |= Prefix(BytesLen1Byte)
 		return e.writeBytesWithPrefix(bs, byte(sign), byte(length))
-	} else if length < Max2Byte {
+	// 同 encode_string：最后一档必须 <=，否则 length == 65535 静默写 0 字节。
+	} else if length <= Max2Byte {
 		sign |= Prefix(BytesLen2Byte)
 		return e.writeBytesWithPrefix(bs, byte(sign), byte(length>>8), byte(length))
 	}

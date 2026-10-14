@@ -218,7 +218,10 @@ public class WireEncoder
         {
             _buf.WriteWithBytes(sign | WireConstants.STRING_LEN_1, (byte)length, utf);
         }
-        else if (length < WireConstants.MAX_2)
+        // The last bucket must use <=: MAX_2 (65535) itself is representable by the
+        // 2-byte length field. Using < makes length == MAX_2 fall through every
+        // branch and get reported as "too long" even though it fits on the wire.
+        else if (length <= WireConstants.MAX_2)
         {
             _buf.WriteWithBytes(sign | WireConstants.STRING_LEN_2, (byte)(length >> 8), (byte)length, utf);
         }
@@ -242,7 +245,10 @@ public class WireEncoder
         {
             _buf.WriteWithBytes(sign | WireConstants.BYTES_LEN_1, (byte)length, bytes);
         }
-        else if (length < WireConstants.MAX_2)
+        // The last bucket must use <=: MAX_2 (65535) itself is representable by the
+        // 2-byte length field. Using < makes length == MAX_2 fall through every
+        // branch and get reported as "too long" even though it fits on the wire.
+        else if (length <= WireConstants.MAX_2)
         {
             _buf.WriteWithBytes(sign | WireConstants.BYTES_LEN_2, (byte)(length >> 8), (byte)length, bytes);
         }
@@ -266,7 +272,10 @@ public class WireEncoder
         {
             _buf.WriteWithBytes(sign | WireConstants.CONTAINER_LEN_1, (byte)length, payload);
         }
-        else if (length < WireConstants.MAX_2)
+        // The last bucket must use <=: MAX_2 (65535) itself is representable by the
+        // 2-byte length field. Using < makes length == MAX_2 fall through every
+        // branch and get reported as "too long" even though it fits on the wire.
+        else if (length <= WireConstants.MAX_2)
         {
             _buf.WriteWithBytes(sign | WireConstants.CONTAINER_LEN_2, (byte)(length >> 8), (byte)length, payload);
         }
@@ -290,7 +299,10 @@ public class WireEncoder
         {
             _buf.WriteWithBytes(sign | WireConstants.CONTAINER_LEN_1, (byte)length, payload);
         }
-        else if (length < WireConstants.MAX_2)
+        // The last bucket must use <=: MAX_2 (65535) itself is representable by the
+        // 2-byte length field. Using < makes length == MAX_2 fall through every
+        // branch and get reported as "too long" even though it fits on the wire.
+        else if (length <= WireConstants.MAX_2)
         {
             _buf.WriteWithBytes(sign | WireConstants.CONTAINER_LEN_2, (byte)(length >> 8), (byte)length, payload);
         }
