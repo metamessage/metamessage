@@ -31,7 +31,9 @@ func (e *encoder) encodeTag(bs []byte, tag []byte) (n uint32, err error) {
 			return
 		}
 		nb, err = e.writeBytes(bs)
-	} else if length < Max2Byte {
+	// 同 encode_string：最后一档必须 <=，否则 tag+payload 正好 65535 字节时
+	// 静默写 0 字节（节点连 tag 带内容整个丢失）。
+	} else if length <= Max2Byte {
 		sign |= Prefix(TagLen2Byte)
 		if ns, err = e.writeBytesWithPrefix(tag, byte(sign), byte(length>>8), byte(length)); err != nil {
 			return
