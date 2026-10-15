@@ -45,6 +45,8 @@ class Tag(
         var childVersion: Int = DEFAULT_VERSION,
         var childMime: String = "",
         var more: Int = 0,
+        var refId: Int = 0,
+        var refTo: Int = 0,
         var isInherit: Boolean = false
 ) {
     fun copy(): Tag =
@@ -82,6 +84,8 @@ class Tag(
                     childVersion,
                     childMime,
                     more,
+                    refId,
+                    refTo,
                     isInherit
             )
 
@@ -305,6 +309,14 @@ class Tag(
             parts.add("${T_CHILD_MIME}=${childMime}")
         }
 
+        if (refId != 0 && !isInherit) {
+            parts.add("${T_REF_ID}=${refId}")
+        }
+
+        if (refTo != 0 && !isInherit) {
+            parts.add("${T_REF_TO}=${refTo}")
+        }
+
         return parts.joinToString("; ")
     }
 
@@ -371,7 +383,33 @@ class Tag(
                 encodeU64(w, TagKey.K_CHILD_VERSION, childVersion.toLong())
         if (childMime.isNotEmpty())
                 encodeU64(w, TagKey.K_CHILD_MIME, Mime.parse(childMime).toLong())
-        if (more != 0) encodeU64(w, TagKey.K_MORE, more.toLong())
+
+        // ref meta：[K_MORE | k][meta 位图][每个出现值 1 字节]，与 Go
+        // encodeRefMeta 互为逆运算；两字段全 0 时不写任何字节；任一字段越界
+        // （<0 或 >255）时整块丢弃——绝不写截断值（文本侧 parse 已限制 1..255）。
+        val refIdOk = refId == 0 || (refId in 1..255)
+        val refToOk = refTo == 0 || (refTo in 1..255)
+        if (refIdOk && refToOk && (refId != 0 || refTo != 0)) {
+            var meta = 0
+            var k = 0
+            if (refId != 0) {
+                meta = meta or (1 shl 0)
+                k++
+            }
+            if (refTo != 0) {
+                meta = meta or (1 shl 1)
+                k++
+            }
+            w.writeByte((TagKey.K_MORE or k).toByte())
+            w.writeByte(meta.toByte())
+            if (refId != 0) {
+                w.writeByte((refId and 0xFF).toByte())
+            }
+            if (refTo != 0) {
+                w.writeByte((refTo and 0xFF).toByte())
+            }
+        }
+
         return w.toByteArray()
     }
 
@@ -650,6 +688,8 @@ class Tag(
         const val T_CHILD_LOCATION = "child_location"
         const val T_CHILD_VERSION = "child_version"
         const val T_CHILD_MIME = "child_mime"
+        const val T_REF_ID = "ref_id"
+        const val T_REF_TO = "ref_to"
 
         private val emailRegex =
                 Pattern.compile("^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$")
@@ -740,6 +780,8 @@ class Tag(
             if (src.childLocation != 0) dst.childLocation = src.childLocation
             if (src.childVersion != DEFAULT_VERSION) dst.childVersion = src.childVersion
             if (src.childMime.isNotEmpty()) dst.childMime = src.childMime
+            if (src.refId != 0) dst.refId = src.refId
+            if (src.refTo != 0) dst.refTo = src.refTo
 
             return dst
         }
@@ -850,6 +892,18 @@ class Tag(
                     T_CHILD_MIME -> {
                         r.childMime = value
                         r.childType = ValueType.MEDIA
+                    }
+                    T_REF_ID -> {
+                        val d = value.toIntOrNull()
+                        if (d != null && d in 1..65535) {
+                            r.refId = d
+                        }
+                    }
+                    T_REF_TO -> {
+                        val d = value.toIntOrNull()
+                        if (d != null && d in 1..65535) {
+                            r.refTo = d
+                        }
                     }
                 }
             }
@@ -2271,5 +2325,8 @@ class Tag(
         const val K_CHILD_VERSION = 29 shl 3
         const val K_CHILD_MIME = 30 shl 3
         const val K_MORE = 31 shl 3
+
+        const val META_HAS_REF_ID = 1 shl 0
+        const val META_HAS_REF_TO = 1 shl 1
     }
 }

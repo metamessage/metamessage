@@ -34,6 +34,77 @@ func copyChildTag(parent *ir.Tag, child *ir.Tag) {
 	parent.ChildMime = child.Mime
 }
 
+// refCtx 承载循环引用检测与 ref_id 分配状态，仅在单次 ValueToNode 调用内有效。
+//
+// visiting 即「当前递归路径栈」（D3）：容器类型进入 anyToJSONC / createExampleValue
+// 时写入、返回时删除，因此同一类型出现在两个平行分支时各自独立编号，不会被误判为环。
+type refCtx struct {
+	visiting map[reflect.Type]*refFrame
+	nextID   int // 每次编码调用从 1 开始自增
+}
+
+// refFrame 是路径栈上某一容器类型的帧。
+// tag 指向该类型当前正在构建的节点的 tag（createExampleValue 内部登记的帧无 tag）。
+// 环命中瞬间惰性分配 id 并直接回写 tag.RefID：tag 为指针，Bytes()/ToString()
+// 在建树之后才调用，提前写安全；id 只在真被引用时分配，无空洞、无后扫描。
+type refFrame struct {
+	tag *ir.Tag
+	id  int // 0 = 尚未被引用
+}
+
+// refMarker 是 createExampleValue 的环命中哨兵：命中帧带 tag（anyToJSONC 帧），
+// id 已写入其 tag.RefID，调用方据 refTo 产出引用空壳节点。
+type refMarker struct {
+	refTo int
+}
+
+// cycleStop 是 createExampleValue 内部成环的哨兵（命中帧无 tag）：
+// 停止展开该分支并置零，引用语义由 anyToJSONC 二次编码阶段重新检测产生。
+type cycleStop struct{}
+
+func newRefCtx() *refCtx {
+	return &refCtx{
+		visiting: make(map[reflect.Type]*refFrame),
+		nextID:   1,
+	}
+}
+
+// isContainerKind 报告该 kind 是否可能参与循环（需要登记路径栈）。
+// Pointer 仅用于 createExampleValue 的自嵌套防护（如 type A *A）；
+// anyToJSONC 在检测前已解引用指针，实际不会以 Pointer kind 登记。
+func isContainerKind(k reflect.Kind) bool {
+	switch k {
+	case reflect.Struct, reflect.Map, reflect.Slice, reflect.Array, reflect.Pointer:
+		return true
+	}
+	return false
+}
+
+// hitCycle 报告 typ 是否已在路径栈上；命中时对目标帧惰性分配 ref_id 并回写其 tag。
+func (ctx *refCtx) hitCycle(typ reflect.Type) (id int, frame *refFrame, ok bool) {
+	frame, onStack := ctx.visiting[typ]
+	if !onStack {
+		return 0, nil, false
+	}
+	if frame.id == 0 {
+		frame.id = ctx.nextID
+		ctx.nextID++
+		if frame.tag != nil {
+			frame.tag.RefID = frame.id
+		}
+	}
+	return frame.id, frame, true
+}
+
+// enter 登记容器类型入栈；调用方须在返回前执行 leave 出栈。
+func (ctx *refCtx) enter(typ reflect.Type, tag *ir.Tag) {
+	ctx.visiting[typ] = &refFrame{tag: tag}
+}
+
+func (ctx *refCtx) leave(typ reflect.Type) {
+	delete(ctx.visiting, typ)
+}
+
 func NilToNode(valueType ir.ValueType) (*ir.NodeScalar, error) {
 	tag := ir.NewTag()
 	tag.Type = valueType
@@ -159,10 +230,10 @@ func ValueToNode(v any, tagStr string) (node ir.Node, err error) {
 
 	example := tag.Example
 
-	return valueToNode(v, tag, 0, "", example)
+	return valueToNode(newRefCtx(), v, tag, 0, "", example)
 }
 
-func valueToNode(v any, tag *ir.Tag, depth int, path string, example bool) (node ir.Node, err error) {
+func valueToNode(ctx *refCtx, v any, tag *ir.Tag, depth int, path string, example bool) (node ir.Node, err error) {
 	if tag == nil {
 		tag = ir.NewTag()
 	}
@@ -189,7 +260,7 @@ func valueToNode(v any, tag *ir.Tag, depth int, path string, example bool) (node
 			data, text, err = tag.ValidateMedia(val, example)
 
 		case ir.ValueTypeVec:
-			return anyToJSONC(v, tag, depth, path, example)
+			return anyToJSONC(ctx, v, tag, depth, path, example)
 		default:
 			return nil, fmt.Errorf("%s unsupported type: %T", tag.Type.String(), val)
 		}
@@ -246,7 +317,7 @@ func valueToNode(v any, tag *ir.Tag, depth int, path string, example bool) (node
 			}
 
 		case ir.ValueTypeVec:
-			return anyToJSONC(v, tag, depth, path, example)
+			return anyToJSONC(ctx, v, tag, depth, path, example)
 		default:
 			return nil, fmt.Errorf("%s unsupported type: %T", tag.Type.String(), val)
 		}
@@ -1260,7 +1331,7 @@ func valueToNode(v any, tag *ir.Tag, depth int, path string, example bool) (node
 		}
 
 	default:
-		return anyToJSONC(v, tag, depth, path, example)
+		return anyToJSONC(ctx, v, tag, depth, path, example)
 	}
 
 	if err != nil {
@@ -1276,13 +1347,44 @@ func valueToNode(v any, tag *ir.Tag, depth int, path string, example bool) (node
 	}, nil
 }
 
-// Create sample values according to the element Type (special for empty slices)
-func createExampleValue(elemType reflect.Type) (any, error) {
+// createExampleValue 按元素类型构造示例值（空容器专用）。
+//
+// 循环防护：容器类型进入时登记路径栈（帧不带 tag）。
+//   - 命中带 tag 的帧（anyToJSONC 登记）→ 返回 refMarker：
+//     id 已写入被引用节点的 tag.RefID，调用方产出引用空壳；
+//   - 命中无 tag 的帧（本函数内部登记）→ 返回 cycleStop：
+//     分支置零停止展开，引用语义由 anyToJSONC 二次编码阶段重新检测产生。
+func createExampleValue(ctx *refCtx, elemType reflect.Type) (any, error) {
+	if isContainerKind(elemType.Kind()) {
+		id, frame, hit := ctx.hitCycle(elemType)
+		if hit {
+			if frame.tag != nil {
+				return &refMarker{refTo: id}, nil
+			}
+			return &cycleStop{}, nil
+		}
+		ctx.enter(elemType, nil)
+		defer ctx.leave(elemType)
+	}
+	return createExampleValueInner(ctx, elemType)
+}
+
+// createExampleValueInner 构造示例值本体。所有哨兵只在分支边界处理，
+// 不会嵌套进返回的真实值内部（struct 分支对哨兵字段置零跳过）。
+func createExampleValueInner(ctx *refCtx, elemType reflect.Type) (any, error) {
 	if elemType.Kind() == reflect.Pointer {
 		base := elemType.Elem()
-		baseVal, err := createExampleValue(base)
+		baseVal, err := createExampleValue(ctx,base)
 		if err != nil {
 			return nil, err
+		}
+		switch baseVal.(type) {
+		case *refMarker:
+			// 指针指向环内类型：整体退化为引用
+			return baseVal, nil
+		case *cycleStop:
+			// 内部成环：置为 nil 指针
+			return reflect.Zero(elemType).Interface(), nil
 		}
 		ptr := reflect.New(base)
 		ptr.Elem().Set(reflect.ValueOf(baseVal))
@@ -1303,20 +1405,32 @@ func createExampleValue(elemType reflect.Type) (any, error) {
 
 	case reflect.Slice:
 		// Recursively create sample values for other slices (e.g., []int → []int{0})
-		sliceVal := reflect.MakeSlice(elemType, 1, 1)
-		elemExample, err := createExampleValue(elemType.Elem())
+		elemExample, err := createExampleValue(ctx,elemType.Elem())
 		if err != nil {
 			return nil, err
 		}
+		switch elemExample.(type) {
+		case *refMarker:
+			return elemExample, nil
+		case *cycleStop:
+			return reflect.MakeSlice(elemType, 0, 0).Interface(), nil
+		}
+		sliceVal := reflect.MakeSlice(elemType, 1, 1)
 		sliceVal.Index(0).Set(reflect.ValueOf(elemExample))
 		return sliceVal.Interface(), nil
 
 	case reflect.Array:
 		arrayVal := reflect.New(elemType).Elem()
 		if elemType.Len() > 0 {
-			elemExample, err := createExampleValue(elemType.Elem())
+			elemExample, err := createExampleValue(ctx,elemType.Elem())
 			if err != nil {
 				return nil, err
+			}
+			switch elemExample.(type) {
+			case *refMarker:
+				return elemExample, nil
+			case *cycleStop:
+				return arrayVal.Interface(), nil
 			}
 			arrayVal.Index(0).Set(reflect.ValueOf(elemExample))
 		}
@@ -1344,9 +1458,16 @@ func createExampleValue(elemType reflect.Type) (any, error) {
 					continue
 				}
 
-				fieldVal, err := createExampleValue(field.Type)
+				fieldVal, err := createExampleValue(ctx,field.Type)
 				if err != nil {
 					return nil, fmt.Errorf("struct %s field %s: %w", elemType.Name(), field.Name, err)
+				}
+
+				// 环哨兵：该字段保持零值。refMarker 的引用语义、cycleStop 的
+				// 展开语义均由 anyToJSONC 二次编码阶段重新检测并正确落地。
+				switch fieldVal.(type) {
+				case *refMarker, *cycleStop:
+					continue
 				}
 
 				val := reflect.ValueOf(fieldVal)
@@ -1359,13 +1480,23 @@ func createExampleValue(elemType reflect.Type) (any, error) {
 
 	case reflect.Map:
 		mapVal := reflect.MakeMap(elemType)
-		keyExample, err := createExampleValue(elemType.Key())
+		keyExample, err := createExampleValue(ctx,elemType.Key())
 		if err != nil {
 			return nil, fmt.Errorf("create map key example: %w", err)
 		}
-		valExample, err := createExampleValue(elemType.Elem())
+		valExample, err := createExampleValue(ctx,elemType.Elem())
 		if err != nil {
 			return nil, fmt.Errorf("create map val example: %w", err)
+		}
+		switch valExample.(type) {
+		case *refMarker:
+			return valExample, nil
+		case *cycleStop:
+			return mapVal.Interface(), nil
+		}
+		switch keyExample.(type) {
+		case *refMarker, *cycleStop:
+			return mapVal.Interface(), nil
 		}
 		mapVal.SetMapIndex(reflect.ValueOf(keyExample), reflect.ValueOf(valExample))
 		return mapVal.Interface(), nil
@@ -1375,7 +1506,7 @@ func createExampleValue(elemType reflect.Type) (any, error) {
 	}
 }
 
-func anyToJSONC(obj any, tag *ir.Tag, depth int, path string, example bool) (ir.Node, error) {
+func anyToJSONC(ctx *refCtx, obj any, tag *ir.Tag, depth int, path string, example bool) (ir.Node, error) {
 	depth++
 	if depth > maxDepth {
 		return nil, fmt.Errorf("max depth: %d", maxDepth)
@@ -1400,9 +1531,15 @@ func anyToJSONC(obj any, tag *ir.Tag, depth int, path string, example bool) (ir.
 			}
 			typ = typ.Elem()
 			example = true
-			elemVal, err := createExampleValue(typ)
+			elemVal, err := createExampleValue(ctx, typ)
 			if err != nil {
 				return nil, fmt.Errorf("%s create element %s err: %w", path, typ, err)
+			}
+			// 环内类型：产出引用空壳（D2：被引用类型的空形式，不展开字段）
+			if r, isRef := elemVal.(*refMarker); isRef {
+				tag.RefTo = r.refTo
+				tag.Type = ir.ValueTypeObj
+				return &ir.NodeObject{Tag: tag, Path: path}, nil
 			}
 			val = reflect.ValueOf(elemVal)
 		} else {
@@ -1444,6 +1581,24 @@ func anyToJSONC(obj any, tag *ir.Tag, depth int, path string, example bool) (ir.
 			path = tag.Name
 		} else {
 			path = fmt.Sprintf("%s.%s", path, tag.Name)
+		}
+	}
+
+	// —— 循环引用检测（D3：按当前递归路径栈）——
+	// 此处 val 已解引用指针，kind 只可能是 struct/map/slice/array。
+	if isContainerKind(val.Kind()) {
+		if id, _, hit := ctx.hitCycle(typ); hit {
+			if example {
+				// D2：引用节点 = 被引用类型的空形式，不展开字段
+				tag.RefTo = id
+				tag.Type = ir.ValueTypeObj
+				return &ir.NodeObject{Tag: tag, Path: path}, nil
+			}
+			// 非 example（真实数据环）：不产壳、不重复登记，
+			// 落入原逻辑由 maxDepth 兜底报错，保持既有行为不变。
+		} else {
+			ctx.enter(typ, tag)
+			defer ctx.leave(typ)
 		}
 	}
 
@@ -1493,7 +1648,7 @@ func anyToJSONC(obj any, tag *ir.Tag, depth int, path string, example bool) (ir.
 				}
 
 				p := fmt.Sprintf("%s.%s", path, fieldKey)
-				fieldNode, err := valueToNode(fieldVal.Interface(), tagField, depth, p, example)
+				fieldNode, err := valueToNode(ctx, fieldVal.Interface(), tagField, depth, p, example)
 				if err != nil {
 					return nil, fmt.Errorf("%s: %w", p, err)
 				}
@@ -1544,7 +1699,7 @@ func anyToJSONC(obj any, tag *ir.Tag, depth int, path string, example bool) (ir.
 			tagItem.Name = keyStr
 
 			p := fmt.Sprintf("%s[%s]", path, keyStr)
-			valNode, err := valueToNode(val.MapIndex(key).Interface(), tagItem, depth, p, example)
+			valNode, err := valueToNode(ctx, val.MapIndex(key).Interface(), tagItem, depth, p, example)
 			if err != nil {
 				return nil, fmt.Errorf("%s: %w", p, err)
 			}
@@ -1571,7 +1726,7 @@ func anyToJSONC(obj any, tag *ir.Tag, depth int, path string, example bool) (ir.
 
 			var exampleVal any
 			elemType := typ.Elem()
-			exampleVal, err = createExampleValue(elemType)
+			exampleVal, err = createExampleValue(ctx, elemType)
 			if err != nil {
 				return nil, fmt.Errorf("create example value for empty slice: %w", err)
 			}
@@ -1586,9 +1741,18 @@ func anyToJSONC(obj any, tag *ir.Tag, depth int, path string, example bool) (ir.
 			tagItem.Example = true
 
 			p := fmt.Sprintf("%s[%s]", path, keyStr)
-			valNode, err := valueToNode(exampleVal, tagItem, depth, p, true)
-			if err != nil {
-				return nil, fmt.Errorf("%s: %w", p, err)
+
+			var valNode ir.Node
+			if r, isRef := exampleVal.(*refMarker); isRef {
+				// 环内类型：产出引用空壳（D2，ref_to 标在空壳自身 tag 上）
+				tagItem.RefTo = r.refTo
+				tagItem.Type = ir.ValueTypeObj
+				valNode = &ir.NodeObject{Tag: tagItem, Path: p}
+			} else {
+				valNode, err = valueToNode(ctx, exampleVal, tagItem, depth, p, true)
+				if err != nil {
+					return nil, fmt.Errorf("%s: %w", p, err)
+				}
 			}
 
 			tagItem = valNode.GetTag()
@@ -1629,7 +1793,7 @@ func anyToJSONC(obj any, tag *ir.Tag, depth int, path string, example bool) (ir.
 			tagItem.Inherit(tag)
 
 			p := fmt.Sprintf("%s[%d]", path, i)
-			itemNode, err := valueToNode(val.Index(i).Interface(), tagItem, depth, p, example)
+			itemNode, err := valueToNode(ctx, val.Index(i).Interface(), tagItem, depth, p, example)
 			if err != nil {
 				return nil, fmt.Errorf("%s: %w", p, err)
 			}
@@ -1647,7 +1811,7 @@ func anyToJSONC(obj any, tag *ir.Tag, depth int, path string, example bool) (ir.
 		if size == 0 {
 			tag.IsEmpty = true
 			var exampleVal any
-			exampleVal, err = createExampleValue(typ.Elem())
+			exampleVal, err = createExampleValue(ctx, typ.Elem())
 			if err != nil {
 				return nil, fmt.Errorf("create example value for empty slice: %w", err)
 			}
@@ -1658,9 +1822,18 @@ func anyToJSONC(obj any, tag *ir.Tag, depth int, path string, example bool) (ir.
 			tagItem.Example = true
 
 			p := fmt.Sprintf("%s[%d]", path, 0)
-			itemNode, err := valueToNode(exampleVal, tagItem, depth, p, true)
-			if err != nil {
-				return nil, fmt.Errorf("%s: %w", p, err)
+
+			var itemNode ir.Node
+			if r, isRef := exampleVal.(*refMarker); isRef {
+				// 环内类型：产出引用空壳（D2，ref_to 标在空壳自身 tag 上）
+				tagItem.RefTo = r.refTo
+				tagItem.Type = ir.ValueTypeObj
+				itemNode = &ir.NodeObject{Tag: tagItem, Path: p}
+			} else {
+				itemNode, err = valueToNode(ctx, exampleVal, tagItem, depth, p, true)
+				if err != nil {
+					return nil, fmt.Errorf("%s: %w", p, err)
+				}
 			}
 
 			tagItem = itemNode.GetTag()
@@ -1698,7 +1871,7 @@ func anyToJSONC(obj any, tag *ir.Tag, depth int, path string, example bool) (ir.
 			tagItem.Inherit(tag)
 
 			p := fmt.Sprintf("%s[%d]", path, i)
-			itemNode, err := valueToNode(val.Index(i).Interface(), tagItem, depth, p, example)
+			itemNode, err := valueToNode(ctx, val.Index(i).Interface(), tagItem, depth, p, example)
 			if err != nil {
 				return nil, fmt.Errorf("%s: %w", p, err)
 			}

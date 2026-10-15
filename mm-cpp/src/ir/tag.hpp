@@ -57,6 +57,9 @@ enum TagKey : uint8_t {
   KMore = 31 << 3
 };
 
+constexpr uint8_t MetaHasRefId = 1 << 0;
+constexpr uint8_t MetaHasRefTo = 1 << 1;
+
 constexpr int DefaultVersion = 0;
 constexpr int DefaultLocationOffset = 0;
 
@@ -82,6 +85,9 @@ struct Tag {
   int version = DefaultVersion;
   std::string mime;
   uint8_t more = 0;
+
+  int refId = 0;
+  int refTo = 0;
 
   std::string childDesc;
   ValueType childType = ValueType::Unknown;
@@ -252,6 +258,10 @@ struct Tag {
       add("child_version=" + std::to_string(childVersion));
     if (!childMime.empty() && !isInherit)
       add("child_mime=" + childMime);
+    if (refId != 0 && !isInherit)
+      add("ref_id=" + std::to_string(refId));
+    if (refTo != 0 && !isInherit)
+      add("ref_to=" + std::to_string(refTo));
 
     return b.str();
   }
@@ -364,6 +374,14 @@ struct Tag {
       } else if (lower == "child_mime") {
         r.childMime = v;
         r.childType = ValueType::Media;
+      } else if (lower == "ref_id") {
+        int d = std::stoi(v);
+        if (d >= 1 && d <= 255)
+          r.refId = d;
+      } else if (lower == "ref_to") {
+        int d = std::stoi(v);
+        if (d >= 1 && d <= 255)
+          r.refTo = d;
       }
     }
     return r;
@@ -541,8 +559,33 @@ struct Tag {
     if (!childMime.empty() && !isInherit)
       encodeU64(&bs, KChildMime, static_cast<uint64_t>(parseMime(childMime)));
 
-    if (more != 0)
-      encodeU64(&bs, KMore, static_cast<uint64_t>(more));
+    // ref meta：[KMore | k][meta 位图][每个出现值 1 字节]，与 Go encodeRefMeta
+    // 互为逆运算；两字段全 0 时不写任何字节；任一字段越界（<0 或 >255）时整块
+    // 丢弃——绝不写截断值（文本侧 parse 已将取值限制在 1..255）。
+    auto refMetaValueOk = [](int x) {
+      return x == 0 || (x >= 1 && x <= 255);
+    };
+    if (refMetaValueOk(refId) && refMetaValueOk(refTo) &&
+        (refId != 0 || refTo != 0)) {
+      uint8_t meta = 0;
+      int k = 0;
+      if (refId != 0) {
+        meta |= MetaHasRefId;
+        k++;
+      }
+      if (refTo != 0) {
+        meta |= MetaHasRefTo;
+        k++;
+      }
+      writeByte(static_cast<uint8_t>(KMore | k));
+      writeByte(meta);
+      if (refId != 0) {
+        writeByte(static_cast<uint8_t>(refId & 0xFF));
+      }
+      if (refTo != 0) {
+        writeByte(static_cast<uint8_t>(refTo & 0xFF));
+      }
+    }
 
     return bs;
   }
@@ -901,6 +944,10 @@ inline Tag mergeTag(const Tag *dst, const Tag *src) {
     r.childVersion = src->childVersion;
   if (!src->childMime.empty())
     r.childMime = src->childMime;
+  if (src->refId != 0)
+    r.refId = src->refId;
+  if (src->refTo != 0)
+    r.refTo = src->refTo;
 
   return r;
 }

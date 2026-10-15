@@ -1151,7 +1151,47 @@ static bool dec_parse_one_tag_entry(mm_decoder_t *d, mm_tag_t *tag) {
     return true;
   }
 
+  case MM_TAG_KMORE: {
+    // ref meta：[meta 位图][每个出现值 1 字节]，低 3 bit = k = payload 字节数。
+    if (payload < 1)
+      return false;
+    uint8_t meta = dec_read_byte(d);
+    if (errno)
+      return false;
+    if (meta & ~(uint8_t)(MM_META_HAS_REF_ID | MM_META_HAS_REF_TO))
+      return false;
+    int k = 0;
+    if (meta & MM_META_HAS_REF_ID)
+      k++;
+    if (meta & MM_META_HAS_REF_TO)
+      k++;
+    if (payload != k)
+      return false;
+    if (meta & MM_META_HAS_REF_ID) {
+      uint8_t v = dec_read_byte(d);
+      if (errno)
+        return false;
+      if (v == 0)
+        return false;
+      tag->ref_id = (int)v;
+    }
+    if (meta & MM_META_HAS_REF_TO) {
+      uint8_t v = dec_read_byte(d);
+      if (errno)
+        return false;
+      if (v == 0)
+        return false;
+      tag->ref_to = (int)v;
+    }
+    return true;
+  }
+
   default:
+    // Unknown key: consume payload+1 bytes to stay
+    // byte-aligned with the Go encoder.
+    for (int i = 0; i < payload + 1; i++) {
+      dec_read_byte(d);
+    }
     return true;
   }
 }

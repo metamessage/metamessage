@@ -42,6 +42,7 @@ import {
   KMax,
   KMime,
   KMin,
+  KMore,
   KNullable,
   KPattern,
   KDeprecated,
@@ -566,6 +567,38 @@ export class MMDecoder {
           return 2 + l;
         }
         throw new Error('mime 不能超过 8 字节');
+
+      case KMore: {
+        // ref meta：[meta 位图][每个出现值 1 字节]，低 3 bit = k = payload 字节数。
+        if (l < 1) {
+          throw new Error('invalid ref meta: empty payload');
+        }
+        const meta = this.readByte();
+        if (meta & ~0x03) {
+          throw new Error(`invalid ref meta: reserved bits set (0x${meta.toString(16)})`);
+        }
+        let k = 0;
+        if (meta & 0x01) k++;
+        if (meta & 0x02) k++;
+        if (l !== k) {
+          throw new Error(`invalid ref meta: payload length ${l + 1} mismatch, want ${1 + k}`);
+        }
+        if (meta & 0x01) {
+          const v = this.readByte();
+          if (v === 0) {
+            throw new Error('invalid ref meta: ref_id must be in [1, 255]');
+          }
+          tag.refId = v;
+        }
+        if (meta & 0x02) {
+          const v = this.readByte();
+          if (v === 0) {
+            throw new Error('invalid ref meta: ref_to must be in [1, 255]');
+          }
+          tag.refTo = v;
+        }
+        return 2 + l;
+      }
 
       default:
         throw new Error('invalid data');

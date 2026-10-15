@@ -498,6 +498,33 @@ class Decoder:
             tag.child_mime = str(MIME(mime_id))
             tag.child_type = ValueType.Media
             return 2 + l
+        elif p == TagKey.More:
+            # ref meta：[meta 位图][每个出现值 1 字节]，低 3 bit = k = payload 字节数。
+            if l < 1:
+                raise ValueError("invalid ref meta: empty payload")
+            meta = self._read_byte()
+            if meta & ~0x03:
+                raise ValueError(f"invalid ref meta: reserved bits set (0x{meta:02x})")
+            k = 0
+            if meta & 0x01:
+                k += 1
+            if meta & 0x02:
+                k += 1
+            if l != k:
+                raise ValueError(
+                    f"invalid ref meta: payload length {l + 1} mismatch, want {1 + k}"
+                )
+            if meta & 0x01:
+                v = self._read_bytes(1)[0]
+                if v == 0:
+                    raise ValueError("invalid ref meta: ref_id must be in [1, 255]")
+                tag.ref_id = v
+            if meta & 0x02:
+                v = self._read_bytes(1)[0]
+                if v == 0:
+                    raise ValueError("invalid ref meta: ref_to must be in [1, 255]")
+                tag.ref_to = v
+            return 2 + l
         else:
             raise ValueError("invalid data")
 

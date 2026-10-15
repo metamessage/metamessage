@@ -52,12 +52,48 @@ object TagFieldParser {
             Tag.TagKey.K_CHILD_LOCATION -> tag.childLocation = readAscii(c, low).toInt()
             Tag.TagKey.K_CHILD_VERSION -> tag.childVersion = readUintN(c, low)
             Tag.TagKey.K_CHILD_MIME -> readMime(c, tag, low, false)
+            Tag.TagKey.K_MORE -> readRefMeta(c, tag, low)
             else ->
                     throw MmDecodeException(
                             "invalid tag field prefix: 0x${Integer.toHexString(prefix)}"
                     )
         }
         return c.pos - start
+    }
+
+    /** ref meta：[meta 位图][每个出现值 1 字节]，低 3 bit = k = payload 字节数。 */
+    private fun readRefMeta(c: Cursor, tag: Tag, low: Int) {
+        if (low < 1) {
+            throw MmDecodeException("invalid ref meta: empty payload")
+        }
+        val meta = c.read()
+        if (meta and (Tag.TagKey.META_HAS_REF_ID or Tag.TagKey.META_HAS_REF_TO).inv() != 0) {
+            throw MmDecodeException(
+                    "invalid ref meta: reserved bits set (0x${Integer.toHexString(meta)})"
+            )
+        }
+        var k = 0
+        if (meta and Tag.TagKey.META_HAS_REF_ID != 0) k++
+        if (meta and Tag.TagKey.META_HAS_REF_TO != 0) k++
+        if (low != k) {
+            throw MmDecodeException(
+                    "invalid ref meta: payload length ${low + 1} mismatch, want ${1 + k}"
+            )
+        }
+        if (meta and Tag.TagKey.META_HAS_REF_ID != 0) {
+            val v = c.read()
+            if (v == 0) {
+                throw MmDecodeException("invalid ref meta: ref_id must be in [1, 255]")
+            }
+            tag.refId = v
+        }
+        if (meta and Tag.TagKey.META_HAS_REF_TO != 0) {
+            val v = c.read()
+            if (v == 0) {
+                throw MmDecodeException("invalid ref meta: ref_to must be in [1, 255]")
+            }
+            tag.refTo = v
+        }
     }
 
     private fun readSizedUtf8(c: Cursor, tag: Tag, low: Int, mode: Int) {

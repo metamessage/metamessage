@@ -79,8 +79,13 @@ typedef struct {
   int child_version;
   char *child_mime;
   int more;
+  int ref_id;
+  int ref_to;
   bool is_inherit;
 } mm_tag_t;
+
+#define MM_META_HAS_REF_ID (1 << 0)
+#define MM_META_HAS_REF_TO (1 << 1)
 
 void mm_tag_init(mm_tag_t *tag);
 void mm_tag_cleanup(mm_tag_t *tag);

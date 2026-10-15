@@ -44,16 +44,24 @@ func dumpNode(node ir.Node, indent string) {
 		fmt.Printf("%sArray (items: %d):\n", indent, len(n.Items))
 		if n.Tag != nil {
 			dumpTag(indent+"  ArrayTag: ", n.Tag)
-			tb := n.Tag.Bytes()
-			fmt.Printf("%s  Bytes(): %s (len=%d)\n", indent, hex.EncodeToString(tb), len(tb))
+			tb, err := n.Tag.Bytes()
+			if err != nil {
+				fmt.Printf("%s  Bytes() error: %v\n", indent, err)
+			} else {
+				fmt.Printf("%s  Bytes(): %s (len=%d)\n", indent, hex.EncodeToString(tb), len(tb))
+			}
 		}
 		for i, item := range n.Items {
 			if v, ok := item.(*ir.NodeScalar); ok {
 				fmt.Printf("%s  [%d] Value data=%v text=%q:\n", indent, i, v.Data, v.Text)
 				if v.Tag != nil {
 					dumpTag(indent+"    Tag: ", v.Tag)
-					tb := v.Tag.Bytes()
-					fmt.Printf("%s    Bytes(): %s (len=%d)\n", indent, hex.EncodeToString(tb), len(tb))
+					tb, err := v.Tag.Bytes()
+					if err != nil {
+						fmt.Printf("%s    Bytes() error: %v\n", indent, err)
+					} else {
+						fmt.Printf("%s    Bytes(): %s (len=%d)\n", indent, hex.EncodeToString(tb), len(tb))
+					}
 				} else {
 					fmt.Printf("%s    Tag: nil\n", indent)
 				}

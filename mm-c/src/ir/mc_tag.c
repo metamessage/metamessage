@@ -751,6 +751,20 @@ char *mm_tag_to_string(const mm_tag_t *tag) {
     first = false;
   }
 
+  if (tag->ref_id != 0 && !tag->is_inherit) {
+    if (!first)
+      append_str(&buf, &cap, &len, "; ");
+    append_fmt(&buf, &cap, &len, "ref_id=%d", tag->ref_id);
+    first = false;
+  }
+
+  if (tag->ref_to != 0 && !tag->is_inherit) {
+    if (!first)
+      append_str(&buf, &cap, &len, "; ");
+    append_fmt(&buf, &cap, &len, "ref_to=%d", tag->ref_to);
+    first = false;
+  }
+
   if (!buf)
     return strdup("");
   return buf;
@@ -986,6 +1000,18 @@ mm_tag_t mm_tag_parse(const char *tag_str) {
       free(r.child_mime);
       r.child_mime = strdup(val);
       r.child_type = MM_VALUE_MEDIA;
+    } else if (strcmp(k, "ref_id") == 0) {
+      char *end;
+      long d = strtol(val, &end, 10);
+      if (*end == '\0' && d >= 1 && d <= 255) {
+        r.ref_id = (int)d;
+      }
+    } else if (strcmp(k, "ref_to") == 0) {
+      char *end;
+      long d = strtol(val, &end, 10);
+      if (*end == '\0' && d >= 1 && d <= 255) {
+        r.ref_to = (int)d;
+      }
     }
 
     free(k);
@@ -996,6 +1022,9 @@ mm_tag_t mm_tag_parse(const char *tag_str) {
   free_split_parts(parts, part_count);
   return r;
 }
+
+// ref_id/ref_to 合法域：0（未设置）或 1..255（u8 wire 上限，见 MM_TAG_KMORE）。
+static int ref_meta_value_ok(int v) { return v == 0 || (v >= 1 && v <= 255); }
 
 uint8_t *mm_tag_bytes(const mm_tag_t *tag, size_t *out_len) {
   uint8_t *buf = NULL;
@@ -1217,6 +1246,37 @@ uint8_t *mm_tag_bytes(const mm_tag_t *tag, size_t *out_len) {
                (uint64_t)parse_mime(tag->child_mime));
   }
 
+  // ref meta：[KMore | k][meta 位图][每个出现值 1 字节]，与 Go encodeRefMeta
+  // 互为逆运算；两字段全 0 时不写任何字节；任一字段越界（<0 或 >255）时整块
+  // 丢弃——绝不写截断值（文本侧 parse 已将取值限制在 1..255）。
+  if (ref_meta_value_ok(tag->ref_id) && ref_meta_value_ok(tag->ref_to) &&
+      (tag->ref_id != 0 || tag->ref_to != 0)) {
+    uint8_t meta = 0;
+    int k = 0;
+    if (tag->ref_id != 0) {
+      meta |= MM_META_HAS_REF_ID;
+      k++;
+    }
+    if (tag->ref_to != 0) {
+      meta |= MM_META_HAS_REF_TO;
+      k++;
+    }
+    if (len + 2 + (size_t)k > cap) {
+      cap = cap ? cap * 2 : 128;
+      while (len + 2 + (size_t)k > cap)
+        cap *= 2;
+      buf = (uint8_t *)realloc(buf, cap);
+    }
+    buf[len++] = (uint8_t)(MM_TAG_KMORE | k);
+    buf[len++] = meta;
+    if (tag->ref_id != 0) {
+      buf[len++] = (uint8_t)(tag->ref_id & 0xFF);
+    }
+    if (tag->ref_to != 0) {
+      buf[len++] = (uint8_t)(tag->ref_to & 0xFF);
+    }
+  }
+
   *out_len = len;
   return buf;
 }
@@ -1361,6 +1421,14 @@ void mm_tag_merge(mm_tag_t *dst, const mm_tag_t *src) {
   if (src->child_mime) {
     free(dst->child_mime);
     dst->child_mime = strdup(src->child_mime);
+  }
+
+  if (src->ref_id != 0) {
+    dst->ref_id = src->ref_id;
+  }
+
+  if (src->ref_to != 0) {
+    dst->ref_to = src->ref_to;
   }
 
   dst->is_inherit = false;

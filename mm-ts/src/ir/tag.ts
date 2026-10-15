@@ -74,6 +74,8 @@ export class Tag {
   version: number = 0;
   mime: string = '';
   more: number = 0;
+  refId: number = 0;
+  refTo: number = 0;
   childDesc: string = '';
   childType: ValueType = ValueType.Unknown;
   childNullable: boolean = false;
@@ -317,6 +319,14 @@ export class Tag {
 
     if (this.childMime) {
       parts.push(`child_mime=${this.childMime}`);
+    }
+
+    if (this.refId !== 0 && !this.isInherit) {
+      parts.push(`ref_id=${this.refId}`);
+    }
+
+    if (this.refTo !== 0 && !this.isInherit) {
+      parts.push(`ref_to=${this.refTo}`);
     }
 
     return parts.join('; ');
@@ -814,8 +824,30 @@ export class Tag {
       this.encodeU64(buf, KChildMime, BigInt(this.parseMIME(this.childMime)));
     }
 
-    if (this.more !== 0) {
-      this.encodeU64(buf, KMore, BigInt(this.more));
+    // ref meta：[KMore | k][meta 位图][每个出现值 1 字节]，与 Go
+    // encodeRefMeta 互为逆运算；两字段全 0 时不写任何字节；任一字段越界
+    // （<0 或 >255）时整块丢弃——绝不写截断值（文本侧 parse 已限制 1..255）。
+    const refIdOk = this.refId === 0 || (this.refId >= 1 && this.refId <= 255);
+    const refToOk = this.refTo === 0 || (this.refTo >= 1 && this.refTo <= 255);
+    if (refIdOk && refToOk && (this.refId !== 0 || this.refTo !== 0)) {
+      let meta = 0;
+      let k = 0;
+      if (this.refId !== 0) {
+        meta |= 1 << 0;
+        k++;
+      }
+      if (this.refTo !== 0) {
+        meta |= 1 << 1;
+        k++;
+      }
+      buf.push(KMore | k);
+      buf.push(meta);
+      if (this.refId !== 0) {
+        buf.push(this.refId & 0xFF);
+      }
+      if (this.refTo !== 0) {
+        buf.push(this.refTo & 0xFF);
+      }
     }
 
     return new Uint8Array(buf);
@@ -2036,6 +2068,20 @@ export function parseMMTag(tagStr: string): Tag {
         tag.childMime = value;
         tag.childType = ValueType.Media;
         break;
+      case 'ref_id': {
+        const id = parseInt(value, 10);
+        if (Number.isFinite(id) && id >= 1 && id <= 255) {
+          tag.refId = id;
+        }
+        break;
+      }
+      case 'ref_to': {
+        const id = parseInt(value, 10);
+        if (Number.isFinite(id) && id >= 1 && id <= 255) {
+          tag.refTo = id;
+        }
+        break;
+      }
     }
   }
 

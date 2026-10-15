@@ -728,6 +728,11 @@ def _get_tag_str(tag) -> str:
     if tag.child_mime and not inh:
         parts.append(f"child_mime={tag.child_mime}")
 
+    if getattr(tag, "ref_id", 0) and not inh:
+        parts.append(f"ref_id={tag.ref_id}")
+    if getattr(tag, "ref_to", 0) and not inh:
+        parts.append(f"ref_to={tag.ref_to}")
+
     return "; ".join(parts)
 
 

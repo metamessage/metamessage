@@ -124,8 +124,12 @@ func (e *encoder) encodeNodeObject(obj *ir.NodeObject) (n uint32, err error) {
 }
 
 func (e *encoder) encodeComment(payload []byte, tag *ir.Tag) (n uint32, err error) {
+	var tb []byte
+	if tb, err = tag.Bytes(); err != nil {
+		return
+	}
 	var ns uint32
-	if ns, err = e.encodeT(tag.Bytes()); err != nil {
+	if ns, err = e.encodeT(tb); err != nil {
 		return
 	}
 

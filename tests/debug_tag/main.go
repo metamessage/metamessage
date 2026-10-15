@@ -21,11 +21,16 @@ func main() {
 	fmt.Printf("  ChildDesc: %q\n", childTag.ChildDesc)
 	fmt.Printf("  Type: %v\n", childTag.Type)
 	fmt.Printf("  ChildType: %v\n", childTag.ChildType)
-	fmt.Printf("  Bytes: %v\n", childTag.Bytes())
-	fmt.Printf("  Bytes hex: %x\n", childTag.Bytes())
+	tb, err := childTag.Bytes()
+	if err != nil {
+		fmt.Printf("  Bytes error: %v\n", err)
+		return
+	}
+	fmt.Printf("  Bytes: %v\n", tb)
+	fmt.Printf("  Bytes hex: %x\n", tb)
 
 	// Now check what Bytes() produces
-	bytesVal := childTag.Bytes()
+	bytesVal := tb
 	fmt.Printf("  Bytes len: %d\n", len(bytesVal))
 	for i, b := range bytesVal {
 		fmt.Printf("    [%d] = 0x%02x (%08b)\n", i, b, b)

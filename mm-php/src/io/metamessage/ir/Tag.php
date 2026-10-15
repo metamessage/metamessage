@@ -28,6 +28,8 @@ class Tag
     public int $version = self::DEFAULT_VERSION;
     public string $mime = '';
     public int $more = 0;
+    public int $refId = 0;
+    public int $refTo = 0;
 
     public string $childDesc = '';
     public ValueType $childType;
@@ -82,6 +84,8 @@ class Tag
     const T_CHILD_LOCATION = 'child_location';
     const T_CHILD_VERSION = 'child_version';
     const T_CHILD_MIME = 'child_mime';
+    const T_REF_ID = 'ref_id';
+    const T_REF_TO = 'ref_to';
 
     const K_IS_NULL = 0 << 3;
     const K_EXAMPLE = 1 << 3;
@@ -509,6 +513,14 @@ class Tag
             $add(self::T_CHILD_MIME . '=' . $this->childMime);
         }
 
+        if ($this->refId !== 0 && !$this->isInherit) {
+            $add(self::T_REF_ID . '=' . $this->refId);
+        }
+
+        if ($this->refTo !== 0 && !$this->isInherit) {
+            $add(self::T_REF_TO . '=' . $this->refTo);
+        }
+
         return $b;
     }
 
@@ -797,6 +809,32 @@ class Tag
             self::encodeU64Static($w, self::K_CHILD_MIME, Mime::parse($this->childMime));
         }
 
+        // ref meta：[K_MORE | k][meta 位图][每个出现值 1 字节]，与 Go
+        // encodeRefMeta 互为逆运算；两字段全 0 时不写任何字节；任一字段越界
+        // （<0 或 >255）时整块丢弃——绝不写截断值（文本侧 parse 已限制 1..255）。
+        $refIdOk = $this->refId === 0 || ($this->refId >= 1 && $this->refId <= 255);
+        $refToOk = $this->refTo === 0 || ($this->refTo >= 1 && $this->refTo <= 255);
+        if ($refIdOk && $refToOk && ($this->refId !== 0 || $this->refTo !== 0)) {
+            $meta = 0;
+            $k = 0;
+            if ($this->refId !== 0) {
+                $meta |= 1 << 0;
+                $k++;
+            }
+            if ($this->refTo !== 0) {
+                $meta |= 1 << 1;
+                $k++;
+            }
+            $w->writeByte(self::K_MORE | $k);
+            $w->writeByte($meta);
+            if ($this->refId !== 0) {
+                $w->writeByte($this->refId & 0xFF);
+            }
+            if ($this->refTo !== 0) {
+                $w->writeByte($this->refTo & 0xFF);
+            }
+        }
+
         return $w->toByteArray();
     }
 
@@ -1002,6 +1040,14 @@ class Tag
             $dst->childMime = $src->childMime;
         }
 
+        if ($src->refId !== 0) {
+            $dst->refId = $src->refId;
+        }
+
+        if ($src->refTo !== 0) {
+            $dst->refTo = $src->refTo;
+        }
+
         return $dst;
     }
 
@@ -1177,6 +1223,20 @@ class Tag
                 case self::T_CHILD_MIME:
                     $r->childMime = $v;
                     $r->childType = ValueType::MEDIA;
+                    break;
+
+                case self::T_REF_ID:
+                    $n = (int)$v;
+                    if ($n >= 1 && $n <= 255) {
+                        $r->refId = $n;
+                    }
+                    break;
+
+                case self::T_REF_TO:
+                    $n = (int)$v;
+                    if ($n >= 1 && $n <= 255) {
+                        $r->refTo = $n;
+                    }
                     break;
 
                 default:

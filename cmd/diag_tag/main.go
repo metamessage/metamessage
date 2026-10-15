@@ -21,7 +21,12 @@ func main() {
 
 	fmt.Printf("TEST Inherit: Child: IsInherit=%v, Desc=%q, ChildDesc=%q, Type=%v\n",
 		childTag.IsInherit, childTag.Desc, childTag.ChildDesc, childTag.Type)
-	fmt.Printf("TEST Inherit: Child tag bytes: %x\n\n", childTag.Bytes())
+	tb, err := childTag.Bytes()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "child tag bytes error: %v\n", err)
+		os.Exit(1)
+	}
+	fmt.Printf("TEST Inherit: Child tag bytes: %x\n\n", tb)
 
 	if len(os.Args) < 2 {
 		fmt.Fprintf(os.Stderr, "usage: %s <file.jsonc>\n", os.Args[0])
@@ -63,7 +68,12 @@ func main() {
 			}
 			b, _ := json.MarshalIndent(val.Tag, "", "    ")
 			fmt.Printf("  Item[%d] tag JSON: %s\n", i, string(b))
-			fmt.Printf("  Item[%d] tag bytes: %x\n", i, val.Tag.Bytes())
+			tb, err := val.Tag.Bytes()
+		if err != nil {
+			fmt.Printf("  Item[%d] tag bytes error: %v\n", i, err)
+			continue
+		}
+		fmt.Printf("  Item[%d] tag bytes: %x\n", i, tb)
 			if i >= 0 {
 				break
 			}

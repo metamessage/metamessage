@@ -1018,6 +1018,8 @@ class JsoncParser(private val tokens: List<JsoncToken>) {
                 "child_location" -> tag.childLocation = value.toIntOrNull() ?: 0
                 "child_version" -> tag.childVersion = value.toIntOrNull() ?: 0
                 "child_mime" -> tag.childMime = value
+                "ref_id" -> tag.refId = value.toIntOrNull()?.takeIf { it in 1..255 } ?: 0
+                "ref_to" -> tag.refTo = value.toIntOrNull()?.takeIf { it in 1..255 } ?: 0
             }
         }
         return tag
@@ -1052,6 +1054,8 @@ class JsoncParser(private val tokens: List<JsoncToken>) {
         if (a.childLocation != 0) b.childLocation = a.childLocation
         if (a.childVersion != 0) b.childVersion = a.childVersion
         if (a.childMime.isNotEmpty()) b.childMime = a.childMime
+        if (a.refId != 0) b.refId = a.refId
+        if (a.refTo != 0) b.refTo = a.refTo
         return b
     }
 

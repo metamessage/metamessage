@@ -77,6 +77,9 @@ pub struct Tag {
     pub child_mime: Option<String>,
 
     pub more: u8,
+
+    pub ref_id: u8,
+    pub ref_to: u8,
 }
 
 impl Tag {
@@ -116,6 +119,8 @@ impl Tag {
             child_version: None,
             child_mime: None,
             more: 0,
+            ref_id: 0,
+            ref_to: 0,
         }
     }
 
@@ -312,6 +317,14 @@ impl Tag {
 
         if let Some(ref v) = src.child_mime {
             dst.child_mime = Some(v.clone());
+        }
+
+        if src.ref_id != 0 {
+            dst.ref_id = src.ref_id;
+        }
+
+        if src.ref_to != 0 {
+            dst.ref_to = src.ref_to;
         }
 
         dst
@@ -546,6 +559,25 @@ impl Tag {
                         tag.child_type = ValueType::Media;
                     }
                 }
+                "ref_id" => {
+                    if let Some(ref v) = value {
+                        // u8 parse 天然拒绝 >255 与非数字：越界即忽略（不截断）
+                        if let Ok(id) = v.parse::<u8>() {
+                            if id >= 1 {
+                                tag.ref_id = id;
+                            }
+                        }
+                    }
+                }
+                "ref_to" => {
+                    if let Some(ref v) = value {
+                        if let Ok(id) = v.parse::<u8>() {
+                            if id >= 1 {
+                                tag.ref_to = id;
+                            }
+                        }
+                    }
+                }
                 _ => {}
             }
         }
@@ -725,6 +757,14 @@ impl Tag {
 
         if let Some(ref v) = self.child_mime {
             parts.push(format!("child_mime={}", v));
+        }
+
+        if self.ref_id != 0 && !self.is_inherit {
+            parts.push(format!("ref_id={}", self.ref_id));
+        }
+
+        if self.ref_to != 0 && !self.is_inherit {
+            parts.push(format!("ref_to={}", self.ref_to));
         }
 
         if parts.is_empty() {
@@ -1038,8 +1078,28 @@ impl Tag {
             Self::encode_u64(&mut bs, TagKey::ChildMime as u8, mime_id as u64);
         }
 
-        if self.more != 0 {
-            Self::encode_u64(&mut bs, TagKey::More as u8, self.more as u64);
+        // ref meta：[More | k][meta 位图][每个出现值 1 字节]，与 Go
+        // encodeRefMeta 互为逆运算；u8 字段类型天然强制 1..=255 上限，
+        // 两字段全 0 时不写任何字节。
+        if self.ref_id != 0 || self.ref_to != 0 {
+            let mut meta: u8 = 0;
+            let mut k = 0;
+            if self.ref_id != 0 {
+                meta |= 1 << 0;
+                k += 1;
+            }
+            if self.ref_to != 0 {
+                meta |= 1 << 1;
+                k += 1;
+            }
+            bs.push(TagKey::More as u8 | k as u8);
+            bs.push(meta);
+            if self.ref_id != 0 {
+                bs.push(self.ref_id);
+            }
+            if self.ref_to != 0 {
+                bs.push(self.ref_to);
+            }
         }
 
         bs
