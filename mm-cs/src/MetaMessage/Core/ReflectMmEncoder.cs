@@ -7,7 +7,7 @@ namespace MetaMessage.Core;
 
 public static class ReflectMmEncoder
 {
-    private const int MaxDepth = 32;
+    private const int MaxDepth = 256;
 
     public static INode ValueToNode(object root, string tagStr)
     {

@@ -241,7 +241,7 @@ def _zero_value_for_type(vt: ValueType) -> Tuple[Any, str]:
 
 # ===== ValueToNode =====
 
-_MAX_DEPTH = 32
+_MAX_DEPTH = 256
 
 def value_to_node(value: Any, tag: Optional[Tag] = None) -> Node:
     example = tag.example if tag else False

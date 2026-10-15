@@ -16,7 +16,7 @@ import (
 )
 
 const BitSize = 32 << (^uint(0) >> 63)
-const maxDepth = 32
+const maxDepth = 256
 
 type Parser struct {
 	toks []token.Token

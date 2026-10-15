@@ -6,7 +6,7 @@ public enum MMValueToNodeError: Error {
     case unsupportedType(String)
 }
 
-private let maxDepth = 32
+private let maxDepth = 256
 
 public func valueToNode(_ value: Any?, tag tagStr: String = "") throws -> Node {
     var tag: Tag? = nil
