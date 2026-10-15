@@ -194,36 +194,54 @@ const (
 	FloatLen8Byte = FloatLenMask
 )
 
+// String / Bytes / Tag 的 5-bit suffix 分配（v0.3.0）：
+//   0..27  = 内联长度（length 直接等于 suffix）
+//   28/29/30/31 = 1/2/3/4 字节大端长度档位标记
+// 最大可表达长度 = Max4Byte(0xFFFFFFFF) ≈ 4.29GB。
+//
+// 注意：这是不兼容变更。v0.2.x 用 30/31 作 1/2 字节标记、内联范围 0..29，
+// 现在内联收窄到 0..27 以腾出四个档位标记。
+
 // String
 const (
 	StringLenMask  = 0b11111
-	StringLen1Byte = StringLenMask - 1
-	StringLen2Byte = StringLenMask
+	StringLen1Byte = StringLenMask - 3
+	StringLen2Byte = StringLenMask - 2
+	StringLen3Byte = StringLenMask - 1
+	StringLen4Byte = StringLenMask
 )
 
 // Bytes
 const (
 	BytesLenMask  = 0b11111
-	BytesLen1Byte = BytesLenMask - 1
-	BytesLen2Byte = BytesLenMask
+	BytesLen1Byte = BytesLenMask - 3
+	BytesLen2Byte = BytesLenMask - 2
+	BytesLen3Byte = BytesLenMask - 1
+	BytesLen4Byte = BytesLenMask
 )
 
-// Container
+// Container：suffix 的第 4 位是 Array/Object 标志，低 4 位才是长度。
+//   0..11  = 内联长度
+//   12/13/14/15 = 1/2/3/4 字节大端长度档位标记
 const (
 	ContainerMask   = 0b10000
 	ContainerObject = 0b00000
 	ContainerArray  = 0b10000
 
 	ContainerLenMask  = 0b01111
-	ContainerLen1Byte = ContainerLenMask - 1
-	ContainerLen2Byte = ContainerLenMask
+	ContainerLen1Byte = ContainerLenMask - 3
+	ContainerLen2Byte = ContainerLenMask - 2
+	ContainerLen3Byte = ContainerLenMask - 1
+	ContainerLen4Byte = ContainerLenMask
 )
 
-// Tag
+// Tag（tag+payload 合计长度，档位分配同 String）
 const (
 	TagLenMask  = 0b11111
-	TagLen1Byte = TagLenMask - 1
-	TagLen2Byte = TagLenMask
+	TagLen1Byte = TagLenMask - 3
+	TagLen2Byte = TagLenMask - 2
+	TagLen3Byte = TagLenMask - 1
+	TagLen4Byte = TagLenMask
 )
 
 // TagPayload
@@ -252,6 +270,10 @@ func TagLen(b byte) (int, int) {
 		return 1, 0
 	case TagLen2Byte:
 		return 2, 0
+	case TagLen3Byte:
+		return 3, 0
+	case TagLen4Byte:
+		return 4, 0
 	default:
 		return 0, l
 	}
@@ -264,6 +286,10 @@ func ContainerLen(b byte) (int, int) {
 		return 1, 0
 	case ContainerLen2Byte:
 		return 2, 0
+	case ContainerLen3Byte:
+		return 3, 0
+	case ContainerLen4Byte:
+		return 4, 0
 	default:
 		return 0, l
 	}
@@ -275,23 +301,33 @@ func IsArray(b byte) bool {
 
 func StringLen(b byte) (int, int) {
 	l := int(b & StringLenMask)
-	if l < StringLen1Byte {
+	switch l {
+	case StringLen1Byte:
+		return 1, 0
+	case StringLen2Byte:
+		return 2, 0
+	case StringLen3Byte:
+		return 3, 0
+	case StringLen4Byte:
+		return 4, 0
+	default:
 		return 0, l
-	} else if l == StringLen1Byte {
-		return 1, l
-	} else {
-		return 2, l
 	}
 }
 
 func BytesLen(b byte) (int, int) {
 	l := int(b & BytesLenMask)
-	if l < BytesLen1Byte {
+	switch l {
+	case BytesLen1Byte:
+		return 1, 0
+	case BytesLen2Byte:
+		return 2, 0
+	case BytesLen3Byte:
+		return 3, 0
+	case BytesLen4Byte:
+		return 4, 0
+	default:
 		return 0, l
-	} else if l == BytesLen1Byte {
-		return 1, l
-	} else {
-		return 2, l
 	}
 }
 

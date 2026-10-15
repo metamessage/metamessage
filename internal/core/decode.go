@@ -197,6 +197,18 @@ func (d *decoder) decodeTag(prefix byte, path string) (node ir.Node, length int,
 			return
 		}
 		l2 = int(l[0])<<8 | int(l[1])
+	case 3:
+		var l []byte
+		if l, err = d.ReadBytes(3); err != nil {
+			return
+		}
+		l2 = int(l[0])<<16 | int(l[1])<<8 | int(l[2])
+	case 4:
+		var l []byte
+		if l, err = d.ReadBytes(4); err != nil {
+			return
+		}
+		l2 = int(l[0])<<24 | int(l[1])<<16 | int(l[2])<<8 | int(l[3])
 	default:
 		err = errors.New("invalid data")
 		return
@@ -432,6 +444,18 @@ func (d *decoder) decodeString(prefix byte, tag *ir.Tag, path string) (node ir.N
 			return
 		}
 		l2 = int(l[0])<<8 | int(l[1])
+	case 3:
+		var l []byte
+		if l, err = d.ReadBytes(3); err != nil {
+			return
+		}
+		l2 = int(l[0])<<16 | int(l[1])<<8 | int(l[2])
+	case 4:
+		var l []byte
+		if l, err = d.ReadBytes(4); err != nil {
+			return
+		}
+		l2 = int(l[0])<<24 | int(l[1])<<16 | int(l[2])<<8 | int(l[3])
 	default:
 		err = errors.New("invalid data")
 		return
@@ -508,6 +532,18 @@ func (d *decoder) decodeBytes(prefix byte, tag *ir.Tag, path string) (node ir.No
 			return
 		}
 		l2 = int(l[0])<<8 | int(l[1])
+	case 3:
+		var l []byte
+		if l, err = d.ReadBytes(3); err != nil {
+			return
+		}
+		l2 = int(l[0])<<16 | int(l[1])<<8 | int(l[2])
+	case 4:
+		var l []byte
+		if l, err = d.ReadBytes(4); err != nil {
+			return
+		}
+		l2 = int(l[0])<<24 | int(l[1])<<16 | int(l[2])<<8 | int(l[3])
 	default:
 		err = errors.New("invalid data")
 		return
@@ -1457,6 +1493,28 @@ func (d *decoder) decodeArr(prefix byte, tag *ir.Tag, path string) (node *ir.Nod
 			return
 		}
 		l2 = int(l[0])<<8 | int(l[1])
+	case 3:
+		if int(d.offset)+3 > len(d.data) {
+			err = fmt.Errorf("%s: invalid arr", path)
+			return
+		}
+		var l []byte
+		if l, err = d.ReadBytes(3); err != nil {
+			err = fmt.Errorf("%s: decodeArr %w", path, err)
+			return
+		}
+		l2 = int(l[0])<<16 | int(l[1])<<8 | int(l[2])
+	case 4:
+		if int(d.offset)+4 > len(d.data) {
+			err = fmt.Errorf("%s: invalid arr", path)
+			return
+		}
+		var l []byte
+		if l, err = d.ReadBytes(4); err != nil {
+			err = fmt.Errorf("%s: decodeArr %w", path, err)
+			return
+		}
+		l2 = int(l[0])<<24 | int(l[1])<<16 | int(l[2])<<8 | int(l[3])
 	default:
 		err = fmt.Errorf("%s: invalid arr", path)
 		return
@@ -1521,6 +1579,28 @@ func (d *decoder) decodeObj(prefix byte, tag *ir.Tag, path string) (node *ir.Nod
 			return
 		}
 		l2 = int(l[0])<<8 | int(l[1])
+	case 3:
+		if int(d.offset)+3 > len(d.data) {
+			err = fmt.Errorf("%s: invalid obj", path)
+			return
+		}
+		var l []byte
+		if l, err = d.ReadBytes(3); err != nil {
+			err = fmt.Errorf("%s: decodeObj3 %w", path, err)
+			return
+		}
+		l2 = int(l[0])<<16 | int(l[1])<<8 | int(l[2])
+	case 4:
+		if int(d.offset)+4 > len(d.data) {
+			err = fmt.Errorf("%s: invalid obj", path)
+			return
+		}
+		var l []byte
+		if l, err = d.ReadBytes(4); err != nil {
+			err = fmt.Errorf("%s: decodeObj4 %w", path, err)
+			return
+		}
+		l2 = int(l[0])<<24 | int(l[1])<<16 | int(l[2])<<8 | int(l[3])
 	default:
 		err = fmt.Errorf("%s: invalid obj", path)
 		return

@@ -25,8 +25,10 @@ type encoder struct {
 	maxCap uint32
 }
 
-const defaultBufSize = 1024       // 1KB
-const maxCap = 1024 * 1024 * 1024 // 1GB
+const defaultBufSize = 1024 // 1KB
+// v0.3.0：长度槽扩到 4 字节，单条消息最大 0xFFFFFFFF ≈ 4.29GB。
+// 注意 encoder.offset 是 uint32，上界正好也是 0xFFFFFFFF，两者对齐。
+const maxCap = 0xFFFFFFFF
 
 func NewEncoder(w io.Writer) *encoder {
 	e := &encoder{

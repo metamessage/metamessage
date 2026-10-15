@@ -113,23 +113,46 @@ func TestBoundaryObjectPayloadRoundTrip(t *testing.T) {
 	}
 }
 
-// TestBoundaryPlusOneStillRejected 超过 65535 照旧报错，且错误信息可读——
-// 防止修复时把守卫一起放宽。
-func TestBoundaryPlusOneStillRejected(t *testing.T) {
-	if _, err := EncodeFromValue(strings.Repeat("x", 65536), ""); err == nil {
-		t.Fatal("string of 65536 bytes must be rejected")
-	} else if !strings.Contains(err.Error(), "string too long") {
-		t.Fatalf("string: error = %q, want \"string too long\"", err)
+// TestBoundaryPlusOneNowAccepted v0.3.0 起 65536 不再被拒绝——它落在新的
+// 3 字节长度档（Max2Byte+1 .. Max3Byte）。这里验证它真能无损往返，而不是
+// 像 v0.2.x 那样报 "too long"。
+func TestBoundaryPlusOneNowAccepted(t *testing.T) {
+	in := strings.Repeat("x", 65536)
+	wire, err := EncodeFromValue(in, "")
+	if err != nil {
+		t.Fatalf("65536-byte string must now encode (3-byte tier), got: %v", err)
 	}
+	// 1 字节 sign + 3 字节长度 + 65536 负载
+	if want := 65536 + 4; len(wire) != want {
+		t.Fatalf("wire = %d bytes, want %d", len(wire), want)
+	}
+	var out string
+	if err := DecodeToValue(wire, &out); err != nil {
+		t.Fatalf("DecodeToValue: %v", err)
+	}
+	if out != in {
+		t.Fatalf("string corrupted: got %d bytes, want %d", len(out), len(in))
+	}
+}
 
-	// 数组 payload 超限：86×768 = 66288 > 65535
-	in := make([]string, 86)
-	for i := range in {
-		in[i] = strings.Repeat("z", 768)
+// TestBoundaryLargePayloadRoundTrip 验证 4 字节长度档端到端可用。
+// 16777216 = Max3Byte(0xFFFFFF) + 1，是 4 字节档的入口。
+func TestBoundaryLargePayloadRoundTrip(t *testing.T) {
+	const size = 16777216
+	in := strings.Repeat("x", size)
+	wire, err := EncodeFromValue(in, "")
+	if err != nil {
+		t.Fatalf("%d-byte string must encode (4-byte tier), got: %v", size, err)
 	}
-	if _, err := EncodeFromValue(in, ""); err == nil {
-		t.Fatal("array with payload 66288 must be rejected")
-	} else if !strings.Contains(err.Error(), "array too long") {
-		t.Fatalf("array: error = %q, want \"array too long\"", err)
+	// 1 字节 sign + 4 字节长度 + 负载
+	if want := size + 5; len(wire) != want {
+		t.Fatalf("wire = %d bytes, want %d", len(wire), want)
+	}
+	var out string
+	if err := DecodeToValue(wire, &out); err != nil {
+		t.Fatalf("DecodeToValue: %v", err)
+	}
+	if len(out) != size {
+		t.Fatalf("decoded %d bytes, want %d", len(out), size)
 	}
 }
