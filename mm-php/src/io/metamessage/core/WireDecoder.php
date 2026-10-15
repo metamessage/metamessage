@@ -615,6 +615,50 @@ class WireDecoder
                 $tag->childMime = \io\metamessage\ir\Mime::toString($mime);
                 return $n;
 
+            case Tag::K_MORE:
+                // ref meta：[meta 位图][每个出现值 1 字节]，低 3 bit = k = payload 字节数。
+                if ($remain < 1) {
+                    throw new MmDecodeException('invalid ref meta: empty payload');
+                }
+                $meta = $this->readByte();
+                if ($meta & ~0x03) {
+                    throw new MmDecodeException(
+                        'invalid ref meta: reserved bits set (0x' . dechex($meta) . ')'
+                    );
+                }
+                $k = 0;
+                if ($meta & 0x01) {
+                    $k++;
+                }
+                if ($meta & 0x02) {
+                    $k++;
+                }
+                if ($remain !== $k) {
+                    throw new MmDecodeException(
+                        'invalid ref meta: payload length ' . ($remain + 1) .
+                        ' mismatch, want ' . (1 + $k)
+                    );
+                }
+                if ($meta & 0x01) {
+                    $v = $this->readByte();
+                    if ($v === 0) {
+                        throw new MmDecodeException(
+                            'invalid ref meta: ref_id must be in [1, 255]'
+                        );
+                    }
+                    $tag->refId = $v;
+                }
+                if ($meta & 0x02) {
+                    $v = $this->readByte();
+                    if ($v === 0) {
+                        throw new MmDecodeException(
+                            'invalid ref meta: ref_to must be in [1, 255]'
+                        );
+                    }
+                    $tag->refTo = $v;
+                }
+                return 2 + $remain;
+
             default:
                 throw new MmDecodeException('unsupported tag key: ' . $prefix);
         }

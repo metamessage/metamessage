@@ -44,7 +44,12 @@ func TestDebugChildTags(t *testing.T) {
 				v := item.(*ir.NodeScalar)
 				fmt.Printf("  Parsed child[%d]: type=%v, child_type=%v, data=%T(%v), text=%q, isInherit=%v\n",
 					i, v.Tag.Type, v.Tag.ChildType, v.Data, v.Data, v.Text, v.Tag.IsInherit)
-				fmt.Printf("  Child tag Bytes() = %v\n", v.Tag.Bytes())
+				tb, err := v.Tag.Bytes()
+				if err != nil {
+					fmt.Printf("  Child tag Bytes() error: %v\n", err)
+				} else {
+					fmt.Printf("  Child tag Bytes() = %v\n", tb)
+				}
 				fmt.Printf("  Child tag ToString() = %q\n", v.Tag.ToString())
 				fmt.Printf("  Full tag dump: %+v\n", v.Tag)
 			}

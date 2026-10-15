@@ -1,11 +1,12 @@
 use crate::core::constants::{
-    BYTES_LEN_1, CONTAINER_LEN_1, CONTAINER_LEN_MASK, INT_LEN_1, INT_LEN_MASK, STRING_LEN_1,
-    TAG_ALLOW_EMPTY, TAG_CHILD_ALLOW_EMPTY, TAG_CHILD_DEFAULT_VAL, TAG_CHILD_DESC, TAG_CHILD_ENUMS,
-    TAG_CHILD_LOCATION, TAG_CHILD_MAX, TAG_CHILD_MIME, TAG_CHILD_MIN, TAG_CHILD_NULLABLE,
-    TAG_CHILD_PATTERN, TAG_CHILD_SIZE, TAG_CHILD_TYPE, TAG_CHILD_UNIQUE, TAG_CHILD_VERSION,
-    TAG_DEFAULT_VAL, TAG_DEPRECATED, TAG_DESC, TAG_ENUMS, TAG_EXAMPLE, TAG_IS_NULL, TAG_KEY_MASK,
-    TAG_LEN_1, TAG_LOCATION, TAG_MAX, TAG_MIME, TAG_MIN, TAG_MORE, TAG_NULLABLE, TAG_PATTERN,
-    TAG_PAYLOAD_MASK, TAG_SIZE, TAG_TYPE, TAG_UNIQUE, TAG_VERSION,
+    BYTES_LEN_1, CONTAINER_LEN_1, CONTAINER_LEN_MASK, INT_LEN_1, INT_LEN_MASK, META_HAS_REF_ID,
+    META_HAS_REF_TO, STRING_LEN_1, TAG_ALLOW_EMPTY, TAG_CHILD_ALLOW_EMPTY, TAG_CHILD_DEFAULT_VAL,
+    TAG_CHILD_DESC, TAG_CHILD_ENUMS, TAG_CHILD_LOCATION, TAG_CHILD_MAX, TAG_CHILD_MIME,
+    TAG_CHILD_MIN, TAG_CHILD_NULLABLE, TAG_CHILD_PATTERN, TAG_CHILD_SIZE, TAG_CHILD_TYPE,
+    TAG_CHILD_UNIQUE, TAG_CHILD_VERSION, TAG_DEFAULT_VAL, TAG_DEPRECATED, TAG_DESC, TAG_ENUMS,
+    TAG_EXAMPLE, TAG_IS_NULL, TAG_KEY_MASK, TAG_LEN_1, TAG_LOCATION, TAG_MAX, TAG_MIME, TAG_MIN,
+    TAG_MORE, TAG_NULLABLE, TAG_PATTERN, TAG_PAYLOAD_MASK, TAG_SIZE, TAG_TYPE, TAG_UNIQUE,
+    TAG_VERSION,
 };
 use crate::core::prefix::{
     CONTAINER_TYPE_MASK, FLOAT_LEN_1, FLOAT_LEN_MASK, FLOAT_POSITIVE_NEGATIVE_MASK, PREFIX_BYTES,
@@ -399,8 +400,54 @@ impl Decoder {
                 Ok(2)
             }
             TAG_MORE => {
-                tag.more = (payload & 0x07) as u8;
-                Ok(1)
+                // ref meta：[meta 位图][每个出现值 1 字节]，低 3 bit = k = payload 字节数。
+                if payload < 1 {
+                    return Err(std::io::Error::new(
+                        std::io::ErrorKind::InvalidData,
+                        "invalid ref meta: empty payload",
+                    ));
+                }
+                let meta = self.read_byte()?;
+                if meta & !(META_HAS_REF_ID | META_HAS_REF_TO) != 0 {
+                    return Err(std::io::Error::new(
+                        std::io::ErrorKind::InvalidData,
+                        "invalid ref meta: reserved bits set",
+                    ));
+                }
+                let mut k = 0;
+                if meta & META_HAS_REF_ID != 0 {
+                    k += 1;
+                }
+                if meta & META_HAS_REF_TO != 0 {
+                    k += 1;
+                }
+                if payload != k {
+                    return Err(std::io::Error::new(
+                        std::io::ErrorKind::InvalidData,
+                        "invalid ref meta: payload length mismatch",
+                    ));
+                }
+                if meta & META_HAS_REF_ID != 0 {
+                    let v = self.read_byte()?;
+                    if v == 0 {
+                        return Err(std::io::Error::new(
+                            std::io::ErrorKind::InvalidData,
+                            "invalid ref meta: ref_id must be in [1, 255]",
+                        ));
+                    }
+                    tag.ref_id = v;
+                }
+                if meta & META_HAS_REF_TO != 0 {
+                    let v = self.read_byte()?;
+                    if v == 0 {
+                        return Err(std::io::Error::new(
+                            std::io::ErrorKind::InvalidData,
+                            "invalid ref meta: ref_to must be in [1, 255]",
+                        ));
+                    }
+                    tag.ref_to = v;
+                }
+                Ok(2 + payload)
             }
             TAG_CHILD_NULLABLE => {
                 tag.child_nullable = (payload & 1) == 1;
@@ -490,7 +537,13 @@ impl Decoder {
                 tag.child_mime = Some(mime_to_str(mime_id as u8).to_string());
                 Ok(2 + payload)
             }
-            _ => Ok(1),
+            _ => {
+                // Unknown key: consume payload+1 bytes to stay byte-aligned.
+                for _ in 0..(payload + 1) {
+                    self.read_byte()?;
+                }
+                Ok(2 + payload)
+            }
         }
     }
 

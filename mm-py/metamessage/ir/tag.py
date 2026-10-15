@@ -108,6 +108,8 @@ class Tag:
     version: int = 0
     mime: str = ""
     more: int = 0
+    ref_id: int = 0
+    ref_to: int = 0
     child_desc: str = ""
     child_type: ValueType = ValueType.Unknown
     child_nullable: bool = False
@@ -382,8 +384,26 @@ class Tag:
         if self.child_mime and not self.is_inherit:
             _encode_u64(buf, TagKey.ChildMime, ParseMIME(self.child_mime))
 
-        if self.more != 0:
-            _encode_u64(buf, TagKey.More, self.more)
+        # ref meta：[More | k][meta 位图][每个出现值 1 字节]，与 Go
+        # encodeRefMeta 互为逆运算；两字段全 0 时不写任何字节；任一字段越界
+        # （<0 或 >255）时整块丢弃——绝不写截断值（文本侧 parse 已限制 1..255）。
+        ref_id_ok = self.ref_id == 0 or 1 <= self.ref_id <= 255
+        ref_to_ok = self.ref_to == 0 or 1 <= self.ref_to <= 255
+        if ref_id_ok and ref_to_ok and (self.ref_id != 0 or self.ref_to != 0):
+            meta = 0
+            k = 0
+            if self.ref_id != 0:
+                meta |= 1 << 0
+                k += 1
+            if self.ref_to != 0:
+                meta |= 1 << 1
+                k += 1
+            buf.append(TagKey.More | k)
+            buf.append(meta)
+            if self.ref_id != 0:
+                buf.append(self.ref_id & 0xFF)
+            if self.ref_to != 0:
+                buf.append(self.ref_to & 0xFF)
 
         return bytes(buf)
 
@@ -509,6 +529,12 @@ class Tag:
 
         if self.child_mime and not self.is_inherit:
             parts.append("child_mime=%s" % self.child_mime)
+
+        if self.ref_id != 0 and not self.is_inherit:
+            parts.append("ref_id=%d" % self.ref_id)
+
+        if self.ref_to != 0 and not self.is_inherit:
+            parts.append("ref_to=%d" % self.ref_to)
 
         return "; ".join(parts)
 
@@ -682,6 +708,20 @@ def mm_tag(tag_str: str) -> Tag:
         elif k == "child_mime":
             tag.child_mime = v
             tag.child_type = ValueType.Media
+        elif k == "ref_id":
+            try:
+                n = int(v)
+                if 1 <= n <= 255:
+                    tag.ref_id = n
+            except ValueError:
+                pass
+        elif k == "ref_to":
+            try:
+                n = int(v)
+                if 1 <= n <= 255:
+                    tag.ref_to = n
+            except ValueError:
+                pass
 
     return tag
 
@@ -758,5 +798,9 @@ def MergeTag(dst: Tag, src: Tag) -> Tag:
         dst.child_version = src.child_version
     if src.child_mime:
         dst.child_mime = src.child_mime
+    if src.ref_id:
+        dst.ref_id = src.ref_id
+    if src.ref_to:
+        dst.ref_to = src.ref_to
 
     return dst

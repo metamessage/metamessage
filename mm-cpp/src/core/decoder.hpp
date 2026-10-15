@@ -269,8 +269,31 @@ private:
     }
 
     case ir::KMore: {
-      uint64_t v = readUInt(payload + 1);
-      tag.more = static_cast<uint8_t>(v);
+      // ref meta：[meta 位图][每个出现值 1 字节]，低 3 bit = k = payload 字节数。
+      if (payload < 1)
+        return -1;
+      uint8_t meta = readByte();
+      if (meta & ~(ir::MetaHasRefId | ir::MetaHasRefTo))
+        return -1;
+      int k = 0;
+      if (meta & ir::MetaHasRefId)
+        k++;
+      if (meta & ir::MetaHasRefTo)
+        k++;
+      if (payload != k)
+        return -1;
+      if (meta & ir::MetaHasRefId) {
+        uint8_t v = readByte();
+        if (v == 0)
+          return -1;
+        tag.refId = static_cast<int>(v);
+      }
+      if (meta & ir::MetaHasRefTo) {
+        uint8_t v = readByte();
+        if (v == 0)
+          return -1;
+        tag.refTo = static_cast<int>(v);
+      }
       return 2 + payload;
     }
 
@@ -361,7 +384,11 @@ private:
     }
 
     default:
-      return 1;
+      // Unknown key: consume payload+1 bytes to stay byte-aligned.
+      for (int i = 0; i < payload + 1; i++) {
+        readByte();
+      }
+      return 2 + payload;
     }
   }
 

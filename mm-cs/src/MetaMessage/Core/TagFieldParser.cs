@@ -275,10 +275,42 @@ public static class TagFieldParser
 
                 case TagKey.KMore:
                     {
-                        int byteCount = lenInfo + 1;
-                        if (offset + byteCount > data.Length)
+                        // ref meta：[meta 位图][每个出现值 1 字节]，低 3 bit = k = payload 字节数。
+                        if (lenInfo < 1)
+                            throw new MmDecodeException("invalid ref meta: empty payload");
+                        if (offset >= data.Length)
                             throw new MmDecodeException("Unexpected end of tag data");
-                        tag.More = (int)DecodeU64(data, ref offset, byteCount);
+                        int meta = data[offset];
+                        offset++;
+                        if ((meta & ~0x03) != 0)
+                            throw new MmDecodeException(
+                                $"invalid ref meta: reserved bits set (0x{meta:x2})");
+                        int k = 0;
+                        if ((meta & 0x01) != 0) k++;
+                        if ((meta & 0x02) != 0) k++;
+                        if (lenInfo != k)
+                            throw new MmDecodeException(
+                                $"invalid ref meta: payload length {lenInfo + 1} mismatch, want {1 + k}");
+                        if ((meta & 0x01) != 0)
+                        {
+                            if (offset + 1 > data.Length)
+                                throw new MmDecodeException("Unexpected end of tag data");
+                            if (data[offset] == 0)
+                                throw new MmDecodeException(
+                                    "invalid ref meta: ref_id must be in [1, 255]");
+                            tag.RefId = data[offset];
+                            offset += 1;
+                        }
+                        if ((meta & 0x02) != 0)
+                        {
+                            if (offset + 1 > data.Length)
+                                throw new MmDecodeException("Unexpected end of tag data");
+                            if (data[offset] == 0)
+                                throw new MmDecodeException(
+                                    "invalid ref meta: ref_to must be in [1, 255]");
+                            tag.RefTo = data[offset];
+                            offset += 1;
+                        }
                         break;
                     }
 

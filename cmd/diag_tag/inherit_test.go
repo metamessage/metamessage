@@ -17,5 +17,10 @@ childTag.Inherit(parentTag)
 
 fmt.Printf("Child AFTER Inherit: IsInherit=%v, Desc=%q, ChildDesc=%q, Type=%v\n",
 childTag.IsInherit, childTag.Desc, childTag.ChildDesc, childTag.Type)
-fmt.Printf("Child tag bytes: %x\n", childTag.Bytes())
+tb, err := childTag.Bytes()
+if err != nil {
+fmt.Printf("Child tag bytes error: %v\n", err)
+} else {
+fmt.Printf("Child tag bytes: %x\n", tb)
+}
 }

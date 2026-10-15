@@ -49,6 +49,9 @@ const (
 	TChildLocation   = "child_location"
 	TChildVersion    = "child_version"
 	TChildMime       = "child_mime"
+
+	TRefID = "ref_id"
+	TRefTo = "ref_to"
 )
 
 type TagKey uint8
@@ -112,7 +115,11 @@ type Tag struct {
 	Location   *time.Location // location=0  for time.Time [-12, +14]
 	Version    int            // version=0 for uuid/ip
 	Mime       int            // mime=...
-	More       int            // more
+	More       int            // Deprecated: dead field, superseded by ref meta (KMore payload)
+
+	// 循环引用标记（仅出现环时由编码器赋值，0 = 未设置，上限 MaxRefID）
+	RefID int // ref_id=...    被引用节点：每次编码调用从 1 自增
+	RefTo int // ref_to=...    引用节点：指向某个 ref_id
 
 	// compiled pattern cache
 	patternOnce  sync.Once
@@ -332,6 +339,14 @@ func (t *Tag) ToString() string {
 		add(TMime + "=" + MIME(t.Mime).String())
 	}
 
+	if t.RefID != 0 && !t.IsInherit {
+		add(TRefID + "=" + strconv.Itoa(t.RefID))
+	}
+
+	if t.RefTo != 0 && !t.IsInherit {
+		add(TRefTo + "=" + strconv.Itoa(t.RefTo))
+	}
+
 	if t.ChildDesc != "" {
 		add(TChildDesc + "=" + strconv.Quote(t.ChildDesc))
 	}
@@ -405,7 +420,7 @@ func (t *Tag) ToString() string {
 	return b.String()
 }
 
-func (t *Tag) Bytes() []byte {
+func (t *Tag) Bytes() ([]byte, error) {
 	var bs bytes.Buffer
 	if t.Example {
 		bs.WriteByte(byte(KExample | 1))
@@ -700,11 +715,11 @@ func (t *Tag) Bytes() []byte {
 		encodeU64(&bs, KChildMime, uint64(t.ChildMime))
 	}
 
-	if t.More != 0 {
-		encodeU64(&bs, KMore, uint64(t.More))
+	if err := encodeRefMeta(&bs, t.RefID, t.RefTo); err != nil {
+		return nil, err
 	}
 
-	return bs.Bytes()
+	return bs.Bytes(), nil
 }
 
 // Int
@@ -795,6 +810,61 @@ func encodeU64(buf *bytes.Buffer, sign TagKey, uv uint64) {
 	}
 }
 
+// ref meta 位图（KMore payload 首字节）：
+// bit0=有 ref_id，bit1=有 ref_to，bit2 起保留（非零视为数据损坏）。
+const (
+	MetaHasRefID byte = 1 << 0
+	MetaHasRefTo byte = 1 << 1
+	MetaMask     byte = 0x03
+)
+
+// MaxRefID 是 ref_id/ref_to 的 wire 上限（u8 单字节）。
+// ref_id 由环命中时的 nextID 分配，理论无上界；超限必须显式报错，
+// 绝不静默截断（截断会产生指向错误节点的引用）。
+const MaxRefID = 0xFF
+
+// encodeRefMeta 把循环引用二元组编码进一个 KMore payload。
+//
+// wire 布局：[KMore | (payload总字节数-1)] [meta 位图] [每个出现值 1 字节]
+//   - 低 3 bit 语义与 encodeU64 一致（payload 总字节数 - 1）= k，
+//     解码侧 length = 2 + k 的既有约定保持不变；
+//   - 每个值 1 字节：定界由 meta 位图给出字段数，不依赖定长；
+//     payload 上限 1+2=3 ≤ 8（低 3 bit 约束），恒不超限；
+//   - ref_id/ref_to 超过 MaxRefID 返回错误，绝不静默截断；
+//   - 两字段全 0 时不写任何字节（jsonc/二进制零开销）。
+func encodeRefMeta(buf *bytes.Buffer, refID, refTo int) error {
+	if refID < 0 || refID > MaxRefID {
+		return fmt.Errorf("ref_id %d out of range [1, %d]", refID, MaxRefID)
+	}
+	if refTo < 0 || refTo > MaxRefID {
+		return fmt.Errorf("ref_to %d out of range [1, %d]", refTo, MaxRefID)
+	}
+
+	var meta byte
+	k := 0
+	if refID != 0 {
+		meta |= MetaHasRefID
+		k++
+	}
+	if refTo != 0 {
+		meta |= MetaHasRefTo
+		k++
+	}
+	if k == 0 {
+		return nil
+	}
+
+	buf.WriteByte(byte(KMore) | byte(k)) // payload = 1 + k
+	buf.WriteByte(meta)
+	if refID != 0 {
+		buf.WriteByte(byte(refID))
+	}
+	if refTo != 0 {
+		buf.WriteByte(byte(refTo))
+	}
+	return nil
+}
+
 func MergeTag(dst *Tag, src *Tag) *Tag {
 	if src == nil {
 		return dst
@@ -873,6 +943,14 @@ func MergeTag(dst *Tag, src *Tag) *Tag {
 
 	if src.Mime != 0 {
 		dst.Mime = src.Mime
+	}
+
+	if src.RefID != 0 {
+		dst.RefID = src.RefID
+	}
+
+	if src.RefTo != 0 {
+		dst.RefTo = src.RefTo
 	}
 
 	if src.ChildDesc != "" {
@@ -1135,6 +1213,26 @@ func ParseMMTag(tag string) (*Tag, error) {
 			}
 			r.ChildMime = int(m)
 			r.ChildType = ValueTypeMedia
+
+		case TRefID:
+			d, err := strconv.Atoi(v)
+			if err != nil {
+				return nil, fmt.Errorf("failed to parse ref_id %v %w", v, err)
+			}
+			if d < 1 || d > MaxRefID {
+				return nil, fmt.Errorf("ref_id must be between 1 and %d, got %d", MaxRefID, d)
+			}
+			r.RefID = d
+
+		case TRefTo:
+			d, err := strconv.Atoi(v)
+			if err != nil {
+				return nil, fmt.Errorf("failed to parse ref_to %v %w", v, err)
+			}
+			if d < 1 || d > MaxRefID {
+				return nil, fmt.Errorf("ref_to must be between 1 and %d, got %d", MaxRefID, d)
+			}
+			r.RefTo = d
 
 		default:
 

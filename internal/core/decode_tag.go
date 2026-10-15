@@ -580,19 +580,52 @@ func (d *decoder) decodeTagBytes(tag *ir.Tag) (length int, err error) {
 		return
 
 	case ir.KMore:
-		if l < 8 {
-			for i := 0; i < l+1; i++ {
-				var b byte
-				b, err = d.ReadByte()
-				if err != nil {
-					return
-				}
-				tag.More = tag.More<<8 | int(b)
-			}
-			length = 2 + l
+		// ref meta 格式：[meta 位图][每个出现值 1 字节]
+		// 低 3 bit = k = payload 总字节数 - 1，与 encodeRefMeta 的 1+k 布局互为逆运算。
+		if l < 1 {
+			err = fmt.Errorf("invalid ref meta: empty payload")
 			return
 		}
-		err = fmt.Errorf("more is too large")
+		var meta byte
+		if meta, err = d.ReadByte(); err != nil {
+			return
+		}
+		if meta&^byte(ir.MetaMask) != 0 {
+			err = fmt.Errorf("invalid ref meta: reserved bits set (0x%02x)", meta)
+			return
+		}
+		k := 0
+		if meta&ir.MetaHasRefID != 0 {
+			k++
+		}
+		if meta&ir.MetaHasRefTo != 0 {
+			k++
+		}
+		if l != k {
+			err = fmt.Errorf("invalid ref meta: payload length %d mismatch, want %d", l+1, 1+k)
+			return
+		}
+		readU8 := func() (int, error) {
+			var v byte
+			if v, err = d.ReadByte(); err != nil {
+				return 0, err
+			}
+			if v == 0 {
+				return 0, fmt.Errorf("invalid ref meta: value must be in [1, %d]", ir.MaxRefID)
+			}
+			return int(v), nil
+		}
+		if meta&ir.MetaHasRefID != 0 {
+			if tag.RefID, err = readU8(); err != nil {
+				return
+			}
+		}
+		if meta&ir.MetaHasRefTo != 0 {
+			if tag.RefTo, err = readU8(); err != nil {
+				return
+			}
+		}
+		length = 2 + l
 		return
 
 	default:

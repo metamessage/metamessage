@@ -39,6 +39,8 @@ public static class TagConstants
     public const string TChildLocation = "child_location";
     public const string TChildVersion = "child_version";
     public const string TChildMime = "child_mime";
+    public const string TRefId = "ref_id";
+    public const string TRefTo = "ref_to";
 }
 
 public enum TagKey : byte
@@ -104,6 +106,8 @@ public class Tag
     public int Version { get; set; }
     public string Mime { get; set; } = string.Empty;
     public int More { get; set; }
+    public int RefId { get; set; }
+    public int RefTo { get; set; }
 
     public string ChildDesc { get; set; } = string.Empty;
     public ValueType ChildType { get; set; } = ValueType.Unknown;
@@ -246,6 +250,8 @@ public class Tag
             Version = Version,
             Mime = Mime,
             More = More,
+            RefId = RefId,
+            RefTo = RefTo,
             ChildDesc = ChildDesc,
             ChildType = ChildType,
             ChildNullable = ChildNullable,
@@ -536,6 +542,16 @@ public class Tag
             Add($"{TagConstants.TChildMime}={ChildMime}");
         }
 
+        if (RefId != 0 && !IsInherit)
+        {
+            Add($"{TagConstants.TRefId}={RefId}");
+        }
+
+        if (RefTo != 0 && !IsInherit)
+        {
+            Add($"{TagConstants.TRefTo}={RefTo}");
+        }
+
         var result = b.ToString();
         if (string.IsNullOrEmpty(result))
         {
@@ -760,6 +776,22 @@ public class Tag
                 case TagConstants.TChildMime:
                     r.ChildMime = v;
                     r.ChildType = ValueType.Media;
+                    break;
+
+                case TagConstants.TRefId:
+                    int refIdVal = int.TryParse(v, out var rid) ? rid : 0;
+                    if (refIdVal >= 1 && refIdVal <= 255)
+                    {
+                        r.RefId = refIdVal;
+                    }
+                    break;
+
+                case TagConstants.TRefTo:
+                    int refToVal = int.TryParse(v, out var rtv) ? rtv : 0;
+                    if (refToVal >= 1 && refToVal <= 255)
+                    {
+                        r.RefTo = refToVal;
+                    }
                     break;
             }
         }
@@ -1230,9 +1262,35 @@ public class Tag
             EncodeU64(bs, TagKey.KChildMime, (ulong)MimeWire.ParseMIME(ChildMime));
         }
 
-        if (More != 0)
+        // ref meta：[KMore | k][meta 位图][每个出现值 1 字节]，与 Go
+        // encodeRefMeta 互为逆运算；两字段全 0 时不写任何字节；任一字段越界
+        // （<0 或 >255）时整块丢弃——绝不写截断值（文本侧 parse 已限制 1..255）。
+        bool refIdOk = RefId == 0 || (RefId >= 1 && RefId <= 255);
+        bool refToOk = RefTo == 0 || (RefTo >= 1 && RefTo <= 255);
+        if (refIdOk && refToOk && (RefId != 0 || RefTo != 0))
         {
-            EncodeU64(bs, TagKey.KMore, (ulong)More);
+            int meta = 0;
+            int k = 0;
+            if (RefId != 0)
+            {
+                meta |= 1 << 0;
+                k++;
+            }
+            if (RefTo != 0)
+            {
+                meta |= 1 << 1;
+                k++;
+            }
+            bs.Add((byte)((byte)TagKey.KMore | (byte)k));
+            bs.Add((byte)meta);
+            if (RefId != 0)
+            {
+                bs.Add((byte)(RefId & 0xFF));
+            }
+            if (RefTo != 0)
+            {
+                bs.Add((byte)(RefTo & 0xFF));
+            }
         }
 
         return bs.ToArray();
@@ -1465,8 +1523,32 @@ public class Tag
 
                 case TagKey.KMore:
                     {
-                        int byteCount = lenInfo + 1;
-                        tag.More = (int)DecodeU64(data, ref offset, byteCount);
+                        // ref meta：[meta 位图][每个出现值 2 字节大端]，低 3 bit = 2k。
+                        int meta = data[offset];
+                        offset++;
+                        if ((meta & ~0x03) != 0)
+                        {
+                            throw new MmDecodeException(
+                                $"invalid ref meta: reserved bits set (0x{meta:x2})");
+                        }
+                        int k = 0;
+                        if ((meta & 0x01) != 0) k++;
+                        if ((meta & 0x02) != 0) k++;
+                        if (lenInfo != 2 * k)
+                        {
+                            throw new MmDecodeException(
+                                $"invalid ref meta: payload length {lenInfo + 1} mismatch, want {1 + 2 * k}");
+                        }
+                        if ((meta & 0x01) != 0)
+                        {
+                            tag.RefId = (data[offset] << 8) | data[offset + 1];
+                            offset += 2;
+                        }
+                        if ((meta & 0x02) != 0)
+                        {
+                            tag.RefTo = (data[offset] << 8) | data[offset + 1];
+                            offset += 2;
+                        }
                         break;
                     }
             }
@@ -1684,6 +1766,16 @@ public class Tag
         if (!string.IsNullOrEmpty(src.ChildMime))
         {
             dst.ChildMime = src.ChildMime;
+        }
+
+        if (src.RefId != 0)
+        {
+            dst.RefId = src.RefId;
+        }
+
+        if (src.RefTo != 0)
+        {
+            dst.RefTo = src.RefTo;
         }
 
         return dst;

@@ -68,5 +68,8 @@ pub const TAG_CHILD_VERSION: u8 = 29 << 3;
 pub const TAG_CHILD_MIME: u8 = 30 << 3;
 pub const TAG_MORE: u8 = 31 << 3;
 
+pub const META_HAS_REF_ID: u8 = 1 << 0;
+pub const META_HAS_REF_TO: u8 = 1 << 1;
+
 pub const TAG_KEY_MASK: u8 = 0xF8;
 pub const TAG_PAYLOAD_MASK: u8 = 0x07;
