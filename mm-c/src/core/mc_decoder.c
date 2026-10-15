@@ -469,12 +469,9 @@ static node_t *dec_decode_bytes(mm_decoder_t *d, uint8_t b, mm_tag_t *tag) {
 
   if (extra_len == 0) {
     bytes_len = (size_t)inline_len;
-  } else if (extra_len == 1) {
-    bytes_len = (size_t)dec_read_byte(d);
   } else {
-    uint8_t hi = dec_read_byte(d);
-    uint8_t lo = dec_read_byte(d);
-    bytes_len = ((size_t)hi << 8) | (size_t)lo;
+    /* v0.3.0：1/2/3/4 字节大端长度槽 */
+    bytes_len = (size_t)dec_read_uint64_be(d, extra_len);
   }
 
   node_t *node = node_new_scalar();
@@ -770,12 +767,9 @@ static node_t *dec_decode_container(mm_decoder_t *d, uint8_t b,
 
   if (extra_len == 0) {
     container_len = (size_t)inline_len;
-  } else if (extra_len == 1) {
-    container_len = (size_t)dec_read_byte(d);
   } else {
-    uint8_t hi = dec_read_byte(d);
-    uint8_t lo = dec_read_byte(d);
-    container_len = ((size_t)hi << 8) | (size_t)lo;
+    /* v0.3.0：1/2/3/4 字节大端长度槽 */
+    container_len = (size_t)dec_read_uint64_be(d, extra_len);
   }
 
   if (is_array) {
@@ -1240,12 +1234,9 @@ static node_t *dec_decode_tag(mm_decoder_t *d, uint8_t b,
 
   if (extra_len == 0) {
     total_len = (size_t)inline_len;
-  } else if (extra_len == 1) {
-    total_len = (size_t)dec_read_byte(d);
   } else {
-    uint8_t hi = dec_read_byte(d);
-    uint8_t lo = dec_read_byte(d);
-    total_len = ((size_t)hi << 8) | (size_t)lo;
+    /* v0.3.0：1/2/3/4 字节大端长度槽 */
+    total_len = (size_t)dec_read_uint64_be(d, extra_len);
   }
 
   size_t tag_data_start = d->offset;
