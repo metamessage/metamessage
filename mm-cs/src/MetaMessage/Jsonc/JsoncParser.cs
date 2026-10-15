@@ -10,7 +10,7 @@ public class JsoncParser
     private readonly JsoncScanner _scanner;
     private readonly List<JsoncToken> _pendingComments = new();
     private int _depth;
-    private const int MaxDepth = 256;
+    private const int MaxDepth = 1024;
 
     public JsoncParser(string input)
     {

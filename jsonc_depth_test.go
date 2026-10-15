@@ -44,12 +44,12 @@ func TestEncodeFromJsoncSiblingsDoNotAccumulateDepth(t *testing.T) {
 }
 
 // TestEncodeFromJsoncDeepNestingStillRejected 深度上限必须仍然生效：
-// 真实嵌套超过 256 层依旧报错，防止"把检查删掉"被当成修复。
+// 真实嵌套超过 1024 层依旧报错，防止"把检查删掉"被当成修复。
 func TestEncodeFromJsoncDeepNestingStillRejected(t *testing.T) {
-	deep := strings.Repeat("[", 257) + "1" + strings.Repeat("]", 257)
+	deep := strings.Repeat("[", 1025) + "1" + strings.Repeat("]", 1025)
 	if _, err := EncodeFromJsonc(deep); err == nil {
-		t.Fatal("257-level nesting must be rejected")
-	} else if !strings.Contains(err.Error(), "max depth: 256") {
-		t.Fatalf("error = %q, want it to mention max depth: 256", err)
+		t.Fatal("1025-level nesting must be rejected")
+	} else if !strings.Contains(err.Error(), "max depth: 1024") {
+		t.Fatalf("error = %q, want it to mention max depth: 1024", err)
 	}
 }

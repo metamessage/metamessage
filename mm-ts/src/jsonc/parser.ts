@@ -6,7 +6,7 @@ import { Tag, parseMMTag } from '../ir/tag';
 import { Node } from '../ir/ast';
 import { base64ToUint8 } from './printer';
 
-const maxDepth = 256;
+const maxDepth = 1024;
 
 export class JSONCParser {
   private scanner: JSONCScanner;

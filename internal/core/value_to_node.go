@@ -14,7 +14,7 @@ import (
 	"github.com/metamessage/metamessage/internal/utils"
 )
 
-const maxDepth = 256
+const maxDepth = 1024
 
 // copyChildTag copies child-relevant attributes from child tag to parent tag's Child* fields.
 func copyChildTag(parent *ir.Tag, child *ir.Tag) {
