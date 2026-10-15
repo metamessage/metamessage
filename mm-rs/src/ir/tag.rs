@@ -791,10 +791,6 @@ impl Tag {
             }
         }
 
-        if self.deprecated && !self.is_inherit {
-            bs.push(TagKey::Deprecated as u8 | 1);
-        }
-
         if let Some(ref desc) = self.desc {
             if !self.is_inherit {
                 let l = desc.len();

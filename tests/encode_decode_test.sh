@@ -51,6 +51,10 @@ ts_decode() { printf '%s' "$1" | ts_run --decode; }
 
 # --- Rust ---
 rs_build() {
+    # Prefer the rustup-managed toolchain (~/.cargo/bin) over any distro rustc
+    # that may be ABI-incompatible with the installed LLVM (rustc -vV aborts).
+    [ -d "$HOME/.cargo/bin" ] && PATH="$HOME/.cargo/bin:$PATH"
+    export PATH
     cd "$SCRIPT_DIR/harness/rust" && cargo build --quiet 2>/dev/null
 }
 rs_run() { "$SCRIPT_DIR/harness/rust/target/debug/mm-harness-rs" "$@"; }
@@ -60,7 +64,19 @@ rs_decode() { printf '%s' "$1" | rs_run --decode; }
 # --- C ---
 c_build() {
     mkdir -p "$SCRIPT_DIR/harness/c/build"
-    cd "$SCRIPT_DIR/harness/c/build" && cmake .. -DCMAKE_BUILD_TYPE=Release >/dev/null 2>&1 && make -j$(sysctl -n hw.ncpu 2>/dev/null || echo 4) >/dev/null 2>&1
+    local out="$SCRIPT_DIR/harness/c/build/mm_harness_c"
+    local src="$SCRIPT_DIR/harness/c"
+    local mm="$PROJECT_DIR/mm-c/src"
+    if command -v cmake >/dev/null 2>&1; then
+        (cd "$src/build" && cmake .. -DCMAKE_BUILD_TYPE=Release >/dev/null 2>&1 && make -j$(sysctl -n hw.ncpu 2>/dev/null || echo 4) >/dev/null 2>&1) && [ -x "$out" ] && return 0
+    fi
+    # Fallback: direct compiler build (cmake unavailable, e.g. minimal images)
+    clang -O2 -std=c99 -I "$mm" -o "$out" \
+        "$mm/jsonc/mc_token.c" "$mm/jsonc/mc_scanner.c" \
+        "$mm/ir/mc_ast.c" "$mm/ir/mc_tag.c" \
+        "$mm/core/mc_encoder.c" "$mm/core/mc_decoder.c" \
+        "$mm/jsonc/mc_printer.c" "$mm/jsonc/mc_ir_parser.c" "$mm/mm.c" \
+        "$src/harness.c" >/dev/null 2>&1
 }
 c_run() { "$SCRIPT_DIR/harness/c/build/mm_harness_c" "$@"; }
 c_encode() { c_run --encode "$1"; }
@@ -69,7 +85,16 @@ c_decode() { printf '%s' "$1" | c_run --decode; }
 # --- C++ ---
 cpp_build() {
     mkdir -p "$SCRIPT_DIR/harness/cpp/build"
-    g++ -std=c++17 -I "$PROJECT_DIR/mm-cpp/src" -o "$SCRIPT_DIR/harness/cpp/build/mm_harness_cpp" "$SCRIPT_DIR/harness/cpp/harness.cpp" "$PROJECT_DIR/mm-cpp/src/jsonc/scanner.cpp" 2>/dev/null
+    local out="$SCRIPT_DIR/harness/cpp/build/mm_harness_cpp"
+    local src="$SCRIPT_DIR/harness/cpp"
+    local mm="$PROJECT_DIR/mm-cpp/src"
+    g++ -O2 -std=c++17 -I "$mm" -o "$out" "$src/harness.cpp" "$mm/jsonc/scanner.cpp" >/dev/null 2>&1 && return 0
+    # Fallback: toolchains whose libc++ headers are not in the default search
+    # path (e.g. macOS Command Line Tools) — use the SDK c++/v1 include tree.
+    local inc=/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include
+    [ -d "$inc/c++/v1" ] || return 1
+    g++ -O2 -std=c++17 -nostdinc++ -isystem "$inc/c++/v1" -isystem "$inc" \
+        -I "$mm" -o "$out" "$src/harness.cpp" "$mm/jsonc/scanner.cpp" >/dev/null 2>&1
 }
 cpp_run() { "$SCRIPT_DIR/harness/cpp/build/mm_harness_cpp" "$@"; }
 cpp_encode() { cpp_run --encode "$1"; }
@@ -85,7 +110,7 @@ cs_decode() { printf '%s' "$1" | cs_run --decode; }
 
 # --- Kotlin ---
 kt_build() {
-    cd "$PROJECT_DIR/mm-kt" && mvn compile -q -DskipTests 2>/dev/null
+    cd "$PROJECT_DIR/mm-kt" && mvn -B -Dstyle.color=never compile -q -DskipTests 2>/dev/null
 }
 kt_run() {
     local tmpdir=$(mktemp -d)
@@ -115,9 +140,33 @@ kt_decode() { printf '%s' "$1" | kt_run --decode; }
 
 # --- Swift ---
 sw_build() {
-    cd "$SCRIPT_DIR/harness/swift" && swift build --quiet 2>/dev/null; [ -f .build/arm64-apple-macosx/debug/mm-harness-swift ]
+    local bin="$SCRIPT_DIR/harness/swift/.build/debug/mm-harness-swift"
+    local src="$SCRIPT_DIR/harness/swift"
+    local mm="$PROJECT_DIR/mm-swift/Sources/MetaMessage"
+    # Fast path: binary exists and is newer than every source
+    if [ -x "$bin" ] && [ -z "$(find "$mm" "$src/main.swift" -newer "$bin" -print -quit 2>/dev/null)" ]; then
+        return 0
+    fi
+    mkdir -p "$(dirname "$bin")"
+    if (cd "$src" && swift build --quiet 2>/dev/null); then
+        # SwiftPM emits to .build/<triple>/debug/; normalize to our path
+        local spm_bin
+        for spm_bin in "$src"/.build/*/debug/mm-harness-swift; do
+            [ -x "$spm_bin" ] && cp "$spm_bin" "$bin" && return 0
+        done
+        [ -x "$bin" ] && return 0
+    fi
+    # Fallback: direct xcrun swiftc build for machines where SwiftPM's XCBuild
+    # session is broken. Compile the MetaMessage module (API.swift sits at the
+    # module root, so include both *.swift and */*.swift) and link the harness.
+    local objdir="$src/.build/obj"
+    mkdir -p "$objdir"
+    (cd "$objdir" && xcrun swiftc -O -module-name MetaMessage \
+        -emit-module -emit-module-path "$src/.build/MetaMessage.swiftmodule" \
+        -c "$mm"/*.swift "$mm"/*/*.swift) >/dev/null 2>&1 || return 1
+    xcrun swiftc -O -I "$src/.build" "$src/main.swift" "$objdir"/*.o -o "$bin" >/dev/null 2>&1
 }
-sw_run() { "$SCRIPT_DIR/harness/swift/.build/arm64-apple-macosx/debug/mm-harness-swift" "$@" 2>/dev/null; }
+sw_run() { "$SCRIPT_DIR/harness/swift/.build/debug/mm-harness-swift" "$@" 2>/dev/null; }
 sw_encode() { sw_run --encode "$1"; }
 sw_decode() { printf '%s' "$1" | sw_run --decode; }
 
@@ -176,6 +225,13 @@ for fixture in "${FIXTURES[@]}"; do
     rel="${fixture#$FIXTURES_DIR/}"
     printf "%-45s" "$rel"
 
+    # Negative fixtures (*.reject.jsonc): every language must fail to encode
+    # (empty stdout). Success = all reject; any encoded output is a divergence.
+    case "$rel" in
+        *.reject.jsonc) reject=1 ;;
+        *) reject=0 ;;
+    esac
+
     HEX_OUTPUTS=()
     fixture_ok=1
 
@@ -183,13 +239,34 @@ for fixture in "${FIXTURES[@]}"; do
         hex=$(${lang}_encode "$fixture" 2>/dev/null) || true
 
         if [ -z "$hex" ]; then
-            printf " ${RED}FAIL${NC}  "
-            fixture_ok=0
+            if [ "$reject" -eq 1 ]; then
+                printf " ${GREEN}OK${NC}    "
+            else
+                printf " ${RED}FAIL${NC}  "
+                fixture_ok=0
+            fi
         else
-            HEX_OUTPUTS+=("$hex")
-            printf " ${GREEN}OK${NC}    "
+            if [ "$reject" -eq 1 ]; then
+                printf " ${RED}FAIL${NC}  "
+                fixture_ok=0
+            else
+                HEX_OUTPUTS+=("$hex")
+                printf " ${GREEN}OK${NC}    "
+            fi
         fi
     done
+
+    if [ "$reject" -eq 1 ]; then
+        if [ "$fixture_ok" -eq 1 ]; then
+            printf " ${GREEN}REJECT-OK${NC}"
+            ENC_PASS=$((ENC_PASS + 1))
+        else
+            printf " ${RED}REJECT-FAIL${NC}"
+            ENC_FAIL=$((ENC_FAIL + 1))
+        fi
+        echo ""
+        continue
+    fi
 
     # Compare hex outputs across all successful languages
     if [ "$fixture_ok" -eq 1 ] && [ ${#HEX_OUTPUTS[@]} -gt 0 ]; then
@@ -247,6 +324,11 @@ echo ""
 for fixture in "${FIXTURES[@]}"; do
     rel="${fixture#$FIXTURES_DIR/}"
     printf "%-45s" "$rel"
+
+    # Negative fixtures produce no wire bytes, so no decode round-trip exists.
+    case "$rel" in
+        *.reject.jsonc) printf " ${YELLOW}SKIP${NC}  (negative fixture)\n"; continue ;;
+    esac
 
     # Step 1: Encode with Go (reference) to get hex bytes
     ref_hex=$(go_encode "$fixture" 2>/dev/null) || true

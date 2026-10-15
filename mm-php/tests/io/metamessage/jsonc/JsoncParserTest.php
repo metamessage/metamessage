@@ -54,10 +54,21 @@ class JsoncParserTest extends TestCase
         $this->assertEquals(false, $resultFalse->Data);
     }
 
-    public function testParseNullReturnsNodeNull(): void
+    public function testParseNullRejectsNullLiteral(): void
     {
-        $result = parseJsonc("null");
-        $this->assertInstanceOf(\io\metamessage\ir\NodeNull::class, $result);
+        // The null literal is always rejected (aligned with the Go reference
+        // parser since v0.2.8); null-ness is expressed via `is_null` tags.
+        $this->expectException(\Exception::class);
+        $this->expectExceptionMessage('null is not supported');
+        parseJsonc("null");
+    }
+
+    public function testParseTypedNullRejectsNullLiteral(): void
+    {
+        $source = "// mm: type=i\nnull";
+        $this->expectException(\Exception::class);
+        $this->expectExceptionMessage('null is not supported for type');
+        parseJsonc($source);
     }
 
     public function testParseArray(): void

@@ -6,6 +6,19 @@ const INDENT_UNIT: &str = "\t";
 
 pub fn to_string(node: &Node) -> String {
     let mut buf = String::new();
+    // Mirror Go ToJSONCWithConfig: the root node's own tag is emitted as
+    // leading comments before the node body. write_object/write_array only
+    // print their children's tags, so the root tag must be handled here.
+    if let Some(tag) = node.get_tag() {
+        let tag_str = tag.to_string();
+        if !tag_str.is_empty() {
+            buf.push('\n');
+            write_indent(&mut buf, 0);
+            buf.push_str("// mm: ");
+            buf.push_str(&tag_str);
+            buf.push('\n');
+        }
+    }
     write_node(&mut buf, node, 0);
     buf
 }
@@ -18,19 +31,10 @@ pub fn to_compact_string(node: &Node) -> String {
 
 fn write_node(buf: &mut String, node: &Node, indent: usize) {
     match node {
-        Node::Value(v) => {
-            if let Some(tag) = &v.tag {
-                let tag_str = tag.to_string();
-                if !tag_str.is_empty() {
-                    buf.push('\n');
-                    write_indent(buf, indent);
-                    buf.push_str("// mm: ");
-                    buf.push_str(&tag_str);
-                    buf.push('\n');
-                }
-            }
-            write_value(buf, v)
-        }
+        // Children's tags are printed by write_object/write_array before the
+        // key/item, and the root tag by to_string() — printing here would
+        // duplicate the comment (Go's writeNodeJSONC does not print tags).
+        Node::Value(v) => write_value(buf, v),
         Node::Object(o) => write_object(buf, o, indent),
         Node::Array(a) => write_array(buf, a, indent),
     }

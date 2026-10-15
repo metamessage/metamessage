@@ -252,7 +252,11 @@ public class JSONCParser {
 
             var data: Any?
 
-            if let tag = tag, tag.type == .bigint {
+            // bigint and decimal keep the raw literal as a String:
+            // Go's ValidateBigint/ValidateDecimal take the token text, and
+            // validateDecimal requires a String (a Double would fail with
+            // "value must be a decimal string").
+            if let tag = tag, tag.type == .bigint || tag.type == .decimal {
                 data = tok.literal
                 let numberResult = validator.validate(data!, tag: tag)
                 if !numberResult.isValid {

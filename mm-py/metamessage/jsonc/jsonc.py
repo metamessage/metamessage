@@ -465,9 +465,12 @@ class Parser:
                     raise Exception(f"Validation error at {path}: {r.error}")
             return NodeScalar(data=False, text="false", tag=tag, path=path)
         elif tok.type == TOKEN_NULL:
+            # Always reject the null literal (aligned with the Go reference
+            # parser since v0.2.8). Null-ness is expressed via `is_null` tags,
+            # not literals; NodeNull remains producible via ValueToNode.
             if tag.type != ValueType.Unknown:
                 raise Exception(f"null is not supported for type {tag.type}")
-            return NodeNull(tag=tag, path=path)
+            raise Exception("null is not supported")
         else:
             return NodeScalar(data=None, text="", tag=tag, path=path)
 
