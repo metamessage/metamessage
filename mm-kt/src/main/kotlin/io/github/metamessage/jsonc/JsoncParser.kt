@@ -673,8 +673,8 @@ class JsoncParser(private val tokens: List<JsoncToken>) {
 
     private fun parseObject(openLine: Int, path: String): AstObject {
         depth++
-        if (depth > 256) {
-            throw JsoncException("max depth: 256")
+        if (depth > 1024) {
+            throw JsoncException("max depth: 1024")
         }
 
         var tag = consumeCommentsFor(openLine) ?: Tag()
@@ -757,8 +757,8 @@ class JsoncParser(private val tokens: List<JsoncToken>) {
 
     private fun parseArray(openLine: Int, path: String): AstArray {
         depth++
-        if (depth > 256) {
-            throw JsoncException("max depth: 256")
+        if (depth > 1024) {
+            throw JsoncException("max depth: 1024")
         }
 
         var tag = consumeCommentsFor(openLine) ?: Tag()

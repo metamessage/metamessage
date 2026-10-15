@@ -24,7 +24,7 @@ import kotlin.reflect.full.declaredMemberProperties
 import kotlin.reflect.full.findAnnotation
 import kotlin.reflect.jvm.javaField
 
-private const val maxDepth = 256
+private const val maxDepth = 1024
 
 private const val Null = "null"
 private const val True = "true"

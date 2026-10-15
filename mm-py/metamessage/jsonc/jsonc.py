@@ -183,7 +183,7 @@ class Lexer:
 
 # ===== Parser =====
 
-MAX_DEPTH = 256
+MAX_DEPTH = 1024
 
 
 def camel_to_snake(name: str) -> str:

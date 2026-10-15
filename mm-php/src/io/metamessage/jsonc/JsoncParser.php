@@ -14,7 +14,7 @@ use io\metamessage\core\CamelToSnake;
 
 class JsoncParser
 {
-    private const MAX_DEPTH = 256;
+    private const MAX_DEPTH = 1024;
     private const TRUE_STR = 'true';
     private const FALSE_STR = 'false';
 

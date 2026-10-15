@@ -2,7 +2,7 @@ use crate::core::utils::camel_to_snake;
 use crate::ir::{Field, Node, NodeArray, NodeObject, NodeScalar, Tag, ValueData, ValueType};
 use std::collections::HashMap;
 
-const MAX_DEPTH: usize = 256;
+const MAX_DEPTH: usize = 1024;
 
 pub trait ToNode {
     fn to_node(&self, tag: Option<Tag>) -> Node;

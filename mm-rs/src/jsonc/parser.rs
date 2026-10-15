@@ -5,7 +5,7 @@ use crate::ir::value_type::ValueType;
 use crate::jsonc::scanner::{Scanner, Token, TokenType};
 use chrono::NaiveDateTime;
 
-const MAX_DEPTH: usize = 256;
+const MAX_DEPTH: usize = 1024;
 
 pub struct Parser {
     toks: Vec<Token>,
