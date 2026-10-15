@@ -194,21 +194,22 @@ const (
 	FloatLen8Byte = FloatLenMask
 )
 
-// String / Bytes / Tag 的 5-bit suffix 分配（v0.3.0）：
+// Bytes / Tag 的 5-bit suffix 分配（v0.3.0）：
 //   0..27  = 内联长度（length 直接等于 suffix）
 //   28/29/30/31 = 1/2/3/4 字节大端长度档位标记
 // 最大可表达长度 = Max4Byte(0xFFFFFFFF) ≈ 4.29GB。
 //
 // 注意：这是不兼容变更。v0.2.x 用 30/31 作 1/2 字节标记、内联范围 0..29，
 // 现在内联收窄到 0..27 以腾出四个档位标记。
+//
+// String 不参与本次扩展：维持 v0.2.x 语义（内联 0..29，30/31 = 1/2 字节，
+// 上限 Max2Byte = 65535），字节级与 v0.2.x 完全一致。
 
-// String
+// String（v0.2.x 语义，未改动）
 const (
 	StringLenMask  = 0b11111
-	StringLen1Byte = StringLenMask - 3
-	StringLen2Byte = StringLenMask - 2
-	StringLen3Byte = StringLenMask - 1
-	StringLen4Byte = StringLenMask
+	StringLen1Byte = StringLenMask - 1
+	StringLen2Byte = StringLenMask
 )
 
 // Bytes
@@ -299,19 +300,16 @@ func IsArray(b byte) bool {
 	return b&ContainerMask == ContainerArray
 }
 
+// StringLen 保持 v0.2.x 语义：内联 0..29，30 = 1 字节长度，31 = 2 字节长度。
+// （String 不参与 v0.3.0 的 4 字节长度槽扩展。）
 func StringLen(b byte) (int, int) {
 	l := int(b & StringLenMask)
-	switch l {
-	case StringLen1Byte:
-		return 1, 0
-	case StringLen2Byte:
-		return 2, 0
-	case StringLen3Byte:
-		return 3, 0
-	case StringLen4Byte:
-		return 4, 0
-	default:
+	if l < StringLen1Byte {
 		return 0, l
+	} else if l == StringLen1Byte {
+		return 1, l
+	} else {
+		return 2, l
 	}
 }
 

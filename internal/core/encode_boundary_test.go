@@ -14,22 +14,40 @@ import (
 // `length > Max2Byte`，于是 length 正好等于上限时守卫不报错、所有分支又全部
 // 落空 ⇒ 函数静默返回 (0, nil)，一个字节都不写，数据无声丢失。
 //
-// v0.3.0 把长度槽扩到 4 字节（上限 Max4Byte = 0xFFFFFFFF ≈ 4.29GB）。档位分配
-// 见 constants.go：
-//   - String / Bytes / Tag：内联 0..27，28/29/30/31 = 1/2/3/4 字节大端长度
+// v0.3.0 把 **Bytes / Container / Tag** 的长度槽扩到 4 字节
+// （上限 Max4Byte = 0xFFFFFFFF ≈ 4.29GB）。档位分配见 constants.go：
+//   - Bytes / Tag：内联 0..27，28/29/30/31 = 1/2/3/4 字节大端长度
 //   - Container：内联 0..11，12/13/14/15 = 1/2/3/4 字节大端长度
 //
-// 下面的表驱动用例对每个档位取「本档最大值」与「下一档最小值」两个临界点，
-// 校验：suffix 档位标记正确、长度字段是大端且能解回原长度、负载紧跟其后。
+// **String 不参与本次扩展**，维持 v0.2.x 语义：内联 0..29，30/31 = 1/2 字节，
+// 上限 Max2Byte(65535)。注意 String 的 1 字节档边界是 `< Max1Byte`
+// （即 255 落 2 字节档），这是 v0.2.x 的原样行为，不要"顺手"改成 `<=`，
+// 否则会与尚未改动的其他语言移植字节不一致。
 //
 // 已知覆盖边界：上限 Max4Byte(0xFFFFFFFF) 本身需要 4GB 内存，无法在 CI 里
 // 真实分配，因此「length == Max4Byte 不得落空」这一条靠最后一档统一使用 `<=`
 // 的约定 + code review 保证，下面只验证到 4 字节档的入口（Max3Byte+1）。
 
 // wantTier 返回 length 应落到的档位标记与长度字段字节数。
-// kind 取 "scalar"（String/Bytes/Tag，5-bit suffix）或 "container"（4-bit 长度域）。
+// kind 取：
+//   - "string"   String，v0.2.x 语义，最多 2 字节长度
+//   - "scalar"   Bytes / Tag，v0.3.0 四档
+//   - "container" Container，v0.3.0 四档
 func wantTier(kind string, length int) (marker byte, n int) {
-	inlineCap, m1 := 27, StringLen1Byte
+	if kind == "string" {
+		// String 维持 v0.2.x：内联 0..29，30 = 1 字节，31 = 2 字节。
+		// 1 字节档边界是 `< Max1Byte`（255 落 2 字节档），与 v0.2.x 完全一致。
+		switch {
+		case length < StringLen1Byte:
+			return byte(length), 0
+		case length < Max1Byte:
+			return byte(StringLen1Byte), 1
+		default:
+			return byte(StringLen2Byte), 2
+		}
+	}
+
+	inlineCap, m1 := 27, BytesLen1Byte
 	if kind == "container" {
 		inlineCap, m1 = 11, ContainerLen1Byte
 	}
@@ -48,10 +66,14 @@ func wantTier(kind string, length int) (marker byte, n int) {
 }
 
 func tierMask(kind string) byte {
-	if kind == "container" {
+	switch kind {
+	case "string":
+		return byte(StringLenMask)
+	case "container":
 		return byte(ContainerLenMask)
+	default:
+		return byte(BytesLenMask)
 	}
-	return byte(StringLenMask)
 }
 
 // checkTierPrefix 校验 e.buf 里的档位标记 + 大端长度字段 + 负载布局。
@@ -59,7 +81,7 @@ func checkTierPrefix(t *testing.T, e *encoder, kind string, length int, payload 
 	t.Helper()
 	marker, n := wantTier(kind, length)
 	if got := e.buf[0] & tierMask(kind); got != marker {
-		t.Fatalf("suffix = %d, want %d (length %d)", got, marker, length)
+		t.Fatalf("suffix = %d, want %d (kind %s, length %d)", got, marker, kind, length)
 	}
 	off := 1
 	if n > 0 {
@@ -77,7 +99,8 @@ func checkTierPrefix(t *testing.T, e *encoder, kind string, length int, payload 
 	}
 }
 
-// 每个档位取「本档最大值」与「下一档最小值」两个临界点。
+// Bytes / Container / Tag 的档位临界点：每个档位取「本档最大值」与
+// 「下一档最小值」两个点。
 var tierBoundaryLengths = []int{
 	27, 28,                  // 内联 ↔ 1 字节
 	Max1Byte, Max1Byte + 1,  // 1 字节 ↔ 2 字节
@@ -85,13 +108,23 @@ var tierBoundaryLengths = []int{
 	Max3Byte, Max3Byte + 1,  // 3 字节 ↔ 4 字节
 }
 
+// String 只有内联 / 1 字节 / 2 字节三档，2 字节是最后一档。
+// 254 → 1 字节，255 → 2 字节（v0.2.x 的 `<` 边界，特意钉住）。
+var stringTierBoundaryLengths = []int{
+	29, 30,                    // 内联 ↔ 1 字节
+	Max1Byte - 1, Max1Byte,    // 1 字节 ↔ 2 字节
+	Max2Byte,                  // 最后一档上限，必须仍能编码
+}
+
 func newBufEncoder() *encoder {
 	// w 传 nil：只往内部 buf 写，不落盘
 	return NewEncoder(nil)
 }
 
+// ---- String：维持 v0.2.x，最多 2 字节长度 ----
+
 func TestEncodeStringTierBoundaries(t *testing.T) {
-	for _, l := range tierBoundaryLengths {
+	for _, l := range stringTierBoundaryLengths {
 		t.Run(fmt.Sprintf("len_%d", l), func(t *testing.T) {
 			e := newBufEncoder()
 			s := strings.Repeat("x", l)
@@ -100,14 +133,24 @@ func TestEncodeStringTierBoundaries(t *testing.T) {
 			if err != nil {
 				t.Fatalf("encodeString(%d) must not error, got: %v", l, err)
 			}
-			_, nb := wantTier("scalar", l)
+			_, nb := wantTier("string", l)
 			if want := uint32(1 + nb + l); n != want || e.offset != want {
 				t.Fatalf("wrote %d bytes (offset %d), want %d", n, e.offset, want)
 			}
-			checkTierPrefix(t, e, "scalar", l, []byte(s))
+			checkTierPrefix(t, e, "string", l, []byte(s))
 		})
 	}
 }
+
+// TestEncodeStringAboveMax2ByteStillRejected String 不参与 4GB 扩展，
+// 超过 Max2Byte(65535) 必须照旧报错——防止把 String 的守卫一起放宽。
+func TestEncodeStringAboveMax2ByteStillRejected(t *testing.T) {
+	if _, err := newBufEncoder().encodeString(strings.Repeat("x", Max2Byte+1)); err == nil {
+		t.Fatal("string of Max2Byte+1 bytes must still be rejected")
+	}
+}
+
+// ---- Bytes / Container / Tag：v0.3.0 四档 ----
 
 func TestEncodeBytesTierBoundaries(t *testing.T) {
 	for _, l := range tierBoundaryLengths {
@@ -179,16 +222,12 @@ func TestEncodeTagPayloadTierBoundaries(t *testing.T) {
 				t.Fatalf("encodeTag(tag %d + payload %d) must not error, got: %v",
 					len(tag), len(payload), err)
 			}
-			_, nb := wantTier("scalar", l)
+			marker, nb := wantTier("scalar", l)
 			if want := uint32(1 + nb + l); n != want || e.offset != want {
 				t.Fatalf("wrote %d bytes (offset %d), want %d", n, e.offset, want)
 			}
 
-			// 布局：sign(1) + 长度字段(n) + tag + payload
-			marker, n2 := wantTier("scalar", l)
-			if n2 != nb {
-				t.Fatalf("tier byte width mismatch: %d vs %d", n2, nb)
-			}
+			// 布局：sign(1) + 长度字段(nb) + tag + payload
 			if got := e.buf[0] & tierMask("scalar"); got != marker {
 				t.Fatalf("suffix = %d, want %d", got, marker)
 			}
@@ -214,18 +253,28 @@ func TestEncodeTagPayloadTierBoundaries(t *testing.T) {
 }
 
 // TestEncodeAtTierCeilingStillWorks 守住「长度正好等于某档上限时不得落空」
-// 这条历史 bug。Max2Byte(65535) 与 Max3Byte(16777215) 可真实分配，逐个校验。
+// 这条历史 bug。String 的上限仍是 Max2Byte，Bytes 的 4 字节档入口用
+// Max3Byte+1 验证。
 func TestEncodeAtTierCeilingStillWorks(t *testing.T) {
-	for _, l := range []int{Max2Byte, Max3Byte} {
-		e := newBufEncoder()
-		s := strings.Repeat("x", l)
-		n, err := e.encodeString(s)
-		if err != nil {
-			t.Fatalf("encodeString(%d) must not error, got: %v", l, err)
-		}
-		if n == 0 {
-			t.Fatalf("encodeString(%d) silently wrote 0 bytes (D6 regression)", l)
-		}
-		checkTierPrefix(t, e, "scalar", l, []byte(s))
+	e := newBufEncoder()
+	s := strings.Repeat("x", Max2Byte)
+	n, err := e.encodeString(s)
+	if err != nil {
+		t.Fatalf("encodeString(%d) must not error, got: %v", Max2Byte, err)
 	}
+	if n == 0 {
+		t.Fatalf("encodeString(%d) silently wrote 0 bytes (D6 regression)", Max2Byte)
+	}
+	checkTierPrefix(t, e, "string", Max2Byte, []byte(s))
+
+	be := newBufEncoder()
+	bs := bytes.Repeat([]byte("y"), Max3Byte+1)
+	bn, err := be.encodeBytes(bs)
+	if err != nil {
+		t.Fatalf("encodeBytes(%d) must not error, got: %v", Max3Byte+1, err)
+	}
+	if bn == 0 {
+		t.Fatalf("encodeBytes(%d) silently wrote 0 bytes (D6 regression)", Max3Byte+1)
+	}
+	checkTierPrefix(t, be, "scalar", Max3Byte+1, bs)
 }

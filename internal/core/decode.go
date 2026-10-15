@@ -430,6 +430,8 @@ func (d *decoder) decodeTag(prefix byte, path string) (node ir.Node, length int,
 func (d *decoder) decodeString(prefix byte, tag *ir.Tag, path string) (node ir.Node, length int, err error) {
 	l1, l2 := StringLen(prefix)
 
+	// String 维持 v0.2.x 语义：长度字段最多 2 字节（内联 / 1 字节 / 2 字节）。
+	// 只有 Bytes / Container / Tag 才有 3、4 字节档。
 	switch l1 {
 	case 0:
 	case 1:
@@ -444,18 +446,6 @@ func (d *decoder) decodeString(prefix byte, tag *ir.Tag, path string) (node ir.N
 			return
 		}
 		l2 = int(l[0])<<8 | int(l[1])
-	case 3:
-		var l []byte
-		if l, err = d.ReadBytes(3); err != nil {
-			return
-		}
-		l2 = int(l[0])<<16 | int(l[1])<<8 | int(l[2])
-	case 4:
-		var l []byte
-		if l, err = d.ReadBytes(4); err != nil {
-			return
-		}
-		l2 = int(l[0])<<24 | int(l[1])<<16 | int(l[2])<<8 | int(l[3])
 	default:
 		err = errors.New("invalid data")
 		return
