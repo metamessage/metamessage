@@ -1070,18 +1070,9 @@ export class MMDecoder {
     } else if (lenBytes === 2) {
       const bytes = this.readBytes(2);
       length = ((bytes[0] ?? 0) << 8) | (bytes[1] ?? 0);
-    } else if (lenBytes === 3) {
-      const bytes = this.readBytes(3);
-      length =
-        ((bytes[0] ?? 0) << 16) | ((bytes[1] ?? 0) << 8) | (bytes[2] ?? 0);
-    } else if (lenBytes === 4) {
-      const bytes = this.readBytes(4);
-      length =
-        (bytes[0] ?? 0) * 0x1000000 +
-        ((bytes[1] ?? 0) << 16) +
-        ((bytes[2] ?? 0) << 8) +
-        (bytes[3] ?? 0);
     }
+    // String 维持 v0.2.x：长度字段最多 2 字节（内联 / 1 字节 / 2 字节）。
+    // 只有 Bytes / Container / Tag 才有 3、4 字节档。
 
     const bs = this.readBytes(length);
     const text = new TextDecoder('utf-8').decode(bs);

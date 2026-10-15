@@ -175,12 +175,11 @@ export const FloatLen6Byte = FloatLenMask - 2;
 export const FloatLen7Byte = FloatLenMask - 1;
 export const FloatLen8Byte = FloatLenMask;
 
-// v0.3.0：内联 0..27，28/29/30/31 = 1/2/3/4 字节大端长度档位标记
+// String 维持 v0.2.x：内联 0..29，30/31 = 1/2 字节大端长度档位标记。
+// String 不参与 v0.3.0 的 4 字节长度槽扩展。
 export const StringLenMask = 0b11111;
-export const StringLen1Byte = StringLenMask - 3;
-export const StringLen2Byte = StringLenMask - 2;
-export const StringLen3Byte = StringLenMask - 1;
-export const StringLen4Byte = StringLenMask;
+export const StringLen1Byte = StringLenMask - 1;
+export const StringLen2Byte = StringLenMask;
 
 export const BytesLenMask = 0b11111;
 export const BytesLen1Byte = BytesLenMask - 3;
@@ -254,19 +253,15 @@ export function isArray(b: number): boolean {
   return (b & ContainerMask) === ContainerArray;
 }
 
+// String 维持 v0.2.x 语义：内联 0..29，30 = 1 字节，31 = 2 字节（无 3/4 档）。
 export function stringLen(b: number): [number, number] {
   const l = b & StringLenMask;
-  switch (l) {
-    case StringLen1Byte:
-      return [1, 0];
-    case StringLen2Byte:
-      return [2, 0];
-    case StringLen3Byte:
-      return [3, 0];
-    case StringLen4Byte:
-      return [4, 0];
-    default:
-      return [0, l];
+  if (l < StringLen1Byte) {
+    return [0, l];
+  } else if (l === StringLen1Byte) {
+    return [1, 0];
+  } else {
+    return [2, 0];
   }
 }
 

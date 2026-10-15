@@ -4,8 +4,6 @@ import {
   SimpleValue,
   StringLen1Byte,
   StringLen2Byte,
-  StringLen3Byte,
-  StringLen4Byte,
   BytesLen1Byte,
   BytesLen2Byte,
   BytesLen3Byte,
@@ -773,42 +771,28 @@ export class MMEncoder {
   encodeString(value: string): number {
     let n = 0;
     const length = value.length;
-    if (length > Max4Byte) {
+    // String 维持 v0.2.x：上限 Max2Byte(65535)，最多 2 字节长度字段。
+    // 基线没有守卫（超长会被 writeUint16BE 静默截断），这里保留守卫但按
+    // Max2Byte 判定。1 字节档边界保持基线的 `< 256`（255 落 2 字节档）。
+    if (length > Max2Byte) {
       throw new Error(
-        `string too long, max length: ${Max4Byte}, actual: ${length}`,
+        `string too long, max length: ${Max2Byte}, actual: ${length}`,
       );
     }
     if (length < StringLen1Byte) {
       const prefix = Prefix.String | length;
       this.buffer.writeUint8(prefix);
       n += 1;
-    } else if (length <= Max1Byte) {
+    } else if (length < 256) {
       const prefix = Prefix.String | StringLen1Byte;
       this.buffer.writeUint8(prefix);
       this.buffer.writeUint8(length);
       n += 2;
-    } else if (length <= Max2Byte) {
+    } else {
       const prefix = Prefix.String | StringLen2Byte;
       this.buffer.writeUint8(prefix);
-      this.buffer.writeUint8((length >> 8) & 0xff);
-      this.buffer.writeUint8(length & 0xff);
+      this.buffer.writeUint16BE(length);
       n += 3;
-    } else if (length <= Max3Byte) {
-      const prefix = Prefix.String | StringLen3Byte;
-      this.buffer.writeUint8(prefix);
-      this.buffer.writeUint8((length >>> 16) & 0xff);
-      this.buffer.writeUint8((length >>> 8) & 0xff);
-      this.buffer.writeUint8(length & 0xff);
-      n += 4;
-    } else {
-      // 最后一档必须覆盖到 Max4Byte
-      const prefix = Prefix.String | StringLen4Byte;
-      this.buffer.writeUint8(prefix);
-      this.buffer.writeUint8((length >>> 24) & 0xff);
-      this.buffer.writeUint8((length >>> 16) & 0xff);
-      this.buffer.writeUint8((length >>> 8) & 0xff);
-      this.buffer.writeUint8(length & 0xff);
-      n += 5;
     }
 
     for (let i = 0; i < length; i++) {
