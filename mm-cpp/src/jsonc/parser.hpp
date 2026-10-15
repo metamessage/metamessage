@@ -57,7 +57,7 @@ public:
   }
 
 private:
-  static constexpr size_t kMaxDepth = 32;
+  static constexpr size_t kMaxDepth = 256;
   const std::vector<Token> &tokens_;
   size_t pos_;
   size_t depth_ = 0;
@@ -242,7 +242,7 @@ private:
 
     depth_++;
     if (depth_ > kMaxDepth) {
-      throw std::runtime_error("max depth: 32");
+      throw std::runtime_error("max depth: 256");
     }
 
     // Save tag that was set before { (object-level tag from outer scope)
@@ -312,7 +312,7 @@ private:
 
     depth_++;
     if (depth_ > kMaxDepth) {
-      throw std::runtime_error("max depth: 32");
+      throw std::runtime_error("max depth: 256");
     }
 
     skipComments();

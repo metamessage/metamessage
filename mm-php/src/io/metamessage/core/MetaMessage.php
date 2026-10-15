@@ -21,7 +21,7 @@ use ReflectionNamedType;
 
 class MetaMessage
 {
-    private const MAX_DEPTH = 32;
+    private const MAX_DEPTH = 256;
 
     private function __construct() {}
 

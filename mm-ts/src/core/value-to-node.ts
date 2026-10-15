@@ -4,7 +4,7 @@ import { typeToString, ValueType } from '../ir/value-type';
 import { META_KEY } from './mm';
 import { base64ToUint8 } from '../jsonc/printer';
 
-const maxDepth = 32;
+const maxDepth = 256;
 
 function isUnionTypeWithNull(type: string | undefined): boolean {
   if (!type || typeof type !== 'string') {

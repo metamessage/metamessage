@@ -12,7 +12,7 @@ public class JSONCParser {
     private var pos: Int
     private var pendingComments: [JSONCToken]
     private var depth: Int
-    private let maxDepth: Int = 32
+    private let maxDepth: Int = 256
 
     public init(tokens: [JSONCToken]) {
         self.tokens = tokens
