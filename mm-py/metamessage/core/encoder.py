@@ -97,26 +97,32 @@ StringLenMask  = 0b11111
 StringLen1Byte = StringLenMask - 1  # 30 (for length >= 24 and < 256)
 StringLen2Byte = StringLenMask      # 31 (for length >= 256 and < 65536)
 
-# Bytes constants
+# Bytes constants（v0.3.0：4 档；内联 0..27，档位标记 28/29/30/31）
 BytesLenMask  = 0b11111
-BytesLen1Byte = BytesLenMask - 1  # 30
-BytesLen2Byte = BytesLenMask      # 31
+BytesLen1Byte = BytesLenMask - 3  # 28
+BytesLen2Byte = BytesLenMask - 2  # 29
+BytesLen3Byte = BytesLenMask - 1  # 30
+BytesLen4Byte = BytesLenMask      # 31
 
-# Container constants
+# Container constants（v0.3.0：4 档；内联 0..11，档位标记 12/13/14/15）
 ContainerMask    = 0b10000
 ContainerObject  = 0b00000
 ContainerArray   = 0b10000
 ContainerLenMask  = 0b01111
-ContainerLen1Byte = ContainerLenMask - 1  # 14 (for length >= 12 and < 256)
-ContainerLen2Byte = ContainerLenMask      # 15 (for length >= 256 and < 65536)
+ContainerLen1Byte = ContainerLenMask - 3  # 12
+ContainerLen2Byte = ContainerLenMask - 2  # 13
+ContainerLen3Byte = ContainerLenMask - 1  # 14
+ContainerLen4Byte = ContainerLenMask      # 15
 
-# Tag constants
+# Tag constants（v0.3.0：4 档；tag+payload 合计槽；内联 0..27）
 TagLenMask  = 0b11111
-TagLen1Byte = TagLenMask - 1  # 30 (for length >= 26 and < 256)
-TagLen2Byte = TagLenMask      # 31 (for length >= 256 and < 65536)
+TagLen1Byte = TagLenMask - 3  # 28
+TagLen2Byte = TagLenMask - 2  # 29
+TagLen3Byte = TagLenMask - 1  # 30
+TagLen4Byte = TagLenMask      # 31
 
 DEFAULT_BUF_SIZE = 1024
-MAX_CAP = 1024 * 1024 * 1024  # 1GB
+MAX_CAP = 0xFFFFFFFF  # v0.3.0：~4GB，对齐 Max4Byte
 
 _RE_SCI_FLOAT = re.compile(r'^([\d.]+)[eE]([+-]?\d+)$')
 
@@ -465,22 +471,32 @@ class Encoder:
 
     def _encode_bytes(self, bs: bytes) -> int:
         length = len(bs)
-        if length > Max2Byte:
+        if length > Max4Byte:
             raise ValueError(f"bytes too long: {length}")
 
         sign = PrefixBytes
-        if length < BytesLen1Byte:  # length < 30
+        if length < BytesLen1Byte:  # inline 0..27
             n = self._write_byte(sign | length)
             n += self._write_bytes(bs)
             return n
-        elif length < Max1Byte:  # length < 256
+        elif length <= Max1Byte:  # 1 字节长度槽
             n = self._write_byte(sign | BytesLen1Byte)
             n += self._write_byte(length)
             n += self._write_bytes(bs)
             return n
-        else:  # length < 65536
+        elif length <= Max2Byte:  # 2 字节长度槽
             n = self._write_byte(sign | BytesLen2Byte)
             n += self._write_bytes(bytes([(length >> 8) & 0xFF, length & 0xFF]))
+            n += self._write_bytes(bs)
+            return n
+        elif length <= Max3Byte:  # 3 字节长度槽
+            n = self._write_byte(sign | BytesLen3Byte)
+            n += self._write_bytes(bytes([(length >> 16) & 0xFF, (length >> 8) & 0xFF, length & 0xFF]))
+            n += self._write_bytes(bs)
+            return n
+        else:  # 4 字节长度槽
+            n = self._write_byte(sign | BytesLen4Byte)
+            n += self._write_bytes(bytes([(length >> 24) & 0xFF, (length >> 16) & 0xFF, (length >> 8) & 0xFF, length & 0xFF]))
             n += self._write_bytes(bs)
             return n
 
@@ -489,35 +505,55 @@ class Encoder:
     def _encode_array(self, bs: bytes) -> int:
         """Encode raw array bytes with container prefix."""
         length = len(bs)
-        if length > Max2Byte:
+        if length > Max4Byte:
             raise ValueError(f"array too long: {length}")
 
         sign = Container | ContainerArray
-        if length < ContainerLen1Byte:  # length < 14
+        if length < ContainerLen1Byte:  # inline 0..11
             return self._write_bytes_with_prefix(bs, sign | length)
-        elif length < Max1Byte:  # length < 256
+        elif length <= Max1Byte:  # 1 字节
             return self._write_bytes_with_prefix(bs, sign | ContainerLen1Byte, length)
-        else:  # length < 65536
+        elif length <= Max2Byte:  # 2 字节
             return self._write_bytes_with_prefix(
                 bs, sign | ContainerLen2Byte,
                 (length >> 8) & 0xFF, length & 0xFF
+            )
+        elif length <= Max3Byte:  # 3 字节
+            return self._write_bytes_with_prefix(
+                bs, sign | ContainerLen3Byte,
+                (length >> 16) & 0xFF, (length >> 8) & 0xFF, length & 0xFF
+            )
+        else:  # 4 字节
+            return self._write_bytes_with_prefix(
+                bs, sign | ContainerLen4Byte,
+                (length >> 24) & 0xFF, (length >> 16) & 0xFF, (length >> 8) & 0xFF, length & 0xFF
             )
 
     def _encode_object(self, bs: bytes) -> int:
         """Encode raw object bytes with container prefix."""
         length = len(bs)
-        if length > Max2Byte:
+        if length > Max4Byte:
             raise ValueError(f"object too long: {length}")
 
         sign = Container | ContainerObject
-        if length < ContainerLen1Byte:  # length < 14
+        if length < ContainerLen1Byte:  # inline 0..11
             return self._write_bytes_with_prefix(bs, sign | length)
-        elif length < Max1Byte:  # length < 256
+        elif length <= Max1Byte:  # 1 字节
             return self._write_bytes_with_prefix(bs, sign | ContainerLen1Byte, length)
-        else:  # length < 65536
+        elif length <= Max2Byte:  # 2 字节
             return self._write_bytes_with_prefix(
                 bs, sign | ContainerLen2Byte,
                 (length >> 8) & 0xFF, length & 0xFF
+            )
+        elif length <= Max3Byte:  # 3 字节
+            return self._write_bytes_with_prefix(
+                bs, sign | ContainerLen3Byte,
+                (length >> 16) & 0xFF, (length >> 8) & 0xFF, length & 0xFF
+            )
+        else:  # 4 字节
+            return self._write_bytes_with_prefix(
+                bs, sign | ContainerLen4Byte,
+                (length >> 24) & 0xFF, (length >> 16) & 0xFF, (length >> 8) & 0xFF, length & 0xFF
             )
 
     # ===== Tags =====
@@ -545,7 +581,7 @@ class Encoder:
             return 0
 
         length = len(payload) + len(tag)
-        if length > Max2Byte:
+        if length > Max4Byte:
             raise ValueError(f"tag+payload too long: {length}")
 
         sign = PrefixTag
@@ -555,13 +591,21 @@ class Encoder:
             sign |= length
             ns = self._write_bytes_with_prefix(tag, sign)
             nb = self._write_bytes(payload)
-        elif length < Max1Byte:
+        elif length <= Max1Byte:
             sign |= TagLen1Byte
             ns = self._write_bytes_with_prefix(tag, sign, length)
             nb = self._write_bytes(payload)
-        else:
+        elif length <= Max2Byte:
             sign |= TagLen2Byte
             ns = self._write_bytes_with_prefix(tag, sign, (length >> 8) & 0xFF, length & 0xFF)
+            nb = self._write_bytes(payload)
+        elif length <= Max3Byte:
+            sign |= TagLen3Byte
+            ns = self._write_bytes_with_prefix(tag, sign, (length >> 16) & 0xFF, (length >> 8) & 0xFF, length & 0xFF)
+            nb = self._write_bytes(payload)
+        else:
+            sign |= TagLen4Byte
+            ns = self._write_bytes_with_prefix(tag, sign, (length >> 24) & 0xFF, (length >> 16) & 0xFF, (length >> 8) & 0xFF, length & 0xFF)
             nb = self._write_bytes(payload)
 
         return nb + ns
