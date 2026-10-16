@@ -38,18 +38,27 @@ class WireConstants
     public const STRING_LEN_1 = self::STRING_LEN_MASK - 1;
     public const STRING_LEN_2 = self::STRING_LEN_MASK;
 
+    // Bytes length（v0.3.0：4 档；内联 0..27，档位标记 28/29/30/31）
     public const BYTES_LEN_MASK = 0b11111;
-    public const BYTES_LEN_1 = self::BYTES_LEN_MASK - 1;
-    public const BYTES_LEN_2 = self::BYTES_LEN_MASK;
+    public const BYTES_LEN_1 = self::BYTES_LEN_MASK - 3;
+    public const BYTES_LEN_2 = self::BYTES_LEN_MASK - 2;
+    public const BYTES_LEN_3 = self::BYTES_LEN_MASK - 1;
+    public const BYTES_LEN_4 = self::BYTES_LEN_MASK;
 
     public const CONTAINER_MASK = 0b10000;
     public const CONTAINER_MAP = 0b00000;
     public const CONTAINER_ARRAY = 0b10000;
+    // Container length（v0.3.0：4 档；内联 0..11，档位标记 12/13/14/15）
     public const CONTAINER_LEN_MASK = 0b01111;
-    public const CONTAINER_LEN_1 = self::CONTAINER_LEN_MASK - 1;
-    public const CONTAINER_LEN_2 = self::CONTAINER_LEN_MASK;
+    public const CONTAINER_LEN_1 = self::CONTAINER_LEN_MASK - 3;
+    public const CONTAINER_LEN_2 = self::CONTAINER_LEN_MASK - 2;
+    public const CONTAINER_LEN_3 = self::CONTAINER_LEN_MASK - 1;
+    public const CONTAINER_LEN_4 = self::CONTAINER_LEN_MASK;
 
+    // Tag length（v0.3.0：4 档；tag+payload 合计槽；内联 0..27）
     public const TAG_LEN_MASK = 0b11111;
-    public const TAG_LEN_1 = self::TAG_LEN_MASK - 1;
-    public const TAG_LEN_2 = self::TAG_LEN_MASK;
+    public const TAG_LEN_1 = self::TAG_LEN_MASK - 3;
+    public const TAG_LEN_2 = self::TAG_LEN_MASK - 2;
+    public const TAG_LEN_3 = self::TAG_LEN_MASK - 1;
+    public const TAG_LEN_4 = self::TAG_LEN_MASK;
 }

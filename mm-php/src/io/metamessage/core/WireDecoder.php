@@ -61,13 +61,8 @@ class WireDecoder
     {
         list($l1, $l2) = $this->tagLen($prefix);
 
-        if ($l1 === 1) {
-            $l2 = $this->readByte();
-        } elseif ($l1 === 2) {
-            $l = $this->readBytes(2);
-            $l2 = ($l[0] << 8) | $l[1];
-        } elseif ($l1 !== 0) {
-            throw new MmDecodeException('invalid data');
+        if ($l1 > 0) {
+            $l2 = $this->readLen($l1);
         }
 
         $tag = Tag::newTag();
@@ -724,11 +719,8 @@ class WireDecoder
     {
         list($l1, $l2) = $this->bytesLen($prefix);
 
-        if ($l1 === 1) {
-            $l2 = $this->readByte();
-        } elseif ($l1 === 2) {
-            $l = $this->readBytes(2);
-            $l2 = ($l[0] << 8) | $l[1];
+        if ($l1 > 0) {
+            $l2 = $this->readLen($l1);
         }
 
         $bs = [];
@@ -1213,17 +1205,11 @@ class WireDecoder
 
         list($l1, $l2) = $this->containerLen($prefix);
 
-        if ($l1 === 1) {
-            if (count($this->data) < $this->offset + 1) {
+        if ($l1 > 0) {
+            if (count($this->data) < $this->offset + $l1) {
                 throw new MmDecodeException($path . ': invalid data');
             }
-            $l2 = $this->readByte();
-        } elseif ($l1 === 2) {
-            if (count($this->data) < $this->offset + 2) {
-                throw new MmDecodeException($path . ': invalid data');
-            }
-            $l = $this->readBytes(2);
-            $l2 = ($l[0] << 8) | $l[1];
+            $l2 = $this->readLen($l1);
         }
 
         $node = new NodeArray();
@@ -1261,17 +1247,11 @@ class WireDecoder
 
         list($l1, $l2) = $this->containerLen($prefix);
 
-        if ($l1 === 1) {
-            if (count($this->data) < $this->offset + 1) {
+        if ($l1 > 0) {
+            if (count($this->data) < $this->offset + $l1) {
                 throw new MmDecodeException($path . ': invalid data');
             }
-            $l2 = $this->readByte();
-        } elseif ($l1 === 2) {
-            if (count($this->data) < $this->offset + 2) {
-                throw new MmDecodeException($path . ': invalid data');
-            }
-            $l = $this->readBytes(2);
-            $l2 = ($l[0] << 8) | $l[1];
+            $l2 = $this->readLen($l1);
         }
 
         $node = new NodeObject();
@@ -1326,6 +1306,21 @@ class WireDecoder
         return $bs;
     }
 
+    private function readLen(int $extra): int
+    {
+        if ($extra <= 0) {
+            return 0;
+        }
+        if ($extra > 4 || count($this->data) < $this->offset + $extra) {
+            throw new MmDecodeException('invalid data');
+        }
+        $v = 0;
+        for ($i = 0; $i < $extra; $i++) {
+            $v = ($v << 8) | $this->readByte();
+        }
+        return $v;
+    }
+
     private function readUintBody(int $prefix, int $l1, int $l2): int
     {
         if ($l1 === 0) {
@@ -1355,24 +1350,20 @@ class WireDecoder
     private function tagLen(int $first): array
     {
         $l = $first & WireConstants::TAG_LEN_MASK;
-        if ($l === WireConstants::TAG_LEN_1) {
-            return [1, 0];
-        } elseif ($l === WireConstants::TAG_LEN_2) {
-            return [2, 0];
-        } else {
+        if ($l < WireConstants::TAG_LEN_1) {
             return [0, $l];
+        } else {
+            return [$l - WireConstants::TAG_LEN_1 + 1, 0];
         }
     }
 
     private function containerLen(int $first): array
     {
         $l = $first & WireConstants::CONTAINER_LEN_MASK;
-        if ($l === WireConstants::CONTAINER_LEN_1) {
-            return [1, 0];
-        } elseif ($l === WireConstants::CONTAINER_LEN_2) {
-            return [2, 0];
-        } else {
+        if ($l < WireConstants::CONTAINER_LEN_1) {
             return [0, $l];
+        } else {
+            return [$l - WireConstants::CONTAINER_LEN_1 + 1, 0];
         }
     }
 
@@ -1393,10 +1384,8 @@ class WireDecoder
         $l = $first & WireConstants::BYTES_LEN_MASK;
         if ($l < WireConstants::BYTES_LEN_1) {
             return [0, $l];
-        } elseif ($l === WireConstants::BYTES_LEN_1) {
-            return [1, $l];
         } else {
-            return [2, $l];
+            return [$l - WireConstants::BYTES_LEN_1 + 1, 0];
         }
     }
 

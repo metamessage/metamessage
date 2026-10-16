@@ -17,7 +17,7 @@ class WireEncoder
     private int $maxCap;
 
     private const DEFAULT_BUF_SIZE = 1024;
-    private const MAX_CAP = 1024 * 1024 * 1024;
+    private const MAX_CAP = 0xFFFFFFFF; // v0.3.0：~4GB，对齐 Max4Byte
 
     public function __construct()
     {
@@ -535,20 +535,26 @@ class WireEncoder
     public function encodeBytes(array $bs): int
     {
         $length = count($bs);
-        if ($length > WireConstants::MAX_2) {
-            throw new \Exception('bytes too long, max length: ' . WireConstants::MAX_2 . ', actual: ' . $length);
+        if ($length > WireConstants::MAX_4) {
+            throw new \Exception('bytes too long, max length: ' . WireConstants::MAX_4 . ', actual: ' . $length);
         }
 
         $sign = Prefix::BYTES;
         if ($length < WireConstants::BYTES_LEN_1) {
             $sign |= $length;
             return $this->writeBytesWithPrefix($bs, $sign);
-        } elseif ($length < WireConstants::MAX_1) {
+        } elseif ($length <= WireConstants::MAX_1) {
             $sign |= WireConstants::BYTES_LEN_1;
             return $this->writeBytesWithPrefix($bs, $sign, $length);
-        } else {
+        } elseif ($length <= WireConstants::MAX_2) {
             $sign |= WireConstants::BYTES_LEN_2;
             return $this->writeBytesWithPrefix($bs, $sign, ($length >> 8) & 0xFF, $length & 0xFF);
+        } elseif ($length <= WireConstants::MAX_3) {
+            $sign |= WireConstants::BYTES_LEN_3;
+            return $this->writeBytesWithPrefix($bs, $sign, ($length >> 16) & 0xFF, ($length >> 8) & 0xFF, $length & 0xFF);
+        } else {
+            $sign |= WireConstants::BYTES_LEN_4;
+            return $this->writeBytesWithPrefix($bs, $sign, ($length >> 24) & 0xFF, ($length >> 16) & 0xFF, ($length >> 8) & 0xFF, $length & 0xFF);
         }
     }
 
@@ -559,8 +565,8 @@ class WireEncoder
         }
 
         $length = count($payload) + count($tag);
-        if ($length > WireConstants::MAX_2) {
-            throw new \Exception('tag+payload too long, max length: ' . WireConstants::MAX_2 . ', actual: ' . $length);
+        if ($length > WireConstants::MAX_4) {
+            throw new \Exception('tag+payload too long, max length: ' . WireConstants::MAX_4 . ', actual: ' . $length);
         }
 
         $sign = Prefix::TAG;
@@ -569,13 +575,21 @@ class WireEncoder
             $sign |= $length;
             $ns = $this->writeBytesWithPrefix($tag, $sign);
             $nb = $this->writeBytes($payload);
-        } elseif ($length < WireConstants::MAX_1) {
+        } elseif ($length <= WireConstants::MAX_1) {
             $sign |= WireConstants::TAG_LEN_1;
             $ns = $this->writeBytesWithPrefix($tag, $sign, $length);
             $nb = $this->writeBytes($payload);
-        } else {
+        } elseif ($length <= WireConstants::MAX_2) {
             $sign |= WireConstants::TAG_LEN_2;
             $ns = $this->writeBytesWithPrefix($tag, $sign, ($length >> 8) & 0xFF, $length & 0xFF);
+            $nb = $this->writeBytes($payload);
+        } elseif ($length <= WireConstants::MAX_3) {
+            $sign |= WireConstants::TAG_LEN_3;
+            $ns = $this->writeBytesWithPrefix($tag, $sign, ($length >> 16) & 0xFF, ($length >> 8) & 0xFF, $length & 0xFF);
+            $nb = $this->writeBytes($payload);
+        } else {
+            $sign |= WireConstants::TAG_LEN_4;
+            $ns = $this->writeBytesWithPrefix($tag, $sign, ($length >> 24) & 0xFF, ($length >> 16) & 0xFF, ($length >> 8) & 0xFF, $length & 0xFF);
             $nb = $this->writeBytes($payload);
         }
 
@@ -607,40 +621,52 @@ class WireEncoder
     public function encodeObject(array $bs): int
     {
         $length = count($bs);
-        if ($length > WireConstants::MAX_2) {
-            throw new \Exception('object too long, max length: ' . WireConstants::MAX_2 . ', actual: ' . $length);
+        if ($length > WireConstants::MAX_4) {
+            throw new \Exception('object too long, max length: ' . WireConstants::MAX_4 . ', actual: ' . $length);
         }
 
         $sign = Prefix::CONTAINER | WireConstants::CONTAINER_MAP;
         if ($length < WireConstants::CONTAINER_LEN_1) {
             $sign |= $length;
             return $this->writeBytesWithPrefix($bs, $sign);
-        } elseif ($length < WireConstants::MAX_1) {
+        } elseif ($length <= WireConstants::MAX_1) {
             $sign |= WireConstants::CONTAINER_LEN_1;
             return $this->writeBytesWithPrefix($bs, $sign, $length);
-        } else {
+        } elseif ($length <= WireConstants::MAX_2) {
             $sign |= WireConstants::CONTAINER_LEN_2;
             return $this->writeBytesWithPrefix($bs, $sign, ($length >> 8) & 0xFF, $length & 0xFF);
+        } elseif ($length <= WireConstants::MAX_3) {
+            $sign |= WireConstants::CONTAINER_LEN_3;
+            return $this->writeBytesWithPrefix($bs, $sign, ($length >> 16) & 0xFF, ($length >> 8) & 0xFF, $length & 0xFF);
+        } else {
+            $sign |= WireConstants::CONTAINER_LEN_4;
+            return $this->writeBytesWithPrefix($bs, $sign, ($length >> 24) & 0xFF, ($length >> 16) & 0xFF, ($length >> 8) & 0xFF, $length & 0xFF);
         }
     }
 
     public function encodeArray(array $bs): int
     {
         $length = count($bs);
-        if ($length > WireConstants::MAX_2) {
-            throw new \Exception('array too long, max length: ' . WireConstants::MAX_2 . ', actual: ' . $length);
+        if ($length > WireConstants::MAX_4) {
+            throw new \Exception('array too long, max length: ' . WireConstants::MAX_4 . ', actual: ' . $length);
         }
 
         $sign = Prefix::CONTAINER | WireConstants::CONTAINER_ARRAY;
         if ($length < WireConstants::CONTAINER_LEN_1) {
             $sign |= $length;
             return $this->writeBytesWithPrefix($bs, $sign);
-        } elseif ($length < WireConstants::MAX_1) {
+        } elseif ($length <= WireConstants::MAX_1) {
             $sign |= WireConstants::CONTAINER_LEN_1;
             return $this->writeBytesWithPrefix($bs, $sign, $length);
-        } else {
+        } elseif ($length <= WireConstants::MAX_2) {
             $sign |= WireConstants::CONTAINER_LEN_2;
             return $this->writeBytesWithPrefix($bs, $sign, ($length >> 8) & 0xFF, $length & 0xFF);
+        } elseif ($length <= WireConstants::MAX_3) {
+            $sign |= WireConstants::CONTAINER_LEN_3;
+            return $this->writeBytesWithPrefix($bs, $sign, ($length >> 16) & 0xFF, ($length >> 8) & 0xFF, $length & 0xFF);
+        } else {
+            $sign |= WireConstants::CONTAINER_LEN_4;
+            return $this->writeBytesWithPrefix($bs, $sign, ($length >> 24) & 0xFF, ($length >> 16) & 0xFF, ($length >> 8) & 0xFF, $length & 0xFF);
         }
     }
 
