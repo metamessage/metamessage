@@ -217,21 +217,40 @@ class WireEncoder {
 
     fun encodeBytes(data: ByteArray): Int {
         val length = data.size
-        require(length <= WireConstants.MAX_2) { "bytes too long" }
+        require(length <= WireConstants.MAX_4) { "bytes too long" }
         val sign = Prefix.BYTES
         return when {
             length < WireConstants.BYTES_LEN_1 ->
                     writeBytesWithPrefix(data, (sign or length).toByte())
-            length < WireConstants.MAX_1 ->
+            // v0.3.0：1 字节档边界对齐 Go 参考（length == 255 落 1 字节档）
+            length <= WireConstants.MAX_1 ->
                     writeBytesWithPrefix(
                             data,
                             (sign or WireConstants.BYTES_LEN_1).toByte(),
                             length.toByte()
                     )
-            else ->
+            length <= WireConstants.MAX_2 ->
                     writeBytesWithPrefix(
                             data,
                             (sign or WireConstants.BYTES_LEN_2).toByte(),
+                            (length shr 8).toByte(),
+                            length.toByte()
+                    )
+            length <= WireConstants.MAX_3 ->
+                    writeBytesWithPrefix(
+                            data,
+                            (sign or WireConstants.BYTES_LEN_3).toByte(),
+                            (length shr 16).toByte(),
+                            (length shr 8).toByte(),
+                            length.toByte()
+                    )
+            // 最后一档必须 <=：length == MAX_4 本身可表达，否则静默丢数据
+            else ->
+                    writeBytesWithPrefix(
+                            data,
+                            (sign or WireConstants.BYTES_LEN_4).toByte(),
+                            (length shr 24).toByte(),
+                            (length shr 16).toByte(),
                             (length shr 8).toByte(),
                             length.toByte()
                     )
@@ -246,20 +265,37 @@ class WireEncoder {
 
     private fun encodeContainer(payload: ByteArray, baseSign: Int): Int {
         val length = payload.size
-        require(length <= WireConstants.MAX_2) { "container payload too long" }
+        require(length <= WireConstants.MAX_4) { "container payload too long" }
         return when {
             length < WireConstants.CONTAINER_LEN_1 ->
                     writeBytesWithPrefix(payload, (baseSign or length).toByte())
-            length < WireConstants.MAX_1 ->
+            length <= WireConstants.MAX_1 ->
                     writeBytesWithPrefix(
                             payload,
                             (baseSign or WireConstants.CONTAINER_LEN_1).toByte(),
                             length.toByte()
                     )
-            else ->
+            length <= WireConstants.MAX_2 ->
                     writeBytesWithPrefix(
                             payload,
                             (baseSign or WireConstants.CONTAINER_LEN_2).toByte(),
+                            (length shr 8).toByte(),
+                            length.toByte()
+                    )
+            length <= WireConstants.MAX_3 ->
+                    writeBytesWithPrefix(
+                            payload,
+                            (baseSign or WireConstants.CONTAINER_LEN_3).toByte(),
+                            (length shr 16).toByte(),
+                            (length shr 8).toByte(),
+                            length.toByte()
+                    )
+            else ->
+                    writeBytesWithPrefix(
+                            payload,
+                            (baseSign or WireConstants.CONTAINER_LEN_4).toByte(),
+                            (length shr 24).toByte(),
+                            (length shr 16).toByte(),
                             (length shr 8).toByte(),
                             length.toByte()
                     )
@@ -292,7 +328,7 @@ class WireEncoder {
         tEnc.encodeTagInner(rawTagFields)
         val tagEncoded = tEnc.toByteArray()
         val length = tagEncoded.size + payload.size
-        require(length <= WireConstants.MAX_2) { "tag+payload too long" }
+        require(length <= WireConstants.MAX_4) { "tag+payload too long" }
         val start = buf.length()
         val sign = Prefix.TAG
         when {
@@ -301,14 +337,31 @@ class WireEncoder {
                 buf.writeAll(tagEncoded)
                 buf.writeAll(payload)
             }
-            length < WireConstants.MAX_1 -> {
+            length <= WireConstants.MAX_1 -> {
                 buf.write((sign or WireConstants.TAG_LEN_1).toByte())
                 buf.write(length.toByte())
                 buf.writeAll(tagEncoded)
                 buf.writeAll(payload)
             }
-            else -> {
+            length <= WireConstants.MAX_2 -> {
                 buf.write((sign or WireConstants.TAG_LEN_2).toByte())
+                buf.write((length shr 8).toByte())
+                buf.write(length.toByte())
+                buf.writeAll(tagEncoded)
+                buf.writeAll(payload)
+            }
+            length <= WireConstants.MAX_3 -> {
+                buf.write((sign or WireConstants.TAG_LEN_3).toByte())
+                buf.write((length shr 16).toByte())
+                buf.write((length shr 8).toByte())
+                buf.write(length.toByte())
+                buf.writeAll(tagEncoded)
+                buf.writeAll(payload)
+            }
+            else -> {
+                buf.write((sign or WireConstants.TAG_LEN_4).toByte())
+                buf.write((length shr 24).toByte())
+                buf.write((length shr 16).toByte())
                 buf.write((length shr 8).toByte())
                 buf.write(length.toByte())
                 buf.writeAll(tagEncoded)
