@@ -7,12 +7,24 @@ public enum JSONCParserError: Error {
     case maxDepthExceeded
 }
 
+// 对齐 Go 基线错误消息格式 "max depth: 1024"（数值来自全局常量插值，与 ValueToNode 共享）
+extension JSONCParserError: LocalizedError {
+    public var errorDescription: String? {
+        switch self {
+        case .unexpectedToken(let detail): return "unexpected token: \(detail)"
+        case .unexpectedEndOfData: return "unexpected end of data"
+        case .invalidData(let detail): return "invalid data: \(detail)"
+        case .maxDepthExceeded: return "max depth: \(kMMMaxDepth)"
+        }
+    }
+}
+
 public class JSONCParser {
     private var tokens: [JSONCToken]
     private var pos: Int
     private var pendingComments: [JSONCToken]
     private var depth: Int
-    private let maxDepth: Int = 1024
+    private let maxDepth: Int = kMMMaxDepth
 
     public init(tokens: [JSONCToken]) {
         self.tokens = tokens
@@ -344,11 +356,10 @@ public class JSONCParser {
 
     private func parseObject(_ openLine: Int, _ path: String, _ preTag: Tag? = nil) throws -> NodeObject {
         depth += 1
+        defer { depth -= 1 }
         if depth > maxDepth {
             throw JSONCParserError.maxDepthExceeded
         }
-
-        defer { depth -= 1 }
 
         var tag = consumeCommentsFor(openLine)
         if let pt = preTag {
@@ -432,11 +443,10 @@ public class JSONCParser {
 
     private func parseArray(_ openLine: Int, _ path: String, _ preTag: Tag? = nil) throws -> NodeArray {
         depth += 1
+        defer { depth -= 1 }
         if depth > maxDepth {
             throw JSONCParserError.maxDepthExceeded
         }
-
-        defer { depth -= 1 }
 
         var tag = consumeCommentsFor(openLine)
         if let pt = preTag {

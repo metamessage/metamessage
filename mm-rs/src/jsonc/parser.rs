@@ -383,8 +383,14 @@ impl Parser {
 
     fn parse_object(&mut self, open_line: usize, path: &str) -> Result<Node, String> {
         self.depth += 1;
+        let result = self.parse_object_inner(open_line, path);
+        self.depth -= 1;
+        result
+    }
+
+    fn parse_object_inner(&mut self, open_line: usize, path: &str) -> Result<Node, String> {
         if self.depth > MAX_DEPTH {
-            return Err("max depth exceeded".to_string());
+            return Err(format!("max depth: {}", MAX_DEPTH));
         }
 
         let mut tag = self.consume_comments_for(open_line).unwrap_or_default();
@@ -454,7 +460,6 @@ impl Parser {
             }
         }
 
-        self.depth -= 1;
         Ok(Node::Object(NodeObject {
             fields,
             tag: Some(tag),
@@ -464,8 +469,14 @@ impl Parser {
 
     fn parse_array(&mut self, open_line: usize, path: &str) -> Result<Node, String> {
         self.depth += 1;
+        let result = self.parse_array_inner(open_line, path);
+        self.depth -= 1;
+        result
+    }
+
+    fn parse_array_inner(&mut self, open_line: usize, path: &str) -> Result<Node, String> {
         if self.depth > MAX_DEPTH {
-            return Err("max depth exceeded".to_string());
+            return Err(format!("max depth: {}", MAX_DEPTH));
         }
 
         let mut tag = self.consume_comments_for(open_line).unwrap_or_default();
@@ -523,7 +534,6 @@ impl Parser {
             }
         }
 
-        self.depth -= 1;
         Ok(Node::Array(NodeArray {
             items,
             tag: Some(tag),

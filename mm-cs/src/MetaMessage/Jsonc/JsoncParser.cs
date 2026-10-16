@@ -922,9 +922,20 @@ public class JsoncParser
     private INode ParseObject(int openLine, string path, Tag? existingTag = null)
     {
         _depth++;
-        if (_depth > MaxDepth)
-            throw new Exception($"max depth: {MaxDepth}");
+        try
+        {
+            if (_depth > MaxDepth)
+                throw new Exception($"max depth: {MaxDepth}");
+            return ParseObjectInner(openLine, path, existingTag);
+        }
+        finally
+        {
+            _depth--;
+        }
+    }
 
+    private INode ParseObjectInner(int openLine, string path, Tag? existingTag = null)
+    {
         Tag tag = ConsumeCommentsFor(openLine) ?? Tag.NewTag();
         if (tag.Type == ValueType.Unknown)
             tag.Type = ValueType.Obj;
@@ -1016,16 +1027,26 @@ public class JsoncParser
             }
         }
 
-        _depth--;
         return map;
     }
 
     private INode ParseArray(int openLine, string path, Tag? existingTag = null)
     {
         _depth++;
-        if (_depth > MaxDepth)
-            throw new Exception($"max depth: {MaxDepth}");
+        try
+        {
+            if (_depth > MaxDepth)
+                throw new Exception($"max depth: {MaxDepth}");
+            return ParseArrayInner(openLine, path, existingTag);
+        }
+        finally
+        {
+            _depth--;
+        }
+    }
 
+    private INode ParseArrayInner(int openLine, string path, Tag? existingTag = null)
+    {
         Tag tag = existingTag ?? ConsumeCommentsFor(openLine) ?? Tag.NewTag();
         if (tag.Type == ValueType.Unknown)
         {
@@ -1110,7 +1131,6 @@ public class JsoncParser
             }
         }
 
-        _depth--;
         return arr;
     }
 }

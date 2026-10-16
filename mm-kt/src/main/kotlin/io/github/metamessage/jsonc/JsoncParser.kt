@@ -1,6 +1,7 @@
 package io.github.metamessage.jsonc
 
 import io.github.metamessage.core.CamelToSnake
+import io.github.metamessage.core.Limits
 import io.github.metamessage.ir.Field
 import io.github.metamessage.ir.Node
 import io.github.metamessage.ir.NodeArray as AstArray
@@ -677,10 +678,17 @@ class JsoncParser(private val tokens: List<JsoncToken>) {
 
     private fun parseObject(openLine: Int, path: String): AstObject {
         depth++
-        if (depth > 1024) {
-            throw JsoncException("max depth: 1024")
+        try {
+            if (depth > Limits.MAX_DEPTH) {
+                throw JsoncException("max depth: ${Limits.MAX_DEPTH}")
+            }
+            return parseObjectInner(openLine, path)
+        } finally {
+            depth--
         }
+    }
 
+    private fun parseObjectInner(openLine: Int, path: String): AstObject {
         var tag = consumeCommentsFor(openLine) ?: Tag()
         if (tag.type == ValueType.UNKNOWN) {
             tag.type = ValueType.OBJ
@@ -755,16 +763,22 @@ class JsoncParser(private val tokens: List<JsoncToken>) {
             }
         }
 
-        depth--
         return obj
     }
 
     private fun parseArray(openLine: Int, path: String): AstArray {
         depth++
-        if (depth > 1024) {
-            throw JsoncException("max depth: 1024")
+        try {
+            if (depth > Limits.MAX_DEPTH) {
+                throw JsoncException("max depth: ${Limits.MAX_DEPTH}")
+            }
+            return parseArrayInner(openLine, path)
+        } finally {
+            depth--
         }
+    }
 
+    private fun parseArrayInner(openLine: Int, path: String): AstArray {
         var tag = consumeCommentsFor(openLine) ?: Tag()
         if (tag.type == ValueType.UNKNOWN) {
             tag.type = ValueType.VEC
@@ -829,7 +843,6 @@ class JsoncParser(private val tokens: List<JsoncToken>) {
             }
         }
 
-        depth--
         return arr
     }
 

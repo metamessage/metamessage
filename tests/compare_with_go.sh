@@ -10,6 +10,9 @@
 set -o pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+
+# 清除外部进程注入的 LIBRARY_PATH/CC/CPPFLAGS 等污染，详见 env_sanitize.sh
+source "$SCRIPT_DIR/env_sanitize.sh"
 PROJECT_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
 FIXTURES_DIR="$SCRIPT_DIR/fixtures"
 RESULTS_DIR="$SCRIPT_DIR/results"

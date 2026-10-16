@@ -53,7 +53,9 @@ def test_value_to_node_basic():
     tag.type = ValueType.Str
     node = value_to_node(None, tag)
     assert node.tag.is_null == True
-    assert node.data is None
+    # Per Go reference, a null scalar still carries the type's zero value in
+    # `data` (empty string for Str); `is_null` is the flag for null-ness.
+    assert node.data == ""
 
     print("  basic value_to_node OK")
 
@@ -169,7 +171,7 @@ def test_complex_object():
     """Test complex object with nested objects."""
     @mm(desc="User")
     class User:
-        def __init__(self, name: str = "", age: int = 0, tags: list = None):
+        def __init__(self, name: str = "", age: int = 0, tags: list[str] = None):
             self.name = name
             self.age = age
             self.tags = tags or []

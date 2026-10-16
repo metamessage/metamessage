@@ -287,9 +287,14 @@ class Parser:
     def _parse_object(self, anchor_line: int, path: str) -> NodeObject:
         self.next()  # consume {
         self.depth += 1
-        if self.depth > MAX_DEPTH:
-            raise Exception(f"max depth: {MAX_DEPTH}")
+        try:
+            if self.depth > MAX_DEPTH:
+                raise Exception(f"max depth: {MAX_DEPTH}")
+            return self._parse_object_inner(anchor_line, path)
+        finally:
+            self.depth -= 1
 
+    def _parse_object_inner(self, anchor_line: int, path: str) -> NodeObject:
         tag = self._consume_comments_for(anchor_line)
         if tag is None:
             tag = NewTag()
@@ -339,15 +344,19 @@ class Parser:
         if self.peek().type == TOKEN_RBRACE:
             self.next()
 
-        self.depth -= 1
         return NodeObject(fields=fields, tag=tag or NewTag(), path=path)
 
     def _parse_array(self, anchor_line: int, path: str) -> NodeArray:
         self.next()  # consume [
         self.depth += 1
-        if self.depth > MAX_DEPTH:
-            raise Exception(f"max depth: {MAX_DEPTH}")
+        try:
+            if self.depth > MAX_DEPTH:
+                raise Exception(f"max depth: {MAX_DEPTH}")
+            return self._parse_array_inner(anchor_line, path)
+        finally:
+            self.depth -= 1
 
+    def _parse_array_inner(self, anchor_line: int, path: str) -> NodeArray:
         tag = self._consume_comments_for(anchor_line)
 
         if tag is None:
@@ -389,7 +398,6 @@ class Parser:
         if self.peek().type == TOKEN_RBRACKET:
             self.next()
 
-        self.depth -= 1
         arr = NodeArray(items=items, tag=tag or NewTag(), path=path)
         r = MmValidator.validate_arr(arr, tag)
 

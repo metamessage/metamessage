@@ -591,10 +591,21 @@ export class JSONCParser {
     parentTag?: Tag,
   ): NodeObject {
     this.depth++;
-    if (this.depth > maxDepth) {
-      throw new Error(`max depth: ${maxDepth}`);
+    try {
+      if (this.depth > maxDepth) {
+        throw new Error(`max depth: ${maxDepth}`);
+      }
+      return this.parseObjectInner(openLine, path, parentTag);
+    } finally {
+      this.depth--;
     }
+  }
 
+  private parseObjectInner(
+    openLine: number,
+    path: string,
+    parentTag?: Tag,
+  ): NodeObject {
     let tag = parentTag || new Tag();
     if (tag.type === ValueType.Unknown) {
       tag.type = ValueType.Obj;
@@ -679,7 +690,6 @@ export class JSONCParser {
       }
     }
 
-    this.depth--;
     return obj;
   }
 
@@ -689,10 +699,21 @@ export class JSONCParser {
     parentTag?: Tag,
   ): NodeArray {
     this.depth++;
-    if (this.depth > maxDepth) {
-      throw new Error(`max depth: ${maxDepth}`);
+    try {
+      if (this.depth > maxDepth) {
+        throw new Error(`max depth: ${maxDepth}`);
+      }
+      return this.parseArrayInner(openLine, path, parentTag);
+    } finally {
+      this.depth--;
     }
+  }
 
+  private parseArrayInner(
+    openLine: number,
+    path: string,
+    parentTag?: Tag,
+  ): NodeArray {
     let tag = parentTag || this.consumeCommentsFor(openLine);
     if (!tag) {
       tag = new Tag();
@@ -796,7 +817,6 @@ export class JSONCParser {
       }
     }
 
-    this.depth--;
     return arr;
   }
 

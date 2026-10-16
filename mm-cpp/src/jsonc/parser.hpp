@@ -63,6 +63,17 @@ private:
   size_t depth_ = 0;
   std::optional<ir::Tag> pendingTag_;
 
+  // RAII guard so depth_ is decremented even when the body throws (validation
+  // failure, unexpected token, or the max-depth error itself). Matches Go's
+  // `defer func() { p.depth-- }()` behavior.
+  struct DepthGuard {
+    size_t &d;
+    explicit DepthGuard(size_t &d_) : d(d_) { ++d; }
+    DepthGuard(const DepthGuard &) = delete;
+    DepthGuard &operator=(const DepthGuard &) = delete;
+    ~DepthGuard() { --d; }
+  };
+
   static std::string camelToSnake(const std::string &s) {
     if (s.empty())
       return {};
@@ -240,9 +251,9 @@ private:
     ++pos_;
     auto obj = ir::makeNodeObject();
 
-    depth_++;
+    DepthGuard guard(depth_);
     if (depth_ > kMaxDepth) {
-      throw std::runtime_error("max depth: 1024");
+      throw std::runtime_error("max depth: " + std::to_string(static_cast<long long>(kMaxDepth)));
     }
 
     // Save tag that was set before { (object-level tag from outer scope)
@@ -302,7 +313,6 @@ private:
     }
     applyTagToNode(obj);
 
-    depth_--;
     return obj;
   }
 
@@ -310,9 +320,9 @@ private:
     ++pos_;
     auto arr = ir::makeNodeArray();
 
-    depth_++;
+    DepthGuard guard(depth_);
     if (depth_ > kMaxDepth) {
-      throw std::runtime_error("max depth: 1024");
+      throw std::runtime_error("max depth: " + std::to_string(static_cast<long long>(kMaxDepth)));
     }
 
     skipComments();
@@ -361,7 +371,6 @@ private:
       }
     }
 
-    depth_--;
     return arr;
   }
 

@@ -6,7 +6,19 @@ public enum MMValueToNodeError: Error {
     case unsupportedType(String)
 }
 
-private let maxDepth = 1024
+// 对齐 Go 基线错误消息格式，错误描述携带数值（"max depth: 1024"）
+extension MMValueToNodeError: LocalizedError {
+    public var errorDescription: String? {
+        switch self {
+        case .untypedNil: return "untyped nil"
+        case .maxDepthExceeded: return "max depth: \(kMMMaxDepth)"
+        case .unsupportedType(let detail): return "unsupported type: \(detail)"
+        }
+    }
+}
+
+// 全局深度上限，与 Jsonc/JSONCParser.swift 共享，避免多处字面量漂移
+let kMMMaxDepth = 1024
 
 public func valueToNode(_ value: Any?, tag tagStr: String = "") throws -> Node {
     var tag: Tag? = nil
@@ -21,7 +33,7 @@ func valueToNode(_ value: Any?, tag: Tag?, depth: Int, path: String) throws -> N
     var effectiveTag = tag ?? Tag()
     let currentPath = path
 
-    if depth > maxDepth {
+    if depth > kMMMaxDepth {
         throw MMValueToNodeError.maxDepthExceeded
     }
 
@@ -40,7 +52,7 @@ func valueToNode(_ value: Any?, tag: Tag?, depth: Int, path: String) throws -> N
 }
 
 private func convertScalar(_ value: Any, tag: inout Tag, depth: Int, path: String) throws -> Node {
-    if depth > maxDepth {
+    if depth > kMMMaxDepth {
         throw MMValueToNodeError.maxDepthExceeded
     }
     let currentPath = path

@@ -24,8 +24,6 @@ import kotlin.reflect.full.declaredMemberProperties
 import kotlin.reflect.full.findAnnotation
 import kotlin.reflect.jvm.javaField
 
-private const val maxDepth = 1024
-
 private const val Null = "null"
 private const val True = "true"
 private const val False = "false"
@@ -479,8 +477,8 @@ private fun valueToNode(v: Any?, tag: Tag?, depth: Int, path: String): Node {
 
 private fun anyToJSONC(obj: Any, tag: Tag, depth: Int, path: String): Node {
     val newDepth = depth + 1
-    if (newDepth > maxDepth) {
-        throw IllegalArgumentException("max depth: $maxDepth")
+    if (newDepth > Limits.MAX_DEPTH) {
+        throw IllegalArgumentException("max depth: ${Limits.MAX_DEPTH}")
     }
 
     val kClass = obj::class
