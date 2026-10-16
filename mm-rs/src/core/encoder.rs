@@ -30,6 +30,10 @@ impl Encoder {
     }
 
     fn ensure_capacity(&mut self, needed: usize) {
+        // v0.3.0：落实 MAX_CAP 强制（此前从不检查），超限显式报错而非静默
+        if self.offset + needed > MAX_CAP {
+            panic!("encoded size exceeds format limit (max {} bytes)", MAX_CAP);
+        }
         while self.offset + needed > self.buf.len() {
             self.buf.resize(self.buf.len() * 2, 0);
         }
@@ -628,9 +632,10 @@ impl Encoder {
 
     pub fn encode_bytes(&mut self, bytes: &[u8]) {
         let len = bytes.len();
+        assert!(len <= 0xFFFFFFFF, "bytes too long: {}", len);
         let mut prefix = PREFIX_BYTES;
 
-        if len < 30 {
+        if len < 28 {
             self.write_byte(prefix | len as u8);
             self.write_bytes(bytes);
         } else if len <= 255 {
@@ -638,9 +643,24 @@ impl Encoder {
             self.write_byte(prefix);
             self.write_byte(len as u8);
             self.write_bytes(bytes);
-        } else {
+        } else if len <= 0xFFFF {
             prefix |= BYTES_LEN_2;
             self.write_byte(prefix);
+            self.write_byte((len >> 8) as u8);
+            self.write_byte(len as u8);
+            self.write_bytes(bytes);
+        } else if len <= 0xFFFFFF {
+            prefix |= BYTES_LEN_3;
+            self.write_byte(prefix);
+            self.write_byte((len >> 16) as u8);
+            self.write_byte((len >> 8) as u8);
+            self.write_byte(len as u8);
+            self.write_bytes(bytes);
+        } else {
+            prefix |= BYTES_LEN_4;
+            self.write_byte(prefix);
+            self.write_byte((len >> 24) as u8);
+            self.write_byte((len >> 16) as u8);
             self.write_byte((len >> 8) as u8);
             self.write_byte(len as u8);
             self.write_bytes(bytes);
@@ -649,17 +669,31 @@ impl Encoder {
 
     fn encode_container(&mut self, container_type: u8, payload: &[u8]) {
         let length = payload.len();
+        assert!(length <= 0xFFFFFFFF, "container payload too long: {}", length);
         let mut prefix = PREFIX_CONTAINER | container_type;
 
-        if length < 14 {
+        if length < 12 {
             self.write_byte(prefix | length as u8);
         } else if length <= 255 {
             prefix |= CONTAINER_LEN_1;
             self.write_byte(prefix);
             self.write_byte(length as u8);
-        } else {
+        } else if length <= 0xFFFF {
             prefix |= CONTAINER_LEN_2;
             self.write_byte(prefix);
+            self.write_byte((length >> 8) as u8);
+            self.write_byte(length as u8);
+        } else if length <= 0xFFFFFF {
+            prefix |= CONTAINER_LEN_3;
+            self.write_byte(prefix);
+            self.write_byte((length >> 16) as u8);
+            self.write_byte((length >> 8) as u8);
+            self.write_byte(length as u8);
+        } else {
+            prefix |= CONTAINER_LEN_4;
+            self.write_byte(prefix);
+            self.write_byte((length >> 24) as u8);
+            self.write_byte((length >> 16) as u8);
             self.write_byte((length >> 8) as u8);
             self.write_byte(length as u8);
         }
@@ -681,18 +715,32 @@ impl Encoder {
         };
 
         let total_len = tag_enc_len + payload.len();
+        assert!(total_len <= 0xFFFFFFFF, "tag+payload too long: {}", total_len);
         let mut prefix = PREFIX_TAG;
 
-        if total_len < 30 {
+        if total_len < 28 {
             prefix |= total_len as u8;
             self.write_byte(prefix);
         } else if total_len <= 255 {
             prefix |= TAG_LEN_1;
             self.write_byte(prefix);
             self.write_byte(total_len as u8);
-        } else {
+        } else if total_len <= 0xFFFF {
             prefix |= TAG_LEN_2;
             self.write_byte(prefix);
+            self.write_byte((total_len >> 8) as u8);
+            self.write_byte(total_len as u8);
+        } else if total_len <= 0xFFFFFF {
+            prefix |= TAG_LEN_3;
+            self.write_byte(prefix);
+            self.write_byte((total_len >> 16) as u8);
+            self.write_byte((total_len >> 8) as u8);
+            self.write_byte(total_len as u8);
+        } else {
+            prefix |= TAG_LEN_4;
+            self.write_byte(prefix);
+            self.write_byte((total_len >> 24) as u8);
+            self.write_byte((total_len >> 16) as u8);
             self.write_byte((total_len >> 8) as u8);
             self.write_byte(total_len as u8);
         }
