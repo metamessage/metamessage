@@ -980,11 +980,20 @@ impl Decoder {
 
     fn decode_container_len(&mut self, prefix: u8) -> Result<usize, std::io::Error> {
         let l = prefix & CONTAINER_LEN_MASK;
-        if l < CONTAINER_LEN_1 {
-            Ok(l as usize)
+        let total = if l < CONTAINER_LEN_1 {
+            l as usize
         } else {
-            self.read_len((l - CONTAINER_LEN_1) as usize + 1)
+            self.read_len((l - CONTAINER_LEN_1) as usize + 1)?
+        };
+        // 截断防护：声明 payload 长度超出剩余数据 → 显式报错，
+        // 避免 object 解码因驱动于 keys 结构而静默返回空对象。
+        if self.offset + total > self.data.len() {
+            return Err(std::io::Error::new(
+                std::io::ErrorKind::UnexpectedEof,
+                "container length exceeds data",
+            ));
         }
+        Ok(total)
     }
 
     fn decode_array(&mut self, prefix: u8, tag: &Tag) -> Result<Node, std::io::Error> {

@@ -52,22 +52,32 @@ int main(int argc, char **argv) {
             std::cerr << "usage: harness --encode <file.jsonc>" << std::endl;
             return 1;
         }
-        std::string input = read_file(argv[2]);
-        std::vector<uint8_t> wire = mmc::mm::fromJSONC(input);
-        std::cout << bytes_to_hex(wire);
-        return 0;
+        try {
+            std::string input = read_file(argv[2]);
+            std::vector<uint8_t> wire = mmc::mm::fromJSONC(input);
+            std::cout << bytes_to_hex(wire);
+            return 0;
+        } catch (const std::exception &e) {
+            std::cerr << "encode error: " << e.what() << std::endl;
+            return 1;
+        }
     }
 
     if (arg1 == "--decode") {
-        std::string hex_str;
-        std::string line;
-        while (std::getline(std::cin, line)) {
-            hex_str += line;
+        try {
+            std::string hex_str;
+            std::string line;
+            while (std::getline(std::cin, line)) {
+                hex_str += line;
+            }
+            std::vector<uint8_t> wire = hex_to_bytes(hex_str);
+            std::string output = mmc::mm::toJSONC(wire);
+            std::cout << output;
+            return 0;
+        } catch (const std::exception &e) {
+            std::cerr << "decode error: " << e.what() << std::endl;
+            return 1;
         }
-        std::vector<uint8_t> wire = hex_to_bytes(hex_str);
-        std::string output = mmc::mm::toJSONC(wire);
-        std::cout << output;
-        return 0;
     }
 
     // Existing behavior
