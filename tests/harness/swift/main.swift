@@ -31,7 +31,15 @@ if arg1 == "--encode" {
 }
 
 if arg1 == "--decode" {
-    let inputData = FileHandle.standardInput.availableData
+    // availableData returns only the bytes currently buffered (pipe is ~64KB on
+    // macOS), so it truncates large hex payloads. Drain stdin until EOF.
+    let fh = FileHandle.standardInput
+    var inputData = Data()
+    while true {
+        let chunk = fh.availableData
+        if chunk.isEmpty { break }
+        inputData.append(chunk)
+    }
     guard let hexStr = String(data: inputData, encoding: .utf8) else {
         fputs("error reading hex from stdin\n", stderr)
         exit(1)
