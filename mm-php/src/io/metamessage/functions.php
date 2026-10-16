@@ -88,9 +88,19 @@ function jsoncToValue(string $jsonc): mixed
  */
 function _nodeData(Node $node): mixed
 {
+    $tag = $node->getTag();
+    // is_null 编码：绑定为 null
+    if ($tag !== null && $tag->isNull) {
+        return null;
+    }
     if ($node instanceof NodeObject) {
         $result = [];
         foreach ($node->Fields as $field) {
+            // 跳过 example 哨兵项（空容器占位）：全为 example 时产出空数组
+            $ftag = $field->Value->getTag();
+            if ($ftag !== null && $ftag->example) {
+                continue;
+            }
             $result[$field->Key] = _nodeData($field->Value);
         }
         return $result;
@@ -98,6 +108,11 @@ function _nodeData(Node $node): mixed
     if ($node instanceof NodeArray) {
         $result = [];
         foreach ($node->Items as $item) {
+            // 跳过 example 哨兵项：全为 example 时产出空数组
+            $itag = $item->getTag();
+            if ($itag !== null && $itag->example) {
+                continue;
+            }
             $result[] = _nodeData($item);
         }
         return $result;

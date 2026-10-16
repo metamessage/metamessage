@@ -14,6 +14,12 @@ import java.time.LocalTime
 import java.util.UUID
 
 object Binder {
+    /** 空容器注入的 example 哨兵项：只为保留元素类型，不参与绑定。 */
+    private fun isExample(node: Node?): Boolean = node?.tag?.example == true
+
+    /** 节点是否带 is_null（编码侧真实值为 nil）。 */
+    private fun isNullNode(node: Node?): Boolean = node?.tag?.isNull == true
+
     @Suppress("UNCHECKED_CAST")
     fun <T> bind(node: Node, clazz: Class<T>): T {
         return bind(node, clazz, null)
@@ -21,6 +27,11 @@ object Binder {
 
     @Suppress("UNCHECKED_CAST")
     fun <T> bind(node: Node, clazz: Class<T>, elementClass: Class<*>? = null): T {
+        // is_null：与 Go 对齐，绑定成 null（不展开 example 占位子节点）
+        if (isNullNode(node)) {
+            return null as T
+        }
+
         when (node) {
             is NodeNull -> {
                 @Suppress("UNCHECKED_CAST") return null as T
@@ -67,6 +78,7 @@ object Binder {
         }
 
         for (field in obj.fields) {
+            if (isExample(field.value)) continue // 空容器占位项不绑定
             val fieldKey = field.key
             val camelName = SnakeToCamel.convert(fieldKey)
             val structField = nameToField[camelName] ?: continue
@@ -82,6 +94,8 @@ object Binder {
 
     private fun convertMap(obj: NodeObject, out: MutableMap<String, Any?>) {
         for (field in obj.fields) {
+            // 空 map 的 example 占位项：跳过后得到空 Map
+            if (isExample(field.value)) continue
             val key = field.key
             val value =
                     when (val v = field.value) {
@@ -104,6 +118,8 @@ object Binder {
     private fun convertArr(arr: NodeArray, elementClass: Class<*>): Any {
         val list = mutableListOf<Any?>()
         for (item in arr.items) {
+            // example 哨兵项不参与绑定；固定数组由 tag.size 决定元素个数
+            if (isExample(item)) continue
             when (item) {
                 is NodeScalar -> list.add(convertScalarToAny(item))
                 is NodeObject -> {
@@ -127,6 +143,9 @@ object Binder {
     private fun convertVec(arr: NodeArray, elementClass: Class<*>): Any {
         val list = mutableListOf<Any?>()
         for (item in arr.items) {
+            // example 哨兵项只为保留元素类型，不参与绑定；
+            // 全为 example（编码侧为空容器）时产出空的非 null List。
+            if (isExample(item)) continue
             when (item) {
                 is NodeScalar -> list.add(convertScalarToAny(item))
                 is NodeObject -> {
@@ -163,6 +182,7 @@ object Binder {
     private fun convertVecDynamic(arr: NodeArray): List<Any?> {
         val list = mutableListOf<Any?>()
         for (item in arr.items) {
+            if (isExample(item)) continue // 空容器占位项不绑定
             when (item) {
                 is NodeScalar -> list.add(convertScalarToAny(item))
                 is NodeObject -> {
@@ -316,6 +336,7 @@ object Binder {
             is NodeNull -> null
             is NodeScalar -> convertScalar(node, f.type)
             is NodeObject -> {
+                if (isNullNode(node)) return null // is_null：绑定成 null
                 val tag = node.tag
                 if (tag != null && tag.type == ValueType.MAP) {
                     val map = mutableMapOf<String, Any?>()
@@ -328,6 +349,7 @@ object Binder {
                 }
             }
             is NodeArray -> {
+                if (isNullNode(node)) return null // is_null：绑定成 null
                 convertVec(node, f)
             }
             else -> null

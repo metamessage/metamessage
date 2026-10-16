@@ -685,6 +685,18 @@ public static class MetaMessage
         encoder.EncodeObjectPayload(mapBody.ToArray());
     }
 
+    // example 哨兵项判定：空容器编码时注入的占位节点，取值时必须跳过
+    private static bool IsExampleNode(INode? node)
+    {
+        return node is not null && node.Tag.Example;
+    }
+
+    // is_null 标记判定：编码带 is_null 时绑定为 null
+    private static bool IsNullNode(INode? node)
+    {
+        return node is not null && node.Tag.IsNull;
+    }
+
     private static object? ExtractValueFromTree(INode tree)
     {
         switch (tree)
@@ -692,12 +704,17 @@ public static class MetaMessage
             case NodeNull:
                 return null;
             case NodeScalar scalar:
+                if (scalar.Tag.IsNull)
+                    return null;
                 return scalar.Data;
             case NodeArray array:
                 {
                     var list = new List<object?>();
                     foreach (var element in array.Children)
                     {
+                        // 跳过 example 哨兵项：全为 example 时产出空的非 null List
+                        if (IsExampleNode(element))
+                            continue;
                         list.Add(ExtractValueFromTree(element));
                     }
                     return list;
@@ -707,6 +724,8 @@ public static class MetaMessage
                     var dict = new Dictionary<string, object?>();
                     foreach (var kvp in map.Entries)
                     {
+                        if (IsExampleNode(kvp.Value))
+                            continue;
                         dict[kvp.Key.Text] = ExtractValueFromTree(kvp.Value);
                     }
                     return dict;

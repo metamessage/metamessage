@@ -1030,13 +1030,19 @@ class Decoder:
 
 
 def _node_to_python(node: Node) -> Any:
-    if isinstance(node, NodeNull):
+    def _flag(n: Node, name: str) -> bool:
+        t = getattr(n, "tag", None)
+        return t is not None and getattr(t, name, False) is True
+
+    # is_null：编码侧真实值为 nil，绑定成 None
+    if isinstance(node, NodeNull) or _flag(node, "is_null"):
         return None
     elif isinstance(node, NodeScalar):
         return node.data
     elif isinstance(node, NodeArray):
-        return [_node_to_python(item) for item in node.items]
+        # example 哨兵项只为保留元素类型；全为 example 时产出空列表
+        return [_node_to_python(item) for item in node.items if not _flag(item, "example")]
     elif isinstance(node, NodeObject):
-        return {field.key: _node_to_python(field.value) for field in node.fields}
+        return {field.key: _node_to_python(field.value) for field in node.fields if not _flag(field.value, "example")}
     else:
         return None

@@ -1,9 +1,22 @@
+using System.Linq;
 using MetaMessage.Ir;
 using ValueType = MetaMessage.Ir.ValueType;
 namespace MetaMessage.Core;
 
 public class Binder
 {
+    // example 哨兵项判定：空容器编码时注入的占位节点，绑定时必须跳过
+    private static bool IsExampleNode(INode? node)
+    {
+        return node is not null && node.Tag.Example;
+    }
+
+    // is_null 标记判定：编码带 is_null 时目标绑定为 null
+    private static bool IsNullNode(INode? node)
+    {
+        return node is not null && node.Tag.IsNull;
+    }
+
     public T Bind<T>(INode node) where T : new()
     {
         var result = new T();
@@ -38,6 +51,9 @@ public class Binder
         if (node is NodeNull)
             return null;
 
+        if (IsNullNode(node))
+            return null;
+
         if (node is NodeScalar scalar)
             return scalar.Data;
 
@@ -46,6 +62,8 @@ public class Binder
             var dict = new Dictionary<string, object?>();
             foreach (var entry in map.Entries)
             {
+                if (IsExampleNode(entry.Value))
+                    continue;
                 dict[entry.Key.Text] = BindDynamic(entry.Value);
             }
             return dict;
@@ -56,6 +74,8 @@ public class Binder
             var list = new List<object?>();
             foreach (var child in array.Children)
             {
+                if (IsExampleNode(child))
+                    continue;
                 list.Add(BindDynamic(child));
             }
             return list;
@@ -206,15 +226,24 @@ public class Binder
             return;
         }
 
+        // is_null 编码：绑定为 null
+        if (IsNullNode(node))
+        {
+            prop.SetValue(target, null);
+            return;
+        }
+
         if (propType.IsArray)
         {
             if (node is NodeArray array)
             {
                 var elementType = propType.GetElementType()!;
-                var arr = Array.CreateInstance(elementType, array.Children.Count);
-                for (int i = 0; i < array.Children.Count; i++)
+                // 过滤 example 哨兵项：全为 example 时产出长度为 0 的非 null 数组
+                var items = array.Children.Where(c => !IsExampleNode(c)).ToList();
+                var arr = Array.CreateInstance(elementType, items.Count);
+                for (int i = 0; i < items.Count; i++)
                 {
-                    var itemValue = ConvertMmTreeValue(array.Children[i], elementType);
+                    var itemValue = ConvertMmTreeValue(items[i], elementType);
                     arr.SetValue(itemValue, i);
                 }
                 prop.SetValue(target, arr);
@@ -229,9 +258,10 @@ public class Binder
                 var elementType = propType.GetGenericArguments()[0];
                 var listType = typeof(System.Collections.Generic.List<>).MakeGenericType(elementType);
                 var list = (System.Collections.IList)Activator.CreateInstance(listType)!;
-                for (int i = 0; i < array.Children.Count; i++)
+                // 过滤 example 哨兵项：全为 example 时产出空的非 null List
+                foreach (var element in array.Children.Where(c => !IsExampleNode(c)))
                 {
-                    var itemValue = ConvertMmTreeValue(array.Children[i], elementType);
+                    var itemValue = ConvertMmTreeValue(element, elementType);
                     list.Add(itemValue);
                 }
                 prop.SetValue(target, list);
@@ -268,6 +298,12 @@ public class Binder
             return null;
         }
 
+        // is_null 编码：绑定为 null
+        if (IsNullNode(node))
+        {
+            return null;
+        }
+
         if (node is NodeScalar scalar)
         {
             if (targetType == typeof(string))
@@ -299,6 +335,9 @@ public class Binder
             var list = (System.Collections.IList)Activator.CreateInstance(listType)!;
             foreach (var element in childArray.Children)
             {
+                // 跳过 example 哨兵项：全为 example 时产出空的非 null List
+                if (IsExampleNode(element))
+                    continue;
                 list.Add(ConvertMmTreeValue(element, elementType));
             }
             return list;
@@ -309,13 +348,15 @@ public class Binder
     private void BindArray(NodeArray array, object target)
     {
         var type = target.GetType();
+        // 过滤 example 哨兵项：全为 example 时产出空的非 null 集合
+        var items = array.Children.Where(c => !IsExampleNode(c)).ToList();
         if (type.IsArray)
         {
             var elementType = type.GetElementType()!;
-            var arr = Array.CreateInstance(elementType, array.Children.Count);
-            for (int i = 0; i < array.Children.Count; i++)
+            var arr = Array.CreateInstance(elementType, items.Count);
+            for (int i = 0; i < items.Count; i++)
             {
-                var itemValue = ConvertMmTreeValue(array.Children[i], elementType);
+                var itemValue = ConvertMmTreeValue(items[i], elementType);
                 arr.SetValue(itemValue, i);
             }
             type.GetProperty("Length")!.SetValue(target, arr);
@@ -324,9 +365,9 @@ public class Binder
         {
             var elementType = type.GetGenericArguments()[0];
             var list = (System.Collections.IList)target;
-            for (int i = 0; i < array.Children.Count; i++)
+            for (int i = 0; i < items.Count; i++)
             {
-                var itemValue = ConvertMmTreeValue(array.Children[i], elementType);
+                var itemValue = ConvertMmTreeValue(items[i], elementType);
                 list.Add(itemValue);
             }
         }

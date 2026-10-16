@@ -12,6 +12,32 @@ import (
 	"github.com/metamessage/metamessage/internal/utils"
 )
 
+func newBoolTagReader(get func(*ir.Tag) bool) func(ir.Node) bool {
+	return func(n ir.Node) bool {
+		if n == nil {
+			return false
+		}
+		t := n.GetTag()
+		return t != nil && get(t)
+	}
+}
+
+// isExampleNode 报告节点是否为空容器注入的 example 哨兵项。
+// example 项只是承载容器元素类型信息的占位符，不进入绑定结果。
+var isExampleNode = newBoolTagReader(func(t *ir.Tag) bool { return t.Example })
+
+// isNullNode 报告节点是否带 is_null（编码侧真实值为 nil）。
+var isNullNode = newBoolTagReader(func(t *ir.Tag) bool { return t.IsNull })
+
+// bindNil 把目标置为零值：指针/切片/映射置 nil，其余类型置零值。
+func bindNil(outVal reflect.Value) error {
+	if !outVal.CanSet() {
+		return fmt.Errorf("target %s is not settable", outVal.Type())
+	}
+	outVal.Set(reflect.Zero(outVal.Type()))
+	return nil
+}
+
 func Bind(node ir.Node, out any) error {
 	outVal := reflect.ValueOf(out)
 	if outVal.Kind() != reflect.Pointer {
@@ -30,10 +56,18 @@ func Bind(node ir.Node, out any) error {
 
 	// When the target is an interface{}, create concrete values dynamically
 	if outVal.Kind() == reflect.Interface {
+		if isNullNode(node) {
+			outVal.Set(reflect.Zero(outVal.Type()))
+			return nil
+		}
+
 		switch n := node.(type) {
 		case *ir.NodeObject:
 			m := make(map[string]any)
 			for _, field := range n.Fields {
+				if isExampleNode(field.Value) {
+					continue // 空容器占位项不绑定
+				}
 				var v any
 				if err := Bind(field.Value, &v); err != nil {
 					return fmt.Errorf("failed to bind field %s: %w", field.Key, err)
@@ -44,13 +78,16 @@ func Bind(node ir.Node, out any) error {
 			return nil
 
 		case *ir.NodeArray:
-			s := make([]any, len(n.Items))
+			s := make([]any, 0, len(n.Items))
 			for i, item := range n.Items {
+				if isExampleNode(item) {
+					continue // 空容器占位项不绑定
+				}
 				var v any
 				if err := Bind(item, &v); err != nil {
 					return fmt.Errorf("failed to bind array item %d: %w", i, err)
 				}
-				s[i] = v
+				s = append(s, v)
 			}
 			outVal.Set(reflect.ValueOf(s))
 			return nil
@@ -109,16 +146,31 @@ func getFieldMap(t reflect.Type, val reflect.Value) map[string]reflect.Value {
 	return fieldMap
 }
 
-func convertObj(obj *ir.NodeObject, outVal reflect.Value) error {
-	if obj.Tag.Nullable {
-		if outVal.Kind() != reflect.Pointer {
-			return fmt.Errorf("%s requires pointer type, got %s", obj.Path, outVal.Kind())
-		}
-		if outVal.IsNil() {
-			outVal.Set(reflect.New(outVal.Type().Elem()))
-		}
-		outVal = outVal.Elem()
+func derefNullable(path string, tag *ir.Tag, outVal reflect.Value) (reflect.Value, bool, error) {
+	if tag == nil || !tag.Nullable {
+		return outVal, false, nil
 	}
+	if outVal.Kind() != reflect.Pointer {
+		return outVal, false, fmt.Errorf("%s requires pointer type, got %s", path, outVal.Kind())
+	}
+	if tag.IsNull {
+		return outVal, true, nil
+	}
+	if outVal.IsNil() {
+		outVal.Set(reflect.New(outVal.Type().Elem()))
+	}
+	return outVal.Elem(), false, nil
+}
+
+func convertObj(obj *ir.NodeObject, outVal reflect.Value) error {
+	target, isNull, err := derefNullable(obj.Path, obj.Tag, outVal)
+	if err != nil {
+		return err
+	}
+	if isNull {
+		return bindNil(outVal) // is_null：绑定成 nil 指针
+	}
+	outVal = target
 
 	if outVal.Kind() != reflect.Struct {
 		return fmt.Errorf("%s requires struct type, got %s", obj.Path, outVal.Kind())
@@ -147,15 +199,14 @@ func convertObj(obj *ir.NodeObject, outVal reflect.Value) error {
 }
 
 func convertMap(obj *ir.NodeObject, outVal reflect.Value) error {
-	if obj.Tag.Nullable {
-		if outVal.Kind() != reflect.Pointer {
-			return fmt.Errorf("%s requires pointer type, got %s", obj.Path, outVal.Kind())
-		}
-		if outVal.IsNil() {
-			outVal.Set(reflect.New(outVal.Type().Elem()))
-		}
-		outVal = outVal.Elem()
+	target, isNull, err := derefNullable(obj.Path, obj.Tag, outVal)
+	if err != nil {
+		return err
 	}
+	if isNull {
+		return bindNil(outVal) // is_null：绑定成 nil 映射
+	}
+	outVal = target
 
 	if outVal.Kind() != reflect.Map {
 		return fmt.Errorf("%s requires map type, got %s", obj.Path, outVal.Kind())
@@ -175,6 +226,10 @@ func convertMap(obj *ir.NodeObject, outVal reflect.Value) error {
 
 	mapValType := outVal.Type().Elem()
 	for _, field := range obj.Fields {
+		if isExampleNode(field.Value) {
+			continue // 空 map 的 example 占位项：跳过后得到非 nil 空映射
+		}
+
 		key := reflect.ValueOf(field.Key)
 		val := reflect.New(mapValType).Elem()
 		if err := Bind(field.Value, val.Addr().Interface()); err != nil {
@@ -187,15 +242,14 @@ func convertMap(obj *ir.NodeObject, outVal reflect.Value) error {
 }
 
 func convertArr(arr *ir.NodeArray, outVal reflect.Value) error {
-	if arr.Tag.Nullable {
-		if outVal.Kind() != reflect.Pointer {
-			return fmt.Errorf("%s requires pointer type, got %s", arr.Path, outVal.Kind())
-		}
-		if outVal.IsNil() {
-			outVal.Set(reflect.New(outVal.Type().Elem()))
-		}
-		outVal = outVal.Elem()
+	target, isNull, err := derefNullable(arr.Path, arr.Tag, outVal)
+	if err != nil {
+		return err
 	}
+	if isNull {
+		return bindNil(outVal) // is_null：绑定成 nil 指针
+	}
+	outVal = target
 
 	if outVal.Kind() != reflect.Array {
 		return fmt.Errorf("%s requires array type, got %s", arr.Path, outVal.Kind())
@@ -207,35 +261,52 @@ func convertArr(arr *ir.NodeArray, outVal reflect.Value) error {
 		return fmt.Errorf("array length mismatch: target array length %d, got %d items", arrayLen, size)
 	}
 
-	for i, item := range arr.Items {
-		elem := outVal.Index(i)
-		if err := Bind(item, elem.Addr().Interface()); err != nil {
-			return fmt.Errorf("failed to convert array item %d: %w", i, err)
+	idx := 0
+	for _, item := range arr.Items {
+		if isExampleNode(item) {
+			continue // 固定数组长度由 tag.size 决定，example 占位项不占下标
 		}
+		if idx >= outVal.Len() {
+			return fmt.Errorf("%s: real items (%d) exceed target array length %d", arr.Path, idx+1, outVal.Len())
+		}
+		elem := outVal.Index(idx)
+		if err := Bind(item, elem.Addr().Interface()); err != nil {
+			return fmt.Errorf("failed to convert array item %d: %w", idx, err)
+		}
+		idx++
 	}
 
 	return nil
 }
 
 func convertVec(arr *ir.NodeArray, outVal reflect.Value) error {
-	if arr.Tag.Nullable {
-		if outVal.Kind() != reflect.Pointer {
-			return fmt.Errorf("%s requires pointer type, got %s", arr.Path, outVal.Kind())
-		}
-		if outVal.IsNil() {
-			outVal.Set(reflect.New(outVal.Type().Elem()))
-		}
-		outVal = outVal.Elem()
+	target, isNull, err := derefNullable(arr.Path, arr.Tag, outVal)
+	if err != nil {
+		return err
 	}
+	if isNull {
+		return bindNil(outVal) // is_null：绑定成 nil 切片
+	}
+	outVal = target
 
 	if outVal.Kind() != reflect.Slice {
 		return fmt.Errorf("%s requires slice type, got %s", arr.Path, outVal.Kind())
 	}
 
-	size := len(arr.Items)
+	// example 哨兵项只为保留元素类型，不参与绑定；
+	// 全部为 example（编码侧为空容器）时产出长度 0 的非 nil 切片。
+	items := make([]ir.Node, 0, len(arr.Items))
+	for _, item := range arr.Items {
+		if isExampleNode(item) {
+			continue
+		}
+		items = append(items, item)
+	}
+
+	size := len(items)
 	slice := reflect.MakeSlice(outVal.Type(), size, size)
 
-	for i, item := range arr.Items {
+	for i, item := range items {
 		elem := slice.Index(i)
 		if err := Bind(item, elem.Addr().Interface()); err != nil {
 			return fmt.Errorf("failed to convert slice item %d: %w", i, err)
@@ -247,15 +318,14 @@ func convertVec(arr *ir.NodeArray, outVal reflect.Value) error {
 }
 
 func convertScalar(val *ir.NodeScalar, outVal reflect.Value) error {
-	if val.Tag.Nullable {
-		if outVal.Kind() != reflect.Pointer {
-			return fmt.Errorf("%s requires pointer type, got %s", val.Path, outVal.Kind())
-		}
-		if outVal.IsNil() {
-			outVal.Set(reflect.New(outVal.Type().Elem()))
-		}
-		outVal = outVal.Elem()
+	target, isNull, err := derefNullable(val.Path, val.Tag, outVal)
+	if err != nil {
+		return err
 	}
+	if isNull {
+		return bindNil(outVal) // is_null：绑定成 nil 指针
+	}
+	outVal = target
 
 	data := val.Data
 	text := val.Text

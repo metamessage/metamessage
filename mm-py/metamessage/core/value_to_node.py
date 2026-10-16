@@ -821,6 +821,22 @@ def _get_field_names(cls: type) -> set:
 
 # ===== NodeToValue (Bind) =====
 
+def _node_flag(node: Node, name: str) -> bool:
+    """读取节点 tag 上的布尔标记，容忍 node/tag 缺失。"""
+    tag = getattr(node, "tag", None)
+    return tag is not None and getattr(tag, name, False) is True
+
+
+def _is_example_node(node: Node) -> bool:
+    """空容器注入的 example 哨兵项：只为保留元素类型，不参与绑定。"""
+    return _node_flag(node, "example")
+
+
+def _is_null_node(node: Node) -> bool:
+    """节点是否带 is_null（编码侧真实值为 nil）。"""
+    return _node_flag(node, "is_null")
+
+
 def node_to_value(node: Node, target_type: Any) -> Any:
     """Convert a Node tree back to a Python value.
     
@@ -828,6 +844,8 @@ def node_to_value(node: Node, target_type: Any) -> Any:
     """
     if isinstance(node, NodeNull):
         return None
+    if _is_null_node(node):
+        return None  # is_null：绑定成 None（不展开 example 占位子节点）
     elif isinstance(node, NodeObject):
         return _bind_object(node, target_type)
     elif isinstance(node, NodeArray):
@@ -844,6 +862,8 @@ def _bind_object(obj: NodeObject, target_type: Any) -> Any:
     if target_type is dict or target_type is Any:
         result = {}
         for field in obj.fields:
+            if _is_example_node(field.value):
+                continue  # 空容器占位项不绑定
             val = _bind_value_or_node(field.value)
             result[field.key] = val
         return result
@@ -856,6 +876,8 @@ def _bind_object(obj: NodeObject, target_type: Any) -> Any:
         # Build kwargs from fields
         kwargs = {}
         for field in obj.fields:
+            if _is_example_node(field.value):
+                continue  # 空容器占位项不绑定
             field_key = field.key
             
             field_name = _find_field_name(target_type, field_key)
@@ -880,15 +902,21 @@ def _bind_object(obj: NodeObject, target_type: Any) -> Any:
     # Fallback to dict
     result = {}
     for field in obj.fields:
+        if _is_example_node(field.value):
+            continue  # 空 map 的 example 占位项：跳过后得到空 dict
         result[field.key] = _bind_value_or_node(field.value)
     return result
 
 
 def _bind_array(arr: NodeArray, target_type: Any) -> Any:
     """Bind a NodeArray node to a Python list."""
+    # example 哨兵项只为保留元素类型，不参与绑定；
+    # 全部为 example（编码侧为空容器）时产出长度 0 的空列表。
+    real_items = [item for item in arr.items if not _is_example_node(item)]
+
     if target_type is list or target_type is Any or target_type is tuple:
         result = []
-        for item in arr.items:
+        for item in real_items:
             result.append(_bind_value_or_node(item))
         if target_type is tuple:
             return tuple(result)
@@ -898,13 +926,13 @@ def _bind_array(arr: NodeArray, target_type: Any) -> Any:
         # Try to determine element type from annotations/generics
         item_type = Any
         result = []
-        for item in arr.items:
+        for item in real_items:
             result.append(node_to_value(item, item_type))
         
         # If target is a specific container like List[str], try to convert
         return result
     
-    return [_bind_value_or_node(item) for item in arr.items]
+    return [_bind_value_or_node(item) for item in real_items]
 
 
 def _bind_value(val: NodeScalar, target_type: Any) -> Any:
@@ -957,13 +985,17 @@ def _bind_value_or_node(node: Node) -> Any:
     """Bind a node to a plain Python value (no type info)."""
     if isinstance(node, NodeNull):
         return None
+    if _is_null_node(node):
+        return None  # is_null：绑定成 None
     elif isinstance(node, NodeObject):
         result = {}
         for field in node.fields:
+            if _is_example_node(field.value):
+                continue  # 空容器占位项不绑定
             result[field.key] = _bind_value_or_node(field.value)
         return result
     elif isinstance(node, NodeArray):
-        return [_bind_value_or_node(item) for item in node.items]
+        return [_bind_value_or_node(item) for item in node.items if not _is_example_node(item)]
     elif isinstance(node, NodeScalar):
         if node.tag.is_null:
             return None

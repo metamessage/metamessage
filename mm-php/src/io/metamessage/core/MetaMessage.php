@@ -376,8 +376,34 @@ class MetaMessage
         throw new \RuntimeException('unsupported scalar type: ' . gettype($v));
     }
 
+    // example 哨兵项判定：空容器编码时注入的占位节点，绑定时必须跳过
+    private static function isExampleNode(?Node $node): bool
+    {
+        if ($node === null) {
+            return false;
+        }
+        $tag = $node->Tag ?? null;
+        return $tag !== null && $tag->example;
+    }
+
+    // is_null 标记判定：编码带 is_null 时目标绑定为 null
+    private static function isNullNode(?Node $node): bool
+    {
+        if ($node === null) {
+            return false;
+        }
+        $tag = $node->Tag ?? null;
+        return $tag !== null && $tag->isNull;
+    }
+
     private static function bind(Node $node, mixed &$out): void
     {
+        // is_null 编码：绑定为 null
+        if (self::isNullNode($node) && !($node instanceof NodeScalar)) {
+            $out = null;
+            return;
+        }
+
         if ($node instanceof NodeObject) {
             if ($node->Tag !== null && $node->Tag->type === ValueType::OBJ) {
                 self::bindStruct($node, $out);
@@ -398,6 +424,11 @@ class MetaMessage
         $ref = new ReflectionClass($out);
 
         foreach ($obj->Fields as $field) {
+            // 跳过 example 哨兵项（空容器占位），不绑定到目标对象
+            if (self::isExampleNode($field->Value)) {
+                continue;
+            }
+
             $fieldKey = $field->Key;
             $propName = self::snakeToCamel($fieldKey);
 
@@ -430,11 +461,15 @@ class MetaMessage
                 } else {
                     $propValue = $field->Value->Data;
                 }
-                if ($tag !== null && $tag->isNull && $tag->nullable) {
+                if ($tag !== null && $tag->isNull) {
                     $propValue = null;
                 }
             } else {
                 $propValue = $field->Value;
+                // is_null 编码：绑定为 null
+                if (self::isNullNode($field->Value)) {
+                    $propValue = null;
+                }
             }
 
             $prop->setValue($out, $propValue);
@@ -451,18 +486,30 @@ class MetaMessage
 
         $result = [];
         foreach ($arr->Items as $item) {
+            // 跳过 example 哨兵项：全为 example 时产出空数组
+            if (self::isExampleNode($item)) {
+                continue;
+            }
             if ($item instanceof NodeScalar) {
                 $tag = $item->getTag();
-                if ($tag !== null && $tag->isNull && $tag->nullable) {
+                if ($tag !== null && $tag->isNull) {
                     $result[] = null;
                 } else {
                     $result[] = $item->Data;
                 }
             } elseif ($item instanceof NodeObject) {
+                if (self::isNullNode($item)) {
+                    $result[] = null;
+                    continue;
+                }
                 $itemObj = new \stdClass();
                 self::bind($item, $itemObj);
                 $result[] = $itemObj;
             } elseif ($item instanceof NodeArray) {
+                if (self::isNullNode($item)) {
+                    $result[] = null;
+                    continue;
+                }
                 $subArr = [];
                 self::bind($item, $subArr);
                 $result[] = $subArr;
@@ -480,7 +527,7 @@ class MetaMessage
             return;
         }
 
-        if ($tag->isNull && $tag->nullable) {
+        if ($tag->isNull) {
             $out = null;
             return;
         }

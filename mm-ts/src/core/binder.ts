@@ -16,9 +16,26 @@ export class Binder {
     return value;
   }
 
+  /** 空容器注入的 example 哨兵项：只为保留元素类型，不参与绑定 */
+  private isExample(node: Node | null | undefined): boolean {
+    if (!node) return false;
+    return node.getTag()?.example === true;
+  }
+
+  /** 编码侧真实值为 nil（is_null）：绑定成 null */
+  private isNullNode(node: Node | null | undefined): boolean {
+    if (!node) return false;
+    return node.getTag()?.isNull === true;
+  }
+
   bindNode(node: Node, target: any): { value: any; error: string | null } {
     // Handle NodeNull - return null value
     if (node instanceof NodeNull) {
+      return { value: null, error: null };
+    }
+
+    // is_null：与 Go 对齐，绑定成 null（不展开 example 占位子节点）
+    if (this.isNullNode(node)) {
       return { value: null, error: null };
     }
 
@@ -33,6 +50,9 @@ export class Binder {
         const properties = node.getProperties();
         const result: Record<string, any> = {};
         for (const [key, valueNode] of Object.entries(properties)) {
+          if (this.isExample(valueNode)) {
+            continue; // 空容器占位项不绑定
+          }
           const { value, error } = this.bindNode(valueNode, undefined);
           if (error) {
             return {
@@ -50,6 +70,9 @@ export class Binder {
         const result: any[] = [];
         for (let i = 0; i < elements.length; i++) {
           const el = elements[i]!;
+          if (this.isExample(el)) {
+            continue; // 空容器占位项不绑定
+          }
           const { value, error } = this.bindNode(el, undefined);
           if (error) {
             return {
@@ -104,6 +127,9 @@ export class Binder {
 
     const properties = obj.getProperties();
     for (const [key, valueNode] of Object.entries(properties)) {
+      if (this.isExample(valueNode)) {
+        continue; // 空容器占位项不绑定
+      }
       const camelKey = key.replace(/_([a-z])/g, (_, c) => c.toUpperCase());
       if (!(camelKey in target)) {
         // For plain objects (not class instances), create fields dynamically
@@ -153,6 +179,10 @@ export class Binder {
 
     const properties = obj.getProperties();
     for (const [key, valueNode] of Object.entries(properties)) {
+      // 空 map 的 example 占位项：跳过后得到非 null 空对象
+      if (this.isExample(valueNode)) {
+        continue;
+      }
       const { value, error } = this.bindNode(valueNode, target[key]);
       if (error) {
         return { value: target, error: `field ${key}: ${error}` };
@@ -183,6 +213,9 @@ export class Binder {
     for (let i = 0; i < elements.length; i++) {
       const el = elements[i];
       if (!el) continue;
+      if (this.isExample(el)) {
+        continue; // 固定数组长度由 tag.size 决定，example 占位项不占下标
+      }
 
       const { value, error } = this.bindNode(el, target[i]);
       if (error) {
@@ -207,6 +240,11 @@ export class Binder {
     target.length = 0;
 
     for (const el of elements) {
+      // example 哨兵项只为保留元素类型，不参与绑定；
+      // 全部为 example（编码侧为空容器）时产出长度 0 的空数组。
+      if (this.isExample(el)) {
+        continue;
+      }
       const defaultVal = this.createDefaultValue(el.getTag());
       const { value, error } = this.bindNode(el, defaultVal);
       if (error) {

@@ -27,9 +27,24 @@ public static class ReflectMmBinder
         }
     }
 
+    // example 哨兵项判定：空容器编码时注入的占位节点，绑定时必须跳过
+    private static bool IsExampleNode(INode? node)
+    {
+        return node is not null && node.Tag.Example;
+    }
+
+    // is_null 标记判定：编码带 is_null 时目标绑定为 null
+    private static bool IsNullNode(INode? node)
+    {
+        return node is not null && node.Tag.IsNull;
+    }
+
     public static object? BindDynamic(INode tree)
     {
         if (tree is NodeNull)
+            return null;
+
+        if (IsNullNode(tree))
             return null;
 
         if (tree is NodeScalar scalar)
@@ -40,6 +55,8 @@ public static class ReflectMmBinder
             var list = new List<object?>();
             foreach (var child in array.Children)
             {
+                if (IsExampleNode(child))
+                    continue;
                 list.Add(BindDynamic(child));
             }
             return list;
@@ -50,6 +67,8 @@ public static class ReflectMmBinder
             var dict = new Dictionary<string, object?>();
             foreach (var entry in map.Entries)
             {
+                if (IsExampleNode(entry.Value))
+                    continue;
                 dict[entry.Key.Text] = BindDynamic(entry.Value);
             }
             return dict;
@@ -63,6 +82,10 @@ public static class ReflectMmBinder
         var type = target.GetType();
         foreach (var entry in map.Entries)
         {
+            // 跳过 example 哨兵项（空容器占位），不绑定到目标对象
+            if (IsExampleNode(entry.Value))
+                continue;
+
             var key = entry.Key.Data as string;
             var value = entry.Value;
 
@@ -117,6 +140,12 @@ public static class ReflectMmBinder
         }
 
         if (tree is NodeNull)
+        {
+            return null;
+        }
+
+        // is_null 编码：绑定为 null
+        if (IsNullNode(tree))
         {
             return null;
         }
@@ -236,6 +265,9 @@ public static class ReflectMmBinder
             var elements = new List<object?>();
             foreach (var item in array.Children)
             {
+                // 跳过 example 哨兵项：全为 example 时产出长度为 0 的非 null 数组
+                if (IsExampleNode(item))
+                    continue;
                 elements.Add(ConvertValue(item, elementType));
             }
             var arrayInstance = Array.CreateInstance(elementType, elements.Count);
@@ -254,6 +286,9 @@ public static class ReflectMmBinder
 
             foreach (var item in array.Children)
             {
+                // 跳过 example 哨兵项：全为 example 时产出空的非 null List
+                if (IsExampleNode(item))
+                    continue;
                 var convertedValue = ConvertValue(item, elementType);
                 addMethod?.Invoke(list, new object?[] { convertedValue });
             }
