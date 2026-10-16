@@ -6,8 +6,12 @@ import {
   StringLen2Byte,
   BytesLen1Byte,
   BytesLen2Byte,
+  BytesLen3Byte,
+  BytesLen4Byte,
   ContainerLen1Byte,
   ContainerLen2Byte,
+  ContainerLen3Byte,
+  ContainerLen4Byte,
   ContainerObject,
   ContainerArray,
   IntLen1Byte,
@@ -28,6 +32,8 @@ import {
   Max8Byte,
   TagLen1Byte,
   TagLen2Byte,
+  TagLen3Byte,
+  TagLen4Byte,
   FloatPositiveNegativeMask,
   FloatLen1Byte,
   FloatLen2Byte,
@@ -357,9 +363,9 @@ export class MMEncoder {
 
   private encodeTag(bs: Uint8Array, tag: Uint8Array): number {
     const length = bs.length + tag.length;
-    if (length > Max2Byte) {
+    if (length > Max4Byte) {
       throw new Error(
-        `tag+payload too long, max length: ${Max2Byte}, actual: ${length}`,
+        `tag+payload too long, max length: ${Max4Byte}, actual: ${length}`,
       );
     }
 
@@ -371,16 +377,34 @@ export class MMEncoder {
       this.buffer.writeUint8(prefix);
       this.buffer.writeBytes(tag);
       this.buffer.writeBytes(bs);
-    } else if (length < Max1Byte) {
+    } else if (length <= Max1Byte) {
       const prefix = sign | TagLen1Byte;
       this.buffer.writeUint8(prefix);
       this.buffer.writeUint8(length);
       this.buffer.writeBytes(tag);
       this.buffer.writeBytes(bs);
-    } else {
+    } else if (length <= Max2Byte) {
       const prefix = sign | TagLen2Byte;
       this.buffer.writeUint8(prefix);
       this.buffer.writeUint8((length >> 8) & 0xff);
+      this.buffer.writeUint8(length & 0xff);
+      this.buffer.writeBytes(tag);
+      this.buffer.writeBytes(bs);
+    } else if (length <= Max3Byte) {
+      const prefix = sign | TagLen3Byte;
+      this.buffer.writeUint8(prefix);
+      this.buffer.writeUint8((length >>> 16) & 0xff);
+      this.buffer.writeUint8((length >>> 8) & 0xff);
+      this.buffer.writeUint8(length & 0xff);
+      this.buffer.writeBytes(tag);
+      this.buffer.writeBytes(bs);
+    } else {
+      // 最后一档必须覆盖到 Max4Byte
+      const prefix = sign | TagLen4Byte;
+      this.buffer.writeUint8(prefix);
+      this.buffer.writeUint8((length >>> 24) & 0xff);
+      this.buffer.writeUint8((length >>> 16) & 0xff);
+      this.buffer.writeUint8((length >>> 8) & 0xff);
       this.buffer.writeUint8(length & 0xff);
       this.buffer.writeBytes(tag);
       this.buffer.writeBytes(bs);
@@ -747,6 +771,14 @@ export class MMEncoder {
   encodeString(value: string): number {
     let n = 0;
     const length = value.length;
+    // String 维持 v0.2.x：上限 Max2Byte(65535)，最多 2 字节长度字段。
+    // 基线没有守卫（超长会被 writeUint16BE 静默截断），这里保留守卫但按
+    // Max2Byte 判定。1 字节档边界保持基线的 `< 256`（255 落 2 字节档）。
+    if (length > Max2Byte) {
+      throw new Error(
+        `string too long, max length: ${Max2Byte}, actual: ${length}`,
+      );
+    }
     if (length < StringLen1Byte) {
       const prefix = Prefix.String | length;
       this.buffer.writeUint8(prefix);
@@ -794,20 +826,42 @@ export class MMEncoder {
   encodeBytes(value: Uint8Array): number {
     let n = 0;
     const length = value.length;
+    if (length > Max4Byte) {
+      throw new Error(
+        `bytes too long, max length: ${Max4Byte}, actual: ${length}`,
+      );
+    }
     if (length < BytesLen1Byte) {
       const prefix = Prefix.Bytes | length;
       this.buffer.writeUint8(prefix);
       n += 1;
-    } else if (length < 256) {
+    } else if (length <= Max1Byte) {
       const prefix = Prefix.Bytes | BytesLen1Byte;
       this.buffer.writeUint8(prefix);
       this.buffer.writeUint8(length);
       n += 2;
-    } else {
+    } else if (length <= Max2Byte) {
       const prefix = Prefix.Bytes | BytesLen2Byte;
       this.buffer.writeUint8(prefix);
-      this.buffer.writeUint16BE(length);
+      this.buffer.writeUint8((length >> 8) & 0xff);
+      this.buffer.writeUint8(length & 0xff);
       n += 3;
+    } else if (length <= Max3Byte) {
+      const prefix = Prefix.Bytes | BytesLen3Byte;
+      this.buffer.writeUint8(prefix);
+      this.buffer.writeUint8((length >>> 16) & 0xff);
+      this.buffer.writeUint8((length >>> 8) & 0xff);
+      this.buffer.writeUint8(length & 0xff);
+      n += 4;
+    } else {
+      // 最后一档必须覆盖到 Max4Byte
+      const prefix = Prefix.Bytes | BytesLen4Byte;
+      this.buffer.writeUint8(prefix);
+      this.buffer.writeUint8((length >>> 24) & 0xff);
+      this.buffer.writeUint8((length >>> 16) & 0xff);
+      this.buffer.writeUint8((length >>> 8) & 0xff);
+      this.buffer.writeUint8(length & 0xff);
+      n += 5;
     }
 
     this.buffer.writeBytes(value);
@@ -923,17 +977,37 @@ export class MMEncoder {
 
     let prefix = Prefix.Container | ContainerArray;
     const length = value.length;
+    if (length > Max4Byte) {
+      throw new Error(
+        `array too long, max length: ${Max4Byte}, actual: ${length}`,
+      );
+    }
     if (length < ContainerLen1Byte) {
       prefix |= length;
       this.buffer.writeUint8(prefix);
-    } else if (length < 256) {
+    } else if (length <= Max1Byte) {
       prefix |= ContainerLen1Byte;
       this.buffer.writeUint8(prefix);
       this.buffer.writeUint8(length);
-    } else {
+    } else if (length <= Max2Byte) {
       prefix |= ContainerLen2Byte;
       this.buffer.writeUint8(prefix);
-      this.buffer.writeUint16BE(length);
+      this.buffer.writeUint8((length >> 8) & 0xff);
+      this.buffer.writeUint8(length & 0xff);
+    } else if (length <= Max3Byte) {
+      prefix |= ContainerLen3Byte;
+      this.buffer.writeUint8(prefix);
+      this.buffer.writeUint8((length >>> 16) & 0xff);
+      this.buffer.writeUint8((length >>> 8) & 0xff);
+      this.buffer.writeUint8(length & 0xff);
+    } else {
+      // 最后一档必须覆盖到 Max4Byte
+      prefix |= ContainerLen4Byte;
+      this.buffer.writeUint8(prefix);
+      this.buffer.writeUint8((length >>> 24) & 0xff);
+      this.buffer.writeUint8((length >>> 16) & 0xff);
+      this.buffer.writeUint8((length >>> 8) & 0xff);
+      this.buffer.writeUint8(length & 0xff);
     }
 
     this.buffer.writeBytes(value);
@@ -944,22 +1018,45 @@ export class MMEncoder {
     const length = value.length;
     let n = 0;
 
+    if (length > Max4Byte) {
+      throw new Error(
+        `object too long, max length: ${Max4Byte}, actual: ${length}`,
+      );
+    }
+
     let prefix = Prefix.Container | ContainerObject;
 
     if (length < ContainerLen1Byte) {
       prefix |= length;
       this.buffer.writeUint8(prefix);
       n = 1 + length;
-    } else if (length < 256) {
+    } else if (length <= Max1Byte) {
       prefix |= ContainerLen1Byte;
       this.buffer.writeUint8(prefix);
       this.buffer.writeUint8(length);
       n = 2 + length;
-    } else {
+    } else if (length <= Max2Byte) {
       prefix |= ContainerLen2Byte;
       this.buffer.writeUint8(prefix);
-      this.buffer.writeUint16BE(length);
+      this.buffer.writeUint8((length >> 8) & 0xff);
+      this.buffer.writeUint8(length & 0xff);
       n = 3 + length;
+    } else if (length <= Max3Byte) {
+      prefix |= ContainerLen3Byte;
+      this.buffer.writeUint8(prefix);
+      this.buffer.writeUint8((length >>> 16) & 0xff);
+      this.buffer.writeUint8((length >>> 8) & 0xff);
+      this.buffer.writeUint8(length & 0xff);
+      n = 4 + length;
+    } else {
+      // 最后一档必须覆盖到 Max4Byte
+      prefix |= ContainerLen4Byte;
+      this.buffer.writeUint8(prefix);
+      this.buffer.writeUint8((length >>> 24) & 0xff);
+      this.buffer.writeUint8((length >>> 16) & 0xff);
+      this.buffer.writeUint8((length >>> 8) & 0xff);
+      this.buffer.writeUint8(length & 0xff);
+      n = 5 + length;
     }
 
     this.buffer.writeBytes(value);

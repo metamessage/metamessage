@@ -13,6 +13,10 @@ import (
 // 整个消失（实测：65535 字节的字符串编码后 wire 只有 4 字节，解回来 0 个元素）。
 // 这里用公开 API 做往返，确保「不报错」真的等价于「没丢数据」。
 //
+// v0.3.0 范围说明：只有 **Bytes / Container / TagPayload** 扩到 4 字节长度槽
+// （上限 Max4Byte ≈ 4.29GB）。**String 不在范围内**，维持 v0.2.x 语义
+// （内联 0..29，30/31 = 1/2 字节，上限 65535），字节级与 v0.2.x 一致。
+//
 // 注意数组/对象限的是**序列化后的 payload 字节数**，不是元素个数；下面的尺寸
 // 是实测标定出来的（含 key、tag 等协议开销），不要凭感觉改。
 
@@ -113,23 +117,39 @@ func TestBoundaryObjectPayloadRoundTrip(t *testing.T) {
 	}
 }
 
-// TestBoundaryPlusOneStillRejected 超过 65535 照旧报错，且错误信息可读——
-// 防止修复时把守卫一起放宽。
+// TestBoundaryPlusOneStillRejected String 不参与 v0.3.0 的容量扩展，
+// 超过 65535 照旧报错，且错误信息可读——防止把 String 的守卫一起放宽。
+//
+// 注意：不要把基线的「数组 payload 66288 必须被拒」搬回来——Container 现在
+// 有 4 字节长度档，66288 已经是合法长度。
 func TestBoundaryPlusOneStillRejected(t *testing.T) {
 	if _, err := EncodeFromValue(strings.Repeat("x", 65536), ""); err == nil {
 		t.Fatal("string of 65536 bytes must be rejected")
 	} else if !strings.Contains(err.Error(), "string too long") {
 		t.Fatalf("string: error = %q, want \"string too long\"", err)
 	}
+}
 
-	// 数组 payload 超限：86×768 = 66288 > 65535
-	in := make([]string, 86)
-	for i := range in {
-		in[i] = strings.Repeat("z", 768)
+// TestBoundaryLargePayloadRoundTrip 验证 Bytes 的 4 字节长度档端到端可用。
+// 16777216 = Max3Byte(0xFFFFFF) + 1，是 4 字节档的入口。
+//
+// 这里必须用 []byte（显式 type=bytes）而不是 string：String 维持 v0.2.x 的
+// 2 字节长度、上限 65535，装不下 16MiB。
+func TestBoundaryLargePayloadRoundTrip(t *testing.T) {
+	const size = 16777216
+	type bytesTyped struct {
+		B []byte `mm:"type=bytes"`
 	}
-	if _, err := EncodeFromValue(in, ""); err == nil {
-		t.Fatal("array with payload 66288 must be rejected")
-	} else if !strings.Contains(err.Error(), "array too long") {
-		t.Fatalf("array: error = %q, want \"array too long\"", err)
+	in := bytesTyped{B: bytes.Repeat([]byte("y"), size)}
+	wire, err := EncodeFromValue(in, "")
+	if err != nil {
+		t.Fatalf("%d-byte bytes field must encode (4-byte tier), got: %v", size, err)
+	}
+	var out bytesTyped
+	if err := DecodeToValue(wire, &out); err != nil {
+		t.Fatalf("DecodeToValue: %v", err)
+	}
+	if len(out.B) != size {
+		t.Fatalf("decoded %d bytes, want %d", len(out.B), size)
 	}
 }

@@ -389,30 +389,16 @@ public class WireDecoder
 
     private INode DecodeBytes(int first, Tag? inherited)
     {
-        var (l1, l2) = BytesLen(first);
-        if (l1 == 1)
-        {
-            if (_offset >= _data.Length)
-            {
-                throw new MmDecodeException("Unexpected end of data");
-            }
-            l2 = _data[_offset++];
-        }
-        else if (l1 == 2)
-        {
-            if (_offset + 1 >= _data.Length)
-            {
-                throw new MmDecodeException("Unexpected end of data");
-            }
-            l2 = (_data[_offset] << 8) | _data[_offset + 1];
-            _offset += 2;
-        }
+        var (l1, l2i) = BytesLen(first);
+        // v0.3.0：1/2/3/4 字节大端长度槽（内联时 l1==0，长度已在 l2）
+        long bytesLen = l1 != 0 ? ReadLen(l1) : l2i;
 
-        if (_offset + l2 > _data.Length)
+        if (bytesLen < 0 || _offset + bytesLen > _data.Length)
         {
             throw new MmDecodeException("Bytes data overflow");
         }
 
+        int l2 = (int)bytesLen;
         byte[] bytes = new byte[l2];
         Array.Copy(_data, _offset, bytes, 0, l2);
         _offset += l2;
@@ -454,31 +440,16 @@ public class WireDecoder
     private INode DecodeContainer(int first, Tag? inherited)
     {
         int containerType = first & WireConstants.CONTAINER_MASK;
-        var (l1, l2) = ContainerLen(first);
+        var (l1, l2i) = ContainerLen(first);
+        // v0.3.0：1/2/3/4 字节大端长度槽（内联时 l1==0，长度已在 l2）
+        long containerLen = l1 != 0 ? ReadLen(l1) : l2i;
 
-        if (l1 == 1)
-        {
-            if (_offset >= _data.Length)
-            {
-                throw new MmDecodeException("Unexpected end of data");
-            }
-            l2 = _data[_offset++];
-        }
-        else if (l1 == 2)
-        {
-            if (_offset + 1 >= _data.Length)
-            {
-                throw new MmDecodeException("Unexpected end of data");
-            }
-            l2 = (_data[_offset] << 8) | _data[_offset + 1];
-            _offset += 2;
-        }
-
-        int end = _offset + l2;
-        if (end > _data.Length)
+        long endL = (long)_offset + containerLen;
+        if (containerLen < 0 || endL > _data.Length)
         {
             throw new MmDecodeException("Container data overflow");
         }
+        int end = (int)endL;
 
         Tag tag = inherited?.Copy() ?? Tag.Empty();
 
@@ -531,30 +502,16 @@ public class WireDecoder
 
     private INode DecodeTagged(int first, Tag? inherited)
     {
-        var (l1, l2) = TagLen(first);
-        if (l1 == 1)
-        {
-            if (_offset >= _data.Length)
-            {
-                throw new MmDecodeException("Unexpected end of data");
-            }
-            l2 = _data[_offset++];
-        }
-        else if (l1 == 2)
-        {
-            if (_offset + 1 >= _data.Length)
-            {
-                throw new MmDecodeException("Unexpected end of data");
-            }
-            l2 = (_data[_offset] << 8) | _data[_offset + 1];
-            _offset += 2;
-        }
+        var (l1, l2i) = TagLen(first);
+        // v0.3.0：1/2/3/4 字节大端长度槽（内联时 l1==0，长度已在 l2）
+        long tagLen = l1 != 0 ? ReadLen(l1) : l2i;
 
-        int end = _offset + l2;
-        if (end > _data.Length)
+        long endL = (long)_offset + tagLen;
+        if (tagLen < 0 || endL > _data.Length)
         {
             throw new MmDecodeException("Tag data overflow");
         }
+        int end = (int)endL;
 
         int innerTagLen = _data[_offset++];
         int tagDataLen;
@@ -746,52 +703,54 @@ public class WireDecoder
     private (int, int) BytesLen(int first)
     {
         int len = first & WireConstants.BYTES_LEN_MASK;
-        if (len < WireConstants.BYTES_LEN_1)
+        switch (len)
         {
-            return (0, len);
-        }
-        else if (len == WireConstants.BYTES_LEN_1)
-        {
-            return (1, 0);
-        }
-        else // len == WireConstants.BYTES_LEN_2
-        {
-            return (2, 0);
+            case WireConstants.BYTES_LEN_1: return (1, 0);
+            case WireConstants.BYTES_LEN_2: return (2, 0);
+            case WireConstants.BYTES_LEN_3: return (3, 0);
+            case WireConstants.BYTES_LEN_4: return (4, 0);
+            default: return (0, len);
         }
     }
 
     private (int, int) ContainerLen(int first)
     {
         int len = first & WireConstants.CONTAINER_LEN_MASK;
-        if (len < WireConstants.CONTAINER_LEN_1)
+        switch (len)
         {
-            return (0, len);
-        }
-        else if (len == WireConstants.CONTAINER_LEN_1)
-        {
-            return (1, 0);
-        }
-        else // len == WireConstants.CONTAINER_LEN_2
-        {
-            return (2, 0);
+            case WireConstants.CONTAINER_LEN_1: return (1, 0);
+            case WireConstants.CONTAINER_LEN_2: return (2, 0);
+            case WireConstants.CONTAINER_LEN_3: return (3, 0);
+            case WireConstants.CONTAINER_LEN_4: return (4, 0);
+            default: return (0, len);
         }
     }
 
     private (int, int) TagLen(int first)
     {
         int len = first & WireConstants.TAG_LEN_MASK;
-        if (len < WireConstants.TAG_LEN_1)
+        switch (len)
         {
-            return (0, len);
+            case WireConstants.TAG_LEN_1: return (1, 0);
+            case WireConstants.TAG_LEN_2: return (2, 0);
+            case WireConstants.TAG_LEN_3: return (3, 0);
+            case WireConstants.TAG_LEN_4: return (4, 0);
+            default: return (0, len);
         }
-        else if (len == WireConstants.TAG_LEN_1)
-        {
-            return (1, 0);
-        }
-        else // len == WireConstants.TAG_LEN_2
-        {
-            return (2, 0);
-        }
+    }
+
+    // v0.3.0：按 extra 字节大端读出一个长度（1..4 字节长度槽）
+    // v0.3.0：长度槽最大 4 字节（0xFFFFFFFF > int.MaxValue），必须用 long 累加防 32 位溢出
+private long ReadLen(int extra)
+    {
+        if (extra <= 0)
+            return 0;
+        if (_offset + extra > _data.Length)
+            throw new MmDecodeException("Unexpected end of data");
+        long v = 0;
+        for (int i = 0; i < extra; i++)
+            v = (v << 8) | _data[_offset++];
+        return v;
     }
 
     private int FloatLenExtraBytes(int first)

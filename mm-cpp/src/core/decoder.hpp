@@ -89,6 +89,9 @@ private:
     return val;
   }
 
+  // v0.3.0：按 extra 字节大端读出一个长度（1..4 字节长度槽）
+  size_t readLen(int extra) { return static_cast<size_t>(readUInt(extra)); }
+
   std::shared_ptr<ir::Node> decodeNode(const ir::Tag *parentTag) {
     uint8_t b = readByte();
     Prefix prefix = getPrefix(b);
@@ -124,11 +127,9 @@ private:
     int inlineLen = tagInlineLen(b);
     if (extraLen == 0) {
       l = inlineLen;
-    } else if (extraLen == 1) {
-      l = readByte();
     } else {
-      auto bytes = readBytes(2);
-      l = (bytes[0] << 8) | bytes[1];
+      // v0.3.0：1/2/3/4 字节大端长度槽
+      l = static_cast<int>(readLen(extraLen));
     }
 
     int totalRead = 1 + extraLen;
@@ -152,11 +153,9 @@ private:
 
     if (extraLen == 0) {
       l = inlineLen;
-    } else if (extraLen == 1) {
-      l = readByte();
     } else {
-      auto bytes = readBytes(2);
-      l = (bytes[0] << 8) | bytes[1];
+      // v0.3.0：1/2/3/4 字节大端长度槽
+      l = static_cast<int>(readLen(extraLen));
     }
 
     size_t frameEnd = offset_ + l;
@@ -617,11 +616,9 @@ private:
 
     if (extraLen == 0) {
       len = static_cast<size_t>(inlineLen);
-    } else if (extraLen == 1) {
-      len = readByte();
     } else {
-      auto bytes = readBytes(2);
-      len = static_cast<size_t>((bytes[0] << 8) | bytes[1]);
+      // v0.3.0：1/2/3/4 字节大端长度槽
+      len = readLen(extraLen);
     }
 
     auto bytes = readBytes(len);
@@ -713,11 +710,9 @@ private:
 
     if (extraLen == 0) {
       len = static_cast<size_t>(inlineLen);
-    } else if (extraLen == 1) {
-      len = readByte();
     } else {
-      auto bytes = readBytes(2);
-      len = static_cast<size_t>((bytes[0] << 8) | bytes[1]);
+      // v0.3.0：1/2/3/4 字节大端长度槽
+      len = readLen(extraLen);
     }
 
     auto rawBytes = readBytes(len);
@@ -752,11 +747,9 @@ private:
 
     if (extraLen == 0) {
       len = static_cast<size_t>(inlineLen);
-    } else if (extraLen == 1) {
-      len = readByte();
     } else {
-      auto bytes = readBytes(2);
-      len = static_cast<size_t>((bytes[0] << 8) | bytes[1]);
+      // v0.3.0：1/2/3/4 字节大端长度槽
+      len = readLen(extraLen);
     }
 
     if (isArray) {

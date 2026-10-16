@@ -365,18 +365,17 @@ impl Parser {
             }
             TokenType::Null => {
                 let tag = self.consume_comments_for(tok.line).unwrap_or_default();
+                // Always reject the null literal (aligned with the Go reference
+                // parser since v0.2.8). Null-ness is expressed via `is_null`
+                // tags, not literals; NodeNull remains producible via
+                // ValueToNode.
                 if tag.value_type != ValueType::Unknown {
                     return Err(format!(
                         "null is not supported for type {:?}",
                         tag.value_type
                     ));
                 }
-                Ok(Some(Node::Value(NodeScalar {
-                    data: ValueData::Null,
-                    text: "null".to_string(),
-                    tag: Some(tag),
-                    path: path.to_string(),
-                })))
+                Err("null is not supported".to_string())
             }
             _ => Err(format!("unexpected token: {:?}", tok.token_type)),
         }

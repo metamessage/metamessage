@@ -1,5 +1,5 @@
 pub const DEFAULT_BUF_SIZE: usize = 1024;
-pub const MAX_CAP: usize = 1024 * 1024 * 1024;
+pub const MAX_CAP: usize = 0xFFFFFFFF;
 
 pub const MAX_1: u8 = 0xFF;
 pub const MAX_2: u16 = 0xFFFF;
@@ -23,15 +23,24 @@ pub const INT_LEN_MASK: u8 = 0x1F;
 pub const STRING_LEN_1: u8 = 30;
 pub const STRING_LEN_2: u8 = 31;
 
-pub const BYTES_LEN_1: u8 = 30;
-pub const BYTES_LEN_2: u8 = 31;
+// Bytes length（v0.3.0：4 档；内联 0..27，档位标记 28/29/30/31）
+pub const BYTES_LEN_1: u8 = 28;
+pub const BYTES_LEN_2: u8 = 29;
+pub const BYTES_LEN_3: u8 = 30;
+pub const BYTES_LEN_4: u8 = 31;
 
-pub const CONTAINER_LEN_1: u8 = 14;
-pub const CONTAINER_LEN_2: u8 = 15;
+// Container length（v0.3.0：4 档；内联 0..11，档位标记 12/13/14/15）
+pub const CONTAINER_LEN_1: u8 = 12;
+pub const CONTAINER_LEN_2: u8 = 13;
+pub const CONTAINER_LEN_3: u8 = 14;
+pub const CONTAINER_LEN_4: u8 = 15;
 pub const CONTAINER_LEN_MASK: u8 = 0x0F;
 
-pub const TAG_LEN_1: u8 = 30;
-pub const TAG_LEN_2: u8 = 31;
+// Tag length（v0.3.0：4 档；tag+payload 合计槽；内联 0..27）
+pub const TAG_LEN_1: u8 = 28;
+pub const TAG_LEN_2: u8 = 29;
+pub const TAG_LEN_3: u8 = 30;
+pub const TAG_LEN_4: u8 = 31;
 
 // Tag key prefixes (key = byte & 0xF8)
 pub const TAG_IS_NULL: u8 = 0 << 3;

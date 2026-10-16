@@ -189,9 +189,13 @@ class JsoncParser(private val tokens: List<JsoncToken>) {
                 }
                 JsoncTokenType.Null -> {
                     val tag = consumeCommentsFor(tok.line) ?: Tag()
+                    // Always reject the null literal (aligned with the Go
+                    // reference parser since v0.2.8). Null-ness is expressed
+                    // via `is_null` tags, not literals; NodeNull remains
+                    // producible via ValueToNode.
                     if (tag.type != ValueType.UNKNOWN)
-                            throw JsoncException("null is not supported for type ${tag.type}")
-                    return NodeNull(tag = tag, path = path)
+                        throw JsoncException("null is not supported for type ${tag.type}")
+                    throw JsoncException("null is not supported")
                 }
                 else -> throw JsoncException("unexpected token ${tok.type}")
             }

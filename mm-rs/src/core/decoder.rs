@@ -43,15 +43,30 @@ impl Decoder {
     }
 
     fn read_bytes(&mut self, n: usize) -> Result<&[u8], std::io::Error> {
-        if self.offset + n > self.data.len() {
+        // v0.3.0：先做边界检查（checked_add 防 32 位溢出）后切片，绝不先分配
+        let end = self
+            .offset
+            .checked_add(n)
+            .ok_or_else(|| std::io::Error::new(std::io::ErrorKind::UnexpectedEof, "length overflow"))?;
+        if end > self.data.len() {
             return Err(std::io::Error::new(
                 std::io::ErrorKind::UnexpectedEof,
                 "unexpected eof",
             ));
         }
         let start = self.offset;
-        self.offset += n;
-        Ok(&self.data[start..start + n])
+        self.offset = end;
+        Ok(&self.data[start..end])
+    }
+
+    // v0.3.0：按 n 字节大端读出长度槽（支持 1/2/3/4 字节）
+    fn read_len(&mut self, n: usize) -> Result<usize, std::io::Error> {
+        let b = self.read_bytes(n)?;
+        let mut v: usize = 0;
+        for &byte in b {
+            v = (v << 8) | byte as usize;
+        }
+        Ok(v)
     }
 
     pub fn decode(&mut self) -> Result<Node, std::io::Error> {
@@ -82,11 +97,8 @@ impl Decoder {
             let l = prefix & INT_LEN_MASK;
             if l < TAG_LEN_1 {
                 l as usize
-            } else if l == TAG_LEN_1 {
-                self.read_byte()? as usize
             } else {
-                let b = self.read_bytes(2)?;
-                ((b[0] as usize) << 8) | (b[1] as usize)
+                self.read_len((l - TAG_LEN_1) as usize + 1)?
             }
         };
 
@@ -903,11 +915,8 @@ impl Decoder {
         let l = prefix & INT_LEN_MASK;
         let len = if l < BYTES_LEN_1 {
             l as usize
-        } else if l == BYTES_LEN_1 {
-            self.read_byte()? as usize
         } else {
-            let b = self.read_bytes(2)?;
-            ((b[0] as usize) << 8) | (b[1] as usize)
+            self.read_len((l - BYTES_LEN_1) as usize + 1)?
         };
 
         let bytes = if len > 0 {
@@ -971,14 +980,20 @@ impl Decoder {
 
     fn decode_container_len(&mut self, prefix: u8) -> Result<usize, std::io::Error> {
         let l = prefix & CONTAINER_LEN_MASK;
-        if l < CONTAINER_LEN_1 {
-            Ok(l as usize)
-        } else if l == CONTAINER_LEN_1 {
-            Ok(self.read_byte()? as usize)
+        let total = if l < CONTAINER_LEN_1 {
+            l as usize
         } else {
-            let b = self.read_bytes(2)?;
-            Ok(((b[0] as usize) << 8) | (b[1] as usize))
+            self.read_len((l - CONTAINER_LEN_1) as usize + 1)?
+        };
+        // 截断防护：声明 payload 长度超出剩余数据 → 显式报错，
+        // 避免 object 解码因驱动于 keys 结构而静默返回空对象。
+        if self.offset + total > self.data.len() {
+            return Err(std::io::Error::new(
+                std::io::ErrorKind::UnexpectedEof,
+                "container length exceeds data",
+            ));
         }
+        Ok(total)
     }
 
     fn decode_array(&mut self, prefix: u8, tag: &Tag) -> Result<Node, std::io::Error> {

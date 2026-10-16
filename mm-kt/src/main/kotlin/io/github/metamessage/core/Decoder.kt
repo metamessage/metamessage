@@ -64,16 +64,12 @@ class Decoder() {
         val tl = tagOuterLen(firstByte)
         val l1 = tl[0]
         var l2 = tl[1]
-        if (l1 == 1) {
-            l2 = data[offset++].toInt() and 0xFF
-        } else if (l1 == 2) {
-            l2 = ((data[offset++].toInt() and 0xFF) shl 8) or (data[offset++].toInt() and 0xFF)
-        }
+        if (l1 > 0) l2 = readLen(l1)
         val innerStart = offset
-        val innerEnd = innerStart + l2
-        if (innerEnd > data.size) {
+        if (l2 < 0 || innerStart.toLong() + l2 > data.size.toLong()) {
             throw MmDecodeException("tag frame past eof")
         }
+        val innerEnd = innerStart + l2
         val tb = data[offset++].toInt() and 0xFF
         val innerFieldLen = readInnerLen(tb)
         val fieldsEnd = offset + innerFieldLen
@@ -157,6 +153,8 @@ class Decoder() {
             l < WireConstants.TAG_LEN_1 -> intArrayOf(0, l)
             l == WireConstants.TAG_LEN_1 -> intArrayOf(1, 0)
             l == WireConstants.TAG_LEN_2 -> intArrayOf(2, 0)
+            l == WireConstants.TAG_LEN_3 -> intArrayOf(3, 0)
+            l == WireConstants.TAG_LEN_4 -> intArrayOf(4, 0)
             else -> intArrayOf(0, l)
         }
     }
@@ -435,11 +433,7 @@ class Decoder() {
     private fun decodeBytes(first: Int, inherited: Tag?, start: Int): Decoded {
         val bl = bytesLen(first)
         var l2 = bl[1]
-        if (bl[0] == 1) {
-            l2 = data[offset++].toInt() and 0xFF
-        } else if (bl[0] == 2) {
-            l2 = ((data[offset++].toInt() and 0xFF) shl 8) or (data[offset++].toInt() and 0xFF)
-        }
+        if (bl[0] > 0) l2 = readLen(bl[0])
         val bs = if (l2 > 0) readBytes(l2) else ByteArray(0)
         val tag = inherited?.copy() ?: Tag.empty()
         if (tag.type == ValueType.UNKNOWN) tag.type = ValueType.BYTES
@@ -471,7 +465,10 @@ class Decoder() {
         return when {
             l < WireConstants.BYTES_LEN_1 -> intArrayOf(0, l)
             l == WireConstants.BYTES_LEN_1 -> intArrayOf(1, 0)
-            else -> intArrayOf(2, 0)
+            l == WireConstants.BYTES_LEN_2 -> intArrayOf(2, 0)
+            l == WireConstants.BYTES_LEN_3 -> intArrayOf(3, 0)
+            l == WireConstants.BYTES_LEN_4 -> intArrayOf(4, 0)
+            else -> intArrayOf(0, l)
         }
     }
 
@@ -515,16 +512,12 @@ class Decoder() {
     private fun decodeArr(first: Int, inherited: Tag?, start: Int): Decoded {
         val cl = containerLen(first)
         var l2 = cl[1]
-        if (cl[0] == 1) {
-            l2 = data[offset++].toInt() and 0xFF
-        } else if (cl[0] == 2) {
-            l2 = ((data[offset++].toInt() and 0xFF) shl 8) or (data[offset++].toInt() and 0xFF)
-        }
+        if (cl[0] > 0) l2 = readLen(cl[0])
         val bodyStart = offset
-        val bodyEnd = bodyStart + l2
-        if (bodyEnd > data.size) {
+        if (l2 < 0 || bodyStart.toLong() + l2 > data.size.toLong()) {
             throw MmDecodeException("array past eof")
         }
+        val bodyEnd = bodyStart + l2
         val tag = inherited?.copy() ?: Tag.empty()
         if (tag.type == ValueType.UNKNOWN) {
             tag.type = if (tag.size > 0) ValueType.ARR else ValueType.VEC
@@ -545,16 +538,12 @@ class Decoder() {
     private fun decodeObj(first: Int, inherited: Tag?, start: Int): Decoded {
         val cl = containerLen(first)
         var l2 = cl[1]
-        if (cl[0] == 1) {
-            l2 = data[offset++].toInt() and 0xFF
-        } else if (cl[0] == 2) {
-            l2 = ((data[offset++].toInt() and 0xFF) shl 8) or (data[offset++].toInt() and 0xFF)
-        }
+        if (cl[0] > 0) l2 = readLen(cl[0])
         val innerStart = offset
-        val innerEnd = innerStart + l2
-        if (innerEnd > data.size) {
+        if (l2 < 0 || innerStart.toLong() + l2 > data.size.toLong()) {
             throw MmDecodeException("object past eof")
         }
+        val innerEnd = innerStart + l2
         val tag = inherited?.copy() ?: Tag.empty()
         if (tag.type == ValueType.UNKNOWN) tag.type = ValueType.OBJ
         val keyPrefixPos = offset
@@ -581,8 +570,21 @@ class Decoder() {
         return when {
             l < WireConstants.CONTAINER_LEN_1 -> intArrayOf(0, l)
             l == WireConstants.CONTAINER_LEN_1 -> intArrayOf(1, 0)
-            else -> intArrayOf(2, 0)
+            l == WireConstants.CONTAINER_LEN_2 -> intArrayOf(2, 0)
+            l == WireConstants.CONTAINER_LEN_3 -> intArrayOf(3, 0)
+            l == WireConstants.CONTAINER_LEN_4 -> intArrayOf(4, 0)
+            else -> intArrayOf(0, l)
         }
+    }
+
+    // v0.3.0：按 extra 字节大端读出长度槽（支持 1/2/3/4 字节），先做边界检查再消费
+    private fun readLen(extra: Int): Int {
+        if (extra <= 0) return 0
+        if (offset + extra > data.size) throw MmDecodeException("Unexpected end of data")
+        var v: Long = 0
+        for (i in 0 until extra) v = (v shl 8) or (data[offset++].toInt() and 0xFF).toLong()
+        if (v > Int.MAX_VALUE.toLong()) throw MmDecodeException("length exceeds addressable range")
+        return v.toInt()
     }
 
     private fun readBytes(n: Int): ByteArray {

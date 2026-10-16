@@ -54,11 +54,28 @@ int main(int argc, char **argv) {
     }
 
     if (strcmp(argv[1], "--decode") == 0) {
-        char hex_input[65536];
+        // Dynamic hex buffer: large payloads (e.g. ~70KB fixtures) exceed any
+        // fixed stack buffer, so grow on demand while reading stdin.
+        size_t cap = 1 << 16;
+        char *hex_input = malloc(cap);
+        if (!hex_input) {
+            fprintf(stderr, "hex decode error: out of memory\n");
+            return 1;
+        }
         size_t hex_len = 0;
         int ch;
-        while ((ch = getchar()) != EOF && hex_len < sizeof(hex_input) - 1) {
+        while ((ch = getchar()) != EOF) {
             if (ch != '\n' && ch != ' ') {
+                if (hex_len + 1 >= cap) {
+                    cap *= 2;
+                    char *nb = realloc(hex_input, cap);
+                    if (!nb) {
+                        fprintf(stderr, "hex decode error: out of memory\n");
+                        free(hex_input);
+                        return 1;
+                    }
+                    hex_input = nb;
+                }
                 hex_input[hex_len++] = ch;
             }
         }
@@ -66,16 +83,18 @@ int main(int argc, char **argv) {
 
         if (hex_len % 2 != 0) {
             fprintf(stderr, "hex decode error: odd length\n");
+            free(hex_input);
             return 1;
         }
 
         size_t wire_len = hex_len / 2;
-        uint8_t *wire = malloc(wire_len);
+        uint8_t *wire = malloc(wire_len ? wire_len : 1);
         for (size_t i = 0; i < wire_len; i++) {
             unsigned int byte;
             sscanf(&hex_input[i * 2], "%2x", &byte);
             wire[i] = (uint8_t)byte;
         }
+        free(hex_input);
 
         mm_buffer_t buf;
         buf.data = wire;

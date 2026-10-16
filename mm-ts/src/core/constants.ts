@@ -175,24 +175,33 @@ export const FloatLen6Byte = FloatLenMask - 2;
 export const FloatLen7Byte = FloatLenMask - 1;
 export const FloatLen8Byte = FloatLenMask;
 
+// String 维持 v0.2.x：内联 0..29，30/31 = 1/2 字节大端长度档位标记。
+// String 不参与 v0.3.0 的 4 字节长度槽扩展。
 export const StringLenMask = 0b11111;
 export const StringLen1Byte = StringLenMask - 1;
 export const StringLen2Byte = StringLenMask;
 
 export const BytesLenMask = 0b11111;
-export const BytesLen1Byte = BytesLenMask - 1;
-export const BytesLen2Byte = BytesLenMask;
+export const BytesLen1Byte = BytesLenMask - 3;
+export const BytesLen2Byte = BytesLenMask - 2;
+export const BytesLen3Byte = BytesLenMask - 1;
+export const BytesLen4Byte = BytesLenMask;
 
 export const ContainerMask = 0b10000;
 export const ContainerObject = 0b00000;
 export const ContainerArray = 0b10000;
 export const ContainerLenMask = 0b01111;
-export const ContainerLen1Byte = ContainerLenMask - 1;
-export const ContainerLen2Byte = ContainerLenMask;
+// v0.3.0：内联 0..11，12/13/14/15 = 1/2/3/4 字节大端长度档位标记
+export const ContainerLen1Byte = ContainerLenMask - 3;
+export const ContainerLen2Byte = ContainerLenMask - 2;
+export const ContainerLen3Byte = ContainerLenMask - 1;
+export const ContainerLen4Byte = ContainerLenMask;
 
 export const TagLenMask = 0b11111;
-export const TagLen1Byte = TagLenMask - 1;
-export const TagLen2Byte = TagLenMask;
+export const TagLen1Byte = TagLenMask - 3;
+export const TagLen2Byte = TagLenMask - 2;
+export const TagLen3Byte = TagLenMask - 1;
+export const TagLen4Byte = TagLenMask;
 
 export const TagPayload1Byte = BytesLenMask - 1;
 export const TagPayload2Byte = BytesLenMask;
@@ -215,6 +224,10 @@ export function tagLen(b: number): [number, number] {
       return [1, 0];
     case TagLen2Byte:
       return [2, 0];
+    case TagLen3Byte:
+      return [3, 0];
+    case TagLen4Byte:
+      return [4, 0];
     default:
       return [0, l];
   }
@@ -227,6 +240,10 @@ export function containerLen(b: number): [number, number] {
       return [1, 0];
     case ContainerLen2Byte:
       return [2, 0];
+    case ContainerLen3Byte:
+      return [3, 0];
+    case ContainerLen4Byte:
+      return [4, 0];
     default:
       return [0, l];
   }
@@ -236,25 +253,31 @@ export function isArray(b: number): boolean {
   return (b & ContainerMask) === ContainerArray;
 }
 
+// String 维持 v0.2.x 语义：内联 0..29，30 = 1 字节，31 = 2 字节（无 3/4 档）。
 export function stringLen(b: number): [number, number] {
   const l = b & StringLenMask;
   if (l < StringLen1Byte) {
     return [0, l];
   } else if (l === StringLen1Byte) {
-    return [1, l];
+    return [1, 0];
   } else {
-    return [2, l];
+    return [2, 0];
   }
 }
 
 export function bytesLen(b: number): [number, number] {
   const l = b & BytesLenMask;
-  if (l < BytesLen1Byte) {
-    return [0, l];
-  } else if (l === BytesLen1Byte) {
-    return [1, l];
-  } else {
-    return [2, l];
+  switch (l) {
+    case BytesLen1Byte:
+      return [1, 0];
+    case BytesLen2Byte:
+      return [2, 0];
+    case BytesLen3Byte:
+      return [3, 0];
+    case BytesLen4Byte:
+      return [4, 0];
+    default:
+      return [0, l];
   }
 }
 

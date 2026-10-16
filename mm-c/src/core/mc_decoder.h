@@ -9,6 +9,7 @@ typedef struct {
     const uint8_t* data;
     size_t size;
     size_t offset;
+    int error;  /* v0.3.0：置位表示遇到截断/越界数据，顶层 decode 据此返回 NULL */
 } mm_decoder_t;
 
 mm_decoder_t* mm_decoder_new(const uint8_t* data, size_t size);

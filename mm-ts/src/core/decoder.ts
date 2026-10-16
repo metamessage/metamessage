@@ -152,13 +152,33 @@ export class MMDecoder {
     switch (l1) {
       case 0:
         break;
-      case 1:
+      case 1: {
         length = this.readByte();
         break;
-      case 2:
+      }
+      case 2: {
         const lenBytes = this.readBytes(2);
-        length = (lenBytes[0] ?? 0) | ((lenBytes[1] ?? 0) << 8);
+        // 大端：先写的是高位字节（与 encoder 的 (length >> 8) 在前一致）
+        length = ((lenBytes[0] ?? 0) << 8) | (lenBytes[1] ?? 0);
         break;
+      }
+      case 3: {
+        const lenBytes = this.readBytes(3);
+        length =
+          ((lenBytes[0] ?? 0) << 16) |
+          ((lenBytes[1] ?? 0) << 8) |
+          (lenBytes[2] ?? 0);
+        break;
+      }
+      case 4: {
+        const lenBytes = this.readBytes(4);
+        length =
+          (lenBytes[0] ?? 0) * 0x1000000 +
+          ((lenBytes[1] ?? 0) << 16) +
+          ((lenBytes[2] ?? 0) << 8) +
+          (lenBytes[3] ?? 0);
+        break;
+      }
       default:
         throw new Error('Invalid data');
     }
@@ -1051,6 +1071,8 @@ export class MMDecoder {
       const bytes = this.readBytes(2);
       length = ((bytes[0] ?? 0) << 8) | (bytes[1] ?? 0);
     }
+    // String 维持 v0.2.x：长度字段最多 2 字节（内联 / 1 字节 / 2 字节）。
+    // 只有 Bytes / Container / Tag 才有 3、4 字节档。
 
     const bs = this.readBytes(length);
     const text = new TextDecoder('utf-8').decode(bs);
@@ -1097,6 +1119,17 @@ export class MMDecoder {
     } else if (lenBytes === 2) {
       const bytes = this.readBytes(2);
       length = ((bytes[0] ?? 0) << 8) | (bytes[1] ?? 0);
+    } else if (lenBytes === 3) {
+      const bytes = this.readBytes(3);
+      length =
+        ((bytes[0] ?? 0) << 16) | ((bytes[1] ?? 0) << 8) | (bytes[2] ?? 0);
+    } else if (lenBytes === 4) {
+      const bytes = this.readBytes(4);
+      length =
+        (bytes[0] ?? 0) * 0x1000000 +
+        ((bytes[1] ?? 0) << 16) +
+        ((bytes[2] ?? 0) << 8) +
+        (bytes[3] ?? 0);
     }
 
     const bs = this.readBytes(length);
@@ -1186,6 +1219,17 @@ export class MMDecoder {
     } else if (l1 === 2) {
       const bytes = this.readBytes(2);
       length = ((bytes[0] ?? 0) << 8) | (bytes[1] ?? 0);
+    } else if (l1 === 3) {
+      const bytes = this.readBytes(3);
+      length =
+        ((bytes[0] ?? 0) << 16) | ((bytes[1] ?? 0) << 8) | (bytes[2] ?? 0);
+    } else if (l1 === 4) {
+      const bytes = this.readBytes(4);
+      length =
+        (bytes[0] ?? 0) * 0x1000000 +
+        ((bytes[1] ?? 0) << 16) +
+        ((bytes[2] ?? 0) << 8) +
+        (bytes[3] ?? 0);
     }
 
     const arr = new NodeArray();
@@ -1230,6 +1274,17 @@ export class MMDecoder {
     } else if (l1 === 2) {
       const bytes = this.readBytes(2);
       length = ((bytes[0] ?? 0) << 8) | (bytes[1] ?? 0);
+    } else if (l1 === 3) {
+      const bytes = this.readBytes(3);
+      length =
+        ((bytes[0] ?? 0) << 16) | ((bytes[1] ?? 0) << 8) | (bytes[2] ?? 0);
+    } else if (l1 === 4) {
+      const bytes = this.readBytes(4);
+      length =
+        (bytes[0] ?? 0) * 0x1000000 +
+        ((bytes[1] ?? 0) << 16) +
+        ((bytes[2] ?? 0) << 8) +
+        (bytes[3] ?? 0);
     }
 
     const lArray = this.readByte();

@@ -38,7 +38,7 @@ MetaMessage is naturally suited for AI understanding and interaction, solving am
 
 Note:
 
-- Encoding currently supports up to 65535 bytes (64KB). This limit may be extended once full support for document types is implemented.
+- Encoding currently supports up to 4294967295 bytes (~4GB) for Bytes / Object / Array / Tag length slots (4 tiers); String remains at 2 tiers with a 65535-byte (64KB) limit. This limit may be extended once full support for document types is implemented.
 - The project is under active development and testing, and is not yet recommended for production use.
 - APIs and behavior may still change, so please track version updates.
 
@@ -71,7 +71,7 @@ Note:
 
 Define data types using the tag `type=`. The format is `type=typeIdentifier`, e.g. `type=i` means integer.
 
-- doc: Encoding supports up to 65535 bytes (64KB). This limit may be extended after full support for document types
+- doc: Encoding supports up to 4294967295 bytes (~4GB) for Bytes / Object / Array / Tag; String stays at 65535 bytes (64KB). This limit may be extended after full support for document types
 - vec: dynamic arrays/slices, do not allow composite types
 - arr: array, fixed length, do not allow composite types
 - obj: object/struct, composite structure, corresponds to multi-language struct/object

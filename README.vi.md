@@ -38,7 +38,7 @@ MetaMessage tự nhiên phù hợp với hiểu biết và tương tác AI, gi�
 
 Lưu ý:
 
-- Mã hóa hiện hỗ trợ tối đa 65535 byte (64KB). Giới hạn này có thể được mở rộng khi hỗ trợ đầy đủ các loại tài liệu.
+- Mã hóa hiện hỗ trợ tối đa 4294967295 byte (~4GB) cho các ô độ dài của Bytes / Object / Array / Tag (4 mức); String vẫn ở 2 mức với giới hạn 65535 byte (64KB). Giới hạn này có thể được mở rộng khi hỗ trợ đầy đủ các loại tài liệu.
 - Dự án đang trong giai đoạn phát triển và thử nghiệm, và chưa nên sử dụng trong môi trường sản xuất.
 - API và hành vi có thể vẫn thay đổi, nên theo dõi các bản cập nhật phiên bản.
 
@@ -71,7 +71,7 @@ Lưu ý:
 
 Định nghĩa kiểu dữ liệu bằng thẻ `type=`. Định dạng là `type=typeIdentifier`, ví dụ `type=i` nghĩa là số nguyên.
 
-- doc: Mã hóa hỗ trợ đến 65535 byte (64KB). Giới hạn này có thể được mở rộng sau khi hỗ trợ đầy đủ các loại tài liệu
+- doc: Mã hóa hỗ trợ đến 4294967295 byte (~4GB) cho Bytes / Object / Array / Tag; String vẫn giới hạn ở 65535 byte (64KB). Giới hạn này có thể được mở rộng sau khi hỗ trợ đầy đủ các loại tài liệu
 - vec: mảng/slice động, không cho phép kiểu hợp chất
 - arr: mảng cố định, không cho phép kiểu hợp chất
 - obj: đối tượng/struct, cấu trúc hợp chất, tương ứng với struct/object đa ngôn ngữ

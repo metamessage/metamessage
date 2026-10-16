@@ -12,9 +12,12 @@ tests/
 │   ├── 03_tags/       # mm: tag annotations
 │   ├── 04_comments/   # Line/block/mixed comments
 │   ├── 05_edge_cases/ # Trailing comma, negative numbers, empty string, deep nesting
-│   └── 06_complex/    # Real-world scenarios: person, product, config
+│   ├── 06_complex/    # Real-world scenarios: person, product, config
+│   └── 07_large/      # v0.3.0 容量扩容：>65536 字节大 payload（3/4 字节长度档）
 ├── harness/           # Language-specific CLI harnesses (one per language)
 ├── runner.go          # Go reference test runner
+├── compare_with_go.sh # 单语言 vs Go 字节/还原一致性对比
+├── boundary_cross_lang.sh # v0.3.0 容量档位跨语言门禁（大 payload + 截断负例）
 └── run_cross_lang.sh  # Cross-language comparison script
 ```
 
@@ -30,6 +33,23 @@ go run tests/runner.go
 
 ```bash
 ./tests/run_cross_lang.sh
+```
+
+### Compare a single language against the Go reference
+
+对全部 fixture 验证：编码字节与 Go 完全一致 + 还原 JSONC 与 Go 一致。
+
+```bash
+./tests/compare_with_go.sh <lang>   # lang: ts c cpp cs kt php py rs sw
+```
+
+### Capacity boundary gate (v0.3.0)
+
+验证 4 字节长度档扩容：大 payload（`07_large/big_object.jsonc`，越过 65536→3B 档）在所有语言 decode 与 Go 一致；向 stdin 喂入截断的 3B/4B 档位 wire 时，所有语言必须显式报错（非零退出、不崩溃(非 128+ 信号)、不静默(exit 0)、不超时）。
+
+```bash
+./tests/boundary_cross_lang.sh          # 全部 10 语言
+./tests/boundary_cross_lang.sh cs php   # 指定语言
 ```
 
 ## Fixture Format
@@ -63,3 +83,6 @@ Borderline cases: trailing commas, negative numbers, empty strings, deep nesting
 
 ### 06_complex
 Real-world scenarios combining multiple features: person, product, config objects.
+
+### 07_large
+v0.3.0 容量扩容验证。`big_object.jsonc` 含一个 70000 元素内联整数数组，编码后超过 65536 字节，触发 Object/Array 的 3 字节长度档（首字节 0xCE）。用于跨语言验证大长度槽的编码字节一致与还原无损。

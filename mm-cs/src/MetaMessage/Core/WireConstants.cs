@@ -36,20 +36,29 @@ public static class WireConstants
     public const int STRING_LEN_1 = STRING_LEN_MASK - 1;
     public const int STRING_LEN_2 = STRING_LEN_MASK;
 
+    // Bytes length（v0.3.0：4 档；内联 0..27，档位标记 28/29/30/31）
     public const int BYTES_LEN_MASK = 0b11111;
-    public const int BYTES_LEN_1 = BYTES_LEN_MASK - 1;
-    public const int BYTES_LEN_2 = BYTES_LEN_MASK;
+    public const int BYTES_LEN_1 = BYTES_LEN_MASK - 3;
+    public const int BYTES_LEN_2 = BYTES_LEN_MASK - 2;
+    public const int BYTES_LEN_3 = BYTES_LEN_MASK - 1;
+    public const int BYTES_LEN_4 = BYTES_LEN_MASK;
 
     public const int CONTAINER_MASK = 0b10000;
     public const int CONTAINER_MAP = 0b00000;
     public const int CONTAINER_ARRAY = 0b10000;
+    // Container length（v0.3.0：4 档；内联 0..11，档位标记 12/13/14/15）
     public const int CONTAINER_LEN_MASK = 0b01111;
-    public const int CONTAINER_LEN_1 = CONTAINER_LEN_MASK - 1;
-    public const int CONTAINER_LEN_2 = CONTAINER_LEN_MASK;
+    public const int CONTAINER_LEN_1 = CONTAINER_LEN_MASK - 3;
+    public const int CONTAINER_LEN_2 = CONTAINER_LEN_MASK - 2;
+    public const int CONTAINER_LEN_3 = CONTAINER_LEN_MASK - 1;
+    public const int CONTAINER_LEN_4 = CONTAINER_LEN_MASK;
 
+    // Tag length（v0.3.0：4 档；tag+payload 总槽；内联 0..27）
     public const int TAG_LEN_MASK = 0b11111;
-    public const int TAG_LEN_1 = TAG_LEN_MASK - 1;
-    public const int TAG_LEN_2 = TAG_LEN_MASK;
+    public const int TAG_LEN_1 = TAG_LEN_MASK - 3;
+    public const int TAG_LEN_2 = TAG_LEN_MASK - 2;
+    public const int TAG_LEN_3 = TAG_LEN_MASK - 1;
+    public const int TAG_LEN_4 = TAG_LEN_MASK;
 
     public const int TAG_PAYLOAD_1 = BYTES_LEN_MASK - 1;
     public const int TAG_PAYLOAD_2 = BYTES_LEN_MASK;

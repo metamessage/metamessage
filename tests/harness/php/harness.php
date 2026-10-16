@@ -32,7 +32,13 @@ if ($argv[1] === '--encode') {
     }
     try {
         $wire = MetaMessage::FromJSONC($input);
-        echo bin2hex(pack('C*', ...$wire));
+        // Avoid `pack('C*', ...$wire)`: spreading a large array overflows the
+        // engine's argument limit / stack for ~70KB payloads. Build hex directly.
+        $hex = '';
+        foreach ($wire as $b) {
+            $hex .= sprintf('%02x', $b & 0xFF);
+        }
+        echo $hex;
     } catch (Exception $e) {
         fwrite(STDERR, "encode error: " . $e->getMessage() . "\n");
         exit(1);

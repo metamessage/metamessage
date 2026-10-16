@@ -805,10 +805,11 @@ class JsoncParser
                     if ($tag->type !== ValueType::UNKNOWN) {
                         throw new \Exception(sprintf('null is not supported for type %s', $tag->type->wireName()));
                     }
-                    $value = new NodeNull();
-                    $value->Tag = $tag;
-                    $value->Path = $path;
-                    return $value;
+                    // Always reject the null literal (aligned with the Go
+                    // reference parser since v0.2.8). Null-ness is expressed
+                    // via `is_null` tags, not literals; NodeNull remains
+                    // producible via ValueToNode.
+                    throw new \Exception('null is not supported');
 
                 default:
                     throw new \Exception(sprintf('unexpected token %s', $tok->type));

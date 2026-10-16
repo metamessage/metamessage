@@ -12,6 +12,7 @@
 static uint8_t dec_read_byte(mm_decoder_t *d) {
   if (d->offset >= d->size) {
     errno = EINVAL;
+    d->error = 1;
     return 0;
   }
   return d->data[d->offset++];
@@ -20,6 +21,7 @@ static uint8_t dec_read_byte(mm_decoder_t *d) {
 static const uint8_t *dec_read_bytes(mm_decoder_t *d, size_t len) {
   if (d->offset + len > d->size) {
     errno = EINVAL;
+    d->error = 1;
     return NULL;
   }
   const uint8_t *p = d->data + d->offset;
@@ -469,12 +471,15 @@ static node_t *dec_decode_bytes(mm_decoder_t *d, uint8_t b, mm_tag_t *tag) {
 
   if (extra_len == 0) {
     bytes_len = (size_t)inline_len;
-  } else if (extra_len == 1) {
-    bytes_len = (size_t)dec_read_byte(d);
   } else {
-    uint8_t hi = dec_read_byte(d);
-    uint8_t lo = dec_read_byte(d);
-    bytes_len = ((size_t)hi << 8) | (size_t)lo;
+    /* v0.3.0：1/2/3/4 字节大端长度槽 */
+    bytes_len = (size_t)dec_read_uint64_be(d, extra_len);
+  }
+
+  /* 截断防护：声明长度超出剩余数据 → 显式报错，不静默补空 */
+  if (bytes_len > 0 && d->offset + bytes_len > d->size) {
+    d->error = 1;
+    return NULL;
   }
 
   node_t *node = node_new_scalar();
@@ -770,12 +775,15 @@ static node_t *dec_decode_container(mm_decoder_t *d, uint8_t b,
 
   if (extra_len == 0) {
     container_len = (size_t)inline_len;
-  } else if (extra_len == 1) {
-    container_len = (size_t)dec_read_byte(d);
   } else {
-    uint8_t hi = dec_read_byte(d);
-    uint8_t lo = dec_read_byte(d);
-    container_len = ((size_t)hi << 8) | (size_t)lo;
+    /* v0.3.0：1/2/3/4 字节大端长度槽 */
+    container_len = (size_t)dec_read_uint64_be(d, extra_len);
+  }
+
+  /* 截断防护：容器 payload 长度超出剩余数据 → 显式报错，避免进入死循环/越界迭代 */
+  if (d->offset + container_len > d->size) {
+    d->error = 1;
+    return NULL;
   }
 
   if (is_array) {
@@ -1240,12 +1248,9 @@ static node_t *dec_decode_tag(mm_decoder_t *d, uint8_t b,
 
   if (extra_len == 0) {
     total_len = (size_t)inline_len;
-  } else if (extra_len == 1) {
-    total_len = (size_t)dec_read_byte(d);
   } else {
-    uint8_t hi = dec_read_byte(d);
-    uint8_t lo = dec_read_byte(d);
-    total_len = ((size_t)hi << 8) | (size_t)lo;
+    /* v0.3.0：1/2/3/4 字节大端长度槽 */
+    total_len = (size_t)dec_read_uint64_be(d, extra_len);
   }
 
   size_t tag_data_start = d->offset;
@@ -1620,4 +1625,12 @@ mm_decoder_t *mm_decoder_new(const uint8_t *data, size_t size) {
 
 void mm_decoder_free(mm_decoder_t *d) { free(d); }
 
-node_t *mm_decoder_decode(mm_decoder_t *d) { return dec_decode_node(d, NULL); }
+node_t *mm_decoder_decode(mm_decoder_t *d) {
+  node_t *n = dec_decode_node(d, NULL);
+  if (d->error) {
+    if (n)
+      node_free(n);
+    return NULL;
+  }
+  return n;
+}

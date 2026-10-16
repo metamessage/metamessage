@@ -38,7 +38,7 @@ MetaMessage es naturalmente adecuado para la comprensión e interacción de IA, 
 
 Nota:
 
-- La codificación admite actualmente hasta 65535 bytes (64KB). Este límite puede ampliarse cuando se implemente el soporte completo de tipos de documento.
+- La codificación admite actualmente hasta 4294967295 bytes (~4GB) para las ranuras de longitud de Bytes / Object / Array / Tag (4 niveles); String sigue en 2 niveles con un límite de 65535 bytes (64KB). Este límite puede ampliarse cuando se implemente el soporte completo de tipos de documento.
 - El proyecto está en desarrollo y pruebas activas, y aún no se recomienda su uso en producción.
 - Las API y el comportamiento aún pueden cambiar, por lo que conviene seguir las actualizaciones de versión.
 
@@ -67,7 +67,7 @@ Nota:
 - Las estructuras y slices no necesitan etiquetas de tipo explícitas
 - Cuando el tamaño del arreglo es > 0, no se necesitan etiquetas de tipo explícitas
 - Los flotantes no admiten NaN/Inf/-0
-- Codificación admite hasta 65535 bytes (64KB); esto puede ampliarse en el futuro
+- Codificación admite hasta 4294967295 bytes (~4GB) para Bytes / Object / Array / Tag; String sigue limitado a 65535 bytes (64KB); esto puede ampliarse en el futuro
 - Los literales de punto flotante deben incluir un punto decimal
 - Los literales enteros no deben incluir un punto decimal
 
@@ -75,7 +75,7 @@ Nota:
 
 Defina tipos de datos usando la etiqueta `type=`. El formato es `type=typeIdentifier`, p. ej. `type=i` significa entero.
 
-- doc: La codificación admite hasta 65535 bytes (64KB). Este límite puede ampliarse después del soporte completo para tipos de documento
+- doc: La codificación admite hasta 4294967295 bytes (~4GB) para Bytes / Object / Array / Tag; String sigue limitado a 65535 bytes (64KB). Este límite puede ampliarse después del soporte completo para tipos de documento
 - vec: arreglos/slices dinámicos, no permiten tipos compuestos
 - arr: array, longitud fija, no permite tipos compuestos
 - obj: objeto/estructura, estructura compuesta, corresponde a struct/object multilenguaje

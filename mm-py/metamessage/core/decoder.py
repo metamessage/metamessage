@@ -56,6 +56,8 @@ SimpleKey        = 31
 
 Max1Byte = 0xFF
 Max2Byte = 0xFFFF
+Max3Byte = 0xFFFFFF
+Max4Byte = 0xFFFFFFFF
 
 IntLenMask  = 0b11111
 IntLen1Byte = IntLenMask - 7
@@ -83,19 +85,25 @@ StringLen1Byte = StringLenMask - 1
 StringLen2Byte = StringLenMask
 
 BytesLenMask  = 0b11111
-BytesLen1Byte = BytesLenMask - 1
-BytesLen2Byte = BytesLenMask
+BytesLen1Byte = BytesLenMask - 3  # 28
+BytesLen2Byte = BytesLenMask - 2  # 29
+BytesLen3Byte = BytesLenMask - 1  # 30
+BytesLen4Byte = BytesLenMask      # 31
 
 ContainerMask   = 0b10000
 ContainerObject = 0b00000
 ContainerArray  = 0b10000
 ContainerLenMask  = 0b01111
-ContainerLen1Byte = ContainerLenMask - 1
-ContainerLen2Byte = ContainerLenMask
+ContainerLen1Byte = ContainerLenMask - 3  # 12
+ContainerLen2Byte = ContainerLenMask - 2  # 13
+ContainerLen3Byte = ContainerLenMask - 1  # 14
+ContainerLen4Byte = ContainerLenMask      # 15
 
 TagLenMask  = 0b11111
-TagLen1Byte = TagLenMask - 1
-TagLen2Byte = TagLenMask
+TagLen1Byte = TagLenMask - 3  # 28
+TagLen2Byte = TagLenMask - 2  # 29
+TagLen3Byte = TagLenMask - 1  # 30
+TagLen4Byte = TagLenMask      # 31
 
 PrefixMask = 0b11100000
 SuffixMask = 0b00011111
@@ -139,8 +147,12 @@ def _bytes_len(b: int):
         return 0, l
     elif l == BytesLen1Byte:
         return 1, 0
-    else:
+    elif l == BytesLen2Byte:
         return 2, 0
+    elif l == BytesLen3Byte:
+        return 3, 0
+    else:  # BytesLen4Byte
+        return 4, 0
 
 
 def _container_len(b: int):
@@ -149,8 +161,12 @@ def _container_len(b: int):
         return 0, l
     elif l == ContainerLen1Byte:
         return 1, 0
-    else:
+    elif l == ContainerLen2Byte:
         return 2, 0
+    elif l == ContainerLen3Byte:
+        return 3, 0
+    else:  # ContainerLen4Byte
+        return 4, 0
 
 
 def _tag_len(b: int):
@@ -159,8 +175,12 @@ def _tag_len(b: int):
         return 0, l
     elif l == TagLen1Byte:
         return 1, 0
-    else:
+    elif l == TagLen2Byte:
         return 2, 0
+    elif l == TagLen3Byte:
+        return 3, 0
+    else:  # TagLen4Byte
+        return 4, 0
 
 
 def _is_array(b: int) -> bool:
@@ -250,6 +270,16 @@ class Decoder:
         self.offset += n
         return bs
 
+    def _read_len(self, extra: int) -> int:
+        # v0.3.0：按 extra 字节大端读出长度槽（支持 1/2/3/4 字节），越界由 _read_bytes 显式报错
+        if extra <= 0:
+            return 0
+        bs = self._read_bytes(extra)
+        v = 0
+        for by in bs:
+            v = (v << 8) | by
+        return v
+
     def decode(self) -> Any:
         node = self._decode_top()
         return _node_to_python(node)
@@ -287,11 +317,8 @@ class Decoder:
     def _decode_tag(self, prefix: int, path: str) -> Tuple[Node, int]:
         l1, l2 = _tag_len(prefix)
 
-        if l1 == 1:
-            l2 = self._read_byte()
-        elif l1 == 2:
-            bs = self._read_bytes(2)
-            l2 = (bs[0] << 8) | bs[1]
+        if l1:
+            l2 = self._read_len(l1)
 
         tag = Tag()
 
@@ -843,11 +870,8 @@ class Decoder:
     def _decode_string(self, b: int, tag: Optional[Tag], path: str) -> Tuple[Node, int]:
         l1, l2 = _string_len(b)
 
-        if l1 == 1:
-            l2 = self._read_byte()
-        elif l1 == 2:
-            bs = self._read_bytes(2)
-            l2 = (bs[0] << 8) | bs[1]
+        if l1:
+            l2 = self._read_len(l1)
 
         if l2 > 0:
             by = self._read_bytes(l2)
@@ -885,11 +909,8 @@ class Decoder:
     def _decode_bytes(self, b: int, tag: Optional[Tag], path: str) -> Tuple[Node, int]:
         l1, l2 = _bytes_len(b)
 
-        if l1 == 1:
-            l2 = self._read_byte()
-        elif l1 == 2:
-            bs = self._read_bytes(2)
-            l2 = (bs[0] << 8) | bs[1]
+        if l1:
+            l2 = self._read_len(l1)
 
         if l2 > 0:
             bs = self._read_bytes(l2)
@@ -951,11 +972,8 @@ class Decoder:
 
         l1, l2 = _container_len(b)
 
-        if l1 == 1:
-            l2 = self._read_byte()
-        elif l1 == 2:
-            bs = self._read_bytes(2)
-            l2 = (bs[0] << 8) | bs[1]
+        if l1:
+            l2 = self._read_len(l1)
 
         arr = NodeArray(tag=tag, path=path)
         index = 0
@@ -983,11 +1001,8 @@ class Decoder:
 
         l1, l2 = _container_len(b)
 
-        if l1 == 1:
-            l2 = self._read_byte()
-        elif l1 == 2:
-            bs = self._read_bytes(2)
-            l2 = (bs[0] << 8) | bs[1]
+        if l1:
+            l2 = self._read_len(l1)
 
         obj = NodeObject(tag=tag, path=path)
 

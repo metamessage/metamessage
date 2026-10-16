@@ -10,8 +10,8 @@ func (e *encoder) encodeTag(bs []byte, tag []byte) (n uint32, err error) {
 	}
 
 	length := len(bs) + len(tag)
-	if length > Max2Byte {
-		err = fmt.Errorf("tag+payload too long, max length: %d, actual: %d", Max2Byte, length)
+	if length > Max4Byte {
+		err = fmt.Errorf("tag+payload too long, max length: %d, actual: %d", Max4Byte, length)
 		return
 	}
 
@@ -25,17 +25,31 @@ func (e *encoder) encodeTag(bs []byte, tag []byte) (n uint32, err error) {
 			return
 		}
 		nb, err = e.writeBytes(bs)
-	} else if length < Max1Byte {
+	} else if length <= Max1Byte {
 		sign |= Prefix(TagLen1Byte)
 		if ns, err = e.writeBytesWithPrefix(tag, byte(sign), byte(length)); err != nil {
 			return
 		}
 		nb, err = e.writeBytes(bs)
-	// 同 encode_string：最后一档必须 <=，否则 tag+payload 正好 65535 字节时
-	// 静默写 0 字节（节点连 tag 带内容整个丢失）。
 	} else if length <= Max2Byte {
 		sign |= Prefix(TagLen2Byte)
 		if ns, err = e.writeBytesWithPrefix(tag, byte(sign), byte(length>>8), byte(length)); err != nil {
+			return
+		}
+		nb, err = e.writeBytes(bs)
+	} else if length <= Max3Byte {
+		sign |= Prefix(TagLen3Byte)
+		if ns, err = e.writeBytesWithPrefix(tag, byte(sign),
+			byte(length>>16), byte(length>>8), byte(length)); err != nil {
+			return
+		}
+		nb, err = e.writeBytes(bs)
+	// 同 encode_string：最后一档必须 <=，否则 tag+payload 正好 Max4Byte 字节时
+	// 静默写 0 字节（节点连 tag 带内容整个丢失）。
+	} else if length <= Max4Byte {
+		sign |= Prefix(TagLen4Byte)
+		if ns, err = e.writeBytesWithPrefix(tag, byte(sign),
+			byte(length>>24), byte(length>>16), byte(length>>8), byte(length)); err != nil {
 			return
 		}
 		nb, err = e.writeBytes(bs)
