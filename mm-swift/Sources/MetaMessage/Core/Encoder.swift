@@ -305,16 +305,7 @@ public class Encoder {
         let bytes = [UInt8](value)
         let len = bytes.count
 
-        if len < 30 {
-            buffer.write(MMPrefix.prefixBytes.rawValue | UInt8(len))
-        } else if len < 256 {
-            buffer.write(MMPrefix.prefixBytes.rawValue | MMConstants.bytesLen1Byte)
-            buffer.write(UInt8(len))
-        } else {
-            buffer.write(MMPrefix.prefixBytes.rawValue | MMConstants.bytesLen2Byte)
-            buffer.write(UInt8((len >> 8) & 0xFF))
-            buffer.write(UInt8(len & 0xFF))
-        }
+        buffer.write(lengthHeader(sign: MMPrefix.prefixBytes.rawValue, inlineLimit: Int(MMConstants.bytesLen1Byte), m1: MMConstants.bytesLen1Byte, m2: MMConstants.bytesLen2Byte, m3: MMConstants.bytesLen3Byte, m4: MMConstants.bytesLen4Byte, len: len))
         buffer.write(bytes)
     }
 
@@ -386,16 +377,7 @@ public class Encoder {
         let bytes = [UInt8](value)
         let len = bytes.count
 
-        if len < 30 {
-            buffer.write(MMPrefix.prefixBytes.rawValue | UInt8(len))
-        } else if len < 256 {
-            buffer.write(MMPrefix.prefixBytes.rawValue | MMConstants.bytesLen1Byte)
-            buffer.write(UInt8(len))
-        } else {
-            buffer.write(MMPrefix.prefixBytes.rawValue | MMConstants.bytesLen2Byte)
-            buffer.write(UInt8((len >> 8) & 0xFF))
-            buffer.write(UInt8(len & 0xFF))
-        }
+        buffer.write(lengthHeader(sign: MMPrefix.prefixBytes.rawValue, inlineLimit: Int(MMConstants.bytesLen1Byte), m1: MMConstants.bytesLen1Byte, m2: MMConstants.bytesLen2Byte, m3: MMConstants.bytesLen3Byte, m4: MMConstants.bytesLen4Byte, len: len))
         buffer.write(bytes)
     }
 
@@ -412,16 +394,7 @@ public class Encoder {
         let payload = [UInt8](valBuf.data)
         let len = payload.count
 
-        if len < 14 {
-            buffer.write(MMPrefix.container.rawValue | MMConstants.containerArray | UInt8(len))
-        } else if len < 256 {
-            buffer.write(MMPrefix.container.rawValue | MMConstants.containerArray | MMConstants.containerLen1Byte)
-            buffer.write(UInt8(len))
-        } else {
-            buffer.write(MMPrefix.container.rawValue | MMConstants.containerArray | MMConstants.containerLen2Byte)
-            buffer.write(UInt8((len >> 8) & 0xFF))
-            buffer.write(UInt8(len & 0xFF))
-        }
+        buffer.write(lengthHeader(sign: MMPrefix.container.rawValue | MMConstants.containerArray, inlineLimit: Int(MMConstants.containerLen1Byte), m1: MMConstants.containerLen1Byte, m2: MMConstants.containerLen2Byte, m3: MMConstants.containerLen3Byte, m4: MMConstants.containerLen4Byte, len: len))
         buffer.write(payload)
     }
 
@@ -438,16 +411,7 @@ public class Encoder {
         let payload = [UInt8](valBuf.data)
         let len = payload.count
 
-        if len < 14 {
-            buffer.write(MMPrefix.container.rawValue | MMConstants.containerArray | UInt8(len))
-        } else if len < 256 {
-            buffer.write(MMPrefix.container.rawValue | MMConstants.containerArray | MMConstants.containerLen1Byte)
-            buffer.write(UInt8(len))
-        } else {
-            buffer.write(MMPrefix.container.rawValue | MMConstants.containerArray | MMConstants.containerLen2Byte)
-            buffer.write(UInt8((len >> 8) & 0xFF))
-            buffer.write(UInt8(len & 0xFF))
-        }
+        buffer.write(lengthHeader(sign: MMPrefix.container.rawValue | MMConstants.containerArray, inlineLimit: Int(MMConstants.containerLen1Byte), m1: MMConstants.containerLen1Byte, m2: MMConstants.containerLen2Byte, m3: MMConstants.containerLen3Byte, m4: MMConstants.containerLen4Byte, len: len))
         buffer.write(payload)
     }
 
@@ -464,16 +428,7 @@ public class Encoder {
         let payload = [UInt8](valBuf.data)
         let len = payload.count
 
-        if len < 14 {
-            buffer.write(MMPrefix.container.rawValue | MMConstants.containerArray | UInt8(len))
-        } else if len < 256 {
-            buffer.write(MMPrefix.container.rawValue | MMConstants.containerArray | MMConstants.containerLen1Byte)
-            buffer.write(UInt8(len))
-        } else {
-            buffer.write(MMPrefix.container.rawValue | MMConstants.containerArray | MMConstants.containerLen2Byte)
-            buffer.write(UInt8((len >> 8) & 0xFF))
-            buffer.write(UInt8(len & 0xFF))
-        }
+        buffer.write(lengthHeader(sign: MMPrefix.container.rawValue | MMConstants.containerArray, inlineLimit: Int(MMConstants.containerLen1Byte), m1: MMConstants.containerLen1Byte, m2: MMConstants.containerLen2Byte, m3: MMConstants.containerLen3Byte, m4: MMConstants.containerLen4Byte, len: len))
         buffer.write(payload)
     }
 
@@ -490,16 +445,7 @@ public class Encoder {
         let payload = [UInt8](valBuf.data)
         let len = payload.count
 
-        if len < 14 {
-            buffer.write(MMPrefix.container.rawValue | MMConstants.containerArray | UInt8(len))
-        } else if len < 256 {
-            buffer.write(MMPrefix.container.rawValue | MMConstants.containerArray | MMConstants.containerLen1Byte)
-            buffer.write(UInt8(len))
-        } else {
-            buffer.write(MMPrefix.container.rawValue | MMConstants.containerArray | MMConstants.containerLen2Byte)
-            buffer.write(UInt8((len >> 8) & 0xFF))
-            buffer.write(UInt8(len & 0xFF))
-        }
+        buffer.write(lengthHeader(sign: MMPrefix.container.rawValue | MMConstants.containerArray, inlineLimit: Int(MMConstants.containerLen1Byte), m1: MMConstants.containerLen1Byte, m2: MMConstants.containerLen2Byte, m3: MMConstants.containerLen3Byte, m4: MMConstants.containerLen4Byte, len: len))
         buffer.write(payload)
     }
 
@@ -516,16 +462,7 @@ public class Encoder {
         let payload = [UInt8](valBuf.data)
         let len = payload.count
 
-        if len < 14 {
-            buffer.write(MMPrefix.container.rawValue | MMConstants.containerArray | UInt8(len))
-        } else if len < 256 {
-            buffer.write(MMPrefix.container.rawValue | MMConstants.containerArray | MMConstants.containerLen1Byte)
-            buffer.write(UInt8(len))
-        } else {
-            buffer.write(MMPrefix.container.rawValue | MMConstants.containerArray | MMConstants.containerLen2Byte)
-            buffer.write(UInt8((len >> 8) & 0xFF))
-            buffer.write(UInt8(len & 0xFF))
-        }
+        buffer.write(lengthHeader(sign: MMPrefix.container.rawValue | MMConstants.containerArray, inlineLimit: Int(MMConstants.containerLen1Byte), m1: MMConstants.containerLen1Byte, m2: MMConstants.containerLen2Byte, m3: MMConstants.containerLen3Byte, m4: MMConstants.containerLen4Byte, len: len))
         buffer.write(payload)
     }
 
@@ -542,16 +479,7 @@ public class Encoder {
         let payload = [UInt8](valBuf.data)
         let len = payload.count
 
-        if len < 14 {
-            buffer.write(MMPrefix.container.rawValue | MMConstants.containerArray | UInt8(len))
-        } else if len < 256 {
-            buffer.write(MMPrefix.container.rawValue | MMConstants.containerArray | MMConstants.containerLen1Byte)
-            buffer.write(UInt8(len))
-        } else {
-            buffer.write(MMPrefix.container.rawValue | MMConstants.containerArray | MMConstants.containerLen2Byte)
-            buffer.write(UInt8((len >> 8) & 0xFF))
-            buffer.write(UInt8(len & 0xFF))
-        }
+        buffer.write(lengthHeader(sign: MMPrefix.container.rawValue | MMConstants.containerArray, inlineLimit: Int(MMConstants.containerLen1Byte), m1: MMConstants.containerLen1Byte, m2: MMConstants.containerLen2Byte, m3: MMConstants.containerLen3Byte, m4: MMConstants.containerLen4Byte, len: len))
         buffer.write(payload)
     }
 
@@ -568,16 +496,7 @@ public class Encoder {
         let payload = [UInt8](valBuf.data)
         let len = payload.count
 
-        if len < 14 {
-            buffer.write(MMPrefix.container.rawValue | MMConstants.containerArray | UInt8(len))
-        } else if len < 256 {
-            buffer.write(MMPrefix.container.rawValue | MMConstants.containerArray | MMConstants.containerLen1Byte)
-            buffer.write(UInt8(len))
-        } else {
-            buffer.write(MMPrefix.container.rawValue | MMConstants.containerArray | MMConstants.containerLen2Byte)
-            buffer.write(UInt8((len >> 8) & 0xFF))
-            buffer.write(UInt8(len & 0xFF))
-        }
+        buffer.write(lengthHeader(sign: MMPrefix.container.rawValue | MMConstants.containerArray, inlineLimit: Int(MMConstants.containerLen1Byte), m1: MMConstants.containerLen1Byte, m2: MMConstants.containerLen2Byte, m3: MMConstants.containerLen3Byte, m4: MMConstants.containerLen4Byte, len: len))
         buffer.write(payload)
     }
 
@@ -874,16 +793,7 @@ extension Encoder {
             }
             let payload = [UInt8](valBuf.data)
             let len = payload.count
-            if len < 14 {
-                buffer.write(MMPrefix.container.rawValue | MMConstants.containerArray | UInt8(len))
-            } else if len < 256 {
-                buffer.write(MMPrefix.container.rawValue | MMConstants.containerArray | MMConstants.containerLen1Byte)
-                buffer.write(UInt8(len))
-            } else {
-                buffer.write(MMPrefix.container.rawValue | MMConstants.containerArray | MMConstants.containerLen2Byte)
-                buffer.write(UInt8((len >> 8) & 0xFF))
-                buffer.write(UInt8(len & 0xFF))
-            }
+            buffer.write(lengthHeader(sign: MMPrefix.container.rawValue | MMConstants.containerArray, inlineLimit: Int(MMConstants.containerLen1Byte), m1: MMConstants.containerLen1Byte, m2: MMConstants.containerLen2Byte, m3: MMConstants.containerLen3Byte, m4: MMConstants.containerLen4Byte, len: len))
             buffer.write(payload)
             return
         }
@@ -911,16 +821,7 @@ extension Encoder {
         }
         let payload = [UInt8](valBuf.data)
         let len = payload.count
-        if len < 14 {
-            buffer.write(MMPrefix.container.rawValue | MMConstants.containerArray | UInt8(len))
-        } else if len < 256 {
-            buffer.write(MMPrefix.container.rawValue | MMConstants.containerArray | MMConstants.containerLen1Byte)
-            buffer.write(UInt8(len))
-        } else {
-            buffer.write(MMPrefix.container.rawValue | MMConstants.containerArray | MMConstants.containerLen2Byte)
-            buffer.write(UInt8((len >> 8) & 0xFF))
-            buffer.write(UInt8(len & 0xFF))
-        }
+        buffer.write(lengthHeader(sign: MMPrefix.container.rawValue | MMConstants.containerArray, inlineLimit: Int(MMConstants.containerLen1Byte), m1: MMConstants.containerLen1Byte, m2: MMConstants.containerLen2Byte, m3: MMConstants.containerLen3Byte, m4: MMConstants.containerLen4Byte, len: len))
         buffer.write(payload)
         let payloadBytes = Array(buffer.data[payloadStart..<buffer.count])
 
@@ -964,32 +865,14 @@ extension Encoder {
 
         let keyBytesLen = keyBytes.count
         let keyArrayBuf = MMBuffer()
-        if keyBytesLen < 14 {
-            keyArrayBuf.write(MMPrefix.container.rawValue | MMConstants.containerArray | UInt8(keyBytesLen))
-        } else if keyBytesLen < 256 {
-            keyArrayBuf.write(MMPrefix.container.rawValue | MMConstants.containerArray | MMConstants.containerLen1Byte)
-            keyArrayBuf.write(UInt8(keyBytesLen))
-        } else {
-            keyArrayBuf.write(MMPrefix.container.rawValue | MMConstants.containerArray | MMConstants.containerLen2Byte)
-            keyArrayBuf.write(UInt8((keyBytesLen >> 8) & 0xFF))
-            keyArrayBuf.write(UInt8(keyBytesLen & 0xFF))
-        }
+        keyArrayBuf.write(lengthHeader(sign: MMPrefix.container.rawValue | MMConstants.containerArray, inlineLimit: Int(MMConstants.containerLen1Byte), m1: MMConstants.containerLen1Byte, m2: MMConstants.containerLen2Byte, m3: MMConstants.containerLen3Byte, m4: MMConstants.containerLen4Byte, len: keyBytesLen))
         keyArrayBuf.write(keyBytes)
         let keyArrayBytes = [UInt8](keyArrayBuf.data)
 
         let allBytes = keyArrayBytes + valBytes
         let allLen = allBytes.count
 
-        if allLen < 14 {
-            buffer.write(MMPrefix.container.rawValue | MMConstants.containerObject | UInt8(allLen))
-        } else if allLen < 256 {
-            buffer.write(MMPrefix.container.rawValue | MMConstants.containerObject | MMConstants.containerLen1Byte)
-            buffer.write(UInt8(allLen))
-        } else {
-            buffer.write(MMPrefix.container.rawValue | MMConstants.containerObject | MMConstants.containerLen2Byte)
-            buffer.write(UInt8((allLen >> 8) & 0xFF))
-            buffer.write(UInt8(allLen & 0xFF))
-        }
+        buffer.write(lengthHeader(sign: MMPrefix.container.rawValue | MMConstants.containerObject, inlineLimit: Int(MMConstants.containerLen1Byte), m1: MMConstants.containerLen1Byte, m2: MMConstants.containerLen2Byte, m3: MMConstants.containerLen3Byte, m4: MMConstants.containerLen4Byte, len: allLen))
         buffer.write(keyArrayBytes)
         buffer.write(valBytes)
 
@@ -1341,15 +1224,24 @@ extension Encoder {
     }
 
     private func writeTagPrefix(_ totalLen: Int) {
-        if totalLen < 30 {
-            buffer.write(MMPrefix.prefixTag.rawValue | UInt8(totalLen))
-        } else if totalLen < 256 {
-            buffer.write(MMPrefix.prefixTag.rawValue | MMConstants.tagLen1Byte)
-            buffer.write(UInt8(totalLen))
+        buffer.write(lengthHeader(sign: MMPrefix.prefixTag.rawValue, inlineLimit: Int(MMConstants.tagLen1Byte), m1: MMConstants.tagLen1Byte, m2: MMConstants.tagLen2Byte, m3: MMConstants.tagLen3Byte, m4: MMConstants.tagLen4Byte, len: totalLen))
+    }
+
+    // v0.3.0：统一 4 档长度头生成（内联 / 1 / 2 / 3 / 4 字节大端长度槽），超限显式报错
+    private func lengthHeader(sign: UInt8, inlineLimit: Int, m1: UInt8, m2: UInt8, m3: UInt8, m4: UInt8, len: Int) -> [UInt8] {
+        var out: [UInt8] = []
+        if len < inlineLimit {
+            out.append(sign | UInt8(len))
+        } else if len <= 0xFF {
+            out.append(sign | m1); out.append(UInt8(len & 0xFF))
+        } else if len <= 0xFFFF {
+            out.append(sign | m2); out.append(UInt8((len >> 8) & 0xFF)); out.append(UInt8(len & 0xFF))
+        } else if len <= 0xFFFFFF {
+            out.append(sign | m3); out.append(UInt8((len >> 16) & 0xFF)); out.append(UInt8((len >> 8) & 0xFF)); out.append(UInt8(len & 0xFF))
         } else {
-            buffer.write(MMPrefix.prefixTag.rawValue | MMConstants.tagLen2Byte)
-            buffer.write(UInt8((totalLen >> 8) & 0xFF))
-            buffer.write(UInt8(totalLen & 0xFF))
+            precondition(len <= 0xFFFFFFFF, "value too long: \(len)")
+            out.append(sign | m4); out.append(UInt8((len >> 24) & 0xFF)); out.append(UInt8((len >> 16) & 0xFF)); out.append(UInt8((len >> 8) & 0xFF)); out.append(UInt8(len & 0xFF))
         }
+        return out
     }
 }

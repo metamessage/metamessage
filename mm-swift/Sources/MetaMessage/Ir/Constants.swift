@@ -108,20 +108,29 @@ public enum MMConstants {
     public static let stringLen1Byte: UInt8 = 0b11110
     public static let stringLen2Byte: UInt8 = 0b11111
 
+    // Bytes length（v0.3.0：4 档；内联 0..27，档位标记 28/29/30/31）
     public static let bytesLenMask: UInt8 = 0b11111
-    public static let bytesLen1Byte: UInt8 = 0b11110
-    public static let bytesLen2Byte: UInt8 = 0b11111
+    public static let bytesLen1Byte: UInt8 = 0b11100
+    public static let bytesLen2Byte: UInt8 = 0b11101
+    public static let bytesLen3Byte: UInt8 = 0b11110
+    public static let bytesLen4Byte: UInt8 = 0b11111
 
     public static let containerMask: UInt8 = 0b10000
     public static let containerObject: UInt8 = 0b00000
     public static let containerArray: UInt8 = 0b10000
+    // Container length（v0.3.0：4 档；内联 0..11，档位标记 12/13/14/15）
     public static let containerLenMask: UInt8 = 0b01111
-    public static let containerLen1Byte: UInt8 = 0b01110
-    public static let containerLen2Byte: UInt8 = 0b01111
+    public static let containerLen1Byte: UInt8 = 0b01100
+    public static let containerLen2Byte: UInt8 = 0b01101
+    public static let containerLen3Byte: UInt8 = 0b01110
+    public static let containerLen4Byte: UInt8 = 0b01111
 
+    // Tag length（v0.3.0：4 档；tag+payload 合计槽；内联 0..27）
     public static let tagLenMask: UInt8 = 0b11111
-    public static let tagLen1Byte: UInt8 = 0b11110
-    public static let tagLen2Byte: UInt8 = 0b11111
+    public static let tagLen1Byte: UInt8 = 0b11100
+    public static let tagLen2Byte: UInt8 = 0b11101
+    public static let tagLen3Byte: UInt8 = 0b11110
+    public static let tagLen4Byte: UInt8 = 0b11111
 
     public static let prefixMask: UInt8 = 0b11100000
     public static let suffixMask: UInt8 = 0b00011111
@@ -168,10 +177,8 @@ public func bytesLen(_ b: UInt8) -> (extraBytes: Int, len: Int) {
     let l = Int(b & MMConstants.bytesLenMask)
     if l < Int(MMConstants.bytesLen1Byte) {
         return (0, l)
-    } else if l == Int(MMConstants.bytesLen1Byte) {
-        return (1, l)
     } else {
-        return (2, l)
+        return (l - Int(MMConstants.bytesLen1Byte) + 1, l)
     }
 }
 
@@ -179,10 +186,8 @@ public func containerLen(_ b: UInt8) -> (extraBytes: Int, len: Int) {
     let l = Int(b & MMConstants.containerLenMask)
     if l < Int(MMConstants.containerLen1Byte) {
         return (0, l)
-    } else if l == Int(MMConstants.containerLen1Byte) {
-        return (1, l)
     } else {
-        return (2, l)
+        return (l - Int(MMConstants.containerLen1Byte) + 1, l)
     }
 }
 
@@ -190,10 +195,8 @@ public func tagLen(_ b: UInt8) -> (extraBytes: Int, len: Int) {
     let l = Int(b & MMConstants.tagLenMask)
     if l < Int(MMConstants.tagLen1Byte) {
         return (0, l)
-    } else if l == Int(MMConstants.tagLen1Byte) {
-        return (1, l)
     } else {
-        return (2, l)
+        return (l - Int(MMConstants.tagLen1Byte) + 1, l)
     }
 }
 
