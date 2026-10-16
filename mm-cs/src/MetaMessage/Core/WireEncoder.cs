@@ -241,16 +241,25 @@ public class WireEncoder
         {
             _buf.WriteWithBytes(sign | length, bytes);
         }
-        else if (length < WireConstants.MAX_1)
+        // v0.3.0：1 字节档边界对齐 Go 参考（length == 255 落 1 字节档）
+        else if (length <= WireConstants.MAX_1)
         {
             _buf.WriteWithBytes(sign | WireConstants.BYTES_LEN_1, (byte)length, bytes);
         }
-        // The last bucket must use <=: MAX_2 (65535) itself is representable by the
-        // 2-byte length field. Using < makes length == MAX_2 fall through every
-        // branch and get reported as "too long" even though it fits on the wire.
         else if (length <= WireConstants.MAX_2)
         {
             _buf.WriteWithBytes(sign | WireConstants.BYTES_LEN_2, (byte)(length >> 8), (byte)length, bytes);
+        }
+        else if (length <= WireConstants.MAX_3)
+        {
+            _buf.Write(sign | WireConstants.BYTES_LEN_3, (byte)(length >> 16), (byte)(length >> 8), (byte)length);
+            _buf.WriteAll(bytes);
+        }
+        // 最后一档必须 <=：length == MAX_4 本身可表达，否则静默丢数据
+        else if (length <= WireConstants.MAX_4)
+        {
+            _buf.Write(sign | WireConstants.BYTES_LEN_4, (byte)(length >> 24), (byte)(length >> 16), (byte)(length >> 8), (byte)length);
+            _buf.WriteAll(bytes);
         }
         else
         {
@@ -268,16 +277,23 @@ public class WireEncoder
         {
             _buf.WriteWithBytes(sign | length, payload);
         }
-        else if (length < WireConstants.MAX_1)
+        else if (length <= WireConstants.MAX_1)
         {
             _buf.WriteWithBytes(sign | WireConstants.CONTAINER_LEN_1, (byte)length, payload);
         }
-        // The last bucket must use <=: MAX_2 (65535) itself is representable by the
-        // 2-byte length field. Using < makes length == MAX_2 fall through every
-        // branch and get reported as "too long" even though it fits on the wire.
         else if (length <= WireConstants.MAX_2)
         {
             _buf.WriteWithBytes(sign | WireConstants.CONTAINER_LEN_2, (byte)(length >> 8), (byte)length, payload);
+        }
+        else if (length <= WireConstants.MAX_3)
+        {
+            _buf.Write(sign | WireConstants.CONTAINER_LEN_3, (byte)(length >> 16), (byte)(length >> 8), (byte)length);
+            _buf.WriteAll(payload);
+        }
+        else if (length <= WireConstants.MAX_4)
+        {
+            _buf.Write(sign | WireConstants.CONTAINER_LEN_4, (byte)(length >> 24), (byte)(length >> 16), (byte)(length >> 8), (byte)length);
+            _buf.WriteAll(payload);
         }
         else
         {
@@ -295,16 +311,23 @@ public class WireEncoder
         {
             _buf.WriteWithBytes(sign | length, payload);
         }
-        else if (length < WireConstants.MAX_1)
+        else if (length <= WireConstants.MAX_1)
         {
             _buf.WriteWithBytes(sign | WireConstants.CONTAINER_LEN_1, (byte)length, payload);
         }
-        // The last bucket must use <=: MAX_2 (65535) itself is representable by the
-        // 2-byte length field. Using < makes length == MAX_2 fall through every
-        // branch and get reported as "too long" even though it fits on the wire.
         else if (length <= WireConstants.MAX_2)
         {
             _buf.WriteWithBytes(sign | WireConstants.CONTAINER_LEN_2, (byte)(length >> 8), (byte)length, payload);
+        }
+        else if (length <= WireConstants.MAX_3)
+        {
+            _buf.Write(sign | WireConstants.CONTAINER_LEN_3, (byte)(length >> 16), (byte)(length >> 8), (byte)length);
+            _buf.WriteAll(payload);
+        }
+        else if (length <= WireConstants.MAX_4)
+        {
+            _buf.Write(sign | WireConstants.CONTAINER_LEN_4, (byte)(length >> 24), (byte)(length >> 16), (byte)(length >> 8), (byte)length);
+            _buf.WriteAll(payload);
         }
         else
         {
@@ -348,7 +371,7 @@ public class WireEncoder
             return payload.Length;
         }
         int length = rawTagFields.Length + payload.Length;
-        if (length > WireConstants.MAX_2)
+        if (length > WireConstants.MAX_4)
         {
             throw new Exception("Tag+payload too long");
         }
@@ -358,13 +381,25 @@ public class WireEncoder
         {
             _buf.WriteWithMultipleBytes(sign | length, rawTagFields, payload);
         }
-        else if (length < WireConstants.MAX_1)
+        else if (length <= WireConstants.MAX_1)
         {
             _buf.WriteWithMultipleBytes(sign | WireConstants.TAG_LEN_1, (byte)length, rawTagFields, payload);
         }
-        else
+        else if (length <= WireConstants.MAX_2)
         {
             _buf.WriteWithMultipleBytes(sign | WireConstants.TAG_LEN_2, (byte)(length >> 8), (byte)length, rawTagFields, payload);
+        }
+        else if (length <= WireConstants.MAX_3)
+        {
+            _buf.Write(sign | WireConstants.TAG_LEN_3, (byte)(length >> 16), (byte)(length >> 8), (byte)length);
+            _buf.WriteAll(rawTagFields);
+            _buf.WriteAll(payload);
+        }
+        else
+        {
+            _buf.Write(sign | WireConstants.TAG_LEN_4, (byte)(length >> 24), (byte)(length >> 16), (byte)(length >> 8), (byte)length);
+            _buf.WriteAll(rawTagFields);
+            _buf.WriteAll(payload);
         }
         return _buf.Length - start;
     }
