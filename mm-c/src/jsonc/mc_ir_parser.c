@@ -8,6 +8,9 @@
 // Debug flag - set to 1 to enable debug output
 #define DEBUG_PARSE 0
 
+// Max nesting depth for JSONC parser; aligned with Go reference (internal/jsonc/parser/parser.go)
+#define MC_MAX_DEPTH 1024
+
 typedef struct {
   const char *input;
   size_t pos;
@@ -16,6 +19,7 @@ typedef struct {
   int has_pending_tag;
   int last_was_lbrace;
   int error;
+  int depth;
 } parse_ctx_t;
 
 static void skip_ws(parse_ctx_t *ctx) {
@@ -184,7 +188,7 @@ static char *parse_raw_string(parse_ctx_t *ctx) {
 
 static node_t *parse_value(parse_ctx_t *ctx);
 
-static node_t *parse_object(parse_ctx_t *ctx) {
+static node_t *parse_object_inner(parse_ctx_t *ctx) {
   node_t *obj = node_new_object();
   consume_comments(ctx);
 
@@ -280,7 +284,7 @@ static node_t *parse_object(parse_ctx_t *ctx) {
   return obj;
 }
 
-static node_t *parse_array(parse_ctx_t *ctx) {
+static node_t *parse_array_inner(parse_ctx_t *ctx) {
   node_t *arr = node_new_array();
 
   if (ctx->has_pending_tag) {
@@ -342,6 +346,32 @@ static node_t *parse_array(parse_ctx_t *ctx) {
   }
 
   return arr;
+}
+
+static node_t *parse_object(parse_ctx_t *ctx) {
+  ctx->depth++;
+  if (ctx->depth > MC_MAX_DEPTH) {
+    fprintf(stderr, "max depth: %d\n", MC_MAX_DEPTH);
+    ctx->error = 1;
+    ctx->depth--;
+    return NULL;
+  }
+  node_t *result = parse_object_inner(ctx);
+  ctx->depth--;
+  return result;
+}
+
+static node_t *parse_array(parse_ctx_t *ctx) {
+  ctx->depth++;
+  if (ctx->depth > MC_MAX_DEPTH) {
+    fprintf(stderr, "max depth: %d\n", MC_MAX_DEPTH);
+    ctx->error = 1;
+    ctx->depth--;
+    return NULL;
+  }
+  node_t *result = parse_array_inner(ctx);
+  ctx->depth--;
+  return result;
 }
 
 static node_t *parse_value(parse_ctx_t *ctx) {
@@ -417,6 +447,7 @@ node_t *mm_jsonc_parse(const char *input) {
   ctx.has_pending_tag = 0;
   ctx.last_was_lbrace = 0;
   ctx.error = 0;
+  ctx.depth = 0;
   memset(ctx.pending_tag, 0, sizeof(ctx.pending_tag));
 
   consume_comments(&ctx);

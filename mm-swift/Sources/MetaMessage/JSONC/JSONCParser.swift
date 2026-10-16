@@ -344,11 +344,10 @@ public class JSONCParser {
 
     private func parseObject(_ openLine: Int, _ path: String, _ preTag: Tag? = nil) throws -> NodeObject {
         depth += 1
+        defer { depth -= 1 }
         if depth > maxDepth {
             throw JSONCParserError.maxDepthExceeded
         }
-
-        defer { depth -= 1 }
 
         var tag = consumeCommentsFor(openLine)
         if let pt = preTag {
@@ -432,11 +431,10 @@ public class JSONCParser {
 
     private func parseArray(_ openLine: Int, _ path: String, _ preTag: Tag? = nil) throws -> NodeArray {
         depth += 1
+        defer { depth -= 1 }
         if depth > maxDepth {
             throw JSONCParserError.maxDepthExceeded
         }
-
-        defer { depth -= 1 }
 
         var tag = consumeCommentsFor(openLine)
         if let pt = preTag {

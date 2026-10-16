@@ -66,10 +66,22 @@ public class WireEncoderBoundaryTest
     [Fact]
     public void EncodeAtMax2BytePlusOneStillRejected()
     {
+        // String is capped at MAX_2 by the wire format (STRING_LEN_2 is the top tier),
+        // so MAX_2+1 must reject.
         var enc = new WireEncoder();
         Assert.Throws<Exception>(() => enc.EncodeString(AsciiString(Max2 + 1)));
-        Assert.Throws<Exception>(() => enc.EncodeBytes(AsciiBytes(Max2 + 1)));
-        Assert.Throws<Exception>(() => enc.EncodeArrayPayload(AsciiBytes(Max2 + 1)));
-        Assert.Throws<Exception>(() => enc.EncodeObjectPayload(AsciiBytes(Max2 + 1)));
+    }
+
+    [Fact]
+    public void EncodeBytesArrayObjectAtMax2BytePlusOneUsesNextTier()
+    {
+        // Bytes / ArrayPayload / ObjectPayload have 4 length tiers (v0.3.0 alignment
+        // with the Go reference), so MAX_2+1 legitimately falls into the 3-byte tier
+        // instead of being rejected.
+        var enc = new WireEncoder();
+        int payloadLen = Max2 + 1;
+        Assert.Null(Record.Exception(() => enc.EncodeBytes(AsciiBytes(payloadLen))));
+        Assert.Null(Record.Exception(() => enc.EncodeArrayPayload(AsciiBytes(payloadLen))));
+        Assert.Null(Record.Exception(() => enc.EncodeObjectPayload(AsciiBytes(payloadLen))));
     }
 }

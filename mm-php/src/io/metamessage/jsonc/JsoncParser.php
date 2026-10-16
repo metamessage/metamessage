@@ -820,10 +820,18 @@ class JsoncParser
     private function parseObject(int $openLine, string $path, ?Tag $tag = null): NodeObject
     {
         $this->depth++;
-        if ($this->depth > self::MAX_DEPTH) {
-            throw new \Exception(sprintf('max depth: %d', self::MAX_DEPTH));
+        try {
+            if ($this->depth > self::MAX_DEPTH) {
+                throw new \Exception(sprintf('max depth: %d', self::MAX_DEPTH));
+            }
+            return $this->parseObjectInner($openLine, $path, $tag);
+        } finally {
+            $this->depth--;
         }
+    }
 
+    private function parseObjectInner(int $openLine, string $path, ?Tag $tag = null): NodeObject
+    {
         // $tag = $this->consumeCommentsFor($openLine);
         if ($tag === null) {
             $tag = Tag::newTag();
@@ -921,10 +929,18 @@ class JsoncParser
     private function parseArray(int $openLine, string $path, ?Tag $tag = null): NodeArray
     {
         $this->depth++;
-        if ($this->depth > self::MAX_DEPTH) {
-            throw new \Exception(sprintf('max depth: %d', self::MAX_DEPTH));
+        try {
+            if ($this->depth > self::MAX_DEPTH) {
+                throw new \Exception(sprintf('max depth: %d', self::MAX_DEPTH));
+            }
+            return $this->parseArrayInner($openLine, $path, $tag);
+        } finally {
+            $this->depth--;
         }
+    }
 
+    private function parseArrayInner(int $openLine, string $path, ?Tag $tag = null): NodeArray
+    {
         // $tag = $this->consumeCommentsFor($openLine);
         if ($tag === null) {
             $tag = Tag::newTag();

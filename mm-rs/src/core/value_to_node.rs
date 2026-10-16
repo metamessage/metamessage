@@ -1,8 +1,36 @@
 use crate::core::utils::camel_to_snake;
 use crate::ir::{Field, Node, NodeArray, NodeObject, NodeScalar, Tag, ValueData, ValueType};
+use std::cell::Cell;
 use std::collections::HashMap;
 
 const MAX_DEPTH: usize = 1024;
+
+// Thread-local recursion depth tracker. The `ToNode` trait signature cannot carry a
+// depth parameter (would be an API break), so we track it here and guard every
+// recursive hop through `to_node_value_with_depth`. Aligned with Go reference which
+// errors on `depth > maxDepth`.
+thread_local! {
+    static CURRENT_DEPTH: Cell<usize> = const { Cell::new(0) };
+}
+
+struct DepthGuard;
+
+impl DepthGuard {
+    fn enter() -> Self {
+        CURRENT_DEPTH.with(|d| d.set(d.get() + 1));
+        DepthGuard
+    }
+
+    fn current() -> usize {
+        CURRENT_DEPTH.with(|d| d.get())
+    }
+}
+
+impl Drop for DepthGuard {
+    fn drop(&mut self) {
+        CURRENT_DEPTH.with(|d| d.set(d.get().saturating_sub(1)));
+    }
+}
 
 pub trait ToNode {
     fn to_node(&self, tag: Option<Tag>) -> Node;
@@ -23,19 +51,15 @@ pub fn value_to_node<T: ToNode + ?Sized>(v: &T, tag: Option<Tag>) -> Node {
     v.to_node(tag)
 }
 
-pub fn value_to_node_internal<T: ?Sized>(v: &T, tag: Option<Tag>, depth: usize, path: &str) -> Node
+pub fn value_to_node_internal<T: ?Sized>(v: &T, tag: Option<Tag>, depth: usize, _path: &str) -> Node
 where
     T: ToNode,
 {
-    if depth > MAX_DEPTH {
-        return NodeScalar {
-            data: ValueData::Null,
-            text: "null".to_string(),
-            tag,
-            path: path.to_string(),
-        }
-        .into();
+    // Effective depth = max(caller-supplied seed, current thread-local depth).
+    if depth.max(DepthGuard::current()) > MAX_DEPTH {
+        panic!("max depth: {}", MAX_DEPTH);
     }
+    let _g = DepthGuard::enter();
     v.to_node(tag)
 }
 
@@ -343,15 +367,15 @@ impl From<NodeArray> for Node {
 }
 
 trait ToNodeExt: ToNode {
-    fn to_node_value_with_depth(&self, tag: Tag, depth: usize, path: &str) -> Node {
-        if depth > MAX_DEPTH {
-            return Node::Value(NodeScalar {
-                data: ValueData::Null,
-                text: "null".to_string(),
-                tag: Some(tag),
-                path: path.to_string(),
-            });
+    fn to_node_value_with_depth(&self, tag: Tag, _depth: usize, path: &str) -> Node {
+        // The `depth` parameter is kept for signature stability but recursion depth
+        // is tracked via the thread-local counter so that every nested Vec/HashMap
+        // hop is counted (previously the value was hard-coded to 0 at every call
+        // site and the guard never fired).
+        if DepthGuard::current() > MAX_DEPTH {
+            panic!("max depth: {}", MAX_DEPTH);
         }
+        let _g = DepthGuard::enter();
         let mut node = self.to_node(Some(tag));
         match &mut node {
             Node::Value(v) => v.path = path.to_string(),
@@ -614,5 +638,14 @@ mod tests {
             }
             _ => panic!("expected Value node"),
         }
+    }
+
+    #[test]
+    #[should_panic(expected = "max depth: 1024")]
+    fn test_depth_overflow_panics() {
+        // Previously this silently returned a null NodeScalar; now it must abort
+        // like Go reference (metamessage.internal/core/value_to_node.go: maxDepth).
+        let val: i32 = 42;
+        let _ = value_to_node_internal(&val, None, MAX_DEPTH + 1, "");
     }
 }
