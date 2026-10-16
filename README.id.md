@@ -38,7 +38,7 @@ MetaMessage secara alami cocok untuk pemahaman dan interaksi AI, menyelesaikan a
 
 Catatan:
 
-- Encoding saat ini mendukung hingga 65535 byte (64KB). Batas ini dapat diperluas setelah dukungan penuh untuk tipe dokumen diterapkan.
+- Encoding saat ini mendukung hingga 4294967295 byte (~4GB) untuk slot panjang Bytes / Object / Array / Tag (4 tingkat); String tetap pada 2 tingkat dengan batas 65535 byte (64KB). Batas ini dapat diperluas setelah dukungan penuh untuk tipe dokumen diterapkan.
 - Proyek ini sedang dalam pengembangan dan pengujian aktif, dan belum direkomendasikan untuk penggunaan produksi.
 - API dan perilaku masih bisa berubah, jadi harap perhatikan pembaruan versi.
 
@@ -71,7 +71,7 @@ Catatan:
 
 Definisikan tipe data menggunakan tag `type=`. Formatnya adalah `type=typeIdentifier`, misalnya `type=i` berarti integer.
 
-- doc: Encoding mendukung hingga 65535 byte (64KB). Batasan ini mungkin diperluas setelah dukungan penuh untuk tipe dokumen
+- doc: Encoding mendukung hingga 4294967295 byte (~4GB) untuk Bytes / Object / Array / Tag; String tetap dibatasi 65535 byte (64KB). Batasan ini mungkin diperluas setelah dukungan penuh untuk tipe dokumen
 - vec: array/slice dinamis, tidak mengizinkan tipe komposit
 - arr: array panjang tetap, tidak mengizinkan tipe komposit
 - obj: objek/struct, struktur komposit, sesuai dengan struct/object lintas-bahasa

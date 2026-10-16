@@ -38,7 +38,7 @@ MetaMessage eignet sich von Natur aus für das Verständnis und die Interaktion 
 
 Hinweis:
 
-- Die Codierung unterstützt derzeit bis zu 65535 Bytes (64KB). Diese Grenze kann erweitert werden, sobald der vollständige Support für Dokumenttypen umgesetzt ist.
+- Die Codierung unterstützt derzeit für Bytes / Object / Array / Tag bis zu 4294967295 Bytes (~4GB) (4 Stufen); String bleibt bei 2 Stufen mit einer Grenze von 65535 Bytes (64KB). Diese Grenze kann erweitert werden, sobald der vollständige Support für Dokumenttypen umgesetzt ist.
 - Das Projekt befindet sich in aktiver Entwicklung und Testphase und wird für den Produktionseinsatz noch nicht empfohlen.
 - APIs und Verhalten können sich noch ändern, daher bitte die Versionshinweise beachten.
 
@@ -71,7 +71,7 @@ Hinweis:
 
 Definieren Sie Datentypen mit dem Tag `type=`. Das Format ist `type=typeIdentifier`, z. B. `type=i` bedeutet Integer.
 
-- doc: Die Kodierung unterstützt bis zu 65535 Bytes (64KB). Diese Grenze kann nach vollständiger Unterstützung von Dokumenttypen überschritten werden
+- doc: Die Kodierung unterstützt für Bytes / Object / Array / Tag bis zu 4294967295 Bytes (~4GB); String bleibt bei 65535 Bytes (64KB). Diese Grenze kann nach vollständiger Unterstützung von Dokumenttypen überschritten werden
 - vec: dynamische Arrays/Slices, erlauben keine zusammengesetzten Typen
 - arr: Array, feste Länge, erlaubt keine zusammengesetzten Typen
 - obj: Objekt/Struct, zusammengesetzte Struktur, entspricht mehrsprachigem struct/object

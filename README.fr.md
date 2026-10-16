@@ -38,7 +38,7 @@ MetaMessage est naturellement adapté à la compréhension et à l'interaction a
 
 Note :
 
-- L'encodage prend actuellement en charge jusqu'à 65535 octets (64KB). Cette limite pourra être étendue une fois le support complet des types document implémenté.
+- L'encodage prend actuellement en charge jusqu'à 4294967295 octets (~4GB) pour les emplacements de longueur Bytes / Object / Array / Tag (4 niveaux) ; String reste à 2 niveaux avec une limite de 65535 octets (64KB). Cette limite pourra être étendue une fois le support complet des types document implémenté.
 - Le projet est en développement et en test actif, et n'est pas encore recommandé pour une utilisation en production.
 - L'API et le comportement peuvent encore évoluer, suivez les mises à jour de version.
 
@@ -71,7 +71,7 @@ Note :
 
 Définissez les types de données à l'aide du tag `type=`. Le format est `type=typeIdentifier`, par exemple `type=i` signifie entier.
 
-- doc: L'encodage prend en charge jusqu'à 65535 octets (64KB). Cette limite peut être étendue après la prise en charge complète des types de documents
+- doc: L'encodage prend en charge jusqu'à 4294967295 octets (~4GB) pour Bytes / Object / Array / Tag ; String reste limité à 65535 octets (64KB). Cette limite peut être étendue après la prise en charge complète des types de documents
 - vec: tableaux/slices dynamiques, pas de types composites
 - arr: tableau, longueur fixe, pas de types composites
 - obj: objet/structure, structure composite, correspond à struct/object multilingue
