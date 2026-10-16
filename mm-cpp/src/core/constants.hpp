@@ -101,7 +101,7 @@ inline int floatLen(uint8_t b) {
   return l - FloatLen1Byte + 1;
 }
 
-// String length
+// String length（v0.2.x 语义，未改动）
 constexpr uint8_t StringLenMask = 0b11111;
 constexpr uint8_t StringLen1Byte = StringLenMask - 1;
 constexpr uint8_t StringLen2Byte = StringLenMask;
@@ -122,18 +122,27 @@ inline int stringInlineLen(uint8_t b) {
   return 0;
 }
 
-// Bytes length
+// Bytes length（v0.3.0：4 档）
 constexpr uint8_t BytesLenMask = 0b11111;
-constexpr uint8_t BytesLen1Byte = BytesLenMask - 1;
-constexpr uint8_t BytesLen2Byte = BytesLenMask;
+constexpr uint8_t BytesLen1Byte = BytesLenMask - 3; // 28
+constexpr uint8_t BytesLen2Byte = BytesLenMask - 2; // 29
+constexpr uint8_t BytesLen3Byte = BytesLenMask - 1; // 30
+constexpr uint8_t BytesLen4Byte = BytesLenMask;     // 31
 
 inline int bytesExtraLen(uint8_t b) {
   int l = static_cast<int>(b & BytesLenMask);
-  if (l < BytesLen1Byte)
-    return 0;
-  if (l == BytesLen1Byte)
+  switch (l) {
+  case BytesLen1Byte:
     return 1;
-  return 2;
+  case BytesLen2Byte:
+    return 2;
+  case BytesLen3Byte:
+    return 3;
+  case BytesLen4Byte:
+    return 4;
+  default:
+    return 0;
+  }
 }
 
 inline int bytesInlineLen(uint8_t b) {
@@ -143,21 +152,30 @@ inline int bytesInlineLen(uint8_t b) {
   return 0;
 }
 
-// Container
+// Container（v0.3.0：4 档，suffix 低 4 位是长度）
 constexpr uint8_t ContainerMask = 0b10000;
 constexpr uint8_t ContainerObject = 0b00000;
 constexpr uint8_t ContainerArray = 0b10000;
 constexpr uint8_t ContainerLenMask = 0b01111;
-constexpr uint8_t ContainerLen1Byte = ContainerLenMask - 1;
-constexpr uint8_t ContainerLen2Byte = ContainerLenMask;
+constexpr uint8_t ContainerLen1Byte = ContainerLenMask - 3; // 12
+constexpr uint8_t ContainerLen2Byte = ContainerLenMask - 2; // 13
+constexpr uint8_t ContainerLen3Byte = ContainerLenMask - 1; // 14
+constexpr uint8_t ContainerLen4Byte = ContainerLenMask;     // 15
 
 inline int containerExtraLen(uint8_t b) {
   int l = static_cast<int>(b & ContainerLenMask);
-  if (l < ContainerLen1Byte)
-    return 0;
-  if (l == ContainerLen1Byte)
+  switch (l) {
+  case ContainerLen1Byte:
     return 1;
-  return 2;
+  case ContainerLen2Byte:
+    return 2;
+  case ContainerLen3Byte:
+    return 3;
+  case ContainerLen4Byte:
+    return 4;
+  default:
+    return 0;
+  }
 }
 
 inline int containerInlineLen(uint8_t b) {
@@ -171,18 +189,27 @@ inline bool isArrayContainer(uint8_t b) {
   return (b & ContainerMask) == ContainerArray;
 }
 
-// Tag
+// Tag length（v0.3.0：4 档，tag+payload 总槽）
 constexpr uint8_t TagLenMask = 0b11111;
-constexpr uint8_t TagLen1Byte = TagLenMask - 1;
-constexpr uint8_t TagLen2Byte = TagLenMask;
+constexpr uint8_t TagLen1Byte = TagLenMask - 3; // 28
+constexpr uint8_t TagLen2Byte = TagLenMask - 2; // 29
+constexpr uint8_t TagLen3Byte = TagLenMask - 1; // 30
+constexpr uint8_t TagLen4Byte = TagLenMask;     // 31
 
 inline int tagExtraLen(uint8_t b) {
   int l = static_cast<int>(b & TagLenMask);
-  if (l < TagLen1Byte)
-    return 0;
-  if (l == TagLen1Byte)
+  switch (l) {
+  case TagLen1Byte:
     return 1;
-  return 2;
+  case TagLen2Byte:
+    return 2;
+  case TagLen3Byte:
+    return 3;
+  case TagLen4Byte:
+    return 4;
+  default:
+    return 0;
+  }
 }
 
 inline int tagInlineLen(uint8_t b) {
@@ -192,7 +219,7 @@ inline int tagInlineLen(uint8_t b) {
   return 0;
 }
 
-// TagPayload
+// TagPayload（encodeT 内部方案，v0.2.x 语义，未改动）
 constexpr uint8_t TagPayload1Byte = BytesLenMask - 1;
 constexpr uint8_t TagPayload2Byte = BytesLenMask;
 

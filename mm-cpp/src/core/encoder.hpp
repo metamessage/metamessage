@@ -310,67 +310,121 @@ private:
 
   uint32_t encodeBytes(const std::vector<uint8_t> &data) {
     size_t l = data.size();
+    if (l > 0xFFFFFFFF) {
+      return 0; // v0.3.0：超 4 字节档上限，静默拒绝（对齐 Go 的 "bytes too long"）
+    }
+
+    uint8_t sign = static_cast<uint8_t>(Prefix::Bytes);
     if (l < BytesLen1Byte) {
       writeByte(static_cast<uint8_t>(Prefix::Bytes) | static_cast<uint8_t>(l));
       writeBytes(data);
       return static_cast<uint32_t>(1 + l);
-    } else if (l <= 255) {
+    } else if (l <= 0xFF) {
       writeByte(static_cast<uint8_t>(Prefix::Bytes) | BytesLen1Byte);
       writeByte(static_cast<uint8_t>(l));
       writeBytes(data);
       return static_cast<uint32_t>(2 + l);
-    } else {
+    } else if (l <= 0xFFFF) {
       writeByte(static_cast<uint8_t>(Prefix::Bytes) | BytesLen2Byte);
       writeByte(static_cast<uint8_t>(l >> 8));
       writeByte(static_cast<uint8_t>(l));
       writeBytes(data);
       return static_cast<uint32_t>(3 + l);
+    } else if (l <= 0xFFFFFF) {
+      writeByte(static_cast<uint8_t>(Prefix::Bytes) | BytesLen3Byte);
+      writeByte(static_cast<uint8_t>(l >> 16));
+      writeByte(static_cast<uint8_t>(l >> 8));
+      writeByte(static_cast<uint8_t>(l));
+      writeBytes(data);
+      return static_cast<uint32_t>(4 + l);
+    } else { // l <= 0xFFFFFFFF
+      writeByte(static_cast<uint8_t>(Prefix::Bytes) | BytesLen4Byte);
+      writeByte(static_cast<uint8_t>(l >> 24));
+      writeByte(static_cast<uint8_t>(l >> 16));
+      writeByte(static_cast<uint8_t>(l >> 8));
+      writeByte(static_cast<uint8_t>(l));
+      writeBytes(data);
+      return static_cast<uint32_t>(5 + l);
     }
   }
 
   uint32_t encodeArray(const std::vector<uint8_t> &data) {
     size_t l = data.size();
+    if (l > 0xFFFFFFFF) {
+      return 0;
+    }
+
+    uint8_t sign = static_cast<uint8_t>(Prefix::Container) | ContainerArray;
     if (l < ContainerLen1Byte) {
-      writeByte(static_cast<uint8_t>(Prefix::Container) | ContainerArray |
-                static_cast<uint8_t>(l));
+      writeByte(sign | static_cast<uint8_t>(l));
       writeBytes(data);
       return static_cast<uint32_t>(1 + l);
-    } else if (l <= 255) {
-      writeByte(static_cast<uint8_t>(Prefix::Container) | ContainerArray |
-                ContainerLen1Byte);
+    } else if (l <= 0xFF) {
+      writeByte(sign | ContainerLen1Byte);
       writeByte(static_cast<uint8_t>(l));
       writeBytes(data);
       return static_cast<uint32_t>(2 + l);
-    } else {
-      writeByte(static_cast<uint8_t>(Prefix::Container) | ContainerArray |
-                ContainerLen2Byte);
+    } else if (l <= 0xFFFF) {
+      writeByte(sign | ContainerLen2Byte);
       writeByte(static_cast<uint8_t>(l >> 8));
       writeByte(static_cast<uint8_t>(l));
       writeBytes(data);
       return static_cast<uint32_t>(3 + l);
+    } else if (l <= 0xFFFFFF) {
+      writeByte(sign | ContainerLen3Byte);
+      writeByte(static_cast<uint8_t>(l >> 16));
+      writeByte(static_cast<uint8_t>(l >> 8));
+      writeByte(static_cast<uint8_t>(l));
+      writeBytes(data);
+      return static_cast<uint32_t>(4 + l);
+    } else {
+      writeByte(sign | ContainerLen4Byte);
+      writeByte(static_cast<uint8_t>(l >> 24));
+      writeByte(static_cast<uint8_t>(l >> 16));
+      writeByte(static_cast<uint8_t>(l >> 8));
+      writeByte(static_cast<uint8_t>(l));
+      writeBytes(data);
+      return static_cast<uint32_t>(5 + l);
     }
   }
 
   uint32_t encodeObject(const std::vector<uint8_t> &data) {
     size_t l = data.size();
+    if (l > 0xFFFFFFFF) {
+      return 0;
+    }
+
+    uint8_t sign = static_cast<uint8_t>(Prefix::Container) | ContainerObject;
     if (l < ContainerLen1Byte) {
-      writeByte(static_cast<uint8_t>(Prefix::Container) | ContainerObject |
-                static_cast<uint8_t>(l));
+      writeByte(sign | static_cast<uint8_t>(l));
       writeBytes(data);
       return static_cast<uint32_t>(1 + l);
-    } else if (l <= 255) {
-      writeByte(static_cast<uint8_t>(Prefix::Container) | ContainerObject |
-                ContainerLen1Byte);
+    } else if (l <= 0xFF) {
+      writeByte(sign | ContainerLen1Byte);
       writeByte(static_cast<uint8_t>(l));
       writeBytes(data);
       return static_cast<uint32_t>(2 + l);
-    } else {
-      writeByte(static_cast<uint8_t>(Prefix::Container) | ContainerObject |
-                ContainerLen2Byte);
+    } else if (l <= 0xFFFF) {
+      writeByte(sign | ContainerLen2Byte);
       writeByte(static_cast<uint8_t>(l >> 8));
       writeByte(static_cast<uint8_t>(l));
       writeBytes(data);
       return static_cast<uint32_t>(3 + l);
+    } else if (l <= 0xFFFFFF) {
+      writeByte(sign | ContainerLen3Byte);
+      writeByte(static_cast<uint8_t>(l >> 16));
+      writeByte(static_cast<uint8_t>(l >> 8));
+      writeByte(static_cast<uint8_t>(l));
+      writeBytes(data);
+      return static_cast<uint32_t>(4 + l);
+    } else {
+      writeByte(sign | ContainerLen4Byte);
+      writeByte(static_cast<uint8_t>(l >> 24));
+      writeByte(static_cast<uint8_t>(l >> 16));
+      writeByte(static_cast<uint8_t>(l >> 8));
+      writeByte(static_cast<uint8_t>(l));
+      writeBytes(data);
+      return static_cast<uint32_t>(5 + l);
     }
   }
 
@@ -398,6 +452,10 @@ private:
       return static_cast<uint32_t>(payload.size());
 
     size_t totalLen = tagData.size() + payload.size();
+    if (totalLen > 0xFFFFFFFF) {
+      return 0; // v0.3.0：超 4 字节档上限，静默拒绝
+    }
+
     uint8_t sign = static_cast<uint8_t>(Prefix::Tag);
 
     size_t headerLen;
@@ -407,15 +465,30 @@ private:
     } else if (totalLen <= 0xFF) {
       sign |= TagLen1Byte;
       headerLen = 2;
-    } else {
+    } else if (totalLen <= 0xFFFF) {
       sign |= TagLen2Byte;
       headerLen = 3;
+    } else if (totalLen <= 0xFFFFFF) {
+      sign |= TagLen3Byte;
+      headerLen = 4;
+    } else {
+      sign |= TagLen4Byte;
+      headerLen = 5;
     }
 
     writeByte(sign);
     if (headerLen == 2) {
       writeByte(static_cast<uint8_t>(totalLen));
     } else if (headerLen == 3) {
+      writeByte(static_cast<uint8_t>(totalLen >> 8));
+      writeByte(static_cast<uint8_t>(totalLen));
+    } else if (headerLen == 4) {
+      writeByte(static_cast<uint8_t>(totalLen >> 16));
+      writeByte(static_cast<uint8_t>(totalLen >> 8));
+      writeByte(static_cast<uint8_t>(totalLen));
+    } else if (headerLen == 5) {
+      writeByte(static_cast<uint8_t>(totalLen >> 24));
+      writeByte(static_cast<uint8_t>(totalLen >> 16));
       writeByte(static_cast<uint8_t>(totalLen >> 8));
       writeByte(static_cast<uint8_t>(totalLen));
     }
