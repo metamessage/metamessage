@@ -150,7 +150,7 @@ class MetaMessage
     private static function valueToNode(mixed $v, ?Tag $tag, int $depth, string $path, ?\ReflectionNamedType $propType = null): Node
     {
         if ($depth > self::MAX_DEPTH) {
-            throw new \RuntimeException('max depth exceeded: ' . self::MAX_DEPTH);
+            throw new \RuntimeException(sprintf('max depth: %d', self::MAX_DEPTH));
         }
 
         if ($tag === null) {

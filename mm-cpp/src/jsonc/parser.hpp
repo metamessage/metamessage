@@ -253,7 +253,7 @@ private:
 
     DepthGuard guard(depth_);
     if (depth_ > kMaxDepth) {
-      throw std::runtime_error("max depth: 1024");
+      throw std::runtime_error("max depth: " + std::to_string(static_cast<long long>(kMaxDepth)));
     }
 
     // Save tag that was set before { (object-level tag from outer scope)
@@ -322,7 +322,7 @@ private:
 
     DepthGuard guard(depth_);
     if (depth_ > kMaxDepth) {
-      throw std::runtime_error("max depth: 1024");
+      throw std::runtime_error("max depth: " + std::to_string(static_cast<long long>(kMaxDepth)));
     }
 
     skipComments();

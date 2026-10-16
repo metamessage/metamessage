@@ -1,6 +1,7 @@
 package io.github.metamessage.jsonc
 
 import io.github.metamessage.core.CamelToSnake
+import io.github.metamessage.core.Limits
 import io.github.metamessage.ir.Field
 import io.github.metamessage.ir.Node
 import io.github.metamessage.ir.NodeArray as AstArray
@@ -678,8 +679,8 @@ class JsoncParser(private val tokens: List<JsoncToken>) {
     private fun parseObject(openLine: Int, path: String): AstObject {
         depth++
         try {
-            if (depth > 1024) {
-                throw JsoncException("max depth: 1024")
+            if (depth > Limits.MAX_DEPTH) {
+                throw JsoncException("max depth: ${Limits.MAX_DEPTH}")
             }
             return parseObjectInner(openLine, path)
         } finally {
@@ -768,8 +769,8 @@ class JsoncParser(private val tokens: List<JsoncToken>) {
     private fun parseArray(openLine: Int, path: String): AstArray {
         depth++
         try {
-            if (depth > 1024) {
-                throw JsoncException("max depth: 1024")
+            if (depth > Limits.MAX_DEPTH) {
+                throw JsoncException("max depth: ${Limits.MAX_DEPTH}")
             }
             return parseArrayInner(openLine, path)
         } finally {

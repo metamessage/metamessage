@@ -390,7 +390,7 @@ impl Parser {
 
     fn parse_object_inner(&mut self, open_line: usize, path: &str) -> Result<Node, String> {
         if self.depth > MAX_DEPTH {
-            return Err("max depth exceeded".to_string());
+            return Err(format!("max depth: {}", MAX_DEPTH));
         }
 
         let mut tag = self.consume_comments_for(open_line).unwrap_or_default();
@@ -476,7 +476,7 @@ impl Parser {
 
     fn parse_array_inner(&mut self, open_line: usize, path: &str) -> Result<Node, String> {
         if self.depth > MAX_DEPTH {
-            return Err("max depth exceeded".to_string());
+            return Err(format!("max depth: {}", MAX_DEPTH));
         }
 
         let mut tag = self.consume_comments_for(open_line).unwrap_or_default();
