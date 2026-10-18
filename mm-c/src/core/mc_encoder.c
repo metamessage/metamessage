@@ -1,4 +1,5 @@
 #include "mc_encoder.h"
+#include "mc_footer.h"
 #include "../ir/mc_tag.h"
 #include "../ir/mc_value_type.h"
 #include "mc_constants.h"
@@ -118,25 +119,24 @@ static void enc_encode_i(encoder_t *e, uint8_t sign, const char *text) {
   if (uv <= 23) {
     enc_write_byte(e, (uint8_t)(sign | uv));
   } else if (uv <= 0xFF) {
-    enc_write_byte(e, (uint8_t)(sign | MM_INTLEN1BYTE));
     enc_write_byte(e, (uint8_t)uv);
+    enc_write_byte(e, (uint8_t)(sign | MM_INTLEN1BYTE));
   } else if (uv <= 0xFFFF) {
-    enc_write_byte(e, (uint8_t)(sign | MM_INTLEN2BYTE));
     enc_write_byte(e, (uint8_t)(uv >> 8));
     enc_write_byte(e, (uint8_t)uv);
+    enc_write_byte(e, (uint8_t)(sign | MM_INTLEN2BYTE));
   } else if (uv <= 0xFFFFFF) {
-    enc_write_byte(e, (uint8_t)(sign | MM_INTLEN3BYTE));
     enc_write_byte(e, (uint8_t)(uv >> 16));
     enc_write_byte(e, (uint8_t)(uv >> 8));
     enc_write_byte(e, (uint8_t)uv);
+    enc_write_byte(e, (uint8_t)(sign | MM_INTLEN3BYTE));
   } else if (uv <= 0xFFFFFFFF) {
-    enc_write_byte(e, (uint8_t)(sign | MM_INTLEN4BYTE));
     enc_write_byte(e, (uint8_t)(uv >> 24));
     enc_write_byte(e, (uint8_t)(uv >> 16));
     enc_write_byte(e, (uint8_t)(uv >> 8));
     enc_write_byte(e, (uint8_t)uv);
+    enc_write_byte(e, (uint8_t)(sign | MM_INTLEN4BYTE));
   } else {
-    enc_write_byte(e, (uint8_t)(sign | MM_INTLEN8BYTE));
     enc_write_byte(e, (uint8_t)(uv >> 56));
     enc_write_byte(e, (uint8_t)(uv >> 48));
     enc_write_byte(e, (uint8_t)(uv >> 40));
@@ -145,6 +145,7 @@ static void enc_encode_i(encoder_t *e, uint8_t sign, const char *text) {
     enc_write_byte(e, (uint8_t)(uv >> 16));
     enc_write_byte(e, (uint8_t)(uv >> 8));
     enc_write_byte(e, (uint8_t)uv);
+    enc_write_byte(e, (uint8_t)(sign | MM_INTLEN8BYTE));
   }
 }
 
@@ -294,7 +295,7 @@ static void enc_encode_float(encoder_t *e, const char *text) {
   int len_val = mantissa_bytes + 7;
   sign |= len_val;
 
-  enc_write_byte(e, sign);
+  // v0.5.0 尾定界：一趟正向 [exp][mantissa BE][sign|档位] 写出。
   enc_write_byte(e, (uint8_t)(int8_t)exponent);
 
   // Write mantissa bytes in big-endian
@@ -352,28 +353,31 @@ static void enc_encode_float(encoder_t *e, const char *text) {
     enc_write_byte(e, (uint8_t)mantissa);
     break;
   }
+  enc_write_byte(e, sign);
 }
 
 static void enc_encode_string(encoder_t *e, const char *s) {
   size_t len = strlen(s);
   uint8_t sign = MM_PREFIX_STRING;
 
+  /* v0.5.0 尾定界：一趟正向 [body][len BE][sign|档位] 写出。
+   * 1byte 档位阈值与 Go 对齐为 < 255（旧 HEAD 误用 <=255）。 */
   if (len <= 29) {
+    enc_write_bytes(e, (const uint8_t *)s, len);
     enc_write_byte(e, (uint8_t)(sign | len));
-  } else if (len <= 255) {
-    enc_write_byte(e, (uint8_t)(sign | MM_STRINGLEN1BYTE));
+  } else if (len < 255) {
+    enc_write_bytes(e, (const uint8_t *)s, len);
     enc_write_byte(e, (uint8_t)len);
+    enc_write_byte(e, (uint8_t)(sign | MM_STRINGLEN1BYTE));
   } else if (len <= 65535) {
-    enc_write_byte(e, (uint8_t)(sign | MM_STRINGLEN2BYTE));
+    enc_write_bytes(e, (const uint8_t *)s, len);
     enc_write_byte(e, (uint8_t)(len >> 8));
     enc_write_byte(e, (uint8_t)(len & 0xFF));
+    enc_write_byte(e, (uint8_t)(sign | MM_STRINGLEN2BYTE));
   } else {
     /* String 维持 v0.2.x 的 2 字节上限：超长必须拒绝，不能静默丢 header。 */
     g_enc_overflow = true;
-    return;
   }
-
-  enc_write_bytes(e, (const uint8_t *)s, len);
 }
 
 static void enc_encode_bytes(encoder_t *e, const uint8_t *data, size_t len) {
@@ -385,30 +389,34 @@ static void enc_encode_bytes(encoder_t *e, const uint8_t *data, size_t len) {
     return;
   }
 
+  /* v0.5.0 尾定界：一趟正向 [body][len BE][sign|档位] 写出，档位阈值与 v0.3.x 一致。 */
   if (len < MM_BYTESLEN1BYTE) {
+    enc_write_bytes(e, data, len);
     enc_write_byte(e, (uint8_t)(sign | len));
   } else if (len <= MM_MAX1BYTE) {
-    enc_write_byte(e, (uint8_t)(sign | MM_BYTESLEN1BYTE));
+    enc_write_bytes(e, data, len);
     enc_write_byte(e, (uint8_t)len);
+    enc_write_byte(e, (uint8_t)(sign | MM_BYTESLEN1BYTE));
   } else if (len <= MM_MAX2BYTE) {
-    enc_write_byte(e, (uint8_t)(sign | MM_BYTESLEN2BYTE));
+    enc_write_bytes(e, data, len);
     enc_write_byte(e, (uint8_t)(len >> 8));
     enc_write_byte(e, (uint8_t)(len & 0xFF));
+    enc_write_byte(e, (uint8_t)(sign | MM_BYTESLEN2BYTE));
   } else if (len <= MM_MAX3BYTE) {
-    enc_write_byte(e, (uint8_t)(sign | MM_BYTESLEN3BYTE));
+    enc_write_bytes(e, data, len);
     enc_write_byte(e, (uint8_t)(len >> 16));
     enc_write_byte(e, (uint8_t)(len >> 8));
     enc_write_byte(e, (uint8_t)(len & 0xFF));
+    enc_write_byte(e, (uint8_t)(sign | MM_BYTESLEN3BYTE));
   /* 最后一档必须 <=：len == MM_MAX4BYTE 时若所有分支落空会静默丢数据。 */
   } else if (len <= MM_MAX4BYTE) {
-    enc_write_byte(e, (uint8_t)(sign | MM_BYTESLEN4BYTE));
+    enc_write_bytes(e, data, len);
     enc_write_byte(e, (uint8_t)((len >> 24) & 0xFF));
     enc_write_byte(e, (uint8_t)((len >> 16) & 0xFF));
     enc_write_byte(e, (uint8_t)((len >> 8) & 0xFF));
     enc_write_byte(e, (uint8_t)(len & 0xFF));
+    enc_write_byte(e, (uint8_t)(sign | MM_BYTESLEN4BYTE));
   }
-
-  enc_write_bytes(e, data, len);
 }
 
 static void enc_encode_bigint(encoder_t *e, const char *text) {
@@ -514,28 +522,31 @@ static void enc_encode_array(encoder_t *e, const uint8_t *data, size_t len) {
   }
 
   if (len < MM_CONTAINERLEN1BYTE) {
+    enc_write_bytes(e, data, len);
     enc_write_byte(e, (uint8_t)(sign | len));
   } else if (len <= MM_MAX1BYTE) {
-    enc_write_byte(e, (uint8_t)(sign | MM_CONTAINERLEN1BYTE));
+    enc_write_bytes(e, data, len);
     enc_write_byte(e, (uint8_t)len);
+    enc_write_byte(e, (uint8_t)(sign | MM_CONTAINERLEN1BYTE));
   } else if (len <= MM_MAX2BYTE) {
-    enc_write_byte(e, (uint8_t)(sign | MM_CONTAINERLEN2BYTE));
+    enc_write_bytes(e, data, len);
     enc_write_byte(e, (uint8_t)(len >> 8));
     enc_write_byte(e, (uint8_t)(len & 0xFF));
+    enc_write_byte(e, (uint8_t)(sign | MM_CONTAINERLEN2BYTE));
   } else if (len <= MM_MAX3BYTE) {
-    enc_write_byte(e, (uint8_t)(sign | MM_CONTAINERLEN3BYTE));
+    enc_write_bytes(e, data, len);
     enc_write_byte(e, (uint8_t)(len >> 16));
     enc_write_byte(e, (uint8_t)(len >> 8));
     enc_write_byte(e, (uint8_t)(len & 0xFF));
+    enc_write_byte(e, (uint8_t)(sign | MM_CONTAINERLEN3BYTE));
   } else if (len <= MM_MAX4BYTE) {
-    enc_write_byte(e, (uint8_t)(sign | MM_CONTAINERLEN4BYTE));
+    enc_write_bytes(e, data, len);
     enc_write_byte(e, (uint8_t)((len >> 24) & 0xFF));
     enc_write_byte(e, (uint8_t)((len >> 16) & 0xFF));
     enc_write_byte(e, (uint8_t)((len >> 8) & 0xFF));
     enc_write_byte(e, (uint8_t)(len & 0xFF));
+    enc_write_byte(e, (uint8_t)(sign | MM_CONTAINERLEN4BYTE));
   }
-
-  enc_write_bytes(e, data, len);
 }
 
 static void enc_encode_container(encoder_t *e, uint8_t container_type,
@@ -548,28 +559,31 @@ static void enc_encode_container(encoder_t *e, uint8_t container_type,
   }
 
   if (len < MM_CONTAINERLEN1BYTE) {
+    enc_write_bytes(e, data, len);
     enc_write_byte(e, (uint8_t)(sign | len));
   } else if (len <= MM_MAX1BYTE) {
-    enc_write_byte(e, (uint8_t)(sign | MM_CONTAINERLEN1BYTE));
+    enc_write_bytes(e, data, len);
     enc_write_byte(e, (uint8_t)len);
+    enc_write_byte(e, (uint8_t)(sign | MM_CONTAINERLEN1BYTE));
   } else if (len <= MM_MAX2BYTE) {
-    enc_write_byte(e, (uint8_t)(sign | MM_CONTAINERLEN2BYTE));
+    enc_write_bytes(e, data, len);
     enc_write_byte(e, (uint8_t)(len >> 8));
     enc_write_byte(e, (uint8_t)(len & 0xFF));
+    enc_write_byte(e, (uint8_t)(sign | MM_CONTAINERLEN2BYTE));
   } else if (len <= MM_MAX3BYTE) {
-    enc_write_byte(e, (uint8_t)(sign | MM_CONTAINERLEN3BYTE));
+    enc_write_bytes(e, data, len);
     enc_write_byte(e, (uint8_t)(len >> 16));
     enc_write_byte(e, (uint8_t)(len >> 8));
     enc_write_byte(e, (uint8_t)(len & 0xFF));
+    enc_write_byte(e, (uint8_t)(sign | MM_CONTAINERLEN3BYTE));
   } else if (len <= MM_MAX4BYTE) {
-    enc_write_byte(e, (uint8_t)(sign | MM_CONTAINERLEN4BYTE));
+    enc_write_bytes(e, data, len);
     enc_write_byte(e, (uint8_t)((len >> 24) & 0xFF));
     enc_write_byte(e, (uint8_t)((len >> 16) & 0xFF));
     enc_write_byte(e, (uint8_t)((len >> 8) & 0xFF));
     enc_write_byte(e, (uint8_t)(len & 0xFF));
+    enc_write_byte(e, (uint8_t)(sign | MM_CONTAINERLEN4BYTE));
   }
-
-  enc_write_bytes(e, data, len);
 }
 
 static void enc_encode_tag(encoder_t *e, mm_tag_t *tag,
@@ -583,57 +597,64 @@ static void enc_encode_tag(encoder_t *e, mm_tag_t *tag,
     return;
   }
 
-  encoder_t tag_enc = {0};
-
-  if (tag_len < 254) {
-    enc_write_byte(&tag_enc, (uint8_t)tag_len);
-  } else if (tag_len < 257) {
-    enc_write_byte(&tag_enc, 254);
-    enc_write_byte(&tag_enc, (uint8_t)tag_len);
-  } else {
-    enc_write_byte(&tag_enc, 255);
-    enc_write_byte(&tag_enc, (uint8_t)(tag_len >> 8));
-    enc_write_byte(&tag_enc, (uint8_t)(tag_len & 0xFF));
-  }
-
-  enc_write_bytes(&tag_enc, tag_bytes, tag_len);
-  free(tag_bytes);
-
-  size_t combined_len = tag_enc.size + inner_len;
-
-  /* v0.3.0：超过 4 字节档上限即拒绝（对齐 Go 的 "tag+payload too long"）。 */
-  if (combined_len > MM_MAX4BYTE) {
+  /* v0.5.0 尾定界：一趟正向 [inner][reverse(meta)][尾槽][total BE][sign] 写出。
+   * total = len(inner) + len(meta) + len(尾槽)，与解码侧 untailify 反推式
+   * inner = total - ml - len(尾槽) 一致（尾槽与前缀槽为同一套 canonical 三档）。 */
+  uint8_t slot[3];
+  size_t slot_len = mc_footer_slot_bytes(tag_len, slot);
+  if (slot_len == 0) {
     g_enc_overflow = true;
-    free(tag_enc.buf);
+    free(tag_bytes);
     return;
   }
 
-  if (combined_len < MM_TAGLEN1BYTE) {
-    enc_write_byte(e, (uint8_t)(MM_PREFIX_TAG | combined_len));
-  } else if (combined_len <= MM_MAX1BYTE) {
-    enc_write_byte(e, (uint8_t)(MM_PREFIX_TAG | MM_TAGLEN1BYTE));
-    enc_write_byte(e, (uint8_t)combined_len);
-  } else if (combined_len <= MM_MAX2BYTE) {
-    enc_write_byte(e, (uint8_t)(MM_PREFIX_TAG | MM_TAGLEN2BYTE));
-    enc_write_byte(e, (uint8_t)(combined_len >> 8));
-    enc_write_byte(e, (uint8_t)(combined_len & 0xFF));
-  } else if (combined_len <= MM_MAX3BYTE) {
-    enc_write_byte(e, (uint8_t)(MM_PREFIX_TAG | MM_TAGLEN3BYTE));
-    enc_write_byte(e, (uint8_t)(combined_len >> 16));
-    enc_write_byte(e, (uint8_t)(combined_len >> 8));
-    enc_write_byte(e, (uint8_t)(combined_len & 0xFF));
-  } else if (combined_len <= MM_MAX4BYTE) {
-    enc_write_byte(e, (uint8_t)(MM_PREFIX_TAG | MM_TAGLEN4BYTE));
-    enc_write_byte(e, (uint8_t)((combined_len >> 24) & 0xFF));
-    enc_write_byte(e, (uint8_t)((combined_len >> 16) & 0xFF));
-    enc_write_byte(e, (uint8_t)((combined_len >> 8) & 0xFF));
-    enc_write_byte(e, (uint8_t)(combined_len & 0xFF));
+  size_t total = inner_len + tag_len + slot_len;
+  if (total > MM_MAX4BYTE) {
+    g_enc_overflow = true;
+    free(tag_bytes);
+    return;
   }
 
-  enc_write_bytes(e, tag_enc.buf, tag_enc.size);
-  enc_write_bytes(e, inner_data, inner_len);
+  uint8_t sign = MM_PREFIX_TAG;
+  uint8_t tier[4];
+  size_t tier_len = 0;
+  if (total < MM_TAGLEN1BYTE) {
+    sign |= (uint8_t)total;
+  } else if (total <= MM_MAX1BYTE) {
+    sign |= MM_TAGLEN1BYTE;
+    tier[0] = (uint8_t)total;
+    tier_len = 1;
+  } else if (total <= MM_MAX2BYTE) {
+    sign |= MM_TAGLEN2BYTE;
+    tier[0] = (uint8_t)(total >> 8);
+    tier[1] = (uint8_t)(total & 0xFF);
+    tier_len = 2;
+  } else if (total <= MM_MAX3BYTE) {
+    sign |= MM_TAGLEN3BYTE;
+    tier[0] = (uint8_t)(total >> 16);
+    tier[1] = (uint8_t)(total >> 8);
+    tier[2] = (uint8_t)(total & 0xFF);
+    tier_len = 3;
+  } else {
+    sign |= MM_TAGLEN4BYTE;
+    tier[0] = (uint8_t)((total >> 24) & 0xFF);
+    tier[1] = (uint8_t)((total >> 16) & 0xFF);
+    tier[2] = (uint8_t)((total >> 8) & 0xFF);
+    tier[3] = (uint8_t)(total & 0xFF);
+    tier_len = 4;
+  }
 
-  free(tag_enc.buf);
+  uint8_t *rev = malloc(tag_len);
+  mc_reverse_bytes(tag_bytes, rev, tag_len);
+
+  enc_write_bytes(e, inner_data, inner_len);
+  enc_write_bytes(e, rev, tag_len);
+  enc_write_bytes(e, slot, slot_len);
+  enc_write_bytes(e, tier, tier_len);
+  enc_write_byte(e, sign);
+
+  free(rev);
+  free(tag_bytes);
 }
 
 static void enc_encode_node_value(encoder_t *e, node_scalar_t *val) {

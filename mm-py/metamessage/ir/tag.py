@@ -180,11 +180,11 @@ class Tag:
             if l <= 5:
                 buf.append(TagKey.Desc | l)
                 buf.extend(desc_bytes)
-            elif l <= 256:
+            elif l <= 255:
                 buf.append(TagKey.Desc | 6)
                 buf.append(l)
                 buf.extend(desc_bytes)
-            elif l <= 65536:
+            elif l <= 65535:
                 buf.append(TagKey.Desc | 7)
                 buf.extend([l >> 8, l & 0xFF])
                 buf.extend(desc_bytes)
@@ -242,11 +242,11 @@ class Tag:
             if l <= 5:
                 buf.append(TagKey.Enum | l)
                 buf.extend(enum_bytes)
-            elif l <= 256:
+            elif l <= 255:
                 buf.append(TagKey.Enum | 6)
                 buf.append(l)
                 buf.extend(enum_bytes)
-            elif l <= 65536:
+            elif l <= 65535:
                 buf.append(TagKey.Enum | 7)
                 buf.extend([l >> 8, l & 0xFF])
                 buf.extend(enum_bytes)
@@ -285,11 +285,11 @@ class Tag:
             if l <= 5:
                 buf.append(TagKey.ChildDesc | l)
                 buf.extend(child_desc_bytes)
-            elif l <= 256:
+            elif l <= 255:
                 buf.append(TagKey.ChildDesc | 6)
                 buf.append(l)
                 buf.extend(child_desc_bytes)
-            elif l <= 65536:
+            elif l <= 65535:
                 buf.append(TagKey.ChildDesc | 7)
                 buf.extend([l >> 8, l & 0xFF])
                 buf.extend(child_desc_bytes)
@@ -347,11 +347,11 @@ class Tag:
             if l <= 5:
                 buf.append(TagKey.ChildEnum | l)
                 buf.extend(child_enum_bytes)
-            elif l <= 256:
+            elif l <= 255:
                 buf.append(TagKey.ChildEnum | 6)
                 buf.append(l)
                 buf.extend(child_enum_bytes)
-            elif l <= 65536:
+            elif l <= 65535:
                 buf.append(TagKey.ChildEnum | 7)
                 buf.extend([l >> 8, l & 0xFF])
                 buf.extend(child_enum_bytes)

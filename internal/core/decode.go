@@ -109,6 +109,11 @@ func (d *decoder) readAllWithDynamicBuf() (int, error) {
 }
 
 func (d *decoder) Decode(encoded []byte) (node ir.Node, err error) {
+	// v0.5.0 入口还原：全尾部定界 wire 形态 → 头部定界形态，后续正向解码器零改动。
+	encoded, err = Untailify(encoded)
+	if err != nil {
+		return nil, err
+	}
 	d.data = encoded
 	d.offset = 0
 	node, _, err = d.decode(nil, "")
@@ -224,13 +229,17 @@ func (d *decoder) decodeTag(prefix byte, path string) (node ir.Node, length int,
 
 	l := int(b)
 	if l < 254 {
-	} else if l < 257 {
+	} else if l == 254 {
+		// 二档：后继 1 字节 u8 长度（ml 254..255）
 		b, err = d.ReadByte()
 		if err != nil {
 			return
 		}
 		l = int(b)
 	} else {
+		// 三档（b == 255）：后继 2 字节 u16 大端长度（ml 256..65535）。
+		// 旧实现写成 l < 257 分支对字节值恒真，此分支实为死代码，
+		// 导致 ml > 255 的 meta 前缀回绕误读；v0.5.0 根治激活本档。
 		var l3 []byte
 		if l3, err = d.ReadBytes(2); err != nil {
 			return

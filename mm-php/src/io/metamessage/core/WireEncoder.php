@@ -89,18 +89,20 @@ class WireEncoder
         return $n1;
     }
 
+    // v0.5.0 尾定界：payload（已尾定界成帧）先出，meta 正序字节交给 encodeTag
+    // 逆序后置 + 尾部槽，一趟写完，无前缀长度回写。
     private function encodeComment(array $payload, ?Tag $tag): int
     {
         if ($tag === null) {
             return 0;
         }
 
-        $ns = $this->encodeT($tag->bytes());
-        if ($ns === 0) {
+        $meta = $tag->bytes();
+        if (empty($meta)) {
             return 0;
         }
 
-        return $this->encodeTag($payload, array_slice($this->buf, $this->offset - $ns, $ns));
+        return $this->encodeTag($payload, $meta);
     }
 
     private function encodeNodeArray(NodeArray $arr): int
@@ -403,33 +405,34 @@ class WireEncoder
 
     private function encodeInt(int $sign, int $uv): int
     {
+        // v0.5.0 尾序：[body BE][sign]；内联档单字节 head==tail。
         if ($uv < WireConstants::INT_LEN_1) {
             $sign |= $uv;
             return $this->writeByte($sign);
         } elseif ($uv <= WireConstants::MAX_1) {
             $sign |= WireConstants::INT_LEN_1;
-            return $this->writeByte($sign, $uv);
+            return $this->writeByte($uv, $sign);
         } elseif ($uv <= WireConstants::MAX_2) {
             $sign |= WireConstants::INT_LEN_2;
-            return $this->writeByte($sign, ($uv >> 8) & 0xFF, $uv & 0xFF);
+            return $this->writeByte(($uv >> 8) & 0xFF, $uv & 0xFF, $sign);
         } elseif ($uv <= WireConstants::MAX_3) {
             $sign |= WireConstants::INT_LEN_3;
-            return $this->writeByte($sign, ($uv >> 16) & 0xFF, ($uv >> 8) & 0xFF, $uv & 0xFF);
+            return $this->writeByte(($uv >> 16) & 0xFF, ($uv >> 8) & 0xFF, $uv & 0xFF, $sign);
         } elseif ($uv <= WireConstants::MAX_4) {
             $sign |= WireConstants::INT_LEN_4;
-            return $this->writeByte($sign, ($uv >> 24) & 0xFF, ($uv >> 16) & 0xFF, ($uv >> 8) & 0xFF, $uv & 0xFF);
+            return $this->writeByte(($uv >> 24) & 0xFF, ($uv >> 16) & 0xFF, ($uv >> 8) & 0xFF, $uv & 0xFF, $sign);
         } elseif ($uv <= WireConstants::MAX_5) {
             $sign |= WireConstants::INT_LEN_5;
-            return $this->writeByte($sign, ($uv >> 32) & 0xFF, ($uv >> 24) & 0xFF, ($uv >> 16) & 0xFF, ($uv >> 8) & 0xFF, $uv & 0xFF);
+            return $this->writeByte(($uv >> 32) & 0xFF, ($uv >> 24) & 0xFF, ($uv >> 16) & 0xFF, ($uv >> 8) & 0xFF, $uv & 0xFF, $sign);
         } elseif ($uv <= WireConstants::MAX_6) {
             $sign |= WireConstants::INT_LEN_6;
-            return $this->writeByte($sign, ($uv >> 40) & 0xFF, ($uv >> 32) & 0xFF, ($uv >> 24) & 0xFF, ($uv >> 16) & 0xFF, ($uv >> 8) & 0xFF, $uv & 0xFF);
+            return $this->writeByte(($uv >> 40) & 0xFF, ($uv >> 32) & 0xFF, ($uv >> 24) & 0xFF, ($uv >> 16) & 0xFF, ($uv >> 8) & 0xFF, $uv & 0xFF, $sign);
         } elseif ($uv <= WireConstants::MAX_7) {
             $sign |= WireConstants::INT_LEN_7;
-            return $this->writeByte($sign, ($uv >> 48) & 0xFF, ($uv >> 40) & 0xFF, ($uv >> 32) & 0xFF, ($uv >> 24) & 0xFF, ($uv >> 16) & 0xFF, ($uv >> 8) & 0xFF, $uv & 0xFF);
+            return $this->writeByte(($uv >> 48) & 0xFF, ($uv >> 40) & 0xFF, ($uv >> 32) & 0xFF, ($uv >> 24) & 0xFF, ($uv >> 16) & 0xFF, ($uv >> 8) & 0xFF, $uv & 0xFF, $sign);
         } elseif ($uv <= WireConstants::MAX_8) {
             $sign |= WireConstants::INT_LEN_8;
-            return $this->writeByte($sign, ($uv >> 56) & 0xFF, ($uv >> 48) & 0xFF, ($uv >> 40) & 0xFF, ($uv >> 32) & 0xFF, ($uv >> 24) & 0xFF, ($uv >> 16) & 0xFF, ($uv >> 8) & 0xFF, $uv & 0xFF);
+            return $this->writeByte(($uv >> 56) & 0xFF, ($uv >> 48) & 0xFF, ($uv >> 40) & 0xFF, ($uv >> 32) & 0xFF, ($uv >> 24) & 0xFF, ($uv >> 16) & 0xFF, ($uv >> 8) & 0xFF, $uv & 0xFF, $sign);
         } else {
             throw new \Exception('invalid byte size');
         }
@@ -476,33 +479,34 @@ class WireEncoder
         $exponent = $p['exponent'];
         $mantissa = $p['mantissa'];
 
+        // v0.5.0 尾序：[exp][mantissa BE][sign]；内联档单字节 head==tail。
         if ($exponent === -1 && $mantissa <= 7) {
             $sign |= $mantissa;
             return $this->writeByte($sign);
         } elseif ($mantissa <= WireConstants::MAX_1) {
             $sign |= WireConstants::FLOAT_LEN_1;
-            return $this->writeByte($sign, $exponent & 0xFF, $mantissa & 0xFF);
+            return $this->writeByte($exponent & 0xFF, $mantissa & 0xFF, $sign);
         } elseif ($mantissa <= WireConstants::MAX_2) {
             $sign |= WireConstants::FLOAT_LEN_2;
-            return $this->writeByte($sign, $exponent & 0xFF, ($mantissa >> 8) & 0xFF, $mantissa & 0xFF);
+            return $this->writeByte($exponent & 0xFF, ($mantissa >> 8) & 0xFF, $mantissa & 0xFF, $sign);
         } elseif ($mantissa <= WireConstants::MAX_3) {
             $sign |= WireConstants::FLOAT_LEN_3;
-            return $this->writeByte($sign, $exponent & 0xFF, ($mantissa >> 16) & 0xFF, ($mantissa >> 8) & 0xFF, $mantissa & 0xFF);
+            return $this->writeByte($exponent & 0xFF, ($mantissa >> 16) & 0xFF, ($mantissa >> 8) & 0xFF, $mantissa & 0xFF, $sign);
         } elseif ($mantissa <= WireConstants::MAX_4) {
             $sign |= WireConstants::FLOAT_LEN_4;
-            return $this->writeByte($sign, $exponent & 0xFF, ($mantissa >> 24) & 0xFF, ($mantissa >> 16) & 0xFF, ($mantissa >> 8) & 0xFF, $mantissa & 0xFF);
+            return $this->writeByte($exponent & 0xFF, ($mantissa >> 24) & 0xFF, ($mantissa >> 16) & 0xFF, ($mantissa >> 8) & 0xFF, $mantissa & 0xFF, $sign);
         } elseif ($mantissa <= WireConstants::MAX_5) {
             $sign |= WireConstants::FLOAT_LEN_5;
-            return $this->writeByte($sign, $exponent & 0xFF, ($mantissa >> 32) & 0xFF, ($mantissa >> 24) & 0xFF, ($mantissa >> 16) & 0xFF, ($mantissa >> 8) & 0xFF, $mantissa & 0xFF);
+            return $this->writeByte($exponent & 0xFF, ($mantissa >> 32) & 0xFF, ($mantissa >> 24) & 0xFF, ($mantissa >> 16) & 0xFF, ($mantissa >> 8) & 0xFF, $mantissa & 0xFF, $sign);
         } elseif ($mantissa <= WireConstants::MAX_6) {
             $sign |= WireConstants::FLOAT_LEN_6;
-            return $this->writeByte($sign, $exponent & 0xFF, ($mantissa >> 40) & 0xFF, ($mantissa >> 32) & 0xFF, ($mantissa >> 24) & 0xFF, ($mantissa >> 16) & 0xFF, ($mantissa >> 8) & 0xFF, $mantissa & 0xFF);
+            return $this->writeByte($exponent & 0xFF, ($mantissa >> 40) & 0xFF, ($mantissa >> 32) & 0xFF, ($mantissa >> 24) & 0xFF, ($mantissa >> 16) & 0xFF, ($mantissa >> 8) & 0xFF, $mantissa & 0xFF, $sign);
         } elseif ($mantissa <= WireConstants::MAX_7) {
             $sign |= WireConstants::FLOAT_LEN_7;
-            return $this->writeByte($sign, $exponent & 0xFF, ($mantissa >> 48) & 0xFF, ($mantissa >> 40) & 0xFF, ($mantissa >> 32) & 0xFF, ($mantissa >> 24) & 0xFF, ($mantissa >> 16) & 0xFF, ($mantissa >> 8) & 0xFF, $mantissa & 0xFF);
+            return $this->writeByte($exponent & 0xFF, ($mantissa >> 48) & 0xFF, ($mantissa >> 40) & 0xFF, ($mantissa >> 32) & 0xFF, ($mantissa >> 24) & 0xFF, ($mantissa >> 16) & 0xFF, ($mantissa >> 8) & 0xFF, $mantissa & 0xFF, $sign);
         } elseif ($mantissa <= WireConstants::MAX_8) {
             $sign |= WireConstants::FLOAT_LEN_8;
-            return $this->writeByte($sign, $exponent & 0xFF, ($mantissa >> 56) & 0xFF, ($mantissa >> 48) & 0xFF, ($mantissa >> 40) & 0xFF, ($mantissa >> 32) & 0xFF, ($mantissa >> 24) & 0xFF, ($mantissa >> 16) & 0xFF, ($mantissa >> 8) & 0xFF, $mantissa & 0xFF);
+            return $this->writeByte($exponent & 0xFF, ($mantissa >> 56) & 0xFF, ($mantissa >> 48) & 0xFF, ($mantissa >> 40) & 0xFF, ($mantissa >> 32) & 0xFF, ($mantissa >> 24) & 0xFF, ($mantissa >> 16) & 0xFF, ($mantissa >> 8) & 0xFF, $mantissa & 0xFF, $sign);
         } else {
             throw new \Exception('unsupported mantissa length');
         }
@@ -519,16 +523,17 @@ class WireEncoder
             throw new \Exception('string too long, max length: ' . WireConstants::MAX_2 . ', actual: ' . $length);
         }
 
+        // v0.5.0 尾序：[body][lenBE][sign]；内联档 [body][sign|len]。
         $sign = Prefix::STRING;
         if ($length < WireConstants::STRING_LEN_1) {
             $sign |= $length;
-            return $this->writeStringWithPrefix($s, $sign);
+            return $this->writeStringWithSuffix($s, $sign);
         } elseif ($length < WireConstants::MAX_1) {
             $sign |= WireConstants::STRING_LEN_1;
-            return $this->writeStringWithPrefix($s, $sign, $length);
+            return $this->writeStringWithSuffix($s, $length, $sign);
         } else {
             $sign |= WireConstants::STRING_LEN_2;
-            return $this->writeStringWithPrefix($s, $sign, ($length >> 8) & 0xFF, $length & 0xFF);
+            return $this->writeStringWithSuffix($s, ($length >> 8) & 0xFF, $length & 0xFF, $sign);
         }
     }
 
@@ -539,83 +544,68 @@ class WireEncoder
             throw new \Exception('bytes too long, max length: ' . WireConstants::MAX_4 . ', actual: ' . $length);
         }
 
+        // v0.5.0 尾序：[body][lenBE][sign]；内联档 [body][sign|len]。
         $sign = Prefix::BYTES;
         if ($length < WireConstants::BYTES_LEN_1) {
             $sign |= $length;
-            return $this->writeBytesWithPrefix($bs, $sign);
+            return $this->writeBytesWithSuffix($bs, $sign);
         } elseif ($length <= WireConstants::MAX_1) {
             $sign |= WireConstants::BYTES_LEN_1;
-            return $this->writeBytesWithPrefix($bs, $sign, $length);
+            return $this->writeBytesWithSuffix($bs, $length, $sign);
         } elseif ($length <= WireConstants::MAX_2) {
             $sign |= WireConstants::BYTES_LEN_2;
-            return $this->writeBytesWithPrefix($bs, $sign, ($length >> 8) & 0xFF, $length & 0xFF);
+            return $this->writeBytesWithSuffix($bs, ($length >> 8) & 0xFF, $length & 0xFF, $sign);
         } elseif ($length <= WireConstants::MAX_3) {
             $sign |= WireConstants::BYTES_LEN_3;
-            return $this->writeBytesWithPrefix($bs, $sign, ($length >> 16) & 0xFF, ($length >> 8) & 0xFF, $length & 0xFF);
+            return $this->writeBytesWithSuffix($bs, ($length >> 16) & 0xFF, ($length >> 8) & 0xFF, $length & 0xFF, $sign);
         } else {
             $sign |= WireConstants::BYTES_LEN_4;
-            return $this->writeBytesWithPrefix($bs, $sign, ($length >> 24) & 0xFF, ($length >> 16) & 0xFF, ($length >> 8) & 0xFF, $length & 0xFF);
+            return $this->writeBytesWithSuffix($bs, ($length >> 24) & 0xFF, ($length >> 16) & 0xFF, ($length >> 8) & 0xFF, $length & 0xFF, $sign);
         }
     }
 
-    public function encodeTag(array $payload, array $tag): int
+    // encodeTag 尾定界写出 tag 包装段（一趟正向，零回写，与 Go encode_tag.go 对齐）：
+    //   [inner 已编码 wire][reverse(meta 正序)][meta_len 尾部槽][total_len 档位大端][tag sign]
+    // bs 为已完成尾定界编码的 inner 字节；meta 为 Tag.bytes() 正序字节。
+    // total = len(bs)+len(meta)+len(尾槽)，与解码侧 inner = total - ml - len(尾槽)
+    // 一致（尾槽与前缀槽为同一套 canonical 三档）。
+    public function encodeTag(array $bs, array $meta): int
     {
-        if (empty($tag)) {
+        if (empty($meta)) {
             return 0;
         }
 
-        $length = count($payload) + count($tag);
+        $slot = Footer::footerSlotBytes(count($meta));
+        $length = count($bs) + count($meta) + count($slot);
         if ($length > WireConstants::MAX_4) {
             throw new \Exception('tag+payload too long, max length: ' . WireConstants::MAX_4 . ', actual: ' . $length);
         }
 
         $sign = Prefix::TAG;
-
         if ($length < WireConstants::TAG_LEN_1) {
             $sign |= $length;
-            $ns = $this->writeBytesWithPrefix($tag, $sign);
-            $nb = $this->writeBytes($payload);
+            $tier = [];
         } elseif ($length <= WireConstants::MAX_1) {
             $sign |= WireConstants::TAG_LEN_1;
-            $ns = $this->writeBytesWithPrefix($tag, $sign, $length);
-            $nb = $this->writeBytes($payload);
+            $tier = [$length];
         } elseif ($length <= WireConstants::MAX_2) {
             $sign |= WireConstants::TAG_LEN_2;
-            $ns = $this->writeBytesWithPrefix($tag, $sign, ($length >> 8) & 0xFF, $length & 0xFF);
-            $nb = $this->writeBytes($payload);
+            $tier = [($length >> 8) & 0xFF, $length & 0xFF];
         } elseif ($length <= WireConstants::MAX_3) {
             $sign |= WireConstants::TAG_LEN_3;
-            $ns = $this->writeBytesWithPrefix($tag, $sign, ($length >> 16) & 0xFF, ($length >> 8) & 0xFF, $length & 0xFF);
-            $nb = $this->writeBytes($payload);
+            $tier = [($length >> 16) & 0xFF, ($length >> 8) & 0xFF, $length & 0xFF];
         } else {
             $sign |= WireConstants::TAG_LEN_4;
-            $ns = $this->writeBytesWithPrefix($tag, $sign, ($length >> 24) & 0xFF, ($length >> 16) & 0xFF, ($length >> 8) & 0xFF, $length & 0xFF);
-            $nb = $this->writeBytes($payload);
+            $tier = [($length >> 24) & 0xFF, ($length >> 16) & 0xFF, ($length >> 8) & 0xFF, $length & 0xFF];
         }
 
-        return $nb + $ns;
-    }
-
-    public function encodeT(array $bs): int
-    {
-        $length = count($bs);
-        if ($length === 0) {
-            return 0;
-        }
-
-        if ($length > WireConstants::MAX_2) {
-            throw new \Exception('tag too long, max length: ' . WireConstants::MAX_2 . ', actual: ' . $length);
-        }
-
-        if ($length < 254) {
-            return $this->writeBytesWithPrefix($bs, $length);
-        }
-
-        if ($length < 257) {
-            return $this->writeBytesWithPrefix($bs, 254, $length);
-        }
-
-        return $this->writeBytesWithPrefix($bs, 255, ($length >> 8) & 0xFF, $length & 0xFF);
+        $n = 0;
+        $n += $this->writeBytes($bs);
+        $n += $this->writeBytes(Footer::reverseBytes($meta));
+        $n += $this->writeBytes($slot);
+        $n += $this->writeBytes($tier);
+        $n += $this->writeByte($sign);
+        return $n;
     }
 
     public function encodeObject(array $bs): int
@@ -626,21 +616,22 @@ class WireEncoder
         }
 
         $sign = Prefix::CONTAINER | WireConstants::CONTAINER_MAP;
+        // v0.5.0 尾序：[payload][lenBE][sign]；内联档 [payload][sign|len]。
         if ($length < WireConstants::CONTAINER_LEN_1) {
             $sign |= $length;
-            return $this->writeBytesWithPrefix($bs, $sign);
+            return $this->writeBytesWithSuffix($bs, $sign);
         } elseif ($length <= WireConstants::MAX_1) {
             $sign |= WireConstants::CONTAINER_LEN_1;
-            return $this->writeBytesWithPrefix($bs, $sign, $length);
+            return $this->writeBytesWithSuffix($bs, $length, $sign);
         } elseif ($length <= WireConstants::MAX_2) {
             $sign |= WireConstants::CONTAINER_LEN_2;
-            return $this->writeBytesWithPrefix($bs, $sign, ($length >> 8) & 0xFF, $length & 0xFF);
+            return $this->writeBytesWithSuffix($bs, ($length >> 8) & 0xFF, $length & 0xFF, $sign);
         } elseif ($length <= WireConstants::MAX_3) {
             $sign |= WireConstants::CONTAINER_LEN_3;
-            return $this->writeBytesWithPrefix($bs, $sign, ($length >> 16) & 0xFF, ($length >> 8) & 0xFF, $length & 0xFF);
+            return $this->writeBytesWithSuffix($bs, ($length >> 16) & 0xFF, ($length >> 8) & 0xFF, $length & 0xFF, $sign);
         } else {
             $sign |= WireConstants::CONTAINER_LEN_4;
-            return $this->writeBytesWithPrefix($bs, $sign, ($length >> 24) & 0xFF, ($length >> 16) & 0xFF, ($length >> 8) & 0xFF, $length & 0xFF);
+            return $this->writeBytesWithSuffix($bs, ($length >> 24) & 0xFF, ($length >> 16) & 0xFF, ($length >> 8) & 0xFF, $length & 0xFF, $sign);
         }
     }
 
@@ -652,21 +643,22 @@ class WireEncoder
         }
 
         $sign = Prefix::CONTAINER | WireConstants::CONTAINER_ARRAY;
+        // v0.5.0 尾序：[payload][lenBE][sign]；内联档 [payload][sign|len]。
         if ($length < WireConstants::CONTAINER_LEN_1) {
             $sign |= $length;
-            return $this->writeBytesWithPrefix($bs, $sign);
+            return $this->writeBytesWithSuffix($bs, $sign);
         } elseif ($length <= WireConstants::MAX_1) {
             $sign |= WireConstants::CONTAINER_LEN_1;
-            return $this->writeBytesWithPrefix($bs, $sign, $length);
+            return $this->writeBytesWithSuffix($bs, $length, $sign);
         } elseif ($length <= WireConstants::MAX_2) {
             $sign |= WireConstants::CONTAINER_LEN_2;
-            return $this->writeBytesWithPrefix($bs, $sign, ($length >> 8) & 0xFF, $length & 0xFF);
+            return $this->writeBytesWithSuffix($bs, ($length >> 8) & 0xFF, $length & 0xFF, $sign);
         } elseif ($length <= WireConstants::MAX_3) {
             $sign |= WireConstants::CONTAINER_LEN_3;
-            return $this->writeBytesWithPrefix($bs, $sign, ($length >> 16) & 0xFF, ($length >> 8) & 0xFF, $length & 0xFF);
+            return $this->writeBytesWithSuffix($bs, ($length >> 16) & 0xFF, ($length >> 8) & 0xFF, $length & 0xFF, $sign);
         } else {
             $sign |= WireConstants::CONTAINER_LEN_4;
-            return $this->writeBytesWithPrefix($bs, $sign, ($length >> 24) & 0xFF, ($length >> 16) & 0xFF, ($length >> 8) & 0xFF, $length & 0xFF);
+            return $this->writeBytesWithSuffix($bs, ($length >> 24) & 0xFF, ($length >> 16) & 0xFF, ($length >> 8) & 0xFF, $length & 0xFF, $sign);
         }
     }
 
@@ -770,5 +762,36 @@ class WireEncoder
     public function getEncodedBytes(int $written): array
     {
         return array_slice($this->buf, $this->offset - $written, $written);
+    }
+
+    // writeBytesWithSuffix v0.5.0 尾序：先写 body，再依次写 suffix（lenBE.../sign）。
+    public function writeBytesWithSuffix(array $bs, int ...$suffix): int
+    {
+        $l = count($bs) + count($suffix);
+        $this->ensureCapacity($this->offset + $l);
+        for ($i = 0; $i < count($bs); $i++) {
+            $this->buf[$this->offset + $i] = $bs[$i] & 0xFF;
+        }
+        for ($i = 0; $i < count($suffix); $i++) {
+            $this->buf[$this->offset + count($bs) + $i] = $suffix[$i] & 0xFF;
+        }
+        $this->offset += $l;
+        return $l;
+    }
+
+    // writeStringWithSuffix v0.5.0 尾序：先写字符串 body，再依次写 suffix。
+    public function writeStringWithSuffix(string $s, int ...$suffix): int
+    {
+        $len = strlen($s);
+        $l = $len + count($suffix);
+        $this->ensureCapacity($this->offset + $l);
+        for ($i = 0; $i < $len; $i++) {
+            $this->buf[$this->offset + $i] = ord($s[$i]);
+        }
+        for ($i = 0; $i < count($suffix); $i++) {
+            $this->buf[$this->offset + $len + $i] = $suffix[$i] & 0xFF;
+        }
+        $this->offset += $l;
+        return $l;
     }
 }

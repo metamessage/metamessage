@@ -11,6 +11,7 @@ from typing import Any, Optional, Tuple
 from ..ir.tag import Tag, TagKey, ValueType
 from ..ir.ast import NodeObject, NodeArray, NodeScalar, Field, Node, NodeType, NodeNull
 from ..ir.mime import MIME
+from .footer import untailify
 
 Simple       = 0b000 << 5
 PositiveInt  = 0b001 << 5
@@ -253,7 +254,9 @@ def _from_bits(bits) -> int:
 
 class Decoder:
     def __init__(self, data: bytes):
-        self.data = data
+        # v0.5.0 尾定界：入口先剥帧（从尾 sign 反向定界）还原成「sign 在前」的
+        # 头部形态，再交给下方原有正向解码器（与 Go decode.go untailify 入口对齐）。
+        self.data = untailify(bytes(data))
         self.offset = 0
 
     def _read_byte(self) -> int:

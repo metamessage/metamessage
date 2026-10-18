@@ -442,11 +442,11 @@ func (t *Tag) Bytes() ([]byte, error) {
 		case l <= 5:
 			bs.WriteByte(byte(KDesc) | byte(l))
 			bs.WriteString(t.Desc)
-		case l <= 1<<8:
+		case l <= 255:
 			bs.WriteByte(byte(KDesc) | byte(6))
 			bs.WriteByte(byte(l))
 			bs.WriteString(t.Desc)
-		case l <= 1<<16:
+		case l <= 65535:
 			bs.WriteByte(byte(KDesc) | byte(7))
 			bs.WriteByte(byte(l >> 8))
 			bs.WriteByte(byte(l))
@@ -534,11 +534,11 @@ func (t *Tag) Bytes() ([]byte, error) {
 		case l <= 5:
 			bs.WriteByte(byte(KEnum) | byte(l))
 			bs.WriteString(t.Enums)
-		case l <= 1<<8:
+		case l <= 255:
 			bs.WriteByte(byte(KEnum) | byte(6))
 			bs.WriteByte(byte(l))
 			bs.WriteString(t.Enums)
-		case l <= 1<<16:
+		case l <= 65535:
 			bs.WriteByte(byte(KEnum) | byte(7))
 			bs.WriteByte(byte(l >> 8))
 			bs.WriteByte(byte(l))
@@ -582,11 +582,11 @@ func (t *Tag) Bytes() ([]byte, error) {
 		case l <= 5:
 			bs.WriteByte(byte(KChildDesc) | byte(l))
 			bs.WriteString(t.ChildDesc)
-		case l <= 1<<8:
+		case l <= 255:
 			bs.WriteByte(byte(KChildDesc) | byte(6))
 			bs.WriteByte(byte(l))
 			bs.WriteString(t.ChildDesc)
-		case l <= 1<<16:
+		case l <= 65535:
 			bs.WriteByte(byte(KChildDesc) | byte(7))
 			bs.WriteByte(byte(l >> 8))
 			bs.WriteByte(byte(l))
@@ -673,11 +673,11 @@ func (t *Tag) Bytes() ([]byte, error) {
 		case l <= 5:
 			bs.WriteByte(byte(KChildEnums) | byte(l))
 			bs.WriteString(t.ChildEnums)
-		case l <= 1<<8:
+		case l <= 255:
 			bs.WriteByte(byte(KChildEnums) | byte(6))
 			bs.WriteByte(byte(l))
 			bs.WriteString(t.ChildEnums)
-		case l <= 1<<16:
+		case l <= 65535:
 			bs.WriteByte(byte(KChildEnums) | byte(7))
 			bs.WriteByte(byte(l >> 8))
 			bs.WriteByte(byte(l))

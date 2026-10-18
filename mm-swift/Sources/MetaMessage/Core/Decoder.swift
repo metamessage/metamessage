@@ -1,13 +1,19 @@
 import Foundation
 
 public class NodeDecoder {
-    private let buffer: MMBuffer
+    private let rawData: Data
+    private var buffer: MMBuffer
 
     public init(data: Data) {
+        self.rawData = data
         self.buffer = MMBuffer(data: data)
     }
 
     public func decode() throws -> Node {
+        // v0.5.0 尾定界剥帧：顶层入口把尾形态 wire 还原成头形态再正向解码；
+        // 嵌套子解码器（NodeDecoder(data: payloadData)）直接调 decodeNode，不重复剥帧。
+        let head = try Footer.untailify([UInt8](rawData))
+        self.buffer = MMBuffer(data: Data(head))
         return try decodeNode(tag: nil, path: "$")
     }
 
@@ -1158,9 +1164,11 @@ public class NodeDecoder {
 // MARK: - Backward Compatibility Decoder
 
 public class Decoder {
-    private let buffer: MMBuffer
+    private let rawData: Data
+    private var buffer: MMBuffer
 
     public init(data: Data) {
+        self.rawData = data
         self.buffer = MMBuffer(data: data)
     }
 
@@ -1178,6 +1186,9 @@ public class Decoder {
     }
 
     public func decode() throws -> DecodedValue {
+        // v0.5.0 尾定界剥帧：顶层入口还原头形态；嵌套子解码器调 decodeValue 不重复剥帧。
+        let head = try Footer.untailify([UInt8](rawData))
+        self.buffer = MMBuffer(data: Data(head))
         return try decodeValue(tag: nil)
     }
 

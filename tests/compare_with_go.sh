@@ -104,6 +104,7 @@ c_build() {
         "$mm/jsonc/mc_token.c" "$mm/jsonc/mc_scanner.c" \
         "$mm/ir/mc_ast.c" "$mm/ir/mc_tag.c" \
         "$mm/core/mc_encoder.c" "$mm/core/mc_decoder.c" \
+        "$mm/core/mc_footer.c" \
         "$mm/jsonc/mc_printer.c" "$mm/jsonc/mc_ir_parser.c" "$mm/mm.c" \
         "$src/harness.c" >/dev/null 2>&1
 }
@@ -117,6 +118,11 @@ cpp_build() {
     local out="$SCRIPT_DIR/harness/cpp/build/mm_harness_cpp"
     local src="$SCRIPT_DIR/harness/cpp"
     local mm="$PROJECT_DIR/mm-cpp/src"
+    # Prefer cmake: its toolchain resolves the SDK libc++/libSystem tbd files
+    # that a bare `g++` link chokes on under some macOS Command Line Tools.
+    if command -v cmake >/dev/null 2>&1; then
+        (cd "$src/build" && cmake .. -DCMAKE_BUILD_TYPE=Release >/dev/null 2>&1 && make -j$(sysctl -n hw.ncpu 2>/dev/null || echo 4) >/dev/null 2>&1) && [ -x "$out" ] && return 0
+    fi
     g++ -O2 -std=c++17 -I "$mm" -o "$out" "$src/harness.cpp" "$mm/jsonc/scanner.cpp" >/dev/null 2>&1 && return 0
     # Fallback: toolchains whose libc++ headers are not in the default search
     # path (e.g. macOS Command Line Tools) — use the SDK c++/v1 include tree.

@@ -21,8 +21,8 @@ def test_decode_bool():
     # SimpleFalse
     assert dec(bytes([0x06])).decode() == False
     
-    # Tag-wrapped True
-    assert dec(bytes([0xE2, 0x01, 0x08, 0x07])).decode() == True
+    # Tag-wrapped True（v0.5.0 尾序）：[inner 07][reverse meta 78 19][slot 02][sign E4]
+    assert dec(bytes([0x07, 0x78, 0x19, 0x02, 0xE4])).decode() == True
 
 
 def test_decode_int():
@@ -35,20 +35,20 @@ def test_decode_int():
     # 5
     assert dec(bytes([0x25])).decode() == 5
     
-    # 24 (1 extra byte)
-    assert dec(bytes([0x38, 24])).decode() == 24
+    # 24 (1 extra byte)：尾序 [body][sign]
+    assert dec(bytes([24, 0x38])).decode() == 24
     
-    # 255
-    assert dec(bytes([0x38, 255])).decode() == 255
+    # 255：尾序 [body][sign]
+    assert dec(bytes([255, 0x38])).decode() == 255
     
-    # 256 (2 extra bytes)
-    assert dec(bytes([0x39, 1, 0])).decode() == 256
+    # 256 (2 extra bytes)：尾序 [body BE][sign]
+    assert dec(bytes([1, 0, 0x39])).decode() == 256
     
     # -1
     assert dec(bytes([0x41])).decode() == -1
     
-    # -24
-    assert dec(bytes([0x58, 24])).decode() == -24
+    # -24：尾序 [body][sign]
+    assert dec(bytes([24, 0x58])).decode() == -24
 
 
 def test_decode_string():
@@ -58,8 +58,8 @@ def test_decode_string():
     # Empty string
     assert dec(bytes([0x80])).decode() == ''
     
-    # "hello"
-    assert dec(bytes([0x85, 0x68, 0x65, 0x6C, 0x6C, 0x6F])).decode() == 'hello'
+    # "hello"：尾序 [body][sign]
+    assert dec(bytes([0x68, 0x65, 0x6C, 0x6C, 0x6F, 0x85])).decode() == 'hello'
 
 
 def test_decode_float():
@@ -144,15 +144,15 @@ def test_decode_edge_cases():
     """Test edge cases."""
     dec = Decoder
     
-    # Min/Absolute Int values
-    assert dec(bytes([0x3F, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00])).decode() == 0
+    # Min/Absolute Int values：尾序 [body BE w][sign]，IntLen8Byte 值 0
+    assert dec(bytes([0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x3F])).decode() == 0
     
-    # Max positive 64-bit
-    b_max = bytes([0x3F, 0x7F, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF])
+    # Max positive 64-bit：尾序 [body 0x7F FF..][sign 0x3F]
+    b_max = bytes([0x7F, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0x3F])
     assert dec(b_max).decode() == 9223372036854775807
     
-    # Min negative 64-bit
-    b_min = bytes([0x5F, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01])
+    # Min negative 64-bit：尾序 [body 00..01][sign 0x5F]
+    b_min = bytes([0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01, 0x5F])
     # NegativeInt + IntLen8Byte | abs(-9223372036854775808) as uint64 overflows, this is just a structural test
     result = dec(b_min).decode()
     assert isinstance(result, int)

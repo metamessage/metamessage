@@ -4,6 +4,7 @@ pub mod simple_value;
 pub mod utils;
 pub mod encoder;
 pub mod decoder;
+pub mod footer;
 pub mod validator;
 pub mod value_to_node;
 

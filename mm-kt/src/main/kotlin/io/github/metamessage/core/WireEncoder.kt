@@ -39,72 +39,26 @@ class WireEncoder {
         return encodeUintWithPrefix(Prefix.POSITIVE_INT, uv)
     }
 
+    // v0.5.0 尾定界：一趟正向直接按 [body BE][sign] 写出，档位/内联语义与 v0.3.x 一致，
+    // 仅物理落盘顺序改为尾部形态（sign 落尾，长度天然已知，零回写）。
     private fun encodeUintWithPrefix(prefix: Int, uv: Long): Int {
         val start = buf.length()
-        when {
-            java.lang.Long.compareUnsigned(uv, WireConstants.INT_LEN_1.toLong()) < 0 ->
-                    buf.write((prefix or uv.toInt()).toByte())
-            java.lang.Long.compareUnsigned(uv, WireConstants.MAX_1) <= 0 -> {
-                buf.write((prefix or WireConstants.INT_LEN_1).toByte())
-                buf.write(uv.toByte())
-            }
-            java.lang.Long.compareUnsigned(uv, WireConstants.MAX_2) <= 0 -> {
-                buf.write((prefix or WireConstants.INT_LEN_2).toByte())
-                buf.write((uv shr 8).toByte())
-                buf.write(uv.toByte())
-            }
-            java.lang.Long.compareUnsigned(uv, WireConstants.MAX_3) <= 0 -> {
-                buf.write((prefix or WireConstants.INT_LEN_3).toByte())
-                buf.write((uv shr 16).toByte())
-                buf.write((uv shr 8).toByte())
-                buf.write(uv.toByte())
-            }
-            java.lang.Long.compareUnsigned(uv, WireConstants.MAX_4) <= 0 -> {
-                buf.write((prefix or WireConstants.INT_LEN_4).toByte())
-                buf.write((uv shr 24).toByte())
-                buf.write((uv shr 16).toByte())
-                buf.write((uv shr 8).toByte())
-                buf.write(uv.toByte())
-            }
-            java.lang.Long.compareUnsigned(uv, WireConstants.MAX_5) <= 0 -> {
-                buf.write((prefix or WireConstants.INT_LEN_5).toByte())
-                buf.write((uv shr 32).toByte())
-                buf.write((uv shr 24).toByte())
-                buf.write((uv shr 16).toByte())
-                buf.write((uv shr 8).toByte())
-                buf.write(uv.toByte())
-            }
-            java.lang.Long.compareUnsigned(uv, WireConstants.MAX_6) <= 0 -> {
-                buf.write((prefix or WireConstants.INT_LEN_6).toByte())
-                buf.write((uv shr 40).toByte())
-                buf.write((uv shr 32).toByte())
-                buf.write((uv shr 24).toByte())
-                buf.write((uv shr 16).toByte())
-                buf.write((uv shr 8).toByte())
-                buf.write(uv.toByte())
-            }
-            java.lang.Long.compareUnsigned(uv, WireConstants.MAX_7) <= 0 -> {
-                buf.write((prefix or WireConstants.INT_LEN_7).toByte())
-                buf.write((uv shr 48).toByte())
-                buf.write((uv shr 40).toByte())
-                buf.write((uv shr 32).toByte())
-                buf.write((uv shr 24).toByte())
-                buf.write((uv shr 16).toByte())
-                buf.write((uv shr 8).toByte())
-                buf.write(uv.toByte())
-            }
-            else -> {
-                buf.write((prefix or WireConstants.INT_LEN_8).toByte())
-                buf.write((uv shr 56).toByte())
-                buf.write((uv shr 48).toByte())
-                buf.write((uv shr 40).toByte())
-                buf.write((uv shr 32).toByte())
-                buf.write((uv shr 24).toByte())
-                buf.write((uv shr 16).toByte())
-                buf.write((uv shr 8).toByte())
-                buf.write(uv.toByte())
-            }
+        if (java.lang.Long.compareUnsigned(uv, WireConstants.INT_LEN_1.toLong()) < 0) {
+            buf.write((prefix or uv.toInt()).toByte())
+            return buf.length() - start
         }
+        val width = when {
+            java.lang.Long.compareUnsigned(uv, WireConstants.MAX_1) <= 0 -> 1
+            java.lang.Long.compareUnsigned(uv, WireConstants.MAX_2) <= 0 -> 2
+            java.lang.Long.compareUnsigned(uv, WireConstants.MAX_3) <= 0 -> 3
+            java.lang.Long.compareUnsigned(uv, WireConstants.MAX_4) <= 0 -> 4
+            java.lang.Long.compareUnsigned(uv, WireConstants.MAX_5) <= 0 -> 5
+            java.lang.Long.compareUnsigned(uv, WireConstants.MAX_6) <= 0 -> 6
+            java.lang.Long.compareUnsigned(uv, WireConstants.MAX_7) <= 0 -> 7
+            else -> 8
+        }
+        for (i in width - 1 downTo 0) buf.write((uv shr (8 * i)).toByte())
+        buf.write((prefix or (WireConstants.INT_LEN_1 - 1 + width)).toByte())
         return buf.length() - start
     }
 
@@ -117,76 +71,20 @@ class WireEncoder {
             writeByte((sign or p.mantissa.toInt()).toByte())
         } else {
             val mantissa = p.mantissa
-            when {
-                mantissa <= WireConstants.MAX_1 -> {
-                    writeByte((sign or WireConstants.FLOAT_LEN_1).toByte())
-                    writeByte(p.exponent)
-                    writeByte(mantissa.toByte())
-                }
-                mantissa <= WireConstants.MAX_2 -> {
-                    writeByte((sign or WireConstants.FLOAT_LEN_2).toByte())
-                    writeByte(p.exponent)
-                    writeByte((mantissa shr 8).toByte())
-                    writeByte(mantissa.toByte())
-                }
-                mantissa <= WireConstants.MAX_3 -> {
-                    writeByte((sign or WireConstants.FLOAT_LEN_3).toByte())
-                    writeByte(p.exponent)
-                    writeByte((mantissa shr 16).toByte())
-                    writeByte((mantissa shr 8).toByte())
-                    writeByte(mantissa.toByte())
-                }
-                mantissa <= WireConstants.MAX_4 -> {
-                    writeByte((sign or WireConstants.FLOAT_LEN_4).toByte())
-                    writeByte(p.exponent)
-                    writeByte((mantissa shr 24).toByte())
-                    writeByte((mantissa shr 16).toByte())
-                    writeByte((mantissa shr 8).toByte())
-                    writeByte(mantissa.toByte())
-                }
-                mantissa <= WireConstants.MAX_5 -> {
-                    writeByte((sign or WireConstants.FLOAT_LEN_5).toByte())
-                    writeByte(p.exponent)
-                    writeByte((mantissa shr 32).toByte())
-                    writeByte((mantissa shr 24).toByte())
-                    writeByte((mantissa shr 16).toByte())
-                    writeByte((mantissa shr 8).toByte())
-                    writeByte(mantissa.toByte())
-                }
-                mantissa <= WireConstants.MAX_6 -> {
-                    writeByte((sign or WireConstants.FLOAT_LEN_6).toByte())
-                    writeByte(p.exponent)
-                    writeByte((mantissa shr 40).toByte())
-                    writeByte((mantissa shr 32).toByte())
-                    writeByte((mantissa shr 24).toByte())
-                    writeByte((mantissa shr 16).toByte())
-                    writeByte((mantissa shr 8).toByte())
-                    writeByte(mantissa.toByte())
-                }
-                mantissa <= WireConstants.MAX_7 -> {
-                    writeByte((sign or WireConstants.FLOAT_LEN_7).toByte())
-                    writeByte(p.exponent)
-                    writeByte((mantissa shr 48).toByte())
-                    writeByte((mantissa shr 40).toByte())
-                    writeByte((mantissa shr 32).toByte())
-                    writeByte((mantissa shr 24).toByte())
-                    writeByte((mantissa shr 16).toByte())
-                    writeByte((mantissa shr 8).toByte())
-                    writeByte(mantissa.toByte())
-                }
-                else -> {
-                    writeByte((sign or WireConstants.FLOAT_LEN_8).toByte())
-                    writeByte(p.exponent)
-                    writeByte((mantissa shr 56).toByte())
-                    writeByte((mantissa shr 48).toByte())
-                    writeByte((mantissa shr 40).toByte())
-                    writeByte((mantissa shr 32).toByte())
-                    writeByte((mantissa shr 24).toByte())
-                    writeByte((mantissa shr 16).toByte())
-                    writeByte((mantissa shr 8).toByte())
-                    writeByte(mantissa.toByte())
-                }
+            // 尾定界：body [exp][mantissa BE w字节]，sign(档位) 落尾
+            val width = when {
+                mantissa <= WireConstants.MAX_1 -> 1
+                mantissa <= WireConstants.MAX_2 -> 2
+                mantissa <= WireConstants.MAX_3 -> 3
+                mantissa <= WireConstants.MAX_4 -> 4
+                mantissa <= WireConstants.MAX_5 -> 5
+                mantissa <= WireConstants.MAX_6 -> 6
+                mantissa <= WireConstants.MAX_7 -> 7
+                else -> 8
             }
+            writeByte(p.exponent)
+            for (i in width - 1 downTo 0) writeByte((mantissa shr (8 * i)).toByte())
+            writeByte((sign or (WireConstants.FLOAT_LEN_1 - 1 + width)).toByte())
         }
         return buf.length() - start
     }
@@ -196,21 +94,18 @@ class WireEncoder {
         val length = utf.size
         require(length <= WireConstants.MAX_2) { "string too long" }
         val sign = Prefix.STRING
+        // 尾定界：[body][lenBE 档位][sign]
         return when {
             length < WireConstants.STRING_LEN_1 ->
-                    writeBytesWithPrefix(utf, (sign or length).toByte())
+                    writeBytesThenSuffix(utf, (sign or length).toByte())
             length < WireConstants.MAX_1 ->
-                    writeBytesWithPrefix(
-                            utf,
-                            (sign or WireConstants.STRING_LEN_1).toByte(),
-                            length.toByte()
-                    )
+                    writeBytesThenSuffix(utf, length.toByte(), (sign or WireConstants.STRING_LEN_1).toByte())
             else ->
-                    writeBytesWithPrefix(
+                    writeBytesThenSuffix(
                             utf,
-                            (sign or WireConstants.STRING_LEN_2).toByte(),
                             (length shr 8).toByte(),
-                            length.toByte()
+                            length.toByte(),
+                            (sign or WireConstants.STRING_LEN_2).toByte()
                     )
         }
     }
@@ -219,40 +114,37 @@ class WireEncoder {
         val length = data.size
         require(length <= WireConstants.MAX_4) { "bytes too long" }
         val sign = Prefix.BYTES
+        // 尾定界：[body][lenBE 档位][sign]
         return when {
             length < WireConstants.BYTES_LEN_1 ->
-                    writeBytesWithPrefix(data, (sign or length).toByte())
+                    writeBytesThenSuffix(data, (sign or length).toByte())
             // v0.3.0：1 字节档边界对齐 Go 参考（length == 255 落 1 字节档）
             length <= WireConstants.MAX_1 ->
-                    writeBytesWithPrefix(
-                            data,
-                            (sign or WireConstants.BYTES_LEN_1).toByte(),
-                            length.toByte()
-                    )
+                    writeBytesThenSuffix(data, length.toByte(), (sign or WireConstants.BYTES_LEN_1).toByte())
             length <= WireConstants.MAX_2 ->
-                    writeBytesWithPrefix(
+                    writeBytesThenSuffix(
                             data,
-                            (sign or WireConstants.BYTES_LEN_2).toByte(),
                             (length shr 8).toByte(),
-                            length.toByte()
+                            length.toByte(),
+                            (sign or WireConstants.BYTES_LEN_2).toByte()
                     )
             length <= WireConstants.MAX_3 ->
-                    writeBytesWithPrefix(
+                    writeBytesThenSuffix(
                             data,
-                            (sign or WireConstants.BYTES_LEN_3).toByte(),
                             (length shr 16).toByte(),
                             (length shr 8).toByte(),
-                            length.toByte()
+                            length.toByte(),
+                            (sign or WireConstants.BYTES_LEN_3).toByte()
                     )
             // 最后一档必须 <=：length == MAX_4 本身可表达，否则静默丢数据
             else ->
-                    writeBytesWithPrefix(
+                    writeBytesThenSuffix(
                             data,
-                            (sign or WireConstants.BYTES_LEN_4).toByte(),
                             (length shr 24).toByte(),
                             (length shr 16).toByte(),
                             (length shr 8).toByte(),
-                            length.toByte()
+                            length.toByte(),
+                            (sign or WireConstants.BYTES_LEN_4).toByte()
                     )
         }
     }
@@ -266,108 +158,80 @@ class WireEncoder {
     private fun encodeContainer(payload: ByteArray, baseSign: Int): Int {
         val length = payload.size
         require(length <= WireConstants.MAX_4) { "container payload too long" }
+        // 尾定界：[payload][lenBE 档位][sign]
         return when {
             length < WireConstants.CONTAINER_LEN_1 ->
-                    writeBytesWithPrefix(payload, (baseSign or length).toByte())
+                    writeBytesThenSuffix(payload, (baseSign or length).toByte())
             length <= WireConstants.MAX_1 ->
-                    writeBytesWithPrefix(
-                            payload,
-                            (baseSign or WireConstants.CONTAINER_LEN_1).toByte(),
-                            length.toByte()
-                    )
+                    writeBytesThenSuffix(payload, length.toByte(), (baseSign or WireConstants.CONTAINER_LEN_1).toByte())
             length <= WireConstants.MAX_2 ->
-                    writeBytesWithPrefix(
+                    writeBytesThenSuffix(
                             payload,
-                            (baseSign or WireConstants.CONTAINER_LEN_2).toByte(),
                             (length shr 8).toByte(),
-                            length.toByte()
+                            length.toByte(),
+                            (baseSign or WireConstants.CONTAINER_LEN_2).toByte()
                     )
             length <= WireConstants.MAX_3 ->
-                    writeBytesWithPrefix(
+                    writeBytesThenSuffix(
                             payload,
-                            (baseSign or WireConstants.CONTAINER_LEN_3).toByte(),
                             (length shr 16).toByte(),
                             (length shr 8).toByte(),
-                            length.toByte()
+                            length.toByte(),
+                            (baseSign or WireConstants.CONTAINER_LEN_3).toByte()
                     )
             else ->
-                    writeBytesWithPrefix(
+                    writeBytesThenSuffix(
                             payload,
-                            (baseSign or WireConstants.CONTAINER_LEN_4).toByte(),
                             (length shr 24).toByte(),
                             (length shr 16).toByte(),
                             (length shr 8).toByte(),
-                            length.toByte()
+                            length.toByte(),
+                            (baseSign or WireConstants.CONTAINER_LEN_4).toByte()
                     )
         }
     }
 
-    fun encodeTagInner(tagBytes: ByteArray): Int {
-        if (tagBytes.isEmpty()) return 0
-        require(tagBytes.size <= WireConstants.MAX_2) { "tag too long" }
-        val length = tagBytes.size
-        return when {
-            length < 254 -> writeBytesWithPrefix(tagBytes, length.toByte())
-            length < 257 -> writeBytesWithPrefix(tagBytes, 254.toByte(), length.toByte())
-            else ->
-                    writeBytesWithPrefix(
-                            tagBytes,
-                            255.toByte(),
-                            (length shr 8).toByte(),
-                            length.toByte()
-                    )
-        }
-    }
-
-    fun encodeTaggedPayload(payload: ByteArray, rawTagFields: ByteArray): Int {
-        if (rawTagFields.isEmpty()) {
+    // v0.5.0 尾定界 tag 包装段（一趟正向，零回写），与 Go encode_tag.go 逐字节对齐：
+    //   [inner 已编码 payload wire][reverse(meta 正序)][meta_len 尾部槽][total_len 档位大端][tag sign]
+    // meta 为 Tag.toBytes() 正序字节；total = len(payload)+len(meta)+len(尾槽)。
+    fun encodeTaggedPayload(payload: ByteArray, meta: ByteArray): Int {
+        if (meta.isEmpty()) {
             writeBytes(payload)
             return payload.size
         }
-        val tEnc = WireEncoder()
-        tEnc.encodeTagInner(rawTagFields)
-        val tagEncoded = tEnc.toByteArray()
-        val length = tagEncoded.size + payload.size
-        require(length <= WireConstants.MAX_4) { "tag+payload too long" }
+        val slot = Footer.footerSlotBytes(meta.size)
+        val length = payload.size + meta.size + slot.size
+        require(length.toLong() <= WireConstants.MAX_4) { "tag+payload too long" }
         val start = buf.length()
-        val sign = Prefix.TAG
-        when {
+        var sign = Prefix.TAG
+        val tier: ByteArray = when {
             length < WireConstants.TAG_LEN_1 -> {
-                buf.write((sign or length).toByte())
-                buf.writeAll(tagEncoded)
-                buf.writeAll(payload)
+                sign = sign or length
+                ByteArray(0)
             }
             length <= WireConstants.MAX_1 -> {
-                buf.write((sign or WireConstants.TAG_LEN_1).toByte())
-                buf.write(length.toByte())
-                buf.writeAll(tagEncoded)
-                buf.writeAll(payload)
+                sign = sign or WireConstants.TAG_LEN_1
+                byteArrayOf(length.toByte())
             }
             length <= WireConstants.MAX_2 -> {
-                buf.write((sign or WireConstants.TAG_LEN_2).toByte())
-                buf.write((length shr 8).toByte())
-                buf.write(length.toByte())
-                buf.writeAll(tagEncoded)
-                buf.writeAll(payload)
+                sign = sign or WireConstants.TAG_LEN_2
+                byteArrayOf((length shr 8).toByte(), length.toByte())
             }
             length <= WireConstants.MAX_3 -> {
-                buf.write((sign or WireConstants.TAG_LEN_3).toByte())
-                buf.write((length shr 16).toByte())
-                buf.write((length shr 8).toByte())
-                buf.write(length.toByte())
-                buf.writeAll(tagEncoded)
-                buf.writeAll(payload)
+                sign = sign or WireConstants.TAG_LEN_3
+                byteArrayOf((length shr 16).toByte(), (length shr 8).toByte(), length.toByte())
             }
+            // 最后一档必须 <=：total == MAX_4 本身可表达。
             else -> {
-                buf.write((sign or WireConstants.TAG_LEN_4).toByte())
-                buf.write((length shr 24).toByte())
-                buf.write((length shr 16).toByte())
-                buf.write((length shr 8).toByte())
-                buf.write(length.toByte())
-                buf.writeAll(tagEncoded)
-                buf.writeAll(payload)
+                sign = sign or WireConstants.TAG_LEN_4
+                byteArrayOf((length shr 24).toByte(), (length shr 16).toByte(), (length shr 8).toByte(), length.toByte())
             }
         }
+        buf.writeAll(payload)
+        buf.writeAll(Footer.reverseBytes(meta))
+        buf.writeAll(slot)
+        buf.writeAll(tier)
+        buf.write(sign.toByte())
         return buf.length() - start
     }
 
@@ -396,11 +260,11 @@ class WireEncoder {
         return bs.size
     }
 
-    private fun writeBytesWithPrefix(bs: ByteArray, vararg prefix: Byte): Int {
-        for (b in prefix) {
+    private fun writeBytesThenSuffix(bs: ByteArray, vararg suffix: Byte): Int {
+        buf.writeAll(bs)
+        for (b in suffix) {
             buf.write(b)
         }
-        buf.writeAll(bs)
-        return prefix.size + bs.size
+        return bs.size + suffix.size
     }
 }

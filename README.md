@@ -71,6 +71,22 @@ MetaMessage 天生適合 AI 的理解和交互場景，解決了理解歧義、�
 
 ### TOML
 
+## 線格式（v0.4.0 Footer 模式）
+
+v0.4.0 将每个节点的 meta（tag）信息從節點**頭部**移至節點**尾部**，采用以下布局：
+
+```
+带 meta 节点：[PrefixTag|档位][total_len][body 正向][reverse(meta 字节)][尾部槽]
+无 meta 节点：[裸 body]（无封装）
+```
+
+- `total_len = len(body) + len(meta) + len(尾部槽)`，沿用 v0.3.x 的四档宽度（0/1/2/3/4 字节大端）
+- `reverse(meta)`：`Tag.Bytes()` 输出字节流的整体字节级逆序；字段逻辑顺序 Example→…→KMore 保持不变
+- 尾部槽：1~3 字节自描述，解碼器从节點末字节向头读取即得 meta_len
+- 解码器对每个带 meta 节点断言：正向解析 body 实际消耗字节 == body_len，否则报 **footer boundary mismatch**
+
+详细字节级规范、边界场景规则与各语言移植指南见 [`docs/footer-format-v0.4.0.md`](docs/footer-format-v0.4.0.md)。
+
 ## 數據類型
 
 通过标签`type=`定義數據類型，格式`type=类型标识`，例如`type=i8`表示int8類型

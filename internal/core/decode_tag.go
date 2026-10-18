@@ -44,7 +44,7 @@ func (d *decoder) decodeTagBytes(tag *ir.Tag) (length int, err error) {
 
 			tag.Desc = string(bs)
 			length = 1 + l
-		case l <= 1<<8:
+		case l == 6:
 			var l2 byte
 			l2, err = d.ReadByte()
 			if err != nil {
@@ -59,7 +59,7 @@ func (d *decoder) decodeTagBytes(tag *ir.Tag) (length int, err error) {
 			}
 			tag.Desc = string(bs)
 			length = 1 + 1 + l
-		case l <= 1<<16:
+		case l == 7:
 			var l2 []byte
 			l2, err = d.ReadBytes(2)
 			if err != nil {
@@ -207,7 +207,7 @@ func (d *decoder) decodeTagBytes(tag *ir.Tag) (length int, err error) {
 
 			tag.Enums = string(bs)
 			length = 1 + l
-		case l <= 1<<8:
+		case l == 6:
 			var l2 byte
 			l2, err = d.ReadByte()
 			if err != nil {
@@ -222,7 +222,7 @@ func (d *decoder) decodeTagBytes(tag *ir.Tag) (length int, err error) {
 			}
 			tag.Enums = string(bs)
 			length = 1 + 1 + l
-		case l <= 1<<16:
+		case l == 7:
 			var l2 []byte
 			l2, err = d.ReadBytes(2)
 			if err != nil {
@@ -322,7 +322,7 @@ func (d *decoder) decodeTagBytes(tag *ir.Tag) (length int, err error) {
 
 			tag.ChildDesc = string(bs)
 			length = 1 + l
-		case l <= 1<<8:
+		case l == 6:
 			var l2 byte
 			l2, err = d.ReadByte()
 			if err != nil {
@@ -337,7 +337,7 @@ func (d *decoder) decodeTagBytes(tag *ir.Tag) (length int, err error) {
 			}
 			tag.ChildDesc = string(bs)
 			length = 1 + 1 + l
-		case l <= 1<<16:
+		case l == 7:
 			var l2 []byte
 			l2, err = d.ReadBytes(2)
 			if err != nil {
@@ -478,7 +478,7 @@ func (d *decoder) decodeTagBytes(tag *ir.Tag) (length int, err error) {
 
 			tag.ChildEnums = string(bs)
 			length = 1 + l
-		case l <= 1<<8:
+		case l == 6:
 			var l2 byte
 			l2, err = d.ReadByte()
 			if err != nil {
@@ -493,7 +493,7 @@ func (d *decoder) decodeTagBytes(tag *ir.Tag) (length int, err error) {
 			}
 			tag.ChildEnums = string(bs)
 			length = 1 + 1 + l
-		case l <= 1<<16:
+		case l == 7:
 			var l2 []byte
 			l2, err = d.ReadBytes(2)
 			if err != nil {

@@ -54,6 +54,7 @@ import {
 } from '../ir/tag';
 import { NodeScalar, NodeObject, NodeArray, Node, NodeNull } from '../ir/ast';
 import { uint8ToBase64 } from '../jsonc/printer';
+import { Untailify } from './footer';
 
 export class MMDecoder {
   private buffer: MMBuffer;
@@ -61,6 +62,9 @@ export class MMDecoder {
   private offset: number;
 
   constructor(data: Uint8Array) {
+    // v0.5.0 尾定界：入口先剥帧（从尾 sign 反向定界）还原成「sign 在前」的
+    // 头部形态，再交给下方原有正向解码器（与 Go decode.go Untailify 入口对齐）。
+    data = Untailify(data);
     this.data = data;
     this.offset = 0;
     this.buffer = new MMBuffer(data.length);
@@ -188,11 +192,15 @@ export class MMDecoder {
     let l = b;
 
     if (l < 254) {
-    } else if (l < 257) {
+    } else if (l === 254) {
+      // 二档：后继 1 字节 u8 长度（ml 254..255）
       l = this.readByte();
     } else {
+      // 三档（b == 255）：后继 2 字节 u16 大端长度（ml 256..65535）。
+      // 旧实现写成 l < 257 分支对字节值恒真，此分支实为死代码，
+      // 导致 ml > 255 的 meta 前缀回绕误读；v0.5.0 根治激活本档。
       const lenBytes = this.readBytes(2);
-      l = (lenBytes[0] ?? 0) | ((lenBytes[1] ?? 0) << 8);
+      l = ((lenBytes[0] ?? 0) << 8) | (lenBytes[1] ?? 0);
     }
 
     while (l > 0) {
@@ -284,13 +292,13 @@ export class MMDecoder {
           const bs = this.readBytes(lenDesc);
           tag.desc = new TextDecoder('utf-8').decode(bs);
           return 1 + lenDesc;
-        } else if (lenDesc <= 0xff) {
+        } else if (lenDesc === 6) {
           const l2 = this.readByte();
           lenDesc = l2;
           const bs = this.readBytes(lenDesc);
           tag.desc = new TextDecoder('utf-8').decode(bs);
           return 1 + 1 + lenDesc;
-        } else if (lenDesc <= 0xffff) {
+        } else if (lenDesc === 7) {
           const l2 = this.readBytes(2);
           if (!l2 || l2.length < 2) {
             throw new Error('读取长度失败，数据不足');
@@ -376,13 +384,13 @@ export class MMDecoder {
           const bs = this.readBytes(lenEnum);
           tag.enums = new TextDecoder('utf-8').decode(bs);
           return 1 + lenEnum;
-        } else if (lenEnum <= 0xff) {
+        } else if (lenEnum === 6) {
           const l2 = this.readByte();
           lenEnum = l2;
           const bs = this.readBytes(lenEnum);
           tag.enums = new TextDecoder('utf-8').decode(bs);
           return 1 + 1 + lenEnum;
-        } else if (lenEnum <= 0xffff) {
+        } else if (lenEnum === 7) {
           const l2 = this.readBytes(2);
           if (!l2 || l2.length < 2) {
             throw new Error('读取长度失败，数据不足');
@@ -441,13 +449,13 @@ export class MMDecoder {
           const bs = this.readBytes(lenChildDesc);
           tag.childDesc = new TextDecoder('utf-8').decode(bs);
           return 1 + lenChildDesc;
-        } else if (lenChildDesc <= 0xff) {
+        } else if (lenChildDesc === 6) {
           const l2 = this.readByte();
           lenChildDesc = l2;
           const bs = this.readBytes(lenChildDesc);
           tag.childDesc = new TextDecoder('utf-8').decode(bs);
           return 1 + 1 + lenChildDesc;
-        } else if (lenChildDesc <= 0xffff) {
+        } else if (lenChildDesc === 7) {
           const l2 = this.readBytes(2);
           if (!l2 || l2.length < 2) {
             throw new Error('读取长度失败，数据不足');
@@ -529,13 +537,13 @@ export class MMDecoder {
           const bs = this.readBytes(lenChildEnum);
           tag.childEnums = new TextDecoder('utf-8').decode(bs);
           return 1 + lenChildEnum;
-        } else if (lenChildEnum <= 0xff) {
+        } else if (lenChildEnum === 6) {
           const l2 = this.readByte();
           lenChildEnum = l2;
           const bs = this.readBytes(lenChildEnum);
           tag.childEnums = new TextDecoder('utf-8').decode(bs);
           return 1 + 1 + lenChildEnum;
-        } else if (lenChildEnum <= 0xffff) {
+        } else if (lenChildEnum === 7) {
           const l2 = this.readBytes(2);
           if (!l2 || l2.length < 2) {
             throw new Error('读取长度失败，数据不足');

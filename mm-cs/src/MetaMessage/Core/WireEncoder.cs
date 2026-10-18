@@ -31,105 +31,51 @@ public class WireEncoder
         return EncodeSimple(value ? SimpleValue.TRUE : SimpleValue.FALSE);
     }
 
+    // v0.5.0 尾定界：一趟正向直接按 [body BE][sign] 写出，档位/内联语义与 v0.3.x 一致，
+    // 仅物理落盘顺序由头部形态改为尾部形态（sign 落在尾字节，长度天然已知，零回写）。
     public int EncodeInt64(long value)
     {
         int start = _buf.Length;
         if (value >= 0)
         {
-            if (value <= WireConstants.INT_LEN_1 - 1)
-            {
-                _buf.Write(Prefix.POSITIVE_INT | (int)value);
-            }
-            else if (value <= WireConstants.MAX_1)
-            {
-                _buf.Write(Prefix.POSITIVE_INT | WireConstants.INT_LEN_1, (byte)value);
-            }
-            else if (value <= WireConstants.MAX_2)
-            {
-                _buf.Write(Prefix.POSITIVE_INT | WireConstants.INT_LEN_2, (byte)(value >> 8), (byte)value);
-            }
-            else if (value <= WireConstants.MAX_3)
-            {
-                _buf.Write(Prefix.POSITIVE_INT | WireConstants.INT_LEN_3, (byte)(value >> 16), (byte)(value >> 8), (byte)value);
-            }
-            else if (value <= WireConstants.MAX_4)
-            {
-                _buf.Write(Prefix.POSITIVE_INT | WireConstants.INT_LEN_4, (byte)(value >> 24), (byte)(value >> 16), (byte)(value >> 8), (byte)value);
-            }
-            else if (value <= WireConstants.MAX_5)
-            {
-                _buf.Write(Prefix.POSITIVE_INT | WireConstants.INT_LEN_5, (byte)(value >> 32), (byte)(value >> 24), (byte)(value >> 16), (byte)(value >> 8), (byte)value);
-            }
-            else if (value <= WireConstants.MAX_6)
-            {
-                _buf.Write(Prefix.POSITIVE_INT | WireConstants.INT_LEN_6, (byte)(value >> 40), (byte)(value >> 32), (byte)(value >> 24), (byte)(value >> 16), (byte)(value >> 8), (byte)value);
-            }
-            else if (value <= WireConstants.MAX_7)
-            {
-                _buf.Write(Prefix.POSITIVE_INT | WireConstants.INT_LEN_7, (byte)(value >> 48), (byte)(value >> 40), (byte)(value >> 32), (byte)(value >> 24), (byte)(value >> 16), (byte)(value >> 8), (byte)value);
-            }
-            else
-            {
-                _buf.Write(Prefix.POSITIVE_INT | WireConstants.INT_LEN_8, (byte)(value >> 56), (byte)(value >> 48), (byte)(value >> 40), (byte)(value >> 32), (byte)(value >> 24), (byte)(value >> 16), (byte)(value >> 8), (byte)value);
-            }
+            WriteIntTail((ulong)value, Prefix.POSITIVE_INT);
         }
         else
         {
-            ulong uv;
-            if (value == long.MinValue)
-            {
-                uv = 9223372036854775808UL;
-            }
-            else
-            {
-                uv = (ulong)(-value);
-            }
-            if (uv <= (ulong)(WireConstants.INT_LEN_1 - 1))
-            {
-                _buf.Write(Prefix.NEGATIVE_INT | (int)uv);
-            }
-            else if (uv <= WireConstants.MAX_1)
-            {
-                _buf.Write(Prefix.NEGATIVE_INT | WireConstants.INT_LEN_1, (byte)uv);
-            }
-            else if (uv <= WireConstants.MAX_2)
-            {
-                _buf.Write(Prefix.NEGATIVE_INT | WireConstants.INT_LEN_2, (byte)(uv >> 8), (byte)uv);
-            }
-            else if (uv <= WireConstants.MAX_3)
-            {
-                _buf.Write(Prefix.NEGATIVE_INT | WireConstants.INT_LEN_3, (byte)(uv >> 16), (byte)(uv >> 8), (byte)uv);
-            }
-            else if (uv <= WireConstants.MAX_4)
-            {
-                _buf.Write(Prefix.NEGATIVE_INT | WireConstants.INT_LEN_4, (byte)(uv >> 24), (byte)(uv >> 16), (byte)(uv >> 8), (byte)uv);
-            }
-            else if (uv <= WireConstants.MAX_5)
-            {
-                _buf.Write(Prefix.NEGATIVE_INT | WireConstants.INT_LEN_5, (byte)(uv >> 32), (byte)(uv >> 24), (byte)(uv >> 16), (byte)(uv >> 8), (byte)uv);
-            }
-            else if (uv <= WireConstants.MAX_6)
-            {
-                _buf.Write(Prefix.NEGATIVE_INT | WireConstants.INT_LEN_6, (byte)(uv >> 40), (byte)(uv >> 32), (byte)(uv >> 24), (byte)(uv >> 16), (byte)(uv >> 8), (byte)uv);
-            }
-            else if (uv <= WireConstants.MAX_7)
-            {
-                _buf.Write(Prefix.NEGATIVE_INT | WireConstants.INT_LEN_7, (byte)(uv >> 48), (byte)(uv >> 40), (byte)(uv >> 32), (byte)(uv >> 24), (byte)(uv >> 16), (byte)(uv >> 8), (byte)uv);
-            }
-            else
-            {
-                _buf.Write(Prefix.NEGATIVE_INT | WireConstants.INT_LEN_8, (byte)(uv >> 56), (byte)(uv >> 48), (byte)(uv >> 40), (byte)(uv >> 32), (byte)(uv >> 24), (byte)(uv >> 16), (byte)(uv >> 8), (byte)uv);
-            }
+            ulong uv = value == long.MinValue ? 9223372036854775808UL : (ulong)(-value);
+            WriteIntTail(uv, Prefix.NEGATIVE_INT);
         }
         return _buf.Length - start;
+    }
+
+    private void WriteIntTail(ulong uv, int prefix)
+    {
+        if (uv <= (ulong)(WireConstants.INT_LEN_1 - 1))
+        {
+            _buf.Write(prefix | (int)uv);
+            return;
+        }
+        int width;
+        if (uv <= (ulong)WireConstants.MAX_1) width = 1;
+        else if (uv <= (ulong)WireConstants.MAX_2) width = 2;
+        else if (uv <= (ulong)WireConstants.MAX_3) width = 3;
+        else if (uv <= (ulong)WireConstants.MAX_4) width = 4;
+        else if (uv <= (ulong)WireConstants.MAX_5) width = 5;
+        else if (uv <= (ulong)WireConstants.MAX_6) width = 6;
+        else if (uv <= (ulong)WireConstants.MAX_7) width = 7;
+        else width = 8;
+        // body 大端先写，sign(档位) 落尾
+        for (int i = width - 1; i >= 0; i--)
+            _buf.Write((byte)(uv >> (8 * i)));
+        _buf.Write(prefix | (WireConstants.INT_LEN_1 - 1 + width));
     }
 
     public int EncodeUInt64(ulong value)
     {
         int start = _buf.Length;
-        _buf.Write(Prefix.POSITIVE_INT | WireConstants.INT_LEN_8,
-            (byte)(value >> 56), (byte)(value >> 48), (byte)(value >> 40), (byte)(value >> 32),
-            (byte)(value >> 24), (byte)(value >> 16), (byte)(value >> 8), (byte)value);
+        for (int i = 7; i >= 0; i--)
+            _buf.Write((byte)(value >> (8 * i)));
+        _buf.Write(Prefix.POSITIVE_INT | WireConstants.INT_LEN_8);
         return _buf.Length - start;
     }
 
@@ -168,38 +114,20 @@ public class WireEncoder
         }
         else
         {
-            if (mantissa <= WireConstants.MAX_1)
-            {
-                _buf.Write(sign | WireConstants.FLOAT_LEN_1, (byte)exponent, (byte)mantissa);
-            }
-            else if (mantissa <= WireConstants.MAX_2)
-            {
-                _buf.Write(sign | WireConstants.FLOAT_LEN_2, (byte)exponent, (byte)(mantissa >> 8), (byte)mantissa);
-            }
-            else if (mantissa <= WireConstants.MAX_3)
-            {
-                _buf.Write(sign | WireConstants.FLOAT_LEN_3, (byte)exponent, (byte)(mantissa >> 16), (byte)(mantissa >> 8), (byte)mantissa);
-            }
-            else if (mantissa <= WireConstants.MAX_4)
-            {
-                _buf.Write(sign | WireConstants.FLOAT_LEN_4, (byte)exponent, (byte)(mantissa >> 24), (byte)(mantissa >> 16), (byte)(mantissa >> 8), (byte)mantissa);
-            }
-            else if (mantissa <= WireConstants.MAX_5)
-            {
-                _buf.Write(sign | WireConstants.FLOAT_LEN_5, (byte)exponent, (byte)(mantissa >> 32), (byte)(mantissa >> 24), (byte)(mantissa >> 16), (byte)(mantissa >> 8), (byte)mantissa);
-            }
-            else if (mantissa <= WireConstants.MAX_6)
-            {
-                _buf.Write(sign | WireConstants.FLOAT_LEN_6, (byte)exponent, (byte)(mantissa >> 40), (byte)(mantissa >> 32), (byte)(mantissa >> 24), (byte)(mantissa >> 16), (byte)(mantissa >> 8), (byte)mantissa);
-            }
-            else if (mantissa <= WireConstants.MAX_7)
-            {
-                _buf.Write(sign | WireConstants.FLOAT_LEN_7, (byte)exponent, (byte)(mantissa >> 48), (byte)(mantissa >> 40), (byte)(mantissa >> 32), (byte)(mantissa >> 24), (byte)(mantissa >> 16), (byte)(mantissa >> 8), (byte)mantissa);
-            }
-            else
-            {
-                _buf.Write(sign | WireConstants.FLOAT_LEN_8, (byte)exponent, (byte)(mantissa >> 56), (byte)(mantissa >> 48), (byte)(mantissa >> 40), (byte)(mantissa >> 32), (byte)(mantissa >> 24), (byte)(mantissa >> 16), (byte)(mantissa >> 8), (byte)mantissa);
-            }
+            int width;
+            if (mantissa <= WireConstants.MAX_1) width = 1;
+            else if (mantissa <= WireConstants.MAX_2) width = 2;
+            else if (mantissa <= WireConstants.MAX_3) width = 3;
+            else if (mantissa <= WireConstants.MAX_4) width = 4;
+            else if (mantissa <= WireConstants.MAX_5) width = 5;
+            else if (mantissa <= WireConstants.MAX_6) width = 6;
+            else if (mantissa <= WireConstants.MAX_7) width = 7;
+            else width = 8;
+            // 尾定界：body [exp][mantissa BE w字节]，sign(档位) 落尾
+            _buf.Write((byte)exponent);
+            for (int i = width - 1; i >= 0; i--)
+                _buf.Write((byte)(mantissa >> (8 * i)));
+            _buf.Write(sign | (WireConstants.FLOAT_LEN_1 - 1 + width));
         }
         return _buf.Length - start;
     }
@@ -210,20 +138,27 @@ public class WireEncoder
         int length = utf.Length;
         int start = _buf.Length;
         int sign = Prefix.STRING;
+        // 尾定界：[body][lenBE 档位][sign]
         if (length < WireConstants.STRING_LEN_1)
         {
-            _buf.WriteWithBytes(sign | length, utf);
+            _buf.WriteAll(utf);
+            _buf.Write(sign | length);
         }
         else if (length < WireConstants.MAX_1)
         {
-            _buf.WriteWithBytes(sign | WireConstants.STRING_LEN_1, (byte)length, utf);
+            _buf.WriteAll(utf);
+            _buf.Write((byte)length);
+            _buf.Write(sign | WireConstants.STRING_LEN_1);
         }
         // The last bucket must use <=: MAX_2 (65535) itself is representable by the
         // 2-byte length field. Using < makes length == MAX_2 fall through every
         // branch and get reported as "too long" even though it fits on the wire.
         else if (length <= WireConstants.MAX_2)
         {
-            _buf.WriteWithBytes(sign | WireConstants.STRING_LEN_2, (byte)(length >> 8), (byte)length, utf);
+            _buf.WriteAll(utf);
+            _buf.Write((byte)(length >> 8));
+            _buf.Write((byte)length);
+            _buf.Write(sign | WireConstants.STRING_LEN_2);
         }
         else
         {
@@ -237,30 +172,23 @@ public class WireEncoder
         int length = bytes.Length;
         int start = _buf.Length;
         int sign = Prefix.BYTES;
+        // 尾定界：[body][lenBE 档位][sign]
         if (length < WireConstants.BYTES_LEN_1)
         {
-            _buf.WriteWithBytes(sign | length, bytes);
-        }
-        // v0.3.0：1 字节档边界对齐 Go 参考（length == 255 落 1 字节档）
-        else if (length <= WireConstants.MAX_1)
-        {
-            _buf.WriteWithBytes(sign | WireConstants.BYTES_LEN_1, (byte)length, bytes);
-        }
-        else if (length <= WireConstants.MAX_2)
-        {
-            _buf.WriteWithBytes(sign | WireConstants.BYTES_LEN_2, (byte)(length >> 8), (byte)length, bytes);
-        }
-        else if (length <= WireConstants.MAX_3)
-        {
-            _buf.Write(sign | WireConstants.BYTES_LEN_3, (byte)(length >> 16), (byte)(length >> 8), (byte)length);
             _buf.WriteAll(bytes);
+            _buf.Write(sign | length);
         }
-        // 最后一档必须 <=：length == MAX_4 本身可表达，否则静默丢数据
         else if (length <= WireConstants.MAX_4)
         {
-            _buf.Write(sign | WireConstants.BYTES_LEN_4, (byte)(length >> 24), (byte)(length >> 16), (byte)(length >> 8), (byte)length);
-            _buf.WriteAll(bytes);
+            int width;
+            // v0.3.0：1 字节档边界对齐 Go 参考（length == 255 落 1 字节档）
+            if (length <= WireConstants.MAX_1) width = 1;
+            else if (length <= WireConstants.MAX_2) width = 2;
+            else if (length <= WireConstants.MAX_3) width = 3;
+            else width = 4;
+            WriteBodyTierSign(bytes, length, width, sign | (WireConstants.BYTES_LEN_1 - 1 + width));
         }
+        // 最后一档必须 <=：length == MAX_4 本身可表达，否则静默丢数据
         else
         {
             throw new Exception("Bytes too long");
@@ -268,139 +196,104 @@ public class WireEncoder
         return _buf.Length - start;
     }
 
+    // 尾定界通用写出：body 先，再大端 length(width 字节)，最后 sign(含档位)。
+    private void WriteBodyTierSign(byte[] body, long length, int width, int signWithTier)
+    {
+        _buf.WriteAll(body);
+        for (int i = width - 1; i >= 0; i--)
+            _buf.Write((byte)(length >> (8 * i)));
+        _buf.Write(signWithTier);
+    }
+
     public int EncodeArrayPayload(byte[] payload)
     {
-        int length = payload.Length;
-        int start = _buf.Length;
-        int sign = Prefix.CONTAINER | WireConstants.CONTAINER_ARRAY;
-        if (length < WireConstants.CONTAINER_LEN_1)
-        {
-            _buf.WriteWithBytes(sign | length, payload);
-        }
-        else if (length <= WireConstants.MAX_1)
-        {
-            _buf.WriteWithBytes(sign | WireConstants.CONTAINER_LEN_1, (byte)length, payload);
-        }
-        else if (length <= WireConstants.MAX_2)
-        {
-            _buf.WriteWithBytes(sign | WireConstants.CONTAINER_LEN_2, (byte)(length >> 8), (byte)length, payload);
-        }
-        else if (length <= WireConstants.MAX_3)
-        {
-            _buf.Write(sign | WireConstants.CONTAINER_LEN_3, (byte)(length >> 16), (byte)(length >> 8), (byte)length);
-            _buf.WriteAll(payload);
-        }
-        else if (length <= WireConstants.MAX_4)
-        {
-            _buf.Write(sign | WireConstants.CONTAINER_LEN_4, (byte)(length >> 24), (byte)(length >> 16), (byte)(length >> 8), (byte)length);
-            _buf.WriteAll(payload);
-        }
-        else
-        {
-            throw new Exception("Array payload too long");
-        }
-        return _buf.Length - start;
+        return EncodeContainerTail(payload, Prefix.CONTAINER | WireConstants.CONTAINER_ARRAY, "Array payload too long");
     }
 
     public int EncodeObjectPayload(byte[] payload)
     {
+        return EncodeContainerTail(payload, Prefix.CONTAINER | WireConstants.CONTAINER_MAP, "Map payload too long");
+    }
+
+    // 尾定界容器：[payload][lenBE 档位][sign]（sign bit4=Array/Object）。
+    private int EncodeContainerTail(byte[] payload, int baseSign, string errName)
+    {
         int length = payload.Length;
         int start = _buf.Length;
-        int sign = Prefix.CONTAINER | WireConstants.CONTAINER_MAP;
         if (length < WireConstants.CONTAINER_LEN_1)
         {
-            _buf.WriteWithBytes(sign | length, payload);
-        }
-        else if (length <= WireConstants.MAX_1)
-        {
-            _buf.WriteWithBytes(sign | WireConstants.CONTAINER_LEN_1, (byte)length, payload);
-        }
-        else if (length <= WireConstants.MAX_2)
-        {
-            _buf.WriteWithBytes(sign | WireConstants.CONTAINER_LEN_2, (byte)(length >> 8), (byte)length, payload);
-        }
-        else if (length <= WireConstants.MAX_3)
-        {
-            _buf.Write(sign | WireConstants.CONTAINER_LEN_3, (byte)(length >> 16), (byte)(length >> 8), (byte)length);
             _buf.WriteAll(payload);
+            _buf.Write(baseSign | length);
         }
         else if (length <= WireConstants.MAX_4)
         {
-            _buf.Write(sign | WireConstants.CONTAINER_LEN_4, (byte)(length >> 24), (byte)(length >> 16), (byte)(length >> 8), (byte)length);
-            _buf.WriteAll(payload);
+            int width;
+            if (length <= WireConstants.MAX_1) width = 1;
+            else if (length <= WireConstants.MAX_2) width = 2;
+            else if (length <= WireConstants.MAX_3) width = 3;
+            else width = 4;
+            WriteBodyTierSign(payload, length, width, baseSign | (WireConstants.CONTAINER_LEN_1 - 1 + width));
         }
         else
         {
-            throw new Exception("Map payload too long");
+            throw new Exception(errName);
         }
         return _buf.Length - start;
     }
 
-    public int EncodeTagInner(byte[] tagBytes)
+    // v0.5.0 尾定界 tag 包装段（一趟正向，零回写），与 Go encode_tag.go 逐字节对齐：
+    //
+    //   [inner 已编码 payload wire][reverse(meta 正序)][meta_len 尾部槽][total_len 档位大端][tag sign]
+    //
+    // meta 为 Tag.ToBytes() 正序字节；total = len(payload)+len(meta)+len(尾槽)，与解码侧
+    // tailframe 反推式 inner = total - ml - len(尾槽) 一致（尾槽与前缀槽同一套三档）。
+    public int EncodeTaggedPayload(byte[] payload, byte[] meta)
     {
-        if (tagBytes.Length == 0)
-        {
-            return 0;
-        }
-        if (tagBytes.Length > WireConstants.MAX_2)
-        {
-            throw new Exception("Tag too long");
-        }
-        int start = _buf.Length;
-        int length = tagBytes.Length;
-        if (length < 254)
-        {
-            _buf.WriteWithBytes(length, tagBytes);
-        }
-        else if (length < 257)
-        {
-            _buf.WriteWithBytes(254, (byte)length, tagBytes);
-        }
-        else
-        {
-            _buf.WriteWithBytes(255, (byte)(length >> 8), (byte)length, tagBytes);
-        }
-        return _buf.Length - start;
-    }
-
-    public int EncodeTaggedPayload(byte[] payload, byte[] rawTagFields)
-    {
-        if (rawTagFields.Length == 0)
+        if (meta.Length == 0)
         {
             _buf.WriteAll(payload);
             return payload.Length;
         }
-        int length = rawTagFields.Length + payload.Length;
-        if (length > WireConstants.MAX_4)
+        byte[] slot = Footer.FooterSlotBytes(meta.Length);
+        int length = payload.Length + meta.Length + slot.Length;
+        if ((long)length > (long)WireConstants.MAX_4)
         {
             throw new Exception("Tag+payload too long");
         }
         int start = _buf.Length;
         int sign = Prefix.TAG;
+        byte[] tier;
         if (length < WireConstants.TAG_LEN_1)
         {
-            _buf.WriteWithMultipleBytes(sign | length, rawTagFields, payload);
+            sign |= length;
+            tier = Array.Empty<byte>();
         }
         else if (length <= WireConstants.MAX_1)
         {
-            _buf.WriteWithMultipleBytes(sign | WireConstants.TAG_LEN_1, (byte)length, rawTagFields, payload);
+            sign |= WireConstants.TAG_LEN_1;
+            tier = new byte[] { (byte)length };
         }
         else if (length <= WireConstants.MAX_2)
         {
-            _buf.WriteWithMultipleBytes(sign | WireConstants.TAG_LEN_2, (byte)(length >> 8), (byte)length, rawTagFields, payload);
+            sign |= WireConstants.TAG_LEN_2;
+            tier = new byte[] { (byte)(length >> 8), (byte)length };
         }
         else if (length <= WireConstants.MAX_3)
         {
-            _buf.Write(sign | WireConstants.TAG_LEN_3, (byte)(length >> 16), (byte)(length >> 8), (byte)length);
-            _buf.WriteAll(rawTagFields);
-            _buf.WriteAll(payload);
+            sign |= WireConstants.TAG_LEN_3;
+            tier = new byte[] { (byte)(length >> 16), (byte)(length >> 8), (byte)length };
         }
+        // 最后一档必须 <=：total == MAX_4 本身可表达，否则静默丢档位字节。
         else
         {
-            _buf.Write(sign | WireConstants.TAG_LEN_4, (byte)(length >> 24), (byte)(length >> 16), (byte)(length >> 8), (byte)length);
-            _buf.WriteAll(rawTagFields);
-            _buf.WriteAll(payload);
+            sign |= WireConstants.TAG_LEN_4;
+            tier = new byte[] { (byte)(length >> 24), (byte)(length >> 16), (byte)(length >> 8), (byte)length };
         }
+        _buf.WriteAll(payload);
+        _buf.WriteAll(Footer.ReverseBytes(meta));
+        _buf.WriteAll(slot);
+        _buf.WriteAll(tier);
+        _buf.Write(sign);
         return _buf.Length - start;
     }
 
@@ -408,20 +301,6 @@ public class WireEncoder
     {
         byte[] bits = BigIntWireCodec.EncodeSignedDecimal(s);
         return EncodeBytes(bits);
-    }
-
-    /// <summary>
-    /// Encodes raw tag bytes with a length prefix (matching Go's encodeT).
-    /// Returns the prefixed tag bytes, or empty array if rawTagBytes is empty.
-    /// </summary>
-    public static byte[] EncodeTagBytesWithPrefix(byte[] rawTagBytes)
-    {
-        if (rawTagBytes.Length == 0)
-            return Array.Empty<byte>();
-
-        var enc = new WireEncoder();
-        enc.EncodeTagInner(rawTagBytes);
-        return enc.ToByteArray();
     }
 
     public static bool TryEncodeSimpleByName(WireEncoder enc, string name)

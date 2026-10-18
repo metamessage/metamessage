@@ -1,5 +1,6 @@
 #include "mm.h"
 #include "core/mc_decoder.h"
+#include "core/mc_footer.h"
 #include "core/mc_encoder.h"
 #include "ir/mc_tag.h"
 #include "jsonc/mc_ir_parser.h"
@@ -344,12 +345,22 @@ mm_buffer_t *mm_encode(node_t *node) {
 }
 
 node_t *mm_decode(const mm_buffer_t *buf) {
-  mm_decoder_t *d = mm_decoder_new(buf->data, buf->size);
-  if (!d)
+  /* v0.5.0 尾定界：顶层解码入口先把尾定界 wire 剥帧还原成头部形态，再走原有正向解码器。
+   * 嵌套 key-array 解码直接调 mm_decoder_decode，不重复剥帧。 */
+  size_t head_len = 0;
+  uint8_t *head = mc_untailify((const uint8_t *)buf->data, buf->size, &head_len);
+  if (!head)
     return NULL;
+
+  mm_decoder_t *d = mm_decoder_new(head, head_len);
+  if (!d) {
+    free(head);
+    return NULL;
+  }
 
   node_t *node = mm_decoder_decode(d);
   mm_decoder_free(d);
+  free(head);
 
   return node;
 }

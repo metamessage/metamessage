@@ -88,64 +88,15 @@ public class Encoder {
     private func encodeUInt64WithSign(_ sign: UInt8, _ value: UInt64) {
         let (extraBytes, _) = intExtraBytes(for: value)
 
-        switch extraBytes {
-        case 0:
+        // v0.5.0 尾定界：一趟正向 [body BE][sign|档位] 写出，档位/内联语义与 v0.3.x 一致。
+        if extraBytes == 0 {
             buffer.write(sign | UInt8(value))
-        case 1:
-            buffer.write(sign | MMConstants.intLen1Byte)
-            buffer.write(UInt8(value & 0xFF))
-        case 2:
-            buffer.write(sign | MMConstants.intLen2Byte)
-            buffer.write(UInt8((value >> 8) & 0xFF))
-            buffer.write(UInt8(value & 0xFF))
-        case 3:
-            buffer.write(sign | MMConstants.intLen3Byte)
-            buffer.write(UInt8((value >> 16) & 0xFF))
-            buffer.write(UInt8((value >> 8) & 0xFF))
-            buffer.write(UInt8(value & 0xFF))
-        case 4:
-            buffer.write(sign | MMConstants.intLen4Byte)
-            buffer.write(UInt8((value >> 24) & 0xFF))
-            buffer.write(UInt8((value >> 16) & 0xFF))
-            buffer.write(UInt8((value >> 8) & 0xFF))
-            buffer.write(UInt8(value & 0xFF))
-        case 5:
-            buffer.write(sign | MMConstants.intLen5Byte)
-            buffer.write(UInt8((value >> 32) & 0xFF))
-            buffer.write(UInt8((value >> 24) & 0xFF))
-            buffer.write(UInt8((value >> 16) & 0xFF))
-            buffer.write(UInt8((value >> 8) & 0xFF))
-            buffer.write(UInt8(value & 0xFF))
-        case 6:
-            buffer.write(sign | MMConstants.intLen6Byte)
-            buffer.write(UInt8((value >> 40) & 0xFF))
-            buffer.write(UInt8((value >> 32) & 0xFF))
-            buffer.write(UInt8((value >> 24) & 0xFF))
-            buffer.write(UInt8((value >> 16) & 0xFF))
-            buffer.write(UInt8((value >> 8) & 0xFF))
-            buffer.write(UInt8(value & 0xFF))
-        case 7:
-            buffer.write(sign | MMConstants.intLen7Byte)
-            buffer.write(UInt8((value >> 48) & 0xFF))
-            buffer.write(UInt8((value >> 40) & 0xFF))
-            buffer.write(UInt8((value >> 32) & 0xFF))
-            buffer.write(UInt8((value >> 24) & 0xFF))
-            buffer.write(UInt8((value >> 16) & 0xFF))
-            buffer.write(UInt8((value >> 8) & 0xFF))
-            buffer.write(UInt8(value & 0xFF))
-        case 8:
-            buffer.write(sign | MMConstants.intLen8Byte)
-            buffer.write(UInt8((value >> 56) & 0xFF))
-            buffer.write(UInt8((value >> 48) & 0xFF))
-            buffer.write(UInt8((value >> 40) & 0xFF))
-            buffer.write(UInt8((value >> 32) & 0xFF))
-            buffer.write(UInt8((value >> 24) & 0xFF))
-            buffer.write(UInt8((value >> 16) & 0xFF))
-            buffer.write(UInt8((value >> 8) & 0xFF))
-            buffer.write(UInt8(value & 0xFF))
-        default:
-            break
+            return
         }
+        for i in stride(from: extraBytes - 1, through: 0, by: -1) {
+            buffer.write(UInt8((value >> (8 * UInt64(i))) & 0xFF))
+        }
+        buffer.write(sign | (MMConstants.intLen1Byte - 1 + UInt8(extraBytes)))
     }
 
     private func intExtraBytes(for value: UInt64) -> (Int, Int) {
@@ -271,7 +222,8 @@ public class Encoder {
         if mantissaBytes > 8 { mantissaBytes = 8 }
 
         let lenByte = UInt8(mantissaBytes + 7)
-        buffer.write(basePrefix | lenByte)
+
+        // v0.5.0 尾定界：body [exp][mantissa BE] 先写，sign(含档位) 落尾。
         buffer.write(UInt8(bitPattern: exponent))
 
         var m = mantissa
@@ -281,6 +233,7 @@ public class Encoder {
             m >>= 8
         }
         buffer.write(mantissaBuf)
+        buffer.write(basePrefix | lenByte)
     }
 
     public func encode(_ value: String) {
@@ -288,25 +241,28 @@ public class Encoder {
         let bytes = [UInt8](data)
         let len = bytes.count
 
+        // v0.5.0 尾定界：[body][lenBE 档位][sign]；1 字节档边界对齐 Go（len < 255）。
         if len < 30 {
+            buffer.write(bytes)
             buffer.write(MMPrefix.prefixString.rawValue | UInt8(len))
-        } else if len < 256 {
-            buffer.write(MMPrefix.prefixString.rawValue | MMConstants.stringLen1Byte)
+        } else if len < Int(MMConstants.max1Byte) {
+            buffer.write(bytes)
             buffer.write(UInt8(len))
+            buffer.write(MMPrefix.prefixString.rawValue | MMConstants.stringLen1Byte)
         } else {
-            buffer.write(MMPrefix.prefixString.rawValue | MMConstants.stringLen2Byte)
+            buffer.write(bytes)
             buffer.write(UInt8((len >> 8) & 0xFF))
             buffer.write(UInt8(len & 0xFF))
+            buffer.write(MMPrefix.prefixString.rawValue | MMConstants.stringLen2Byte)
         }
-        buffer.write(bytes)
     }
 
     public func encode(_ value: Data) {
         let bytes = [UInt8](value)
         let len = bytes.count
 
-        buffer.write(lengthHeader(sign: MMPrefix.prefixBytes.rawValue, inlineLimit: Int(MMConstants.bytesLen1Byte), m1: MMConstants.bytesLen1Byte, m2: MMConstants.bytesLen2Byte, m3: MMConstants.bytesLen3Byte, m4: MMConstants.bytesLen4Byte, len: len))
         buffer.write(bytes)
+        buffer.write(lengthSuffix(sign: MMPrefix.prefixBytes.rawValue, inlineLimit: Int(MMConstants.bytesLen1Byte), m1: MMConstants.bytesLen1Byte, m2: MMConstants.bytesLen2Byte, m3: MMConstants.bytesLen3Byte, m4: MMConstants.bytesLen4Byte, len: len))
     }
 
     public func encodeBigInt(_ s: String) {
@@ -377,8 +333,8 @@ public class Encoder {
         let bytes = [UInt8](value)
         let len = bytes.count
 
-        buffer.write(lengthHeader(sign: MMPrefix.prefixBytes.rawValue, inlineLimit: Int(MMConstants.bytesLen1Byte), m1: MMConstants.bytesLen1Byte, m2: MMConstants.bytesLen2Byte, m3: MMConstants.bytesLen3Byte, m4: MMConstants.bytesLen4Byte, len: len))
         buffer.write(bytes)
+        buffer.write(lengthSuffix(sign: MMPrefix.prefixBytes.rawValue, inlineLimit: Int(MMConstants.bytesLen1Byte), m1: MMConstants.bytesLen1Byte, m2: MMConstants.bytesLen2Byte, m3: MMConstants.bytesLen3Byte, m4: MMConstants.bytesLen4Byte, len: len))
     }
 
     public func encodeArray(_ array: [Bool]) {
@@ -394,8 +350,8 @@ public class Encoder {
         let payload = [UInt8](valBuf.data)
         let len = payload.count
 
-        buffer.write(lengthHeader(sign: MMPrefix.container.rawValue | MMConstants.containerArray, inlineLimit: Int(MMConstants.containerLen1Byte), m1: MMConstants.containerLen1Byte, m2: MMConstants.containerLen2Byte, m3: MMConstants.containerLen3Byte, m4: MMConstants.containerLen4Byte, len: len))
         buffer.write(payload)
+        buffer.write(lengthSuffix(sign: MMPrefix.container.rawValue | MMConstants.containerArray, inlineLimit: Int(MMConstants.containerLen1Byte), m1: MMConstants.containerLen1Byte, m2: MMConstants.containerLen2Byte, m3: MMConstants.containerLen3Byte, m4: MMConstants.containerLen4Byte, len: len))
     }
 
     public func encodeArrayStrings(_ array: [String]) {
@@ -411,8 +367,8 @@ public class Encoder {
         let payload = [UInt8](valBuf.data)
         let len = payload.count
 
-        buffer.write(lengthHeader(sign: MMPrefix.container.rawValue | MMConstants.containerArray, inlineLimit: Int(MMConstants.containerLen1Byte), m1: MMConstants.containerLen1Byte, m2: MMConstants.containerLen2Byte, m3: MMConstants.containerLen3Byte, m4: MMConstants.containerLen4Byte, len: len))
         buffer.write(payload)
+        buffer.write(lengthSuffix(sign: MMPrefix.container.rawValue | MMConstants.containerArray, inlineLimit: Int(MMConstants.containerLen1Byte), m1: MMConstants.containerLen1Byte, m2: MMConstants.containerLen2Byte, m3: MMConstants.containerLen3Byte, m4: MMConstants.containerLen4Byte, len: len))
     }
 
     public func encodeArrayInt(_ array: [Int]) {
@@ -428,8 +384,8 @@ public class Encoder {
         let payload = [UInt8](valBuf.data)
         let len = payload.count
 
-        buffer.write(lengthHeader(sign: MMPrefix.container.rawValue | MMConstants.containerArray, inlineLimit: Int(MMConstants.containerLen1Byte), m1: MMConstants.containerLen1Byte, m2: MMConstants.containerLen2Byte, m3: MMConstants.containerLen3Byte, m4: MMConstants.containerLen4Byte, len: len))
         buffer.write(payload)
+        buffer.write(lengthSuffix(sign: MMPrefix.container.rawValue | MMConstants.containerArray, inlineLimit: Int(MMConstants.containerLen1Byte), m1: MMConstants.containerLen1Byte, m2: MMConstants.containerLen2Byte, m3: MMConstants.containerLen3Byte, m4: MMConstants.containerLen4Byte, len: len))
     }
 
     public func encodeArrayUInt(_ array: [UInt]) {
@@ -445,8 +401,8 @@ public class Encoder {
         let payload = [UInt8](valBuf.data)
         let len = payload.count
 
-        buffer.write(lengthHeader(sign: MMPrefix.container.rawValue | MMConstants.containerArray, inlineLimit: Int(MMConstants.containerLen1Byte), m1: MMConstants.containerLen1Byte, m2: MMConstants.containerLen2Byte, m3: MMConstants.containerLen3Byte, m4: MMConstants.containerLen4Byte, len: len))
         buffer.write(payload)
+        buffer.write(lengthSuffix(sign: MMPrefix.container.rawValue | MMConstants.containerArray, inlineLimit: Int(MMConstants.containerLen1Byte), m1: MMConstants.containerLen1Byte, m2: MMConstants.containerLen2Byte, m3: MMConstants.containerLen3Byte, m4: MMConstants.containerLen4Byte, len: len))
     }
 
     public func encodeArrayFloat(_ array: [Float]) {
@@ -462,8 +418,8 @@ public class Encoder {
         let payload = [UInt8](valBuf.data)
         let len = payload.count
 
-        buffer.write(lengthHeader(sign: MMPrefix.container.rawValue | MMConstants.containerArray, inlineLimit: Int(MMConstants.containerLen1Byte), m1: MMConstants.containerLen1Byte, m2: MMConstants.containerLen2Byte, m3: MMConstants.containerLen3Byte, m4: MMConstants.containerLen4Byte, len: len))
         buffer.write(payload)
+        buffer.write(lengthSuffix(sign: MMPrefix.container.rawValue | MMConstants.containerArray, inlineLimit: Int(MMConstants.containerLen1Byte), m1: MMConstants.containerLen1Byte, m2: MMConstants.containerLen2Byte, m3: MMConstants.containerLen3Byte, m4: MMConstants.containerLen4Byte, len: len))
     }
 
     public func encodeArrayDouble(_ array: [Double]) {
@@ -479,8 +435,8 @@ public class Encoder {
         let payload = [UInt8](valBuf.data)
         let len = payload.count
 
-        buffer.write(lengthHeader(sign: MMPrefix.container.rawValue | MMConstants.containerArray, inlineLimit: Int(MMConstants.containerLen1Byte), m1: MMConstants.containerLen1Byte, m2: MMConstants.containerLen2Byte, m3: MMConstants.containerLen3Byte, m4: MMConstants.containerLen4Byte, len: len))
         buffer.write(payload)
+        buffer.write(lengthSuffix(sign: MMPrefix.container.rawValue | MMConstants.containerArray, inlineLimit: Int(MMConstants.containerLen1Byte), m1: MMConstants.containerLen1Byte, m2: MMConstants.containerLen2Byte, m3: MMConstants.containerLen3Byte, m4: MMConstants.containerLen4Byte, len: len))
     }
 
     public func encodeArrayData(_ array: [Data]) {
@@ -496,8 +452,8 @@ public class Encoder {
         let payload = [UInt8](valBuf.data)
         let len = payload.count
 
-        buffer.write(lengthHeader(sign: MMPrefix.container.rawValue | MMConstants.containerArray, inlineLimit: Int(MMConstants.containerLen1Byte), m1: MMConstants.containerLen1Byte, m2: MMConstants.containerLen2Byte, m3: MMConstants.containerLen3Byte, m4: MMConstants.containerLen4Byte, len: len))
         buffer.write(payload)
+        buffer.write(lengthSuffix(sign: MMPrefix.container.rawValue | MMConstants.containerArray, inlineLimit: Int(MMConstants.containerLen1Byte), m1: MMConstants.containerLen1Byte, m2: MMConstants.containerLen2Byte, m3: MMConstants.containerLen3Byte, m4: MMConstants.containerLen4Byte, len: len))
     }
 
     public var result: Data {
@@ -546,18 +502,11 @@ enum TagKey {
 // MARK: - Node encoding
 extension Encoder {
     public func encodeNodeNull(_ node: NodeNull) {
+        let payloadStart = buffer.count
         buffer.write(MMSimpleValue.null.rawValue)
 
         if let tag = node.getTag(), needsTagEncoding(tag) {
-            let payloadBytes = Array(buffer.data)
-            let tagBuf = encodeTagToBytes(tag)
-            let tagLenHeader = encodeTagBodyLength(tagBuf.count)
-            let totalLen = tagLenHeader.count + tagBuf.count + payloadBytes.count
-            buffer.reset()
-            writeTagPrefix(totalLen)
-            buffer.write(tagLenHeader)
-            buffer.write(tagBuf)
-            buffer.write(payloadBytes)
+            writeTagTail(payloadStart: payloadStart, meta: encodeTagToBytes(tag))
         }
     }
 
@@ -697,18 +646,10 @@ extension Encoder {
                 encodeRawValue(node)
             }
         }
-        let payloadBytes = Array(buffer.data[payloadStart..<buffer.count])
 
         if needsTagEncoding(tag) {
-            let tagBuf = encodeTagToBytes(tag)
-            let tagLenHeader = encodeTagBodyLength(tagBuf.count)
-            let totalLen = tagLenHeader.count + tagBuf.count + payloadBytes.count
-            let saved = Array(buffer.data[payloadStart..<buffer.count])
-            buffer.seek(to: payloadStart)
-            writeTagPrefix(totalLen)
-            buffer.write(tagLenHeader)
-            buffer.write(tagBuf)
-            buffer.write(saved)
+            // payload 已在 buffer 的 [payloadStart..<count]（尾定界形态），直接尾部追加包装。
+            writeTagTail(payloadStart: payloadStart, meta: encodeTagToBytes(tag))
         }
     }
 
@@ -793,8 +734,8 @@ extension Encoder {
             }
             let payload = [UInt8](valBuf.data)
             let len = payload.count
-            buffer.write(lengthHeader(sign: MMPrefix.container.rawValue | MMConstants.containerArray, inlineLimit: Int(MMConstants.containerLen1Byte), m1: MMConstants.containerLen1Byte, m2: MMConstants.containerLen2Byte, m3: MMConstants.containerLen3Byte, m4: MMConstants.containerLen4Byte, len: len))
             buffer.write(payload)
+            buffer.write(lengthSuffix(sign: MMPrefix.container.rawValue | MMConstants.containerArray, inlineLimit: Int(MMConstants.containerLen1Byte), m1: MMConstants.containerLen1Byte, m2: MMConstants.containerLen2Byte, m3: MMConstants.containerLen3Byte, m4: MMConstants.containerLen4Byte, len: len))
             return
         }
 
@@ -821,20 +762,12 @@ extension Encoder {
         }
         let payload = [UInt8](valBuf.data)
         let len = payload.count
-        buffer.write(lengthHeader(sign: MMPrefix.container.rawValue | MMConstants.containerArray, inlineLimit: Int(MMConstants.containerLen1Byte), m1: MMConstants.containerLen1Byte, m2: MMConstants.containerLen2Byte, m3: MMConstants.containerLen3Byte, m4: MMConstants.containerLen4Byte, len: len))
         buffer.write(payload)
-        let payloadBytes = Array(buffer.data[payloadStart..<buffer.count])
+        buffer.write(lengthSuffix(sign: MMPrefix.container.rawValue | MMConstants.containerArray, inlineLimit: Int(MMConstants.containerLen1Byte), m1: MMConstants.containerLen1Byte, m2: MMConstants.containerLen2Byte, m3: MMConstants.containerLen3Byte, m4: MMConstants.containerLen4Byte, len: len))
 
         if needsTagEncoding(tag) {
-            let tagBuf = encodeTagToBytes(tag)
-            let tagLenHeader = encodeTagBodyLength(tagBuf.count)
-            let totalLen = tagLenHeader.count + tagBuf.count + payloadBytes.count
-            let saved = Array(buffer.data[payloadStart..<buffer.count])
-            buffer.seek(to: payloadStart)
-            writeTagPrefix(totalLen)
-            buffer.write(tagLenHeader)
-            buffer.write(tagBuf)
-            buffer.write(saved)
+            // 容器字节已在 [payloadStart..<count]（尾定界形态），tag 直接尾部追加。
+            writeTagTail(payloadStart: payloadStart, meta: encodeTagToBytes(tag))
         }
     }
 
@@ -865,27 +798,23 @@ extension Encoder {
 
         let keyBytesLen = keyBytes.count
         let keyArrayBuf = MMBuffer()
-        keyArrayBuf.write(lengthHeader(sign: MMPrefix.container.rawValue | MMConstants.containerArray, inlineLimit: Int(MMConstants.containerLen1Byte), m1: MMConstants.containerLen1Byte, m2: MMConstants.containerLen2Byte, m3: MMConstants.containerLen3Byte, m4: MMConstants.containerLen4Byte, len: keyBytesLen))
+        // key 数组容器尾定界：[keyBytes][lenBE 档位][sign]。
         keyArrayBuf.write(keyBytes)
+        keyArrayBuf.write(lengthSuffix(sign: MMPrefix.container.rawValue | MMConstants.containerArray, inlineLimit: Int(MMConstants.containerLen1Byte), m1: MMConstants.containerLen1Byte, m2: MMConstants.containerLen2Byte, m3: MMConstants.containerLen3Byte, m4: MMConstants.containerLen4Byte, len: keyBytesLen))
         let keyArrayBytes = [UInt8](keyArrayBuf.data)
 
-        let allBytes = keyArrayBytes + valBytes
-        let allLen = allBytes.count
+        let allLen = keyArrayBytes.count + valBytes.count
+        let payloadStart = buffer.count
 
-        buffer.write(lengthHeader(sign: MMPrefix.container.rawValue | MMConstants.containerObject, inlineLimit: Int(MMConstants.containerLen1Byte), m1: MMConstants.containerLen1Byte, m2: MMConstants.containerLen2Byte, m3: MMConstants.containerLen3Byte, m4: MMConstants.containerLen4Byte, len: allLen))
+        // 外层 object 容器尾定界：[payload][lenBE 档位][sign]。
         buffer.write(keyArrayBytes)
         buffer.write(valBytes)
+        buffer.write(lengthSuffix(sign: MMPrefix.container.rawValue | MMConstants.containerObject, inlineLimit: Int(MMConstants.containerLen1Byte), m1: MMConstants.containerLen1Byte, m2: MMConstants.containerLen2Byte, m3: MMConstants.containerLen3Byte, m4: MMConstants.containerLen4Byte, len: allLen))
 
         if let tag = node.getTag() {
-            let payloadBytes = Array(buffer.data)
-            let tagBuf = encodeTagToBytes(tag)
-            let tagLenHeader = encodeTagBodyLength(tagBuf.count)
-            let totalLen = tagLenHeader.count + tagBuf.count + payloadBytes.count
-            buffer.reset()
-            writeTagPrefix(totalLen)
-            buffer.write(tagLenHeader)
-            buffer.write(tagBuf)
-            buffer.write(payloadBytes)
+            // 容器字节已在 [payloadStart..<count]（尾定界形态），tag 直接尾部追加。
+            // meta 为空时 writeTagTail 自动跳过不包装（与 Go encodeTag len(meta)==0 一致）。
+            writeTagTail(payloadStart: payloadStart, meta: encodeTagToBytes(tag))
         }
     }
 
@@ -1213,20 +1142,6 @@ extension Encoder {
         return bytes
     }
 
-    private func encodeTagBodyLength(_ length: Int) -> [UInt8] {
-        if length < 254 {
-            return [UInt8(length)]
-        } else if length < 65536 {
-            return [254, UInt8(length & 0xFF)]
-        } else {
-            return [255, UInt8((length >> 8) & 0xFF), UInt8(length & 0xFF)]
-        }
-    }
-
-    private func writeTagPrefix(_ totalLen: Int) {
-        buffer.write(lengthHeader(sign: MMPrefix.prefixTag.rawValue, inlineLimit: Int(MMConstants.tagLen1Byte), m1: MMConstants.tagLen1Byte, m2: MMConstants.tagLen2Byte, m3: MMConstants.tagLen3Byte, m4: MMConstants.tagLen4Byte, len: totalLen))
-    }
-
     // v0.3.0：统一 4 档长度头生成（内联 / 1 / 2 / 3 / 4 字节大端长度槽），超限显式报错
     private func lengthHeader(sign: UInt8, inlineLimit: Int, m1: UInt8, m2: UInt8, m3: UInt8, m4: UInt8, len: Int) -> [UInt8] {
         var out: [UInt8] = []
@@ -1243,5 +1158,40 @@ extension Encoder {
             out.append(sign | m4); out.append(UInt8((len >> 24) & 0xFF)); out.append(UInt8((len >> 16) & 0xFF)); out.append(UInt8((len >> 8) & 0xFF)); out.append(UInt8(len & 0xFF))
         }
         return out
+    }
+
+    // v0.5.0 尾定界：body 先、lenBE/sign 后（即 lengthHeader 首字节反转到尾），档位阈值与 lengthHeader 逐字节一致。
+    private func lengthSuffix(sign: UInt8, inlineLimit: Int, m1: UInt8, m2: UInt8, m3: UInt8, m4: UInt8, len: Int) -> [UInt8] {
+        let h = lengthHeader(sign: sign, inlineLimit: inlineLimit, m1: m1, m2: m2, m3: m3, m4: m4, len: len)
+        if h.count <= 1 { return h }
+        return Array(h.dropFirst()) + [h[0]]
+    }
+
+    // v0.5.0 尾定界 tag 包装段（一趟正向，零回写），与 Go encode_tag.go 逐字节对齐：
+    //   [inner 已编码 payload wire][reverse(meta 正序)][meta_len 尾部槽][total_len 档位大端][tag sign]
+    // 前提：payload 已写入 buffer 的 [payloadStart..<buffer.count]，本函数仅在尾部追加包装字节。
+    private func writeTagTail(payloadStart: Int, meta: [UInt8]) {
+        if meta.isEmpty { return }
+        let slot = Footer.footerSlotBytes(meta.count)
+        let payloadLen = buffer.count - payloadStart
+        let total = payloadLen + meta.count + slot.count
+        precondition(total <= 0xFFFFFFFF, "tag+payload too long: \(total)")
+        var sign: UInt8 = MMPrefix.prefixTag.rawValue
+        var tier: [UInt8] = []
+        if total < Int(MMConstants.tagLen1Byte) {
+            sign |= UInt8(total)
+        } else if total <= 0xFF {
+            sign |= MMConstants.tagLen1Byte; tier = [UInt8(total)]
+        } else if total <= 0xFFFF {
+            sign |= MMConstants.tagLen2Byte; tier = [UInt8((total >> 8) & 0xFF), UInt8(total & 0xFF)]
+        } else if total <= 0xFFFFFF {
+            sign |= MMConstants.tagLen3Byte; tier = [UInt8((total >> 16) & 0xFF), UInt8((total >> 8) & 0xFF), UInt8(total & 0xFF)]
+        } else {
+            sign |= MMConstants.tagLen4Byte; tier = [UInt8((total >> 24) & 0xFF), UInt8((total >> 16) & 0xFF), UInt8((total >> 8) & 0xFF), UInt8(total & 0xFF)]
+        }
+        buffer.write(Footer.reverseBytes(meta))
+        buffer.write(slot)
+        buffer.write(tier)
+        buffer.write(sign)
     }
 }

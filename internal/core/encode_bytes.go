@@ -12,21 +12,21 @@ func (e *encoder) encodeBytes(bs []byte) (n uint32, err error) {
 	sign := PrefixBytes
 	if length < BytesLen1Byte {
 		sign |= Prefix(length)
-		return e.writeBytesWithPrefix(bs, byte(sign))
+		return e.writeBytesWithSuffix(bs, byte(sign))
 	} else if length <= Max1Byte {
 		sign |= Prefix(BytesLen1Byte)
-		return e.writeBytesWithPrefix(bs, byte(sign), byte(length))
+		return e.writeBytesWithSuffix(bs, byte(length), byte(sign))
 	} else if length <= Max2Byte {
 		sign |= Prefix(BytesLen2Byte)
-		return e.writeBytesWithPrefix(bs, byte(sign), byte(length>>8), byte(length))
+		return e.writeBytesWithSuffix(bs, byte(length>>8), byte(length), byte(sign))
 	} else if length <= Max3Byte {
 		sign |= Prefix(BytesLen3Byte)
-		return e.writeBytesWithPrefix(bs, byte(sign), byte(length>>16), byte(length>>8), byte(length))
+		return e.writeBytesWithSuffix(bs, byte(length>>16), byte(length>>8), byte(length), byte(sign))
 	// 同 encode_string：最后一档必须 <=，否则 length == Max4Byte 静默写 0 字节。
 	} else if length <= Max4Byte {
 		sign |= Prefix(BytesLen4Byte)
-		return e.writeBytesWithPrefix(bs, byte(sign),
-			byte(length>>24), byte(length>>16), byte(length>>8), byte(length))
+		return e.writeBytesWithSuffix(bs,
+			byte(length>>24), byte(length>>16), byte(length>>8), byte(length), byte(sign))
 	}
 
 	return

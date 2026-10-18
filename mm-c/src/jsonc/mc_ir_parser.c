@@ -11,11 +11,15 @@
 // Max nesting depth for JSONC parser; aligned with Go reference (internal/jsonc/parser/parser.go)
 #define MC_MAX_DEPTH 1024
 
+// pending tag 缓冲上限：meta 总长合法域 ≤65535（与 Go 参考一致），
+// 旧定长 512 会静默丢弃超长 tag 注释，导致 tag 丢失。
+#define MC_PENDING_TAG_CAP 65536
+
 typedef struct {
   const char *input;
   size_t pos;
   size_t len;
-  char pending_tag[512];
+  char *pending_tag;
   int has_pending_tag;
   int last_was_lbrace;
   int error;
@@ -87,7 +91,7 @@ static void skip_line_comment(parse_ctx_t *ctx) {
              (*tag_start == ' ' || *tag_start == '\t'))
         tag_start++;
       size_t tag_len = text + text_len - tag_start;
-      if (tag_len > 0 && tag_len < sizeof(ctx->pending_tag)) {
+      if (tag_len > 0 && tag_len < MC_PENDING_TAG_CAP) {
         memcpy(ctx->pending_tag, tag_start, tag_len);
         ctx->pending_tag[tag_len] = '\0';
         ctx->has_pending_tag = 1;
@@ -444,11 +448,13 @@ node_t *mm_jsonc_parse(const char *input) {
   ctx.input = input;
   ctx.pos = 0;
   ctx.len = strlen(input);
+  ctx.pending_tag = (char *)calloc(MC_PENDING_TAG_CAP, 1);
+  if (!ctx.pending_tag)
+    return NULL;
   ctx.has_pending_tag = 0;
   ctx.last_was_lbrace = 0;
   ctx.error = 0;
   ctx.depth = 0;
-  memset(ctx.pending_tag, 0, sizeof(ctx.pending_tag));
 
   consume_comments(&ctx);
 
@@ -464,8 +470,10 @@ node_t *mm_jsonc_parse(const char *input) {
 
   if (ctx.error && root) {
     node_free(root);
+    free(ctx.pending_tag);
     return NULL;
   }
 
+  free(ctx.pending_tag);
   return root;
 }

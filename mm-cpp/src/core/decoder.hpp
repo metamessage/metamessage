@@ -3,6 +3,7 @@
 
 #include "../ir/ast.hpp"
 #include "constants.hpp"
+#include "footer.hpp"
 #include <cmath>
 #include <cstdint>
 #include <cstring>
@@ -48,13 +49,17 @@ public:
   Decoder() : data_(nullptr), size_(0), offset_(0) {}
 
   std::shared_ptr<ir::Node> decode(const std::vector<uint8_t> &encoded) {
-    data_ = encoded.data();
-    size_ = encoded.size();
+    // v0.5.0 尾定界：反向剥帧还原成「sign 在前」头部形态再喂给正向解码器。
+    // head 生命周期覆盖整个 decodeNode 递归，data_ 指向其内部缓冲安全。
+    head_ = untailify(encoded);
+    data_ = head_.data();
+    size_ = head_.size();
     offset_ = 0;
     return decodeNode(nullptr);
   }
 
 private:
+  std::vector<uint8_t> head_;
   const uint8_t *data_;
   size_t size_;
   size_t offset_;

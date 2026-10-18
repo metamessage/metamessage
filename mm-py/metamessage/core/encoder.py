@@ -12,6 +12,7 @@ from typing import Any, Optional, Union
 
 from ..ir.tag import Tag, ValueType
 from ..ir.ast import NodeObject, NodeArray, NodeScalar, Field, Node, NodeType, NodeNull
+from .footer import footer_slot_bytes, reverse_bytes
 
 # ===== Constants (matching Go internal/core/constants.go) =====
 
@@ -254,6 +255,13 @@ class Encoder:
         n += self._write_bytes(bs)
         return n
 
+    # v0.5.0 尾定界：先写 body，再追加大端长度/尾 sign（一趟正向，无回写）。
+    def _write_bytes_with_suffix(self, bs: bytes, *suffix: int) -> int:
+        n = self._write_bytes(bs)
+        for s in suffix:
+            n += self._write_byte(s)
+        return n
+
     def _write_string_with_prefix(self, s: str, *prefix: int) -> int:
         n = 0
         for p in prefix:
@@ -276,42 +284,42 @@ class Encoder:
         if uv < IntLen1Byte:
             return self._write_byte(sign | uv)
         elif uv <= Max1Byte:
-            return self._write_bytes_with_prefix(
+            return self._write_bytes_with_suffix(
                 bytes([uv & 0xFF]),
                 sign | IntLen1Byte
             )
         elif uv <= Max2Byte:
-            return self._write_bytes_with_prefix(
+            return self._write_bytes_with_suffix(
                 bytes([(uv >> 8) & 0xFF, uv & 0xFF]),
                 sign | IntLen2Byte
             )
         elif uv <= Max3Byte:
-            return self._write_bytes_with_prefix(
+            return self._write_bytes_with_suffix(
                 bytes([(uv >> 16) & 0xFF, (uv >> 8) & 0xFF, uv & 0xFF]),
                 sign | IntLen3Byte
             )
         elif uv <= Max4Byte:
-            return self._write_bytes_with_prefix(
+            return self._write_bytes_with_suffix(
                 struct.pack('>I', uv),
                 sign | IntLen4Byte
             )
         elif uv <= Max5Byte:
-            return self._write_bytes_with_prefix(
+            return self._write_bytes_with_suffix(
                 struct.pack('>Q', uv)[3:],
                 sign | IntLen5Byte
             )
         elif uv <= Max6Byte:
-            return self._write_bytes_with_prefix(
+            return self._write_bytes_with_suffix(
                 struct.pack('>Q', uv)[2:],
                 sign | IntLen6Byte
             )
         elif uv <= Max7Byte:
-            return self._write_bytes_with_prefix(
+            return self._write_bytes_with_suffix(
                 struct.pack('>Q', uv)[1:],
                 sign | IntLen7Byte
             )
         elif uv <= Max8Byte:
-            return self._write_bytes_with_prefix(
+            return self._write_bytes_with_suffix(
                 struct.pack('>Q', uv),
                 sign | IntLen8Byte
             )
@@ -401,42 +409,42 @@ class Encoder:
         exp_byte = exponent & 0xFF
 
         if mantissa <= Max1Byte:
-            return self._write_bytes_with_prefix(
+            return self._write_bytes_with_suffix(
                 bytes([exp_byte, mantissa & 0xFF]),
                 sign | FloatLen1Byte
             )
         elif mantissa <= Max2Byte:
-            return self._write_bytes_with_prefix(
+            return self._write_bytes_with_suffix(
                 bytes([exp_byte, (mantissa >> 8) & 0xFF, mantissa & 0xFF]),
                 sign | FloatLen2Byte
             )
         elif mantissa <= Max3Byte:
-            return self._write_bytes_with_prefix(
+            return self._write_bytes_with_suffix(
                 bytes([exp_byte, (mantissa >> 16) & 0xFF, (mantissa >> 8) & 0xFF, mantissa & 0xFF]),
                 sign | FloatLen3Byte
             )
         elif mantissa <= Max4Byte:
-            return self._write_bytes_with_prefix(
+            return self._write_bytes_with_suffix(
                 bytes([exp_byte]) + struct.pack('>I', mantissa),
                 sign | FloatLen4Byte
             )
         elif mantissa <= Max5Byte:
-            return self._write_bytes_with_prefix(
+            return self._write_bytes_with_suffix(
                 bytes([exp_byte]) + struct.pack('>Q', mantissa)[3:],
                 sign | FloatLen5Byte
             )
         elif mantissa <= Max6Byte:
-            return self._write_bytes_with_prefix(
+            return self._write_bytes_with_suffix(
                 bytes([exp_byte]) + struct.pack('>Q', mantissa)[2:],
                 sign | FloatLen6Byte
             )
         elif mantissa <= Max7Byte:
-            return self._write_bytes_with_prefix(
+            return self._write_bytes_with_suffix(
                 bytes([exp_byte]) + struct.pack('>Q', mantissa)[1:],
                 sign | FloatLen7Byte
             )
         elif mantissa <= Max8Byte:
-            return self._write_bytes_with_prefix(
+            return self._write_bytes_with_suffix(
                 bytes([exp_byte]) + struct.pack('>Q', mantissa),
                 sign | FloatLen8Byte
             )
@@ -445,6 +453,7 @@ class Encoder:
 
     # ===== Strings =====
 
+    # v0.5.0 尾定界：先写 UTF-8 body，再写长度大端，最后写 sign。
     def _encode_string(self, s: str) -> int:
         encoded = s.encode('utf-8')
         length = len(encoded)
@@ -453,22 +462,23 @@ class Encoder:
 
         sign = PrefixString
         if length < StringLen1Byte:  # length < 30
-            n = self._write_byte(sign | length)
-            n += self._write_bytes(encoded)
+            n = self._write_bytes(encoded)
+            n += self._write_byte(sign | length)
             return n
-        elif length < Max1Byte:  # length < 256
-            n = self._write_byte(sign | StringLen1Byte)
+        elif length < Max1Byte:  # length < 255
+            n = self._write_bytes(encoded)
             n += self._write_byte(length)
-            n += self._write_bytes(encoded)
+            n += self._write_byte(sign | StringLen1Byte)
             return n
-        else:  # length < 65536
-            n = self._write_byte(sign | StringLen2Byte)
+        else:  # length <= 65535
+            n = self._write_bytes(encoded)
             n += self._write_bytes(bytes([(length >> 8) & 0xFF, length & 0xFF]))
-            n += self._write_bytes(encoded)
+            n += self._write_byte(sign | StringLen2Byte)
             return n
 
     # ===== Bytes =====
 
+    # v0.5.0 尾定界：先写 body，再写长度大端，最后写 sign。
     def _encode_bytes(self, bs: bytes) -> int:
         length = len(bs)
         if length > Max4Byte:
@@ -476,151 +486,147 @@ class Encoder:
 
         sign = PrefixBytes
         if length < BytesLen1Byte:  # inline 0..27
-            n = self._write_byte(sign | length)
-            n += self._write_bytes(bs)
+            n = self._write_bytes(bs)
+            n += self._write_byte(sign | length)
             return n
         elif length <= Max1Byte:  # 1 字节长度槽
-            n = self._write_byte(sign | BytesLen1Byte)
+            n = self._write_bytes(bs)
             n += self._write_byte(length)
-            n += self._write_bytes(bs)
+            n += self._write_byte(sign | BytesLen1Byte)
             return n
         elif length <= Max2Byte:  # 2 字节长度槽
-            n = self._write_byte(sign | BytesLen2Byte)
+            n = self._write_bytes(bs)
             n += self._write_bytes(bytes([(length >> 8) & 0xFF, length & 0xFF]))
-            n += self._write_bytes(bs)
+            n += self._write_byte(sign | BytesLen2Byte)
             return n
         elif length <= Max3Byte:  # 3 字节长度槽
-            n = self._write_byte(sign | BytesLen3Byte)
+            n = self._write_bytes(bs)
             n += self._write_bytes(bytes([(length >> 16) & 0xFF, (length >> 8) & 0xFF, length & 0xFF]))
-            n += self._write_bytes(bs)
+            n += self._write_byte(sign | BytesLen3Byte)
             return n
         else:  # 4 字节长度槽
-            n = self._write_byte(sign | BytesLen4Byte)
+            n = self._write_bytes(bs)
             n += self._write_bytes(bytes([(length >> 24) & 0xFF, (length >> 16) & 0xFF, (length >> 8) & 0xFF, length & 0xFF]))
-            n += self._write_bytes(bs)
+            n += self._write_byte(sign | BytesLen4Byte)
             return n
 
     # ===== Containers =====
 
+    # v0.5.0 尾定界：先写 payload（子节点 wire 正序），再写长度大端，最后写 sign。
     def _encode_array(self, bs: bytes) -> int:
-        """Encode raw array bytes with container prefix."""
+        """Encode raw array bytes with container suffix (tail-delimited)."""
         length = len(bs)
         if length > Max4Byte:
             raise ValueError(f"array too long: {length}")
 
         sign = Container | ContainerArray
         if length < ContainerLen1Byte:  # inline 0..11
-            return self._write_bytes_with_prefix(bs, sign | length)
+            return self._write_bytes_with_suffix(bs, sign | length)
         elif length <= Max1Byte:  # 1 字节
-            return self._write_bytes_with_prefix(bs, sign | ContainerLen1Byte, length)
+            return self._write_bytes_with_suffix(bs, length, sign | ContainerLen1Byte)
         elif length <= Max2Byte:  # 2 字节
-            return self._write_bytes_with_prefix(
-                bs, sign | ContainerLen2Byte,
-                (length >> 8) & 0xFF, length & 0xFF
+            return self._write_bytes_with_suffix(
+                bs,
+                (length >> 8) & 0xFF, length & 0xFF,
+                sign | ContainerLen2Byte
             )
         elif length <= Max3Byte:  # 3 字节
-            return self._write_bytes_with_prefix(
-                bs, sign | ContainerLen3Byte,
-                (length >> 16) & 0xFF, (length >> 8) & 0xFF, length & 0xFF
+            return self._write_bytes_with_suffix(
+                bs,
+                (length >> 16) & 0xFF, (length >> 8) & 0xFF, length & 0xFF,
+                sign | ContainerLen3Byte
             )
         else:  # 4 字节
-            return self._write_bytes_with_prefix(
-                bs, sign | ContainerLen4Byte,
-                (length >> 24) & 0xFF, (length >> 16) & 0xFF, (length >> 8) & 0xFF, length & 0xFF
+            return self._write_bytes_with_suffix(
+                bs,
+                (length >> 24) & 0xFF, (length >> 16) & 0xFF, (length >> 8) & 0xFF, length & 0xFF,
+                sign | ContainerLen4Byte
             )
 
     def _encode_object(self, bs: bytes) -> int:
-        """Encode raw object bytes with container prefix."""
+        """Encode raw object bytes with container suffix (tail-delimited)."""
         length = len(bs)
         if length > Max4Byte:
             raise ValueError(f"object too long: {length}")
 
         sign = Container | ContainerObject
         if length < ContainerLen1Byte:  # inline 0..11
-            return self._write_bytes_with_prefix(bs, sign | length)
+            return self._write_bytes_with_suffix(bs, sign | length)
         elif length <= Max1Byte:  # 1 字节
-            return self._write_bytes_with_prefix(bs, sign | ContainerLen1Byte, length)
+            return self._write_bytes_with_suffix(bs, length, sign | ContainerLen1Byte)
         elif length <= Max2Byte:  # 2 字节
-            return self._write_bytes_with_prefix(
-                bs, sign | ContainerLen2Byte,
-                (length >> 8) & 0xFF, length & 0xFF
+            return self._write_bytes_with_suffix(
+                bs,
+                (length >> 8) & 0xFF, length & 0xFF,
+                sign | ContainerLen2Byte
             )
         elif length <= Max3Byte:  # 3 字节
-            return self._write_bytes_with_prefix(
-                bs, sign | ContainerLen3Byte,
-                (length >> 16) & 0xFF, (length >> 8) & 0xFF, length & 0xFF
+            return self._write_bytes_with_suffix(
+                bs,
+                (length >> 16) & 0xFF, (length >> 8) & 0xFF, length & 0xFF,
+                sign | ContainerLen3Byte
             )
         else:  # 4 字节
-            return self._write_bytes_with_prefix(
-                bs, sign | ContainerLen4Byte,
-                (length >> 24) & 0xFF, (length >> 16) & 0xFF, (length >> 8) & 0xFF, length & 0xFF
+            return self._write_bytes_with_suffix(
+                bs,
+                (length >> 24) & 0xFF, (length >> 16) & 0xFF, (length >> 8) & 0xFF, length & 0xFF,
+                sign | ContainerLen4Byte
             )
 
     # ===== Tags =====
 
-    def _encode_t(self, bs: bytes) -> int:
-        """Encode tag bytes with length prefix."""
-        length = len(bs)
-        if length == 0:
-            return 0
-        if length > Max2Byte:
-            raise ValueError(f"tag too long: {length}")
-
-        if length < 254:
-            return self._write_bytes_with_prefix(bs, length)
-        elif length < 257:
-            return self._write_bytes_with_prefix(bs, 254, length)
-        else:
-            return self._write_bytes_with_prefix(
-                bs, 255,
-                (length >> 8) & 0xFF, length & 0xFF
-            )
-
-    def _encode_tag(self, payload: bytes, tag: bytes) -> int:
-        if len(tag) == 0:
+    # encode_tag 尾定界写出 tag 包装段（一趟正向，零回写）：
+    #   [inner 已编码 wire][reverse(meta 正序)][meta_len 尾部槽][total_len 档位大端][tag sign]
+    # bs 为已完成尾定界编码的 inner 字节；meta 为 Tag.bytes() 正序字节。
+    # total = len(bs)+len(meta)+len(尾槽)，与解码侧（footer.py node_tail_start）反推式
+    # inner = total - ml - len(尾槽) 一致（尾槽与前缀槽为同一套 canonical 三档）。
+    def _encode_tag(self, bs: bytes, meta: bytes) -> int:
+        if len(meta) == 0:
             return 0
 
-        length = len(payload) + len(tag)
+        slot = footer_slot_bytes(len(meta))
+        length = len(bs) + len(meta) + len(slot)
         if length > Max4Byte:
             raise ValueError(f"tag+payload too long: {length}")
 
         sign = PrefixTag
-        ns = 0
-        nb = 0
+        tier = b""
         if length < TagLen1Byte:
             sign |= length
-            ns = self._write_bytes_with_prefix(tag, sign)
-            nb = self._write_bytes(payload)
         elif length <= Max1Byte:
             sign |= TagLen1Byte
-            ns = self._write_bytes_with_prefix(tag, sign, length)
-            nb = self._write_bytes(payload)
+            tier = bytes([length & 0xFF])
         elif length <= Max2Byte:
             sign |= TagLen2Byte
-            ns = self._write_bytes_with_prefix(tag, sign, (length >> 8) & 0xFF, length & 0xFF)
-            nb = self._write_bytes(payload)
+            tier = bytes([(length >> 8) & 0xFF, length & 0xFF])
         elif length <= Max3Byte:
             sign |= TagLen3Byte
-            ns = self._write_bytes_with_prefix(tag, sign, (length >> 16) & 0xFF, (length >> 8) & 0xFF, length & 0xFF)
-            nb = self._write_bytes(payload)
+            tier = bytes([(length >> 16) & 0xFF, (length >> 8) & 0xFF, length & 0xFF])
         else:
+            # 最后一档必须覆盖到 Max4Byte
             sign |= TagLen4Byte
-            ns = self._write_bytes_with_prefix(tag, sign, (length >> 24) & 0xFF, (length >> 16) & 0xFF, (length >> 8) & 0xFF, length & 0xFF)
-            nb = self._write_bytes(payload)
+            tier = bytes([
+                (length >> 24) & 0xFF, (length >> 16) & 0xFF,
+                (length >> 8) & 0xFF, length & 0xFF,
+            ])
 
-        return nb + ns
+        saved = self.offset
+        self._write_bytes(bs)
+        self._write_bytes(reverse_bytes(meta))
+        self._write_bytes(slot)
+        self._write_bytes(tier)
+        self._write_byte(sign)
+        return self.offset - saved
 
+    # v0.5.0 尾定界：payload（已是 wire 形态）先出，meta 正序字节交给 encode_tag
+    # 逆序后置 + 尾部槽，一趟写完，无前缀长度回写。
     def _encode_comment(self, payload: bytes, tag: Optional[Tag]) -> int:
         if tag is None:
             return 0
-        tag_bytes = tag.bytes()
-        if len(tag_bytes) == 0:
+        meta = bytes(tag.bytes())
+        if len(meta) == 0:
             return 0
-        ns = self._encode_t(tag_bytes)
-        if ns == 0:
-            return 0
-        encoded_tag = self.buf[self.offset - ns:self.offset]
-        return self._encode_tag(payload, bytes(encoded_tag))
+        return self._encode_tag(payload, meta)
 
     # ===== Node encoding =====
 

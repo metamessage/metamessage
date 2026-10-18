@@ -468,61 +468,32 @@ impl Encoder {
     }
 
     fn encode_uint64_with_sign(&mut self, sign: u8, v: u64) {
+        // v0.5.0 尾定界：一趟正向 [body BE][sign|档位] 写出，档位/内联语义与 v0.3.x 一致。
         if v < 24 {
             self.write_byte(sign | (v as u8));
-        } else if v <= 0xFF {
-            self.write_byte(sign | INT_LEN_1);
-            self.write_byte(v as u8);
-        } else if v <= 0xFFFF {
-            self.write_byte(sign | INT_LEN_2);
-            self.write_byte((v >> 8) as u8);
-            self.write_byte(v as u8);
-        } else if v <= 0xFFFFFF {
-            self.write_byte(sign | INT_LEN_3);
-            self.write_byte((v >> 16) as u8);
-            self.write_byte((v >> 8) as u8);
-            self.write_byte(v as u8);
-        } else if v <= 0xFFFFFFFF {
-            self.write_byte(sign | INT_LEN_4);
-            self.write_byte((v >> 24) as u8);
-            self.write_byte((v >> 16) as u8);
-            self.write_byte((v >> 8) as u8);
-            self.write_byte(v as u8);
-        } else if v <= 0xFFFFFFFFFF {
-            self.write_byte(sign | INT_LEN_5);
-            self.write_byte((v >> 32) as u8);
-            self.write_byte((v >> 24) as u8);
-            self.write_byte((v >> 16) as u8);
-            self.write_byte((v >> 8) as u8);
-            self.write_byte(v as u8);
-        } else if v <= 0xFFFFFFFFFFFF {
-            self.write_byte(sign | INT_LEN_6);
-            self.write_byte((v >> 40) as u8);
-            self.write_byte((v >> 32) as u8);
-            self.write_byte((v >> 24) as u8);
-            self.write_byte((v >> 16) as u8);
-            self.write_byte((v >> 8) as u8);
-            self.write_byte(v as u8);
-        } else if v <= 0xFFFFFFFFFFFFFF {
-            self.write_byte(sign | INT_LEN_7);
-            self.write_byte((v >> 48) as u8);
-            self.write_byte((v >> 40) as u8);
-            self.write_byte((v >> 32) as u8);
-            self.write_byte((v >> 24) as u8);
-            self.write_byte((v >> 16) as u8);
-            self.write_byte((v >> 8) as u8);
-            self.write_byte(v as u8);
-        } else {
-            self.write_byte(sign | INT_LEN_8);
-            self.write_byte((v >> 56) as u8);
-            self.write_byte((v >> 48) as u8);
-            self.write_byte((v >> 40) as u8);
-            self.write_byte((v >> 32) as u8);
-            self.write_byte((v >> 24) as u8);
-            self.write_byte((v >> 16) as u8);
-            self.write_byte((v >> 8) as u8);
-            self.write_byte(v as u8);
+            return;
         }
+        let width: u32 = if v <= 0xFF {
+            1
+        } else if v <= 0xFFFF {
+            2
+        } else if v <= 0xFFFFFF {
+            3
+        } else if v <= 0xFFFFFFFF {
+            4
+        } else if v <= 0xFFFFFFFFFF {
+            5
+        } else if v <= 0xFFFFFFFFFFFF {
+            6
+        } else if v <= 0xFFFFFFFFFFFFFF {
+            7
+        } else {
+            8
+        };
+        for i in (0..width).rev() {
+            self.write_byte(((v >> (8 * i)) & 0xFF) as u8);
+        }
+        self.write_byte(sign | (INT_LEN_1 - 1 + width as u8));
     }
 
     pub fn encode_float(&mut self, s: &str) {
@@ -533,79 +504,35 @@ impl Encoder {
             prefix |= FLOAT_POSITIVE_NEGATIVE_MASK;
         }
 
+        // v0.5.0 尾定界：一趟正向 [exp][mantissa BE][sign|档位] 写出，档位/内联语义与 v0.3.x 一致。
+        // 每一档都写 exponent（与 Go encode_float.go 对齐），修复旧末档漏写 exp 的问题。
         if exponent == -1 && mantissa <= 7 {
             self.write_byte(prefix | (mantissa as u8));
             return;
         }
 
-        if mantissa <= 0xFF {
-            prefix |= FLOAT_LEN_1;
-            self.write_byte(prefix);
-            self.write_byte(exponent as u8);
-            self.write_byte(mantissa as u8);
+        let width: u32 = if mantissa <= 0xFF {
+            1
         } else if mantissa <= 0xFFFF {
-            prefix |= FLOAT_LEN_1 + 1;
-            self.write_byte(prefix);
-            self.write_byte(exponent as u8);
-            self.write_byte((mantissa >> 8) as u8);
-            self.write_byte(mantissa as u8);
+            2
         } else if mantissa <= 0xFFFFFF {
-            prefix |= FLOAT_LEN_1 + 2;
-            self.write_byte(prefix);
-            self.write_byte(exponent as u8);
-            self.write_byte((mantissa >> 16) as u8);
-            self.write_byte((mantissa >> 8) as u8);
-            self.write_byte(mantissa as u8);
+            3
         } else if mantissa <= 0xFFFFFFFF {
-            prefix |= FLOAT_LEN_1 + 3;
-            self.write_byte(prefix);
-            self.write_byte(exponent as u8);
-            self.write_byte((mantissa >> 24) as u8);
-            self.write_byte((mantissa >> 16) as u8);
-            self.write_byte((mantissa >> 8) as u8);
-            self.write_byte(mantissa as u8);
+            4
         } else if mantissa <= 0xFFFFFFFFFF {
-            prefix |= FLOAT_LEN_1 + 4;
-            self.write_byte(prefix);
-            self.write_byte(exponent as u8);
-            self.write_byte((mantissa >> 32) as u8);
-            self.write_byte((mantissa >> 24) as u8);
-            self.write_byte((mantissa >> 16) as u8);
-            self.write_byte((mantissa >> 8) as u8);
-            self.write_byte(mantissa as u8);
+            5
         } else if mantissa <= 0xFFFFFFFFFFFF {
-            prefix |= FLOAT_LEN_1 + 5;
-            self.write_byte(prefix);
-            self.write_byte(exponent as u8);
-            self.write_byte((mantissa >> 40) as u8);
-            self.write_byte((mantissa >> 32) as u8);
-            self.write_byte((mantissa >> 24) as u8);
-            self.write_byte((mantissa >> 16) as u8);
-            self.write_byte((mantissa >> 8) as u8);
-            self.write_byte(mantissa as u8);
+            6
         } else if mantissa <= 0xFFFFFFFFFFFFFF {
-            prefix |= FLOAT_LEN_1 + 6;
-            self.write_byte(prefix);
-            self.write_byte(exponent as u8);
-            self.write_byte((mantissa >> 48) as u8);
-            self.write_byte((mantissa >> 40) as u8);
-            self.write_byte((mantissa >> 32) as u8);
-            self.write_byte((mantissa >> 24) as u8);
-            self.write_byte((mantissa >> 16) as u8);
-            self.write_byte((mantissa >> 8) as u8);
-            self.write_byte(mantissa as u8);
+            7
         } else {
-            prefix |= FLOAT_LEN_1 + 7;
-            self.write_byte(prefix);
-            self.write_byte((mantissa >> 56) as u8);
-            self.write_byte((mantissa >> 48) as u8);
-            self.write_byte((mantissa >> 40) as u8);
-            self.write_byte((mantissa >> 32) as u8);
-            self.write_byte((mantissa >> 24) as u8);
-            self.write_byte((mantissa >> 16) as u8);
-            self.write_byte((mantissa >> 8) as u8);
-            self.write_byte(mantissa as u8);
+            8
+        };
+        self.write_byte(exponent as u8);
+        for i in (0..width).rev() {
+            self.write_byte(((mantissa >> (8 * i)) & 0xFF) as u8);
         }
+        self.write_byte(prefix | (FLOAT_LEN_1 - 1 + width as u8));
     }
 
     pub fn encode_string(&mut self, s: &str) {
@@ -613,20 +540,22 @@ impl Encoder {
         let len = utf.len();
         let mut prefix = PREFIX_STRING;
 
+        // v0.5.0 尾定界：一趟正向 [body][len BE][sign|档位] 写出。
+        // 1byte 档位阈值与 Go 对齐为 < 255（旧 HEAD 误用 <=255）。
         if len < 30 {
+            self.write_bytes(utf);
             self.write_byte(prefix | len as u8);
-            self.write_bytes(utf);
-        } else if len <= 255 {
+        } else if len < 255 {
             prefix |= STRING_LEN_1;
-            self.write_byte(prefix);
-            self.write_byte(len as u8);
             self.write_bytes(utf);
+            self.write_byte(len as u8);
+            self.write_byte(prefix);
         } else {
             prefix |= STRING_LEN_2;
-            self.write_byte(prefix);
+            self.write_bytes(utf);
             self.write_byte((len >> 8) as u8);
             self.write_byte(len as u8);
-            self.write_bytes(utf);
+            self.write_byte(prefix);
         }
     }
 
@@ -635,35 +564,36 @@ impl Encoder {
         assert!(len <= 0xFFFFFFFF, "bytes too long: {}", len);
         let mut prefix = PREFIX_BYTES;
 
+        // v0.5.0 尾定界：一趟正向 [body][len BE][sign|档位] 写出，档位阈值与 v0.3.x 一致。
         if len < 28 {
-            self.write_byte(prefix | len as u8);
             self.write_bytes(bytes);
+            self.write_byte(prefix | len as u8);
         } else if len <= 255 {
             prefix |= BYTES_LEN_1;
-            self.write_byte(prefix);
-            self.write_byte(len as u8);
             self.write_bytes(bytes);
+            self.write_byte(len as u8);
+            self.write_byte(prefix);
         } else if len <= 0xFFFF {
             prefix |= BYTES_LEN_2;
-            self.write_byte(prefix);
+            self.write_bytes(bytes);
             self.write_byte((len >> 8) as u8);
             self.write_byte(len as u8);
-            self.write_bytes(bytes);
+            self.write_byte(prefix);
         } else if len <= 0xFFFFFF {
             prefix |= BYTES_LEN_3;
-            self.write_byte(prefix);
+            self.write_bytes(bytes);
             self.write_byte((len >> 16) as u8);
             self.write_byte((len >> 8) as u8);
             self.write_byte(len as u8);
-            self.write_bytes(bytes);
+            self.write_byte(prefix);
         } else {
             prefix |= BYTES_LEN_4;
-            self.write_byte(prefix);
+            self.write_bytes(bytes);
             self.write_byte((len >> 24) as u8);
             self.write_byte((len >> 16) as u8);
             self.write_byte((len >> 8) as u8);
             self.write_byte(len as u8);
-            self.write_bytes(bytes);
+            self.write_byte(prefix);
         }
     }
 
@@ -672,32 +602,33 @@ impl Encoder {
         assert!(length <= 0xFFFFFFFF, "container payload too long: {}", length);
         let mut prefix = PREFIX_CONTAINER | container_type;
 
+        // v0.5.0 尾定界：一趟正向 [payload][len BE][sign|档位] 写出，档位阈值与 v0.3.x 一致。
+        self.write_bytes(payload);
         if length < 12 {
             self.write_byte(prefix | length as u8);
         } else if length <= 255 {
             prefix |= CONTAINER_LEN_1;
-            self.write_byte(prefix);
             self.write_byte(length as u8);
+            self.write_byte(prefix);
         } else if length <= 0xFFFF {
             prefix |= CONTAINER_LEN_2;
-            self.write_byte(prefix);
             self.write_byte((length >> 8) as u8);
             self.write_byte(length as u8);
+            self.write_byte(prefix);
         } else if length <= 0xFFFFFF {
             prefix |= CONTAINER_LEN_3;
-            self.write_byte(prefix);
             self.write_byte((length >> 16) as u8);
             self.write_byte((length >> 8) as u8);
             self.write_byte(length as u8);
+            self.write_byte(prefix);
         } else {
             prefix |= CONTAINER_LEN_4;
-            self.write_byte(prefix);
             self.write_byte((length >> 24) as u8);
             self.write_byte((length >> 16) as u8);
             self.write_byte((length >> 8) as u8);
             self.write_byte(length as u8);
+            self.write_byte(prefix);
         }
-        self.write_bytes(payload);
     }
 
     fn encode_tag(&mut self, tag_bytes: &[u8], payload: &[u8]) {
@@ -706,57 +637,42 @@ impl Encoder {
             return;
         }
 
-        let tag_enc_len = if tag_bytes.len() < 254 {
-            1 + tag_bytes.len()
-        } else if tag_bytes.len() < 257 {
-            2 + tag_bytes.len()
-        } else {
-            3 + tag_bytes.len()
-        };
+        // v0.5.0 尾定界：一趟正向 [payload][reverse(meta)][尾槽][total BE][sign] 写出。
+        // total = len(payload) + len(meta) + len(尾槽)，与解码侧 untailify 反推式
+        // inner = total - ml - len(尾槽) 一致（尾槽与前缀槽为同一套 canonical 三档）。
+        let slot = crate::core::footer::footer_slot_bytes(tag_bytes.len());
+        let total = payload.len() + tag_bytes.len() + slot.len();
+        assert!(total <= 0xFFFFFFFF, "tag+payload too long: {}", total);
 
-        let total_len = tag_enc_len + payload.len();
-        assert!(total_len <= 0xFFFFFFFF, "tag+payload too long: {}", total_len);
-        let mut prefix = PREFIX_TAG;
-
-        if total_len < 28 {
-            prefix |= total_len as u8;
-            self.write_byte(prefix);
-        } else if total_len <= 255 {
-            prefix |= TAG_LEN_1;
-            self.write_byte(prefix);
-            self.write_byte(total_len as u8);
-        } else if total_len <= 0xFFFF {
-            prefix |= TAG_LEN_2;
-            self.write_byte(prefix);
-            self.write_byte((total_len >> 8) as u8);
-            self.write_byte(total_len as u8);
-        } else if total_len <= 0xFFFFFF {
-            prefix |= TAG_LEN_3;
-            self.write_byte(prefix);
-            self.write_byte((total_len >> 16) as u8);
-            self.write_byte((total_len >> 8) as u8);
-            self.write_byte(total_len as u8);
+        let mut sign = PREFIX_TAG;
+        let mut tier: Vec<u8> = Vec::new();
+        if total < 28 {
+            sign |= total as u8;
+        } else if total <= 255 {
+            sign |= TAG_LEN_1;
+            tier.push(total as u8);
+        } else if total <= 0xFFFF {
+            sign |= TAG_LEN_2;
+            tier.push((total >> 8) as u8);
+            tier.push(total as u8);
+        } else if total <= 0xFFFFFF {
+            sign |= TAG_LEN_3;
+            tier.push((total >> 16) as u8);
+            tier.push((total >> 8) as u8);
+            tier.push(total as u8);
         } else {
-            prefix |= TAG_LEN_4;
-            self.write_byte(prefix);
-            self.write_byte((total_len >> 24) as u8);
-            self.write_byte((total_len >> 16) as u8);
-            self.write_byte((total_len >> 8) as u8);
-            self.write_byte(total_len as u8);
+            sign |= TAG_LEN_4;
+            tier.push((total >> 24) as u8);
+            tier.push((total >> 16) as u8);
+            tier.push((total >> 8) as u8);
+            tier.push(total as u8);
         }
 
-        if tag_bytes.len() < 254 {
-            self.write_byte(tag_bytes.len() as u8);
-        } else if tag_bytes.len() == 254 {
-            self.write_byte(254);
-            self.write_byte(tag_bytes.len() as u8);
-        } else {
-            self.write_byte(255);
-            self.write_byte((tag_bytes.len() >> 8) as u8);
-            self.write_byte(tag_bytes.len() as u8);
-        }
-        self.write_bytes(tag_bytes);
         self.write_bytes(payload);
+        self.write_bytes(&tag_bytes.iter().rev().cloned().collect::<Vec<u8>>());
+        self.write_bytes(&slot);
+        self.write_bytes(&tier);
+        self.write_byte(sign);
     }
 }
 
@@ -878,14 +794,14 @@ mod tests {
     fn test_encode_uint64_one_byte() {
         let mut enc = Encoder::new();
         enc.encode_uint64(100);
-        assert_eq!(enc.buf[..enc.offset], vec![0x20 | 24, 100]);
+        assert_eq!(enc.buf[..enc.offset], vec![100, 0x20 | 24]);
     }
 
     #[test]
     fn test_encode_uint64_two_bytes() {
         let mut enc = Encoder::new();
         enc.encode_uint64(1000);
-        assert_eq!(enc.buf[..enc.offset], vec![0x20 | 25, 0x03, 0xE8]);
+        assert_eq!(enc.buf[..enc.offset], vec![0x03, 0xE8, 0x20 | 25]);
     }
 
     #[test]
@@ -894,7 +810,7 @@ mod tests {
         enc.encode_string("hello");
         assert_eq!(
             enc.buf[..enc.offset],
-            vec![0x80 | 5, b'h', b'e', b'l', b'l', b'o']
+            vec![b'h', b'e', b'l', b'l', b'o', 0x80 | 5]
         );
     }
 
@@ -903,9 +819,9 @@ mod tests {
         let mut enc = Encoder::new();
         let s = "a".repeat(30);
         enc.encode_string(&s);
-        let expected: Vec<u8> = vec![0x80 | 30, 30]
-            .into_iter()
-            .chain(std::iter::repeat(b'a').take(30))
+        let expected: Vec<u8> = std::iter::repeat(b'a')
+            .take(30)
+            .chain(vec![30, 0x80 | 30])
             .collect();
         assert_eq!(enc.buf[..enc.offset], expected);
     }
@@ -935,8 +851,8 @@ mod tests {
         // int="3", frac="14" -> base_exp=-2, mantissa_str="314" -> mantissa=314
         // exponent=-2, mantissa=314 > 0xFF? No, 314 <= 255... wait, 314 > 255
         // So needs FloatLen2 (= FLOAT_LEN_1 + 1 = 9)
-        // prefix = 0x60 | 9 = 0x69, then exponent=-2 as u8 = 0xFE, then mantissa 314 = 0x01 0x3A
-        assert_eq!(enc.buf[..enc.offset], vec![0x69, 0xFE, 0x01, 0x3A]);
+        // prefix = 0x60 | 9 = 0x69, tail order: exponent=-2 as u8 = 0xFE, mantissa 314 = 0x01 0x3A, sign 0x69 last
+        assert_eq!(enc.buf[..enc.offset], vec![0xFE, 0x01, 0x3A, 0x69]);
     }
 
     #[test]

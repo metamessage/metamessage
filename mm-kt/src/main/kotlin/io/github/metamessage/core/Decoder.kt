@@ -26,12 +26,13 @@ class Decoder() {
     private lateinit var data: ByteArray
 
     fun decode(data: ByteArray): Node {
-        this.data = data
+        // v0.5.0 尾定界：入口先把尾序 wire 剥帧还原成「sign 在前」的头部形态，再走原有正向解码器。
+        this.data = Footer.untailify(data)
         this.offset = 0
 
         val d = decodeNode(null)
-        if (offset != data.size) {
-            throw MmDecodeException("trailing bytes at $offset len ${data.size}")
+        if (offset != this.data.size) {
+            throw MmDecodeException("trailing bytes at $offset len ${this.data.size}")
         }
         return d.node
     }
@@ -163,7 +164,11 @@ class Decoder() {
         val l = b
         return when {
             l < 254 -> l
-            l < 257 -> data[offset++].toInt() and 0xFF
+            // 二档：后继 1 字节 u8 长度（ml 254..255）
+            l == 254 -> data[offset++].toInt() and 0xFF
+            // 三档（b == 255）：后继 2 字节 u16 大端长度（ml 256..65535）。
+            // 旧实现写成 l < 257 分支对字节值恒真，此分支实为死代码，
+            // 导致 ml > 255 的 meta 前缀回绕误读；v0.5.0 根治激活本档。
             else -> ((data[offset++].toInt() and 0xFF) shl 8) or (data[offset++].toInt() and 0xFF)
         }
     }

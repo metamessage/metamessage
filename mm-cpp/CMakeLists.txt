@@ -20,6 +20,7 @@ set(CORE_SOURCES
     src/core/constants.hpp
     src/core/encoder.hpp
     src/core/decoder.hpp
+    src/core/footer.hpp
 )
 
 set(MM_SOURCES
