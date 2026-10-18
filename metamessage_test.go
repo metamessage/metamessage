@@ -157,9 +157,13 @@ func TestValue(t *testing.T) {
 }
 
 func TestBytes(t *testing.T) {
-	bs := []byte{52, 48, 52, 32, 112, 97, 103, 101, 32, 110, 111, 116, 32, 102, 111, 117, 110, 100, 10}
+	// v0.5.0 wire："404 page not found\n" 逐字节 int 数组 + 尾定界封装
+	wire, err := EncodeFromValue([]byte("404 page not found\n"), "")
+	if err != nil {
+		t.Fatalf("EncodeFromValue error: %v", err)
+	}
 	var v any
-	err := DecodeToValue(bs, &v)
+	err = DecodeToValue(wire, &v)
 	if err != nil {
 		t.Fatalf("DecodeToValue error: %v", err)
 	}

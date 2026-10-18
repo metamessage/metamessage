@@ -26,6 +26,10 @@ public class WireDecoder
             throw new MmDecodeException("Empty data");
         }
 
+        // v0.5.0 尾定界：入口先把尾序 wire 剥帧还原成「sign 在前」的头部形态，再走原有正向解码器。
+        _data = Footer.Untailify(_data);
+        _offset = 0;
+
         return DecodeNext(null);
     }
 

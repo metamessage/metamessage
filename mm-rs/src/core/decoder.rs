@@ -70,6 +70,10 @@ impl Decoder {
     }
 
     pub fn decode(&mut self) -> Result<Node, std::io::Error> {
+        // v0.5.0 尾定界：入口先把尾定界 wire 剥帧还原成头部形态，再走原有正向解码器。
+        let head = crate::core::footer::untailify(&self.data)?;
+        self.data = head;
+        self.offset = 0;
         let tag = Tag::new();
         self.decode_node(&tag, "")
     }

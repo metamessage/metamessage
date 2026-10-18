@@ -67,6 +67,22 @@ Note:
 
 ### TOML
 
+## Wire Format (v0.4.0 Footer Mode)
+
+v0.4.0 moves all per-node meta (tag) information from the node **header** to the node **footer**:
+
+```
+Tagged node: [PrefixTag|tier][total_len][body forward][reverse(meta bytes)][footer slot]
+Untagged node: [bare body] (no wrapping)
+```
+
+- `total_len = len(body) + len(meta) + len(slot)`; tier widths 0/1/2/3/4 bytes (big-endian), same as v0.3.x
+- `reverse(meta)`: byte-level reversal of `Tag.Bytes()` output; field logical order (Example→…→KMore) is unchanged
+- Footer slot: 1–3 byte self-describing length read from the last byte backward to recover `meta_len`
+- Decoder asserts: bytes consumed by forward body parse == `body_len`; mismatch raises **footer boundary mismatch**
+
+Full byte-level specification, boundary rules, and per-language porting guide: [`docs/footer-format-v0.4.0.md`](docs/footer-format-v0.4.0.md).
+
 ## Data Types
 
 Define data types using the tag `type=`. The format is `type=typeIdentifier`, e.g. `type=i` means integer.

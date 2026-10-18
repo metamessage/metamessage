@@ -109,6 +109,40 @@ func (e *encoder) writeStringWithPrefix(s string, prefix ...byte) (n uint32, err
 	copy(e.buf[e.offset:], prefix)
 	copy(e.buf[e.offset+uint32(lp):], s)
 	n = uint32(l)
+
+e.offset += n
+	return
+}
+
+// v0.5.0 尾定界写出原语：body 先出，定界字节（档位长度大端 + sign）追加在 body 之后。
+// 编码器一趟正向写完 body 即可写长度与 sign，无需回写、无需事后反转。
+func (e *encoder) writeBytesWithSuffix(bs []byte, suffix ...byte) (n uint32, err error) {
+	lb := len(bs)
+	l := lb + len(suffix)
+	required := int(e.offset) + l
+	if err = e.ensureCap(required); err != nil {
+		return
+	}
+
+	copy(e.buf[e.offset:], bs)
+	copy(e.buf[e.offset+uint32(lb):], suffix)
+	n = uint32(l)
+
+e.offset += n
+	return
+}
+
+func (e *encoder) writeStringWithSuffix(s string, suffix ...byte) (n uint32, err error) {
+	ls := len(s)
+	l := ls + len(suffix)
+	required := int(e.offset) + l
+	if err = e.ensureCap(required); err != nil {
+		return
+	}
+
+	copy(e.buf[e.offset:], s)
+	copy(e.buf[e.offset+uint32(ls):], suffix)
+	n = uint32(l)
 	e.offset += n
 	return
 }

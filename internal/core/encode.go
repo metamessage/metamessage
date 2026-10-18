@@ -125,21 +125,15 @@ func (e *encoder) encodeNodeObject(obj *ir.NodeObject) (n uint32, err error) {
 	return
 }
 
+// v0.5.0 尾定界：payload（已是 wire 形态）先出，meta 正序字节交给 encodeTag
+// 逆序后置 + 尾部槽，一趟写完，无前缀长度回写。
 func (e *encoder) encodeComment(payload []byte, tag *ir.Tag) (n uint32, err error) {
 	var tb []byte
 	if tb, err = tag.Bytes(); err != nil {
 		return
 	}
-	var ns uint32
-	if ns, err = e.encodeT(tb); err != nil {
-		return
-	}
 
-	if ns == 0 {
-		return
-	}
-
-	return e.encodeTag(payload, e.buf[e.offset-ns:e.offset])
+	return e.encodeTag(payload, tb)
 }
 
 func (e *encoder) encodeNodeArray(arr *ir.NodeArray) (n uint32, err error) {

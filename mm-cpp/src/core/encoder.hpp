@@ -183,10 +183,11 @@ private:
       len = 8;
     }
 
-    writeByte(prefix);
+    // v0.5.0 尾定界：一趟正向 [body BE][sign|档位] 写出，档位/内联语义与 v0.3.x 一致。
     for (int i = len - 1; i >= 0; --i) {
       writeByte(static_cast<uint8_t>(uv >> (i * 8)));
     }
+    writeByte(prefix);
     return static_cast<uint32_t>(1 + len);
   }
 
@@ -276,34 +277,37 @@ private:
       prefixLen = FloatLen8Byte;
     }
 
+    // v0.5.0 尾定界：一趟正向 [exp][mantissa BE][sign|档位] 写出。
     sign |= prefixLen;
-    writeByte(sign);
     writeByte(static_cast<uint8_t>(exponent));
 
     int byteCount = floatLen(sign);
     for (int i = byteCount - 1; i >= 0; --i) {
       writeByte(static_cast<uint8_t>(mantissa >> (i * 8)));
     }
+    writeByte(sign);
 
     return static_cast<uint32_t>(2 + byteCount);
   }
 
   uint32_t encodeString(const std::string &s) {
     size_t l = s.size();
+    // v0.5.0 尾定界：一趟正向 [body][len BE][sign|档位] 写出。
+    // 1byte 档位阈值与 Go 对齐为 < 255（旧 HEAD 误用 <=255）。
     if (l < StringLen1Byte) {
+      writeString(s);
       writeByte(static_cast<uint8_t>(Prefix::String) | static_cast<uint8_t>(l));
-      writeString(s);
       return static_cast<uint32_t>(1 + l);
-    } else if (l <= 255) {
-      writeByte(static_cast<uint8_t>(Prefix::String) | StringLen1Byte);
-      writeByte(static_cast<uint8_t>(l));
+    } else if (l < 255) {
       writeString(s);
+      writeByte(static_cast<uint8_t>(l));
+      writeByte(static_cast<uint8_t>(Prefix::String) | StringLen1Byte);
       return static_cast<uint32_t>(2 + l);
     } else {
-      writeByte(static_cast<uint8_t>(Prefix::String) | StringLen2Byte);
+      writeString(s);
       writeByte(static_cast<uint8_t>(l >> 8));
       writeByte(static_cast<uint8_t>(l));
-      writeString(s);
+      writeByte(static_cast<uint8_t>(Prefix::String) | StringLen2Byte);
       return static_cast<uint32_t>(3 + l);
     }
   }
@@ -315,35 +319,36 @@ private:
     }
 
     uint8_t sign = static_cast<uint8_t>(Prefix::Bytes);
+    // v0.5.0 尾定界：一趟正向 [body][len BE][sign|档位] 写出，档位阈值与 v0.3.x 一致。
     if (l < BytesLen1Byte) {
-      writeByte(static_cast<uint8_t>(Prefix::Bytes) | static_cast<uint8_t>(l));
       writeBytes(data);
+      writeByte(static_cast<uint8_t>(Prefix::Bytes) | static_cast<uint8_t>(l));
       return static_cast<uint32_t>(1 + l);
     } else if (l <= 0xFF) {
-      writeByte(static_cast<uint8_t>(Prefix::Bytes) | BytesLen1Byte);
-      writeByte(static_cast<uint8_t>(l));
       writeBytes(data);
+      writeByte(static_cast<uint8_t>(l));
+      writeByte(static_cast<uint8_t>(Prefix::Bytes) | BytesLen1Byte);
       return static_cast<uint32_t>(2 + l);
     } else if (l <= 0xFFFF) {
-      writeByte(static_cast<uint8_t>(Prefix::Bytes) | BytesLen2Byte);
+      writeBytes(data);
       writeByte(static_cast<uint8_t>(l >> 8));
       writeByte(static_cast<uint8_t>(l));
-      writeBytes(data);
+      writeByte(static_cast<uint8_t>(Prefix::Bytes) | BytesLen2Byte);
       return static_cast<uint32_t>(3 + l);
     } else if (l <= 0xFFFFFF) {
-      writeByte(static_cast<uint8_t>(Prefix::Bytes) | BytesLen3Byte);
+      writeBytes(data);
       writeByte(static_cast<uint8_t>(l >> 16));
       writeByte(static_cast<uint8_t>(l >> 8));
       writeByte(static_cast<uint8_t>(l));
-      writeBytes(data);
+      writeByte(static_cast<uint8_t>(Prefix::Bytes) | BytesLen3Byte);
       return static_cast<uint32_t>(4 + l);
     } else { // l <= 0xFFFFFFFF
-      writeByte(static_cast<uint8_t>(Prefix::Bytes) | BytesLen4Byte);
+      writeBytes(data);
       writeByte(static_cast<uint8_t>(l >> 24));
       writeByte(static_cast<uint8_t>(l >> 16));
       writeByte(static_cast<uint8_t>(l >> 8));
       writeByte(static_cast<uint8_t>(l));
-      writeBytes(data);
+      writeByte(static_cast<uint8_t>(Prefix::Bytes) | BytesLen4Byte);
       return static_cast<uint32_t>(5 + l);
     }
   }
@@ -355,35 +360,36 @@ private:
     }
 
     uint8_t sign = static_cast<uint8_t>(Prefix::Container) | ContainerArray;
+    // v0.5.0 尾定界：一趟正向 [payload][len BE][sign|档位] 写出。
     if (l < ContainerLen1Byte) {
-      writeByte(sign | static_cast<uint8_t>(l));
       writeBytes(data);
+      writeByte(sign | static_cast<uint8_t>(l));
       return static_cast<uint32_t>(1 + l);
     } else if (l <= 0xFF) {
-      writeByte(sign | ContainerLen1Byte);
-      writeByte(static_cast<uint8_t>(l));
       writeBytes(data);
+      writeByte(static_cast<uint8_t>(l));
+      writeByte(sign | ContainerLen1Byte);
       return static_cast<uint32_t>(2 + l);
     } else if (l <= 0xFFFF) {
-      writeByte(sign | ContainerLen2Byte);
+      writeBytes(data);
       writeByte(static_cast<uint8_t>(l >> 8));
       writeByte(static_cast<uint8_t>(l));
-      writeBytes(data);
+      writeByte(sign | ContainerLen2Byte);
       return static_cast<uint32_t>(3 + l);
     } else if (l <= 0xFFFFFF) {
-      writeByte(sign | ContainerLen3Byte);
+      writeBytes(data);
       writeByte(static_cast<uint8_t>(l >> 16));
       writeByte(static_cast<uint8_t>(l >> 8));
       writeByte(static_cast<uint8_t>(l));
-      writeBytes(data);
+      writeByte(sign | ContainerLen3Byte);
       return static_cast<uint32_t>(4 + l);
     } else {
-      writeByte(sign | ContainerLen4Byte);
+      writeBytes(data);
       writeByte(static_cast<uint8_t>(l >> 24));
       writeByte(static_cast<uint8_t>(l >> 16));
       writeByte(static_cast<uint8_t>(l >> 8));
       writeByte(static_cast<uint8_t>(l));
-      writeBytes(data);
+      writeByte(sign | ContainerLen4Byte);
       return static_cast<uint32_t>(5 + l);
     }
   }
@@ -395,35 +401,36 @@ private:
     }
 
     uint8_t sign = static_cast<uint8_t>(Prefix::Container) | ContainerObject;
+    // v0.5.0 尾定界：一趟正向 [payload][len BE][sign|档位] 写出。
     if (l < ContainerLen1Byte) {
-      writeByte(sign | static_cast<uint8_t>(l));
       writeBytes(data);
+      writeByte(sign | static_cast<uint8_t>(l));
       return static_cast<uint32_t>(1 + l);
     } else if (l <= 0xFF) {
-      writeByte(sign | ContainerLen1Byte);
-      writeByte(static_cast<uint8_t>(l));
       writeBytes(data);
+      writeByte(static_cast<uint8_t>(l));
+      writeByte(sign | ContainerLen1Byte);
       return static_cast<uint32_t>(2 + l);
     } else if (l <= 0xFFFF) {
-      writeByte(sign | ContainerLen2Byte);
+      writeBytes(data);
       writeByte(static_cast<uint8_t>(l >> 8));
       writeByte(static_cast<uint8_t>(l));
-      writeBytes(data);
+      writeByte(sign | ContainerLen2Byte);
       return static_cast<uint32_t>(3 + l);
     } else if (l <= 0xFFFFFF) {
-      writeByte(sign | ContainerLen3Byte);
+      writeBytes(data);
       writeByte(static_cast<uint8_t>(l >> 16));
       writeByte(static_cast<uint8_t>(l >> 8));
       writeByte(static_cast<uint8_t>(l));
-      writeBytes(data);
+      writeByte(sign | ContainerLen3Byte);
       return static_cast<uint32_t>(4 + l);
     } else {
-      writeByte(sign | ContainerLen4Byte);
+      writeBytes(data);
       writeByte(static_cast<uint8_t>(l >> 24));
       writeByte(static_cast<uint8_t>(l >> 16));
       writeByte(static_cast<uint8_t>(l >> 8));
       writeByte(static_cast<uint8_t>(l));
-      writeBytes(data);
+      writeByte(sign | ContainerLen4Byte);
       return static_cast<uint32_t>(5 + l);
     }
   }
@@ -445,58 +452,64 @@ private:
   }
 
   uint32_t encodeTag(const std::vector<uint8_t> &payload,
-                     const std::vector<uint8_t> &tagData) {
-    // tagData = [tag_byte_count] [tag_fields]
-    // Writes: [PrefixTag | totalLen] [tag_byte_count] [tag_fields] [payload]
-    if (tagData.empty())
+                     const std::vector<uint8_t> &meta) {
+    // v0.5.0 尾定界：一趟正向 [payload][reverse(meta)][尾槽][total BE][sign] 写出。
+    // total = len(payload) + len(meta) + len(尾槽)，与解码侧 untailify 反推式
+    // inner = total - ml - len(尾槽) 一致（尾槽与前缀槽为同一套 canonical 三档）。
+    if (meta.empty())
       return static_cast<uint32_t>(payload.size());
 
-    size_t totalLen = tagData.size() + payload.size();
-    if (totalLen > 0xFFFFFFFF) {
-      return 0; // v0.3.0：超 4 字节档上限，静默拒绝
+    size_t ml = meta.size();
+    std::vector<uint8_t> slot;
+    if (ml <= 253) {
+      slot.push_back(static_cast<uint8_t>(ml));
+    } else if (ml <= 0xFF) {
+      slot.push_back(static_cast<uint8_t>(ml & 0xFF));
+      slot.push_back(254);
+    } else if (ml <= 0xFFFF) {
+      slot.push_back(static_cast<uint8_t>((ml >> 8) & 0xFF));
+      slot.push_back(static_cast<uint8_t>(ml & 0xFF));
+      slot.push_back(255);
+    } else {
+      return 0; // meta too long
     }
+
+    size_t total = payload.size() + ml + slot.size();
+    if (total > 0xFFFFFFFF)
+      return 0; // v0.3.0：超 4 字节档上限，静默拒绝
 
     uint8_t sign = static_cast<uint8_t>(Prefix::Tag);
-
-    size_t headerLen;
-    if (totalLen < TagLen1Byte) {
-      sign |= static_cast<uint8_t>(totalLen);
-      headerLen = 1;
-    } else if (totalLen <= 0xFF) {
+    std::vector<uint8_t> tier;
+    if (total < TagLen1Byte) {
+      sign |= static_cast<uint8_t>(total);
+    } else if (total <= 0xFF) {
       sign |= TagLen1Byte;
-      headerLen = 2;
-    } else if (totalLen <= 0xFFFF) {
+      tier.push_back(static_cast<uint8_t>(total));
+    } else if (total <= 0xFFFF) {
       sign |= TagLen2Byte;
-      headerLen = 3;
-    } else if (totalLen <= 0xFFFFFF) {
+      tier.push_back(static_cast<uint8_t>(total >> 8));
+      tier.push_back(static_cast<uint8_t>(total));
+    } else if (total <= 0xFFFFFF) {
       sign |= TagLen3Byte;
-      headerLen = 4;
+      tier.push_back(static_cast<uint8_t>(total >> 16));
+      tier.push_back(static_cast<uint8_t>(total >> 8));
+      tier.push_back(static_cast<uint8_t>(total));
     } else {
       sign |= TagLen4Byte;
-      headerLen = 5;
+      tier.push_back(static_cast<uint8_t>((total >> 24) & 0xFF));
+      tier.push_back(static_cast<uint8_t>((total >> 16) & 0xFF));
+      tier.push_back(static_cast<uint8_t>((total >> 8) & 0xFF));
+      tier.push_back(static_cast<uint8_t>(total & 0xFF));
     }
 
-    writeByte(sign);
-    if (headerLen == 2) {
-      writeByte(static_cast<uint8_t>(totalLen));
-    } else if (headerLen == 3) {
-      writeByte(static_cast<uint8_t>(totalLen >> 8));
-      writeByte(static_cast<uint8_t>(totalLen));
-    } else if (headerLen == 4) {
-      writeByte(static_cast<uint8_t>(totalLen >> 16));
-      writeByte(static_cast<uint8_t>(totalLen >> 8));
-      writeByte(static_cast<uint8_t>(totalLen));
-    } else if (headerLen == 5) {
-      writeByte(static_cast<uint8_t>(totalLen >> 24));
-      writeByte(static_cast<uint8_t>(totalLen >> 16));
-      writeByte(static_cast<uint8_t>(totalLen >> 8));
-      writeByte(static_cast<uint8_t>(totalLen));
-    }
-
-    writeBytes(tagData);
     writeBytes(payload);
-
-    return static_cast<uint32_t>(headerLen + totalLen);
+    std::vector<uint8_t> rev(meta.rbegin(), meta.rend());
+    writeBytes(rev);
+    writeBytes(slot);
+    writeBytes(tier);
+    writeByte(sign);
+    return static_cast<uint32_t>(payload.size() + ml + slot.size() + tier.size() +
+                                 1);
   }
 
   uint32_t encodeComment(const std::vector<uint8_t> &payload,
@@ -506,17 +519,7 @@ private:
     auto tagBytes = tag->bytes();
     if (tagBytes.empty())
       return static_cast<uint32_t>(payload.size());
-
-    uint32_t ns = encodeT(tagBytes);
-    if (ns == 0)
-      return static_cast<uint32_t>(payload.size());
-
-    size_t prevOffset = offset_ - ns;
-    std::vector<uint8_t> tagData(buf_.begin() + prevOffset,
-                                 buf_.begin() + prevOffset + ns);
-    offset_ = prevOffset;
-
-    return encodeTag(payload, tagData);
+    return encodeTag(payload, tagBytes);
   }
 
   uint32_t encodeNodeObject(std::shared_ptr<ir::NodeObject> obj) {

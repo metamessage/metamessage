@@ -76,26 +76,27 @@ func tierMask(kind string) byte {
 	}
 }
 
-// checkTierPrefix 校验 e.buf 里的档位标记 + 大端长度字段 + 负载布局。
-func checkTierPrefix(t *testing.T, e *encoder, kind string, length int, payload []byte) {
+// checkTierSuffix 校验 e.buf 里的尾定界布局：[payload][大端长度字段][sign]。
+// v0.5.0 编码器一趟正向写出：body 先落盘，定界信息（大端长度 + sign）追加在尾部，
+// 因此 sign 位于节点最后一个字节，长度字段紧贴其前。
+func checkTierSuffix(t *testing.T, e *encoder, kind string, length int, payload []byte) {
 	t.Helper()
 	marker, n := wantTier(kind, length)
-	if got := e.buf[0] & tierMask(kind); got != marker {
-		t.Fatalf("suffix = %d, want %d (kind %s, length %d)", got, marker, kind, length)
+	total := int(e.offset)
+	if got := e.buf[total-1] & tierMask(kind); got != marker {
+		t.Fatalf("sign tier = %d, want %d (kind %s, length %d)", got, marker, kind, length)
 	}
-	off := 1
 	if n > 0 {
 		var gotLen int
 		for i := 0; i < n; i++ {
-			gotLen = gotLen<<8 | int(e.buf[off+i])
+			gotLen = gotLen<<8 | int(e.buf[total-1-n+i])
 		}
 		if gotLen != length {
 			t.Fatalf("length field = %d, want %d", gotLen, length)
 		}
-		off += n
 	}
-	if !bytes.Equal(e.buf[off:off+len(payload)], payload) {
-		t.Fatal("payload bytes not written right after the header/length field")
+	if !bytes.Equal(e.buf[:len(payload)], payload) {
+		t.Fatal("payload bytes not written at the head of the node (before tail delimiters)")
 	}
 }
 
@@ -137,7 +138,7 @@ func TestEncodeStringTierBoundaries(t *testing.T) {
 			if want := uint32(1 + nb + l); n != want || e.offset != want {
 				t.Fatalf("wrote %d bytes (offset %d), want %d", n, e.offset, want)
 			}
-			checkTierPrefix(t, e, "string", l, []byte(s))
+			checkTierSuffix(t, e, "string", l, []byte(s))
 		})
 	}
 }
@@ -166,7 +167,7 @@ func TestEncodeBytesTierBoundaries(t *testing.T) {
 			if want := uint32(1 + nb + l); n != want || e.offset != want {
 				t.Fatalf("wrote %d bytes (offset %d), want %d", n, e.offset, want)
 			}
-			checkTierPrefix(t, e, "scalar", l, bs)
+			checkTierSuffix(t, e, "scalar", l, bs)
 		})
 	}
 }
@@ -185,7 +186,7 @@ func TestEncodeArrayPayloadTierBoundaries(t *testing.T) {
 			if want := uint32(1 + nb + l); n != want || e.offset != want {
 				t.Fatalf("wrote %d bytes (offset %d), want %d", n, e.offset, want)
 			}
-			checkTierPrefix(t, e, "container", l, payload)
+			checkTierSuffix(t, e, "container", l, payload)
 		})
 	}
 }
@@ -204,49 +205,59 @@ func TestEncodeObjectPayloadTierBoundaries(t *testing.T) {
 			if want := uint32(1 + nb + l); n != want || e.offset != want {
 				t.Fatalf("wrote %d bytes (offset %d), want %d", n, e.offset, want)
 			}
-			checkTierPrefix(t, e, "container", l, payload)
+			checkTierSuffix(t, e, "container", l, payload)
 		})
 	}
 }
 
 func TestEncodeTagPayloadTierBoundaries(t *testing.T) {
-	tag := []byte("tt")
+	meta := []byte("tt")
+	slot, err := footerSlotBytes(len(meta))
+	if err != nil {
+		t.Fatalf("footerSlotBytes(%d): %v", len(meta), err)
+	}
 	for _, l := range tierBoundaryLengths {
 		t.Run(fmt.Sprintf("len_%d", l), func(t *testing.T) {
 			e := newBufEncoder()
-			// tag + payload 合计正好 l
-			payload := bytes.Repeat([]byte("p"), l-len(tag))
+			// 尾定界 tag 节点 total = len(inner)+len(meta)+len(slot)，钉住 total == l
+			inner := bytes.Repeat([]byte("p"), l-len(meta)-len(slot))
 
-			n, err := e.encodeTag(payload, tag)
+			n, err := e.encodeTag(inner, meta)
 			if err != nil {
-				t.Fatalf("encodeTag(tag %d + payload %d) must not error, got: %v",
-					len(tag), len(payload), err)
+				t.Fatalf("encodeTag(meta %d + inner %d) must not error, got: %v",
+					len(meta), len(inner), err)
 			}
 			marker, nb := wantTier("scalar", l)
 			if want := uint32(1 + nb + l); n != want || e.offset != want {
 				t.Fatalf("wrote %d bytes (offset %d), want %d", n, e.offset, want)
 			}
 
-			// 布局：sign(1) + 长度字段(nb) + tag + payload
-			if got := e.buf[0] & tierMask("scalar"); got != marker {
-				t.Fatalf("suffix = %d, want %d", got, marker)
+			// 尾定界布局：[inner][reverse(meta)][slot][大端长度字段][sign]
+			total := int(e.offset)
+			if got := e.buf[total-1] & tierMask("scalar"); got != marker {
+				t.Fatalf("sign tier = %d, want %d", got, marker)
 			}
-			off := 1
+			off := total - 1
 			if nb > 0 {
 				var gotLen int
 				for i := 0; i < nb; i++ {
-					gotLen = gotLen<<8 | int(e.buf[off+i])
+					gotLen = gotLen<<8 | int(e.buf[off-nb+i])
 				}
 				if gotLen != l {
 					t.Fatalf("length field = %d, want %d", gotLen, l)
 				}
-				off += nb
+				off -= nb
 			}
-			if !bytes.Equal(e.buf[off:off+len(tag)], tag) {
-				t.Fatal("tag bytes not written right after the length field")
+			if !bytes.Equal(e.buf[off-len(slot):off], slot) {
+				t.Fatal("footer slot not written before the length field")
 			}
-			if !bytes.Equal(e.buf[off+len(tag):off+len(tag)+len(payload)], payload) {
-				t.Fatal("payload bytes not written after the tag")
+			off -= len(slot)
+			if !bytes.Equal(e.buf[off-len(meta):off], reverseBytes(meta)) {
+				t.Fatal("reversed meta not written before the footer slot")
+			}
+			off -= len(meta)
+			if !bytes.Equal(e.buf[:off], inner) {
+				t.Fatal("inner bytes not written at the head of the node")
 			}
 		})
 	}
@@ -265,7 +276,7 @@ func TestEncodeAtTierCeilingStillWorks(t *testing.T) {
 	if n == 0 {
 		t.Fatalf("encodeString(%d) silently wrote 0 bytes (D6 regression)", Max2Byte)
 	}
-	checkTierPrefix(t, e, "string", Max2Byte, []byte(s))
+	checkTierSuffix(t, e, "string", Max2Byte, []byte(s))
 
 	be := newBufEncoder()
 	bs := bytes.Repeat([]byte("y"), Max3Byte+1)
@@ -276,5 +287,5 @@ func TestEncodeAtTierCeilingStillWorks(t *testing.T) {
 	if bn == 0 {
 		t.Fatalf("encodeBytes(%d) silently wrote 0 bytes (D6 regression)", Max3Byte+1)
 	}
-	checkTierPrefix(t, be, "scalar", Max3Byte+1, bs)
+	checkTierSuffix(t, be, "scalar", Max3Byte+1, bs)
 }

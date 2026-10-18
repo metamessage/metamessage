@@ -49,6 +49,7 @@ import { Node, NodeScalar, NodeObject, NodeArray, NodeNull } from '../ir/ast';
 import { Tag } from '../ir/tag';
 import { ValueToNode } from './value-to-node';
 import { toJSONC } from '../jsonc/printer';
+import { footerSlotBytes, reverseBytes } from './footer';
 
 export class MMEncoder {
   private buffer: MMBuffer;
@@ -340,99 +341,74 @@ export class MMEncoder {
     return n1;
   }
 
+  // v0.5.0 尾定界：payload（已是 wire 形态）先出，meta 正序字节交给 encodeTag
+  // 逆序后置 + 尾部槽，一趟写完，无前缀长度回写。
   private encodeComment(payload: Uint8Array, tag: Tag): number {
     if (!(tag instanceof Tag)) {
       tag = new Tag(tag);
     }
 
-    const tagBytes = tag.toBytes();
-    if (tagBytes.length === 0) {
+    const meta = tag.toBytes();
+    if (meta.length === 0) {
       return 0;
     }
 
-    const n = this.encodeT(tagBytes);
-    if (n === 0) {
-      return n;
-    }
-
-    return this.encodeTag(
-      payload,
-      this.buffer.getBytes(this.buffer.offset - n),
-    );
+    return this.encodeTag(payload, meta);
   }
 
-  private encodeTag(bs: Uint8Array, tag: Uint8Array): number {
-    const length = bs.length + tag.length;
+  // encodeTag 尾定界写出 tag 包装段（一趟正向，零回写）：
+  //
+  //   [inner 已编码 wire][reverse(meta 正序)][meta_len 尾部槽][total_len 档位大端][tag sign]
+  //
+  // bs 为已完成尾定界编码的 inner 字节；meta 为 Tag.toBytes() 正序字节。
+  // total = len(bs)+len(meta)+len(尾槽)，与解码侧（footer.ts nodeTailStart）反推式
+  // inner = total - ml - len(尾槽) 一致（尾槽与前缀槽为同一套 canonical 三档）。
+  private encodeTag(bs: Uint8Array, meta: Uint8Array): number {
+    if (meta.length === 0) {
+      return 0;
+    }
+
+    const slot = footerSlotBytes(meta.length);
+    const length = bs.length + meta.length + slot.length;
     if (length > Max4Byte) {
       throw new Error(
         `tag+payload too long, max length: ${Max4Byte}, actual: ${length}`,
       );
     }
 
-    const sign = Prefix.Tag;
-    const savedOffset = this.buffer.offset;
-
+    let sign: number = Prefix.Tag;
+    let tier: number[] = [];
     if (length < TagLen1Byte) {
-      const prefix = sign | length;
-      this.buffer.writeUint8(prefix);
-      this.buffer.writeBytes(tag);
-      this.buffer.writeBytes(bs);
+      sign |= length;
     } else if (length <= Max1Byte) {
-      const prefix = sign | TagLen1Byte;
-      this.buffer.writeUint8(prefix);
-      this.buffer.writeUint8(length);
-      this.buffer.writeBytes(tag);
-      this.buffer.writeBytes(bs);
+      sign |= TagLen1Byte;
+      tier = [length & 0xff];
     } else if (length <= Max2Byte) {
-      const prefix = sign | TagLen2Byte;
-      this.buffer.writeUint8(prefix);
-      this.buffer.writeUint8((length >> 8) & 0xff);
-      this.buffer.writeUint8(length & 0xff);
-      this.buffer.writeBytes(tag);
-      this.buffer.writeBytes(bs);
+      sign |= TagLen2Byte;
+      tier = [(length >> 8) & 0xff, length & 0xff];
     } else if (length <= Max3Byte) {
-      const prefix = sign | TagLen3Byte;
-      this.buffer.writeUint8(prefix);
-      this.buffer.writeUint8((length >>> 16) & 0xff);
-      this.buffer.writeUint8((length >>> 8) & 0xff);
-      this.buffer.writeUint8(length & 0xff);
-      this.buffer.writeBytes(tag);
-      this.buffer.writeBytes(bs);
+      sign |= TagLen3Byte;
+      tier = [(length >>> 16) & 0xff, (length >> 8) & 0xff, length & 0xff];
     } else {
       // 最后一档必须覆盖到 Max4Byte
-      const prefix = sign | TagLen4Byte;
-      this.buffer.writeUint8(prefix);
-      this.buffer.writeUint8((length >>> 24) & 0xff);
-      this.buffer.writeUint8((length >>> 16) & 0xff);
-      this.buffer.writeUint8((length >>> 8) & 0xff);
-      this.buffer.writeUint8(length & 0xff);
-      this.buffer.writeBytes(tag);
-      this.buffer.writeBytes(bs);
-    }
-
-    return this.buffer.offset - savedOffset;
-  }
-
-  private encodeT(bs: Uint8Array): number {
-    const length = bs.length;
-    if (length === 0) {
-      return 0;
+      sign |= TagLen4Byte;
+      tier = [
+        (length >>> 24) & 0xff,
+        (length >>> 16) & 0xff,
+        (length >>> 8) & 0xff,
+        length & 0xff,
+      ];
     }
 
     const savedOffset = this.buffer.offset;
-
-    if (length < 254) {
-      this.buffer.writeUint8(length);
-      this.buffer.writeBytes(bs);
-    } else if (length < 257) {
-      this.buffer.writeUint8(254);
-      this.buffer.writeUint8(length);
-      this.buffer.writeBytes(bs);
-    } else {
-      this.buffer.writeUint8(255);
-      this.buffer.writeUint16BE(length);
-      this.buffer.writeBytes(bs);
+    const rmq = reverseBytes(meta);
+    this.buffer.writeBytes(bs);
+    this.buffer.writeBytes(rmq);
+    this.buffer.writeBytes(slot);
+    for (const t of tier) {
+      this.buffer.writeUint8(t);
     }
+    this.buffer.writeUint8(sign);
 
     return this.buffer.offset - savedOffset;
   }
@@ -483,57 +459,51 @@ export class MMEncoder {
     return this.encodeIntWithSign(Prefix.PositiveInt, value);
   }
 
+  // v0.5.0 尾定界：body（大端正序）先写，sign（含档位）追加在尾部。内联档为单字节。
   private encodeIntWithSign(sign: number, value: bigint): number {
     if (value <= 23n) {
       this.buffer.writeUint8(sign | Number(value));
       return 1;
     } else if (value <= Max1Byte) {
-      this.buffer.writeUint8(sign | IntLen1Byte);
       this.buffer.writeUint8(Number(value));
+      this.buffer.writeUint8(sign | IntLen1Byte);
       return 2;
     } else if (value <= Max2Byte) {
-      sign |= IntLen2Byte;
-      this.buffer.writeUint8(sign);
       this.buffer.writeUint8(Number((value >> 8n) & 0xffn));
       this.buffer.writeUint8(Number(value & 0xffn));
+      this.buffer.writeUint8(sign | IntLen2Byte);
       return 3;
     } else if (value <= Max3Byte) {
-      sign |= IntLen3Byte;
-      this.buffer.writeUint8(sign);
       this.buffer.writeUint8(Number((value >> 16n) & 0xffn));
       this.buffer.writeUint8(Number((value >> 8n) & 0xffn));
       this.buffer.writeUint8(Number(value & 0xffn));
+      this.buffer.writeUint8(sign | IntLen3Byte);
       return 4;
     } else if (value <= Max4Byte) {
-      sign |= IntLen4Byte;
-      this.buffer.writeUint8(sign);
       this.buffer.writeUint8(Number((value >> 24n) & 0xffn));
       this.buffer.writeUint8(Number((value >> 16n) & 0xffn));
       this.buffer.writeUint8(Number((value >> 8n) & 0xffn));
       this.buffer.writeUint8(Number(value & 0xffn));
+      this.buffer.writeUint8(sign | IntLen4Byte);
       return 5;
     } else if (value <= Max5Byte) {
-      sign |= IntLen5Byte;
-      this.buffer.writeUint8(sign);
       this.buffer.writeUint8(Number((value >> 32n) & 0xffn));
       this.buffer.writeUint8(Number((value >> 24n) & 0xffn));
       this.buffer.writeUint8(Number((value >> 16n) & 0xffn));
       this.buffer.writeUint8(Number((value >> 8n) & 0xffn));
       this.buffer.writeUint8(Number(value & 0xffn));
+      this.buffer.writeUint8(sign | IntLen5Byte);
       return 6;
     } else if (value <= Max6Byte) {
-      sign |= IntLen6Byte;
-      this.buffer.writeUint8(sign);
       this.buffer.writeUint8(Number((value >> 40n) & 0xffn));
       this.buffer.writeUint8(Number((value >> 32n) & 0xffn));
       this.buffer.writeUint8(Number((value >> 24n) & 0xffn));
       this.buffer.writeUint8(Number((value >> 16n) & 0xffn));
       this.buffer.writeUint8(Number((value >> 8n) & 0xffn));
       this.buffer.writeUint8(Number(value & 0xffn));
+      this.buffer.writeUint8(sign | IntLen6Byte);
       return 7;
     } else if (value <= Max7Byte) {
-      sign |= IntLen7Byte;
-      this.buffer.writeUint8(sign);
       this.buffer.writeUint8(Number((value >> 48n) & 0xffn));
       this.buffer.writeUint8(Number((value >> 40n) & 0xffn));
       this.buffer.writeUint8(Number((value >> 32n) & 0xffn));
@@ -541,10 +511,9 @@ export class MMEncoder {
       this.buffer.writeUint8(Number((value >> 16n) & 0xffn));
       this.buffer.writeUint8(Number((value >> 8n) & 0xffn));
       this.buffer.writeUint8(Number(value & 0xffn));
+      this.buffer.writeUint8(sign | IntLen7Byte);
       return 8;
     } else if (value <= Max8Byte) {
-      sign |= IntLen8Byte;
-      this.buffer.writeUint8(sign);
       this.buffer.writeUint8(Number((value >> 56n) & 0xffn));
       this.buffer.writeUint8(Number((value >> 48n) & 0xffn));
       this.buffer.writeUint8(Number((value >> 40n) & 0xffn));
@@ -553,10 +522,10 @@ export class MMEncoder {
       this.buffer.writeUint8(Number((value >> 16n) & 0xffn));
       this.buffer.writeUint8(Number((value >> 8n) & 0xffn));
       this.buffer.writeUint8(Number(value & 0xffn));
+      this.buffer.writeUint8(sign | IntLen8Byte);
       return 9;
     } else {
       throw new Error('Int too large');
-      return 0;
     }
   }
 
@@ -587,49 +556,43 @@ export class MMEncoder {
       return 1;
     }
 
+    // v0.5.0 尾定界：[exp][mantissa 大端正序][sign]。
     if (mantissa <= Max1Byte) {
-      sign |= FloatLen1Byte;
-      this.buffer.writeUint8(sign);
       this.buffer.writeUint8(exponent);
       this.buffer.writeUint8(Number(mantissa));
+      this.buffer.writeUint8(sign | FloatLen1Byte);
       return 1 + 1 + 1;
     } else if (mantissa <= Max2Byte) {
-      sign |= FloatLen2Byte;
-      this.buffer.writeUint8(sign);
       this.buffer.writeUint8(exponent);
       this.buffer.writeUint8(Number((mantissa >> 8n) & 0xffn));
       this.buffer.writeUint8(Number(mantissa & 0xffn));
+      this.buffer.writeUint8(sign | FloatLen2Byte);
       return 1 + 1 + 2;
     } else if (mantissa <= Max3Byte) {
-      sign |= FloatLen3Byte;
-      this.buffer.writeUint8(sign);
       this.buffer.writeUint8(exponent);
       this.buffer.writeUint8(Number((mantissa >> 16n) & 0xffn));
       this.buffer.writeUint8(Number((mantissa >> 8n) & 0xffn));
       this.buffer.writeUint8(Number(mantissa & 0xffn));
+      this.buffer.writeUint8(sign | FloatLen3Byte);
       return 1 + 1 + 3;
     } else if (mantissa <= Max4Byte) {
-      sign |= FloatLen4Byte;
-      this.buffer.writeUint8(sign);
       this.buffer.writeUint8(exponent);
       this.buffer.writeUint8(Number((mantissa >> 24n) & 0xffn));
       this.buffer.writeUint8(Number((mantissa >> 16n) & 0xffn));
       this.buffer.writeUint8(Number((mantissa >> 8n) & 0xffn));
       this.buffer.writeUint8(Number(mantissa & 0xffn));
+      this.buffer.writeUint8(sign | FloatLen4Byte);
       return 1 + 1 + 4;
     } else if (mantissa <= BigInt(Max5Byte)) {
-      sign |= FloatLen5Byte;
-      this.buffer.writeUint8(sign);
       this.buffer.writeUint8(exponent);
       this.buffer.writeUint8(Number((mantissa >> 32n) & 0xffn));
       this.buffer.writeUint8(Number((mantissa >> 24n) & 0xffn));
       this.buffer.writeUint8(Number((mantissa >> 16n) & 0xffn));
       this.buffer.writeUint8(Number((mantissa >> 8n) & 0xffn));
       this.buffer.writeUint8(Number(mantissa & 0xffn));
+      this.buffer.writeUint8(sign | FloatLen5Byte);
       return 1 + 1 + 5;
     } else if (mantissa <= BigInt(Max6Byte)) {
-      sign |= FloatLen6Byte;
-      this.buffer.writeUint8(sign);
       this.buffer.writeUint8(exponent);
       this.buffer.writeUint8(Number((mantissa >> 40n) & 0xffn));
       this.buffer.writeUint8(Number((mantissa >> 32n) & 0xffn));
@@ -637,10 +600,9 @@ export class MMEncoder {
       this.buffer.writeUint8(Number((mantissa >> 16n) & 0xffn));
       this.buffer.writeUint8(Number((mantissa >> 8n) & 0xffn));
       this.buffer.writeUint8(Number(mantissa & 0xffn));
+      this.buffer.writeUint8(sign | FloatLen6Byte);
       return 1 + 1 + 6;
     } else if (mantissa <= BigInt(Max7Byte)) {
-      sign |= FloatLen7Byte;
-      this.buffer.writeUint8(sign);
       this.buffer.writeUint8(exponent);
       this.buffer.writeUint8(Number((mantissa >> 48n) & 0xffn));
       this.buffer.writeUint8(Number((mantissa >> 40n) & 0xffn));
@@ -649,10 +611,9 @@ export class MMEncoder {
       this.buffer.writeUint8(Number((mantissa >> 16n) & 0xffn));
       this.buffer.writeUint8(Number((mantissa >> 8n) & 0xffn));
       this.buffer.writeUint8(Number(mantissa & 0xffn));
+      this.buffer.writeUint8(sign | FloatLen7Byte);
       return 1 + 1 + 7;
     } else if (mantissa <= Max8Byte) {
-      sign |= FloatLen8Byte;
-      this.buffer.writeUint8(sign);
       this.buffer.writeUint8(exponent);
       this.buffer.writeUint8(Number((mantissa >> 56n) & 0xffn));
       this.buffer.writeUint8(Number((mantissa >> 48n) & 0xffn));
@@ -662,6 +623,7 @@ export class MMEncoder {
       this.buffer.writeUint8(Number((mantissa >> 16n) & 0xffn));
       this.buffer.writeUint8(Number((mantissa >> 8n) & 0xffn));
       this.buffer.writeUint8(Number(mantissa & 0xffn));
+      this.buffer.writeUint8(sign | FloatLen8Byte);
       return 1 + 1 + 8;
     } else {
       throw new Error(`Unsupported mantissa length: ${mantissa}`);
@@ -768,53 +730,32 @@ export class MMEncoder {
     this.buffer.writeFloat64(value);
   }
 
+  // v0.5.0 尾定界：先写 UTF-8 body，再写长度大端，最后写 sign。
+  // 长度字段 = UTF-8 字节数（与 Go 参考实现 len(s) 逐字节对齐）。
   encodeString(value: string): number {
-    let n = 0;
-    const length = value.length;
+    const bytes = new TextEncoder().encode(value);
+    const length = bytes.length;
     // String 维持 v0.2.x：上限 Max2Byte(65535)，最多 2 字节长度字段。
-    // 基线没有守卫（超长会被 writeUint16BE 静默截断），这里保留守卫但按
-    // Max2Byte 判定。1 字节档边界保持基线的 `< 256`（255 落 2 字节档）。
+    // 1 字节档边界保持 `< 256`（255 落 2 字节档），与基线一致。
     if (length > Max2Byte) {
       throw new Error(
         `string too long, max length: ${Max2Byte}, actual: ${length}`,
       );
     }
+
+    const savedOffset = this.buffer.offset;
+    this.buffer.writeBytes(bytes);
     if (length < StringLen1Byte) {
-      const prefix = Prefix.String | length;
-      this.buffer.writeUint8(prefix);
-      n += 1;
+      this.buffer.writeUint8(Prefix.String | length);
     } else if (length < 256) {
-      const prefix = Prefix.String | StringLen1Byte;
-      this.buffer.writeUint8(prefix);
       this.buffer.writeUint8(length);
-      n += 2;
+      this.buffer.writeUint8(Prefix.String | StringLen1Byte);
     } else {
-      const prefix = Prefix.String | StringLen2Byte;
-      this.buffer.writeUint8(prefix);
       this.buffer.writeUint16BE(length);
-      n += 3;
+      this.buffer.writeUint8(Prefix.String | StringLen2Byte);
     }
 
-    for (let i = 0; i < length; i++) {
-      const code = value.charCodeAt(i);
-      if (code <= 0x7f) {
-        this.buffer.writeUint8(code);
-      } else if (code <= 0x7ff) {
-        this.buffer.writeUint8(0xc0 | (code >> 6));
-        this.buffer.writeUint8(0x80 | (code & 0x3f));
-      } else if (code <= 0xffff) {
-        this.buffer.writeUint8(0xe0 | (code >> 12));
-        this.buffer.writeUint8(0x80 | ((code >> 6) & 0x3f));
-        this.buffer.writeUint8(0x80 | (code & 0x3f));
-      } else {
-        this.buffer.writeUint8(0xf0 | (code >> 18));
-        this.buffer.writeUint8(0x80 | ((code >> 12) & 0x3f));
-        this.buffer.writeUint8(0x80 | ((code >> 6) & 0x3f));
-        this.buffer.writeUint8(0x80 | (code & 0x3f));
-      }
-    }
-    n += length;
-    return n;
+    return this.buffer.offset - savedOffset;
   }
 
   private encodeStringToBytes(value: string): Uint8Array {
@@ -823,50 +764,41 @@ export class MMEncoder {
     return this.buffer.getBytes(startOffset);
   }
 
+  // v0.5.0 尾定界：先写 body，再写长度大端，最后写 sign。
   encodeBytes(value: Uint8Array): number {
-    let n = 0;
     const length = value.length;
     if (length > Max4Byte) {
       throw new Error(
         `bytes too long, max length: ${Max4Byte}, actual: ${length}`,
       );
     }
+
+    const savedOffset = this.buffer.offset;
+    this.buffer.writeBytes(value);
     if (length < BytesLen1Byte) {
-      const prefix = Prefix.Bytes | length;
-      this.buffer.writeUint8(prefix);
-      n += 1;
+      this.buffer.writeUint8(Prefix.Bytes | length);
     } else if (length <= Max1Byte) {
-      const prefix = Prefix.Bytes | BytesLen1Byte;
-      this.buffer.writeUint8(prefix);
       this.buffer.writeUint8(length);
-      n += 2;
+      this.buffer.writeUint8(Prefix.Bytes | BytesLen1Byte);
     } else if (length <= Max2Byte) {
-      const prefix = Prefix.Bytes | BytesLen2Byte;
-      this.buffer.writeUint8(prefix);
       this.buffer.writeUint8((length >> 8) & 0xff);
       this.buffer.writeUint8(length & 0xff);
-      n += 3;
+      this.buffer.writeUint8(Prefix.Bytes | BytesLen2Byte);
     } else if (length <= Max3Byte) {
-      const prefix = Prefix.Bytes | BytesLen3Byte;
-      this.buffer.writeUint8(prefix);
       this.buffer.writeUint8((length >>> 16) & 0xff);
       this.buffer.writeUint8((length >>> 8) & 0xff);
       this.buffer.writeUint8(length & 0xff);
-      n += 4;
+      this.buffer.writeUint8(Prefix.Bytes | BytesLen3Byte);
     } else {
       // 最后一档必须覆盖到 Max4Byte
-      const prefix = Prefix.Bytes | BytesLen4Byte;
-      this.buffer.writeUint8(prefix);
       this.buffer.writeUint8((length >>> 24) & 0xff);
       this.buffer.writeUint8((length >>> 16) & 0xff);
       this.buffer.writeUint8((length >>> 8) & 0xff);
       this.buffer.writeUint8(length & 0xff);
-      n += 5;
+      this.buffer.writeUint8(Prefix.Bytes | BytesLen4Byte);
     }
 
-    this.buffer.writeBytes(value);
-    n += value.length;
-    return n;
+    return this.buffer.offset - savedOffset;
   }
 
   encodeBigInt(value: string): number {
@@ -972,6 +904,7 @@ export class MMEncoder {
     return this.encodeU64(BigInt(seconds));
   }
 
+  // v0.5.0 尾定界：先写 payload（子节点 wire 正序），再写长度大端，最后写 sign。
   private encodeArrayToBytes(value: Uint8Array): Uint8Array {
     const startOffset = this.buffer.offset;
 
@@ -982,41 +915,37 @@ export class MMEncoder {
         `array too long, max length: ${Max4Byte}, actual: ${length}`,
       );
     }
+
+    this.buffer.writeBytes(value);
     if (length < ContainerLen1Byte) {
-      prefix |= length;
-      this.buffer.writeUint8(prefix);
+      this.buffer.writeUint8(prefix | length);
     } else if (length <= Max1Byte) {
-      prefix |= ContainerLen1Byte;
-      this.buffer.writeUint8(prefix);
       this.buffer.writeUint8(length);
+      this.buffer.writeUint8(prefix | ContainerLen1Byte);
     } else if (length <= Max2Byte) {
-      prefix |= ContainerLen2Byte;
-      this.buffer.writeUint8(prefix);
       this.buffer.writeUint8((length >> 8) & 0xff);
       this.buffer.writeUint8(length & 0xff);
+      this.buffer.writeUint8(prefix | ContainerLen2Byte);
     } else if (length <= Max3Byte) {
-      prefix |= ContainerLen3Byte;
-      this.buffer.writeUint8(prefix);
       this.buffer.writeUint8((length >>> 16) & 0xff);
       this.buffer.writeUint8((length >>> 8) & 0xff);
       this.buffer.writeUint8(length & 0xff);
+      this.buffer.writeUint8(prefix | ContainerLen3Byte);
     } else {
       // 最后一档必须覆盖到 Max4Byte
-      prefix |= ContainerLen4Byte;
-      this.buffer.writeUint8(prefix);
       this.buffer.writeUint8((length >>> 24) & 0xff);
       this.buffer.writeUint8((length >>> 16) & 0xff);
       this.buffer.writeUint8((length >>> 8) & 0xff);
       this.buffer.writeUint8(length & 0xff);
+      this.buffer.writeUint8(prefix | ContainerLen4Byte);
     }
 
-    this.buffer.writeBytes(value);
     return this.buffer.getBytes(startOffset);
   }
 
+  // v0.5.0 尾定界：先写 payload（子节点 wire 正序），再写长度大端，最后写 sign。
   private encodeObjectToBytes(value: Uint8Array): number {
     const length = value.length;
-    let n = 0;
 
     if (length > Max4Byte) {
       throw new Error(
@@ -1024,42 +953,33 @@ export class MMEncoder {
       );
     }
 
-    let prefix = Prefix.Container | ContainerObject;
+    const prefix = Prefix.Container | ContainerObject;
+    const savedOffset = this.buffer.offset;
 
+    this.buffer.writeBytes(value);
     if (length < ContainerLen1Byte) {
-      prefix |= length;
-      this.buffer.writeUint8(prefix);
-      n = 1 + length;
+      this.buffer.writeUint8(prefix | length);
     } else if (length <= Max1Byte) {
-      prefix |= ContainerLen1Byte;
-      this.buffer.writeUint8(prefix);
       this.buffer.writeUint8(length);
-      n = 2 + length;
+      this.buffer.writeUint8(prefix | ContainerLen1Byte);
     } else if (length <= Max2Byte) {
-      prefix |= ContainerLen2Byte;
-      this.buffer.writeUint8(prefix);
       this.buffer.writeUint8((length >> 8) & 0xff);
       this.buffer.writeUint8(length & 0xff);
-      n = 3 + length;
+      this.buffer.writeUint8(prefix | ContainerLen2Byte);
     } else if (length <= Max3Byte) {
-      prefix |= ContainerLen3Byte;
-      this.buffer.writeUint8(prefix);
       this.buffer.writeUint8((length >>> 16) & 0xff);
       this.buffer.writeUint8((length >>> 8) & 0xff);
       this.buffer.writeUint8(length & 0xff);
-      n = 4 + length;
+      this.buffer.writeUint8(prefix | ContainerLen3Byte);
     } else {
       // 最后一档必须覆盖到 Max4Byte
-      prefix |= ContainerLen4Byte;
-      this.buffer.writeUint8(prefix);
       this.buffer.writeUint8((length >>> 24) & 0xff);
       this.buffer.writeUint8((length >>> 16) & 0xff);
       this.buffer.writeUint8((length >>> 8) & 0xff);
       this.buffer.writeUint8(length & 0xff);
-      n = 5 + length;
+      this.buffer.writeUint8(prefix | ContainerLen4Byte);
     }
 
-    this.buffer.writeBytes(value);
-    return n;
+    return this.buffer.offset - savedOffset;
   }
 }

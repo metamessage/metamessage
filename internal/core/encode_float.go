@@ -32,28 +32,28 @@ func (e *encoder) encodeFloat(s string) (n uint32, err error) {
 	// 	return e.writeByte(byte(sign))
 	case mantissa <= Max1Byte:
 		sign |= FloatLen1Byte
-		return e.writeByte(byte(sign), byte(exponent), byte(mantissa))
+		return e.writeByte(byte(exponent), byte(mantissa), byte(sign))
 	case mantissa <= Max2Byte:
 		sign |= FloatLen2Byte
-		return e.writeByte(byte(sign), byte(exponent), byte(mantissa>>8), byte(mantissa))
+		return e.writeByte(byte(exponent), byte(mantissa>>8), byte(mantissa), byte(sign))
 	case mantissa <= Max3Byte:
 		sign |= FloatLen3Byte
-		return e.writeByte(byte(sign), byte(exponent), byte(mantissa>>16), byte(mantissa>>8), byte(mantissa))
+		return e.writeByte(byte(exponent), byte(mantissa>>16), byte(mantissa>>8), byte(mantissa), byte(sign))
 	case mantissa <= Max4Byte:
 		sign |= FloatLen4Byte
-		return e.writeByte(byte(sign), byte(exponent), byte(mantissa>>24), byte(mantissa>>16), byte(mantissa>>8), byte(mantissa))
+		return e.writeByte(byte(exponent), byte(mantissa>>24), byte(mantissa>>16), byte(mantissa>>8), byte(mantissa), byte(sign))
 	case mantissa <= Max5Byte:
 		sign |= FloatLen5Byte
-		return e.writeByte(byte(sign), byte(exponent), byte(mantissa>>32), byte(mantissa>>24), byte(mantissa>>16), byte(mantissa>>8), byte(mantissa))
+		return e.writeByte(byte(exponent), byte(mantissa>>32), byte(mantissa>>24), byte(mantissa>>16), byte(mantissa>>8), byte(mantissa), byte(sign))
 	case mantissa <= Max6Byte:
 		sign |= FloatLen6Byte
-		return e.writeByte(byte(sign), byte(exponent), byte(mantissa>>40), byte(mantissa>>32), byte(mantissa>>24), byte(mantissa>>16), byte(mantissa>>8), byte(mantissa))
+		return e.writeByte(byte(exponent), byte(mantissa>>40), byte(mantissa>>32), byte(mantissa>>24), byte(mantissa>>16), byte(mantissa>>8), byte(mantissa), byte(sign))
 	case mantissa <= Max7Byte:
 		sign |= FloatLen7Byte
-		return e.writeByte(byte(sign), byte(exponent), byte(mantissa>>48), byte(mantissa>>40), byte(mantissa>>32), byte(mantissa>>24), byte(mantissa>>16), byte(mantissa>>8), byte(mantissa))
+		return e.writeByte(byte(exponent), byte(mantissa>>48), byte(mantissa>>40), byte(mantissa>>32), byte(mantissa>>24), byte(mantissa>>16), byte(mantissa>>8), byte(mantissa), byte(sign))
 	case mantissa <= Max8Byte:
 		sign |= FloatLen8Byte
-		return e.writeByte(byte(sign), byte(exponent), byte(mantissa>>56), byte(mantissa>>48), byte(mantissa>>40), byte(mantissa>>32), byte(mantissa>>24), byte(mantissa>>16), byte(mantissa>>8), byte(mantissa))
+		return e.writeByte(byte(exponent), byte(mantissa>>56), byte(mantissa>>48), byte(mantissa>>40), byte(mantissa>>32), byte(mantissa>>24), byte(mantissa>>16), byte(mantissa>>8), byte(mantissa), byte(sign))
 	default:
 		err = fmt.Errorf("unsupported mantissa sign length: %d", sign)
 		return

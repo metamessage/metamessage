@@ -45,27 +45,28 @@ def test_encode_i():
     b = enc.encode(NodeScalar(23, '23', Tag(type=ValueType.I)))
     assert b[0] == 0x37  # PositiveInt | 23
     
-    # Medium int (1 extra byte)
+    # Medium int (1 extra byte)：尾序 [body][sign]
     b = enc.encode(NodeScalar(24, '24', Tag(type=ValueType.I)))
-    assert b[0] == 0x38  # PositiveInt | IntLen1Byte (24)
-    assert b[1] == 24
+    assert b[0] == 24
+    assert b[-1] == 0x38  # PositiveInt | IntLen1Byte (24)
     
     b = enc.encode(NodeScalar(255, '255', Tag(type=ValueType.I)))
-    assert b[0] == 0x38
-    assert b[1] == 255
+    assert b[0] == 255
+    assert b[-1] == 0x38
     
-    # Large int (2 extra bytes)
+    # Large int (2 extra bytes)：尾序 [body BE][sign]
     b = enc.encode(NodeScalar(256, '256', Tag(type=ValueType.I)))
-    assert b[0] == 0x39  # PositiveInt | IntLen2Byte (25)
+    assert b[-1] == 0x39  # PositiveInt | IntLen2Byte (25)
     assert len(b) == 3
+    assert (b[0] << 8) | b[1] == 256
     
-    # Negative int
+    # Negative int（sign 在尾）
     b = enc.encode(NodeScalar(-1, '-1', Tag(type=ValueType.I)))
-    assert b[0] & 0xE0 == 0x40  # NegativeInt
+    assert b[-1] & 0xE0 == 0x40  # NegativeInt
     assert dec(b).decode() == -1
     
     b = enc.encode(NodeScalar(-24, '-24', Tag(type=ValueType.I)))
-    assert b[0] & 0xE0 == 0x40
+    assert b[-1] & 0xE0 == 0x40
     assert dec(b).decode() == -24
     
     # Edge cases
@@ -81,11 +82,11 @@ def test_encode_string():
     enc = Encoder()
     dec = Decoder
     
-    # Short string
+    # Short string：尾序 [body][sign]
     b = enc.encode(NodeScalar('hello', 'hello', Tag(type=ValueType.Str)))
-    # String prefix (0x80) | length 5 = 0x85
-    assert b[0] == 0x85
-    assert b[1:] == b'hello'
+    # String prefix (0x80) | length 5 = 0x85，落在尾字节
+    assert b[-1] == 0x85
+    assert b[:-1] == b'hello'
     assert dec(b).decode() == 'hello'
     
     # Empty string
@@ -93,16 +94,16 @@ def test_encode_string():
     assert b[0] == 0x80  # String | 0
     assert dec(b).decode() == ''
     
-    # Longer string requiring extra length byte
+    # Longer string requiring extra length byte：尾序 [body][len][sign]
     s = 'a' * 30
     b = enc.encode(NodeScalar(s, s, Tag(type=ValueType.Str)))
-    assert b[0] == 0x9E  # String | StringLen1Byte (0x1E = 30)
-    assert b[1] == 30
+    assert b[-1] == 0x9E  # String | StringLen1Byte (0x1E = 30)
+    assert b[-2] == 30
     
     s2 = 'b' * 300
     b = enc.encode(NodeScalar(s2, s2, Tag(type=ValueType.Str)))
-    assert b[0] == 0x9F  # String | StringLen2Byte (0x1F = 31)
-    assert (b[1] << 8) | b[2] == 300
+    assert b[-1] == 0x9F  # String | StringLen2Byte (0x1F = 31)
+    assert (b[-3] << 8) | b[-2] == 300
 
 
 def test_encode_float():
@@ -140,8 +141,10 @@ def test_encode_bytes():
     enc = Encoder()
     dec = Decoder
     
+    # 尾序 [body][sign]
     b = enc.encode(NodeScalar(b'\x00\x01\x02', '', Tag(type=ValueType.Bytes)))
-    assert b[0] == 0xA3  # PrefixBytes | 3
+    assert b[-1] == 0xA3  # PrefixBytes | 3
+    assert b[:-1] == b'\x00\x01\x02'
     assert dec(b).decode() == b'\x00\x01\x02'
     
     # Empty bytes
@@ -240,7 +243,8 @@ def test_roundtrip_complex():
     assert result['tags'] == ['admin', 'user']
     assert result['meta']['created'] == '2024-01-15'
     assert result['meta']['count'] == 100
-    assert result['data'] == ''
+    # v0.2.16 起 is_null 统一绑定为 None（对齐 Go binder），不再是 ''
+    assert result['data'] is None
 
 
 def test_null_values():
@@ -248,11 +252,12 @@ def test_null_values():
     enc = Encoder()
     dec = Decoder
     
+    # v0.2.16 起 is_null 统一解码为 None（bool/int/float/string 一致），对齐 Go binder。
     expected = {
         'bool': None,
-        'int': 0,
-        'float': 0.0,
-        'string': '',
+        'int': None,
+        'float': None,
+        'string': None,
     }
     for typ, tag in [
         ('bool', Tag(type=ValueType.Bool, is_null=True)),

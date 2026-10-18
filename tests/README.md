@@ -2,6 +2,19 @@
 
 Shared JSONC fixtures and test runners for validating consistency across all MetaMessage language implementations.
 
+## v0.4.0 Footer Format Migration
+
+**Status: Go reference implementation migrated; other 9 languages frozen, awaiting migration.**
+
+As of v0.4.0, the Go reference uses the **footer wire format** (see `docs/footer-format-v0.4.0.md`).
+All other language harnesses (py / php / ts / rs / c / cpp / cs / kt / sw) still implement the v0.3.x header format.
+Running `./tests/compare_with_go.sh <lang>` for any non-Go language is **expected to produce diffs** — this is the intended state during the hard-cut migration.
+
+The `tests/results/` diff files from previous runs are stale (generated before the footer migration) and will be regenerated per-language as each implementation catches up.
+
+Porting order: mm-ts → mm-py → mm-php → mm-cs → mm-kt → mm-rs → mm-swift → mm-c → mm-cpp.
+Acceptance per language: `./tests/compare_with_go.sh <lang>` produces zero diffs against the live Go baseline.
+
 ## Structure
 
 ```

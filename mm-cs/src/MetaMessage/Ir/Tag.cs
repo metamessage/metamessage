@@ -911,13 +911,13 @@ public class Tag
                 bs.Add((byte)((byte)TagKey.KDesc | (byte)l));
                 bs.AddRange(descBytes);
             }
-            else if (l <= 1 << 8)
+            else if (l <= 255)
             {
                 bs.Add((byte)((byte)TagKey.KDesc | 6));
                 bs.Add((byte)l);
                 bs.AddRange(descBytes);
             }
-            else if (l <= 1 << 16)
+            else if (l <= 65535)
             {
                 bs.Add((byte)((byte)TagKey.KDesc | 7));
                 bs.Add((byte)(l >> 8));
@@ -1033,13 +1033,13 @@ public class Tag
                 bs.Add((byte)((byte)TagKey.KEnum | (byte)l));
                 bs.AddRange(enumBytes);
             }
-            else if (l <= 1 << 8)
+            else if (l <= 255)
             {
                 bs.Add((byte)((byte)TagKey.KEnum | 6));
                 bs.Add((byte)l);
                 bs.AddRange(enumBytes);
             }
-            else if (l <= 1 << 16)
+            else if (l <= 65535)
             {
                 bs.Add((byte)((byte)TagKey.KEnum | 7));
                 bs.Add((byte)(l >> 8));
@@ -1093,13 +1093,13 @@ public class Tag
                 bs.Add((byte)((byte)TagKey.KChildDesc | (byte)l));
                 bs.AddRange(childDescBytes);
             }
-            else if (l <= 1 << 8)
+            else if (l <= 255)
             {
                 bs.Add((byte)((byte)TagKey.KChildDesc | 6));
                 bs.Add((byte)l);
                 bs.AddRange(childDescBytes);
             }
-            else if (l <= 1 << 16)
+            else if (l <= 65535)
             {
                 bs.Add((byte)((byte)TagKey.KChildDesc | 7));
                 bs.Add((byte)(l >> 8));
@@ -1212,13 +1212,13 @@ public class Tag
                 bs.Add((byte)((byte)TagKey.KChildEnums | (byte)l));
                 bs.AddRange(childEnumBytes);
             }
-            else if (l <= 1 << 8)
+            else if (l <= 255)
             {
                 bs.Add((byte)((byte)TagKey.KChildEnums | 6));
                 bs.Add((byte)l);
                 bs.AddRange(childEnumBytes);
             }
-            else if (l <= 1 << 16)
+            else if (l <= 65535)
             {
                 bs.Add((byte)((byte)TagKey.KChildEnums | 7));
                 bs.Add((byte)(l >> 8));

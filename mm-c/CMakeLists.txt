@@ -19,6 +19,7 @@ set(IR_SOURCES
 set(CORE_SOURCES
     src/core/mc_encoder.c
     src/core/mc_decoder.c
+    src/core/mc_footer.c
 )
 
 set(MM_SOURCES

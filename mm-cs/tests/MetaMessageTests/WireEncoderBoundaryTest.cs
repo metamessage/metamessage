@@ -22,9 +22,10 @@ public class WireEncoderBoundaryTest
 
     private static void AssertLenPrefix(byte[] wire)
     {
+        // v0.5.0 尾定界：[payload][len hi][len lo][sign]，2 字节长度档落在尾部。
         Assert.Equal(WantWire, wire.Length);
-        Assert.Equal(0xFF, wire[1]);
-        Assert.Equal(0xFF, wire[2]);
+        Assert.Equal(0xFF, wire[wire.Length - 3]);
+        Assert.Equal(0xFF, wire[wire.Length - 2]);
     }
 
     [Fact]

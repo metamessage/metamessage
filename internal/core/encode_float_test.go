@@ -486,56 +486,57 @@ func TestEncodeFloatNegativeRoundtrip(t *testing.T) {
 		},
 
 		// ─── 长编码负浮点 (mantissa > 7, 但仍 exponent = -1) ───
+		// v0.5.0 尾定界：换位后 wire = [exp][mant][sign]
 		{
 			name:      "neg_0_8",
 			input:     -0.8,
-			wantBytes: []byte{0x78, 0xFF, 0x08},
+			wantBytes: []byte{0xFF, 0x08, 0x78},
 		},
 		{
 			name:      "neg_0_9",
 			input:     -0.9,
-			wantBytes: []byte{0x78, 0xFF, 0x09},
+			wantBytes: []byte{0xFF, 0x09, 0x78},
 		},
 
 		// ─── 长编码负浮点 (exponent != -1) ───
 		{
 			name:      "neg_1_5",
 			input:     -1.5,
-			wantBytes: []byte{0x78, 0xFF, 0x0F},
+			wantBytes: []byte{0xFF, 0x0F, 0x78},
 		},
 		{
 			name:      "neg_2_5",
 			input:     -2.5,
-			wantBytes: []byte{0x78, 0xFF, 0x19},
+			wantBytes: []byte{0xFF, 0x19, 0x78},
 		},
 		{
 			name:      "neg_3_14",
 			input:     -3.14,
-			wantBytes: []byte{0x79, 0xFE, 0x01, 0x3A},
+			wantBytes: []byte{0xFE, 0x01, 0x3A, 0x79},
 		},
 
 		// ─── 负整数 (exponent = 0) ───
 		{
 			name:      "neg_1",
 			input:     -1.0,
-			wantBytes: []byte{0x78, 0xFF, 0x0A},
+			wantBytes: []byte{0xFF, 0x0A, 0x78},
 		},
 		{
 			name:      "neg_42",
 			input:     -42.0,
-			wantBytes: []byte{0x79, 0xFF, 0x01, 0xA4},
+			wantBytes: []byte{0xFF, 0x01, 0xA4, 0x79},
 		},
 
 		// ─── 小负浮点 (exponent < -1) ───
 		{
 			name:      "neg_0_01",
 			input:     -0.01,
-			wantBytes: []byte{0x78, 0xFE, 0x01},
+			wantBytes: []byte{0xFE, 0x01, 0x78},
 		},
 		{
 			name:      "neg_0_001",
 			input:     -0.001,
-			wantBytes: []byte{0x78, 0xFD, 0x01},
+			wantBytes: []byte{0xFD, 0x01, 0x78},
 		},
 	}
 
